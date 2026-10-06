@@ -13,12 +13,10 @@ const PurchaseSuccessPage = () => {
 	useEffect(() => {
 		const handleCheckoutSuccess = async (sessionId) => {
 			try {
-				await axios.post("/payments/checkout-success", {
-					sessionId,
-				});
+				await axios.post("/payments/checkout-success", { sessionId });
 				clearCart();
 			} catch (error) {
-				console.log(error);
+				setError(error.response?.data?.message || "We couldn't confirm your payment. Please contact support.");
 			} finally {
 				setIsProcessing(false);
 			}
@@ -35,7 +33,17 @@ const PurchaseSuccessPage = () => {
 
 	if (isProcessing) return "Processing...";
 
-	if (error) return `Error: ${error}`;
+	if (error) {
+		return (
+			<div className='h-screen flex items-center justify-center px-4'>
+				<div className='max-w-md w-full bg-gray-800 rounded-lg shadow-xl p-8 text-center'>
+					<h1 className='text-2xl font-bold text-red-400 mb-4'>Payment confirmation failed</h1>
+					<p className='text-gray-300 mb-6'>{error}</p>
+					<Link to='/' className='text-emerald-400 hover:text-emerald-300'>Continue Shopping</Link>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className='h-screen flex items-center justify-center px-4'>
@@ -66,7 +74,7 @@ const PurchaseSuccessPage = () => {
 					<div className='bg-gray-700 rounded-lg p-4 mb-6'>
 						<div className='flex items-center justify-between mb-2'>
 							<span className='text-sm text-gray-400'>Order number</span>
-							<span className='text-sm font-semibold text-emerald-400'>#12345</span>
+							<span className='text-sm font-semibold text-emerald-400'>Confirmed</span>
 						</div>
 						<div className='flex items-center justify-between'>
 							<span className='text-sm text-gray-400'>Estimated delivery</span>
@@ -83,8 +91,8 @@ const PurchaseSuccessPage = () => {
 							Thanks for trusting us!
 						</button>
 						<Link
-							to={"/"}
-							className='w-full bg-gray-700 hover:bg-gray-600 text-emerald-400 font-bold py-2 px-4 
+							to='/'
+							className='w-full bg-gray-700 hover:bg-gray-600 text-emerald-400 font-bold py-2 px-4
             rounded-lg transition duration-300 flex items-center justify-center'
 						>
 							Continue Shopping
