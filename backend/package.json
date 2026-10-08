@@ -6,6 +6,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
+    "build": "node --check api/index.js",
     "start": "node server.js"
   },
   "dependencies": {
