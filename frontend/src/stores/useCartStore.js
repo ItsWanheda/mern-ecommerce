@@ -2,6 +2,9 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
+const getErrorMessage = (error, fallback = "An error occurred") =>
+	error.response?.data?.message || error.message || fallback;
+
 export const useCartStore = create((set, get) => ({
 	cart: [],
 	coupon: null,
@@ -17,6 +20,7 @@ export const useCartStore = create((set, get) => ({
 			console.error("Error fetching coupon:", error);
 		}
 	},
+
 	applyCoupon: async (code) => {
 		try {
 			const response = await axios.post("/coupons/validate", { code });
@@ -24,9 +28,10 @@ export const useCartStore = create((set, get) => ({
 			get().calculateTotals();
 			toast.success("Coupon applied successfully");
 		} catch (error) {
-			toast.error(error.response?.data?.message || "Failed to apply coupon");
+			toast.error(getErrorMessage(error, "Failed to apply coupon"));
 		}
 	},
+
 	removeCoupon: () => {
 		set({ coupon: null, isCouponApplied: false });
 		get().calculateTotals();
@@ -36,16 +41,23 @@ export const useCartStore = create((set, get) => ({
 	getCartItems: async () => {
 		try {
 			const res = await axios.get("/cart");
+
+			if (!Array.isArray(res.data)) {
+				throw new Error("Invalid cart response");
+			}
+
 			set({ cart: res.data });
 			get().calculateTotals();
 		} catch (error) {
 			set({ cart: [] });
-			toast.error(error.response.data.message || "An error occurred");
+			console.error("Failed to fetch cart:", error);
 		}
 	},
+
 	clearCart: async () => {
 		set({ cart: [], coupon: null, total: 0, subtotal: 0 });
 	},
+
 	addToCart: async (product) => {
 		try {
 			await axios.post("/cart", { productId: product._id });
@@ -58,37 +70,58 @@ export const useCartStore = create((set, get) => ({
 							item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
 					  )
 					: [...prevState.cart, { ...product, quantity: 1 }];
+
 				return { cart: newCart };
 			});
 			get().calculateTotals();
 		} catch (error) {
-			toast.error(error.response.data.message || "An error occurred");
+			toast.error(getErrorMessage(error));
 		}
 	},
+
 	removeFromCart: async (productId) => {
-		await axios.delete(`/cart`, { data: { productId } });
-		set((prevState) => ({ cart: prevState.cart.filter((item) => item._id !== productId) }));
-		get().calculateTotals();
+		try {
+			await axios.delete("/cart", { data: { productId } });
+			set((prevState) => ({
+				cart: prevState.cart.filter((item) => item._id !== productId),
+			}));
+			get().calculateTotals();
+		} catch (error) {
+			toast.error(getErrorMessage(error, "Failed to remove item"));
+		}
 	},
+
 	updateQuantity: async (productId, quantity) => {
 		if (quantity === 0) {
-			get().removeFromCart(productId);
+			await get().removeFromCart(productId);
 			return;
 		}
 
-		await axios.put(`/cart/${productId}`, { quantity });
-		set((prevState) => ({
-			cart: prevState.cart.map((item) => (item._id === productId ? { ...item, quantity } : item)),
-		}));
-		get().calculateTotals();
+		try {
+			await axios.put(`/cart/${productId}`, { quantity });
+			set((prevState) => ({
+				cart: prevState.cart.map((item) =>
+					item._id === productId ? { ...item, quantity } : item
+				),
+			}));
+			get().calculateTotals();
+		} catch (error) {
+			toast.error(getErrorMessage(error, "Failed to update quantity"));
+		}
 	},
+
 	calculateTotals: () => {
 		const { cart, coupon } = get();
-		const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+		const safeCart = Array.isArray(cart) ? cart : [];
+		const subtotal = safeCart.reduce(
+			(sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+			0
+		);
+
 		let total = subtotal;
 
 		if (coupon) {
-			const discount = subtotal * (coupon.discountPercentage / 100);
+			const discount = subtotal * (Number(coupon.discountPercentage || 0) / 100);
 			total = subtotal - discount;
 		}
 
