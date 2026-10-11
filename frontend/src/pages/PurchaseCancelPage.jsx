@@ -15,14 +15,14 @@ const PurchaseCancelPage = () => {
 					<div className='flex justify-center'>
 						<XCircle className='text-red-500 w-16 h-16 mb-4' />
 					</div>
-					<h1 className='text-2xl sm:text-3xl font-bold text-center text-red-500 mb-2'>Purchase Cancelled</h1>
+					<h1 className='text-2xl sm:text-3xl font-bold text-center text-red-500 mb-2'>خرید لغو شد</h1>
 					<p className='text-gray-300 text-center mb-6'>
-						Your order has been cancelled. No charges have been made.
+						سفارش شما لغو شده است و مبلغی از حساب شما کسر نشده است.
 					</p>
 					<div className='bg-gray-700 rounded-lg p-4 mb-6'>
 						<p className='text-sm text-gray-400 text-center'>
-							If you encountered any issues during the checkout process, please don&apos;t hesitate to
-							contact our support team.
+							اگر هنگام پرداخت با مشکلی روبه‌رو شدید، با تیم پشتیبانی ما
+							تماس بگیرید.
 						</p>
 					</div>
 					<div className='space-y-4'>
