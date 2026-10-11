@@ -20,34 +20,24 @@ const ProductsList = () => {
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
-						>
-							Product
-						</th>
+						>محصول</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
-						>
-							Price
-						</th>
+						>قیمت</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
-						>
-							Category
-						</th>
+						>دسته‌بندی</th>
 
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
-						>
-							Featured
-						</th>
+						>ویژه</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
-						>
-							Actions
-						</th>
+						>عملیات</th>
 					</tr>
 				</thead>
 
@@ -72,7 +62,7 @@ const ProductsList = () => {
 								<div className='text-sm text-gray-300'>${product.price.toFixed(2)}</div>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
-								<div className='text-sm text-gray-300'>{product.category}</div>
+								<div className='text-sm text-gray-300'>{({ jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" })[product.category] || product.category}</div>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
 								<button
