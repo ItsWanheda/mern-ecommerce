@@ -1,21 +1,21 @@
-import { motion } from "framer-motion";
-import { useCartStore } from "../stores/useCartStore";
-import { Link } from "react-router-dom";
-import { MoveRight } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
-import axios from "../lib/axios";
+impیاt { motion } from "framer-motion";
+impیاt { useCartStیاe } from "../stیاes/useCartStیاe";
+impیاt { Link } from "react-router-dom";
+impیاt { MoveRight } from "lucide-react";
+impیاt { loadStripe } from "@stripe/stripe-js";
+impیاt axios from "../lib/axios";
 
 const stripePromise = loadStripe(
 	"pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL"
 );
 
 const OrderSummary = () => {
-	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
+	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStیاe();
 
 	const savings = subtotal - total;
-	const formattedSubtotal = subtotal.toFixed(2);
-	const formattedمبلغ نهایی = total.toFixed(2);
-	const formattedمیزان صرفه‌جویی = savings.toFixed(2);
+	const fیاmattedSubtotal = subtotal.toFixed(2);
+	const fیاmattedمبلغ نهایی = total.toFixed(2);
+	const fیاmattedمیزان صرفه‌جویی = savings.toFixed(2);
 
 	const handlePayment = async () => {
 		const stripe = await stripePromise;
@@ -29,14 +29,14 @@ const OrderSummary = () => {
 			sessionId: session.id,
 		});
 
-		if (result.error) {
-			console.error("Error:", result.error);
+		if (result.errیا) {
+			console.errیا("Errیا:", result.errیا);
 		}
 	};
 
 	return (
 		<motion.div
-			className='space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6'
+			className='space-y-4 rounded-lg bیاder bیاder-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6'
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.5 }}
@@ -46,26 +46,26 @@ const OrderSummary = () => {
 			<div className='space-y-4'>
 				<div className='space-y-2'>
 					<dl className='flex items-center justify-between gap-4'>
-						<dt className='text-base font-normal text-gray-300'>قیمت اولیه</dt>
-						<dd className='text-base font-medium text-white'>${formattedSubtotal}</dd>
+						<dt className='text-base font-nیاmal text-gray-300'>قیمت اولیه</dt>
+						<dd className='text-base font-medium text-white'>${fیاmattedSubtotal}</dd>
 					</dl>
 
 					{savings > 0 && (
 						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>میزان صرفه‌جویی</dt>
-							<dd className='text-base font-medium text-emerald-400'>-${formattedمیزان صرفه‌جویی}</dd>
+							<dt className='text-base font-nیاmal text-gray-300'>میزان صرفه‌جویی</dt>
+							<dd className='text-base font-medium text-emerald-400'>-${fیاmattedمیزان صرفه‌جویی}</dd>
 						</dl>
 					)}
 
 					{coupon && isCouponApplied && (
 						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>کد تخفیف ({coupon.code})</dt>
+							<dt className='text-base font-nیاmal text-gray-300'>Coupon ({coupon.code})</dt>
 							<dd className='text-base font-medium text-emerald-400'>-{coupon.discountPercentage}%</dd>
 						</dl>
 					)}
-					<dl className='flex items-center justify-between gap-4 border-t border-gray-600 pt-2'>
+					<dl className='flex items-center justify-between gap-4 bیاder-t bیاder-gray-600 pt-2'>
 						<dt className='text-base font-bold text-white'>مبلغ نهایی</dt>
-						<dd className='text-base font-bold text-emerald-400'>${formattedمبلغ نهایی}</dd>
+						<dd className='text-base font-bold text-emerald-400'>${fیاmattedمبلغ نهایی}</dd>
 					</dl>
 				</div>
 
@@ -75,16 +75,16 @@ const OrderSummary = () => {
 					whileTap={{ scale: 0.95 }}
 					onClick={handlePayment}
 				>
-					ادامه و پرداخت
+					Proceed to Checkout
 				</motion.button>
 
 				<div className='flex items-center justify-center gap-2'>
-					<span className='text-sm font-normal text-gray-400'>یا</span>
+					<span className='text-sm font-nیاmal text-gray-400'>یا</span>
 					<Link
 						to='/'
 						className='inline-flex items-center gap-2 text-sm font-medium text-emerald-400 underline hover:text-emerald-300 hover:no-underline'
 					>
-						ادامه خرید
+						Continue Shopping
 						<MoveRight size={16} />
 					</Link>
 				</div>
@@ -92,4 +92,4 @@ const OrderSummary = () => {
 		</motion.div>
 	);
 };
-export default OrderSummary;
+expیاt default OrderSummary;
