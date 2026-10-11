@@ -46,13 +46,13 @@ const OrderSummary = () => {
 			<div className='space-y-4'>
 				<div className='space-y-2'>
 					<dl className='flex items-center justify-between gap-4'>
-						<dt className='text-base font-normal text-gray-300'>قیمت اولیه</g/dt>
+						<dt className='text-base font-normal text-gray-300'>قیمت اولیه</dt>
 						<dd className='text-base font-medium text-white'>${formattedSubtotal}</dd>
 					</dl>
 
 					{savings > 0 && (
 						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>میزان صرفه‌جویی</g/dt>
+							<dt className='text-base font-normal text-gray-300'>میزان صرفه‌جویی</dt>
 							<dd className='text-base font-medium text-emerald-400'>-${formattedSavings}</dd>
 						</dl>
 					)}
@@ -64,7 +64,7 @@ const OrderSummary = () => {
 						</dl>
 					)}
 					<dl className='flex items-center justify-between gap-4 border-t border-gray-600 pt-2'>
-						<dt className='text-base font-bold text-white'>مبلغ نهایی</g/dt>
+						<dt className='text-base font-bold text-white'>مبلغ نهایی</dt>
 						<dd className='text-base font-bold text-emerald-400'>${formattedTotal}</dd>
 					</dl>
 				</div>
@@ -79,7 +79,7 @@ const OrderSummary = () => {
 				</motion.button>
 
 				<div className='flex items-center justify-center gap-2'>
-					<span className='text-sm font-normal text-gray-400'>یا</g/span>
+					<span className='text-sm font-normal text-gray-400'>یا</span>
 					<Link
 						to='/'
 						className='inline-flex items-center gap-2 text-sm font-medium text-emerald-400 underline hover:text-emerald-300 hover:no-underline'
