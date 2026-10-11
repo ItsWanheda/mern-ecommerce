@@ -46,12 +46,12 @@ const CreateProductForm = () => {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.8 }}
 		>
-			<h2 className='text-2xl font-semibold mb-6 text-emerald-300'>Create New Product</h2>
+			<h2 className='text-2xl font-semibold mb-6 text-emerald-300'>ایجاد محصول جدید</h2>
 
 			<form onSubmit={handleSubmit} className='space-y-4'>
 				<div>
 					<label htmlFor='name' className='block text-sm font-medium text-gray-300'>
-						Product Name
+						نام محصول
 					</label>
 					<input
 						type='text'
@@ -68,7 +68,7 @@ const CreateProductForm = () => {
 
 				<div>
 					<label htmlFor='description' className='block text-sm font-medium text-gray-300'>
-						Description
+						توضیحات
 					</label>
 					<textarea
 						id='description'
@@ -85,7 +85,7 @@ const CreateProductForm = () => {
 
 				<div>
 					<label htmlFor='price' className='block text-sm font-medium text-gray-300'>
-						Price
+						قیمت
 					</label>
 					<input
 						type='number'
@@ -103,7 +103,7 @@ const CreateProductForm = () => {
 
 				<div>
 					<label htmlFor='category' className='block text-sm font-medium text-gray-300'>
-						Category
+						دسته‌بندی
 					</label>
 					<select
 						id='category'
@@ -115,7 +115,7 @@ const CreateProductForm = () => {
 						 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'
 						required
 					>
-						<option value=''>Select a category</option>
+						<option value=''>یک دسته‌بندی انتخاب کنید</option>
 						{categories.map((category) => (
 							<option key={category} value={category}>
 								{category}
@@ -131,9 +131,9 @@ const CreateProductForm = () => {
 						className='cursor-pointer bg-gray-700 py-2 px-3 border border-gray-600 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-300 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
 					>
 						<Upload className='h-5 w-5 inline-block mr-2' />
-						Upload Image
+						بارگذاری تصویر
 					</label>
-					{newProduct.image && <span className='ml-3 text-sm text-gray-400'>Image uploaded </span>}
+					{newProduct.image && <span className='ml-3 text-sm text-gray-400'>تصویر بارگذاری شد </span>}
 				</div>
 
 				<button
@@ -151,7 +151,7 @@ const CreateProductForm = () => {
 					) : (
 						<>
 							<PlusCircle className='mr-2 h-5 w-5' />
-							Create Product
+							ایجاد محصول
 						</>
 					)}
 				</button>
