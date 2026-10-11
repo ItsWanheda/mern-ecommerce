@@ -12,6 +12,25 @@ export const getAllProducts = async (req, res) => {
 	}
 };
 
+export const getProductById = async (req, res) => {
+	try {
+		const product = await Product.findById(req.params.id).lean();
+
+		if (!product) {
+			return res.status(404).json({ message: "Product not found" });
+		}
+
+		return res.json(product);
+	} catch (error) {
+		if (error.name === "CastError") {
+			return res.status(400).json({ message: "Invalid product ID" });
+		}
+
+		console.log("Error in getProductById controller", error.message);
+		return res.status(500).json({ message: "Server error" });
+	}
+};
+
 export const getFeaturedProducts = async (req, res) => {
 	try {
 		let featuredProducts = await redis.get("featured_products");
@@ -20,7 +39,7 @@ export const getFeaturedProducts = async (req, res) => {
 		}
 
 		// if not in redis, fetch from mongodb
-		// .lean() is gonna return a plain javascript object instead of a mongodb document
+		// .lean() is gonna return a plain javascript object instead of a mongoose document
 		// which is good for performance
 		featuredProducts = await Product.find({ isFeatured: true }).lean();
 
@@ -29,7 +48,6 @@ export const getFeaturedProducts = async (req, res) => {
 		}
 
 		// store in redis for future quick access
-
 		await redis.set("featured_products", JSON.stringify(featuredProducts));
 
 		res.json(featuredProducts);
@@ -145,8 +163,8 @@ export const toggleFeaturedProduct = async (req, res) => {
 
 async function updateFeaturedProductsCache() {
 	try {
-		// The lean() method  is used to return plain JavaScript objects instead of full Mongoose documents. This can significantly improve performance
-
+		// The lean() method is used to return plain JavaScript objects instead of full Mongoose documents.
+		// This can significantly improve performance.
 		const featuredProducts = await Product.find({ isFeatured: true }).lean();
 		await redis.set("featured_products", JSON.stringify(featuredProducts));
 	} catch (error) {
