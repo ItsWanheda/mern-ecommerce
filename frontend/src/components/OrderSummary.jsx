@@ -75,7 +75,7 @@ const OrderSummary = () => {
 					whileTap={{ scale: 0.95 }}
 					onClick={handlePayment}
 				>
-					Proceed to Checkout
+					ادامه و پرداخت
 				</motion.button>
 
 				<div className='flex items-center justify-center gap-2'>
@@ -84,7 +84,7 @@ const OrderSummary = () => {
 						to='/'
 						className='inline-flex items-center gap-2 text-sm font-medium text-emerald-400 underline hover:text-emerald-300 hover:no-underline'
 					>
-						Continue Shopping
+						ادامه خرید
 						<MoveRight size={16} />
 					</Link>
 				</div>
