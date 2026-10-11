@@ -37,7 +37,7 @@ const PurchaseSuccessPage = () => {
 		return (
 			<div className='h-screen flex items-center justify-center px-4'>
 				<div className='max-w-md w-full bg-gray-800 rounded-lg shadow-xl p-8 text-center'>
-					<h1 className='text-2xl font-bold text-red-400 mb-4'>Payment confirmation failed</h1>
+					<h1 className='text-2xl font-bold text-red-400 mb-4'>تأیید پرداخت ناموفق بود</h1>
 					<p className='text-gray-300 mb-6'>{error}</p>
 					<Link to='/' className='text-emerald-400 hover:text-emerald-300'>ادامه خرید</Link>
 				</div>
@@ -62,23 +62,23 @@ const PurchaseSuccessPage = () => {
 						<CheckCircle className='text-emerald-400 w-16 h-16 mb-4' />
 					</div>
 					<h1 className='text-2xl sm:text-3xl font-bold text-center text-emerald-400 mb-2'>
-						Purchase Successful!
+						خرید با موفقیت انجام شد!
 					</h1>
 
 					<p className='text-gray-300 text-center mb-2'>
-						Thank you for your order. {"We're"} processing it now.
+						از سفارش شما سپاسگزاریم. در حال پردازش سفارش هستیم.
 					</p>
 					<p className='text-emerald-400 text-center text-sm mb-6'>
-						Check your email for order details and updates.
+						جزئیات سفارش و به‌روزرسانی‌ها را در ایمیل خود بررسی کنید.
 					</p>
 					<div className='bg-gray-700 rounded-lg p-4 mb-6'>
 						<div className='flex items-center justify-between mb-2'>
-							<span className='text-sm text-gray-400'>Order number</span>
-							<span className='text-sm font-semibold text-emerald-400'>Confirmed</span>
+							<span className='text-sm text-gray-400'>شماره سفارش</span>
+							<span className='text-sm font-semibold text-emerald-400'>تأیید شد</span>
 						</div>
 						<div className='flex items-center justify-between'>
-							<span className='text-sm text-gray-400'>Estimated delivery</span>
-							<span className='text-sm font-semibold text-emerald-400'>3-5 business days</span>
+							<span className='text-sm text-gray-400'>زمان تقریبی تحویل</span>
+							<span className='text-sm font-semibold text-emerald-400'>۳ تا ۵ روز کاری</span>
 						</div>
 					</div>
 
@@ -88,7 +88,7 @@ const PurchaseSuccessPage = () => {
              rounded-lg transition duration-300 flex items-center justify-center'
 						>
 							<HandHeart className='mr-2' size={18} />
-							Thanks for trusting us!
+							از اعتماد شما سپاسگزاریم!
 						</button>
 						<Link
 							to='/'
