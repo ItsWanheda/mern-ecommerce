@@ -24,7 +24,7 @@ const ProductDetailsPage = () => {
         const response = await axios.get(`/products/${productId}`);
         if (active) setProduct(response.data);
       } catch (requestError) {
-        if (active) setError(requestError.response?.data?.message || "We couldn't load this product. Please try again.");
+        if (active) setError(requestError.response?.data?.message || "بارگذاری این محصول انجام نشد. لطفاً دوباره تلاش کنید.");
       } finally {
         if (active) setLoading(false);
       }
@@ -55,9 +55,9 @@ const ProductDetailsPage = () => {
           <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#62645c]">{product.description || "انتخابی کاربردی برای تکمیل مجموعه روزمره شما."}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <button type="button" onClick={handleAddToCart} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ShoppingCart size={17} aria-hidden="true" />افزودن به سبد خرید</button>
-            <Link to="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#d5d0c5] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">Continue browsing <ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link to="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#d5d0c5] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">ادامه گشت‌وگذار <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
-          <p className="mt-6 flex items-center gap-2 text-xs leading-5 text-[#77786f]"><Check size={15} className="shrink-0 text-[#68745f]" aria-hidden="true" />Clear pricing. No unverified sale or stock claims.</p>
+          <p className="mt-6 flex items-center gap-2 text-xs leading-5 text-[#77786f]"><Check size={15} className="shrink-0 text-[#68745f]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
         </div></div>
       </div>
     </div>
