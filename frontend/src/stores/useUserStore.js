@@ -2,7 +2,7 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
-const getErrorMessage = (error, fallback = "An error occurred") =>
+const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
 	error.response?.data?.message || error.message || fallback;
 
 export const useUserStore = create((set, get) => ({
@@ -15,7 +15,7 @@ export const useUserStore = create((set, get) => ({
 
 		if (password !== confirmPassword) {
 			set({ loading: false });
-			return toast.error("Passwords do not match");
+			return toast.error("رمزهای عبور یکسان نیستند");
 		}
 
 		try {
@@ -43,7 +43,7 @@ export const useUserStore = create((set, get) => ({
 		try {
 			await axios.post("/auth/logout");
 		} catch (error) {
-			console.error("Logout request failed:", error);
+			console.error("درخواست خروج ناموفق بود:", error);
 		} finally {
 			set({ user: null });
 		}
@@ -56,12 +56,12 @@ export const useUserStore = create((set, get) => ({
 			const response = await axios.get("/auth/profile");
 
 			if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
-				throw new Error("Invalid authentication response");
+				throw new Error("پاسخ احراز هویت نامعتبر است");
 			}
 
 			set({ user: response.data, checkingAuth: false });
 		} catch (error) {
-			console.error("Authentication check failed:", error);
+			console.error("بررسی احراز هویت ناموفق بود:", error);
 			set({ checkingAuth: false, user: null });
 		}
 	},
