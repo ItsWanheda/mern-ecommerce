@@ -42,4 +42,11 @@
   .mr-3 { margin-right: 0 !important; margin-left: 0.75rem !important; }
   .mr-4 { margin-right: 0 !important; margin-left: 1rem !important; }
   input[type="email"], input[type="url"], input[type="password"] { direction: ltr; text-align: left; }
+  .absolute.left-3 { left: auto !important; right: 0.75rem !important; }
+  .absolute.left-4 { left: auto !important; right: 1rem !important; }
+  .absolute.left-8 { left: auto !important; right: 2rem !important; }
+  .absolute.right-3 { right: auto !important; left: 0.75rem !important; }
+  .absolute.right-5 { right: auto !important; left: 1.25rem !important; }
+  .md\\:right-0 { right: auto !important; left: 0 !important; }
+  input[type="email"], input[type="url"], input[type="password"] { direction: ltr; text-align: left; }
 }
