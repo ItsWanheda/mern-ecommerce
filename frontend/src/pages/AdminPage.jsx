@@ -8,9 +8,9 @@ import ProductsList from "../components/ProductsList";
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
-	{ id: "create", label: "Create Product", icon: PlusCircle },
-	{ id: "products", label: "Products", icon: ShoppingBasket },
-	{ id: "analytics", label: "Analytics", icon: BarChart },
+	{ id: "create", label: "ایجاد محصول", icon: PlusCircle },
+	{ id: "products", label: "محصولات", icon: ShoppingBasket },
+	{ id: "analytics", label: "آمار و تحلیل", icon: BarChart },
 ];
 
 const AdminPage = () => {
