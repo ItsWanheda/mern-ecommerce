@@ -16,7 +16,7 @@ const PurchaseSuccessPage = () => {
 				await axios.post("/payments/checkout-success", { sessionId });
 				clearCart();
 			} catch (error) {
-				setError(error.response?.data?.message || "We couldn't confirm your payment. Please contact support.");
+				setError(error.response?.data?.message || "امکان تأیید پرداخت وجود نداشت. لطفاً با پشتیبانی تماس بگیرید.");
 			} finally {
 				setIsProcessing(false);
 			}
@@ -27,11 +27,11 @@ const PurchaseSuccessPage = () => {
 			handleCheckoutSuccess(sessionId);
 		} else {
 			setIsProcessing(false);
-			setError("No session ID found in the URL");
+			setError("شناسه نشست در نشانی صفحه پیدا نشد");
 		}
 	}, [clearCart]);
 
-	if (isProcessing) return "Processing...";
+	if (isProcessing) return "در حال پردازش...";
 
 	if (error) {
 		return (
@@ -39,7 +39,7 @@ const PurchaseSuccessPage = () => {
 				<div className='max-w-md w-full bg-gray-800 rounded-lg shadow-xl p-8 text-center'>
 					<h1 className='text-2xl font-bold text-red-400 mb-4'>Payment confirmation failed</h1>
 					<p className='text-gray-300 mb-6'>{error}</p>
-					<Link to='/' className='text-emerald-400 hover:text-emerald-300'>Continue Shopping</Link>
+					<Link to='/' className='text-emerald-400 hover:text-emerald-300'>ادامه خرید</Link>
 				</div>
 			</div>
 		);
@@ -95,7 +95,7 @@ const PurchaseSuccessPage = () => {
 							className='w-full bg-gray-700 hover:bg-gray-600 text-emerald-400 font-bold py-2 px-4
             rounded-lg transition duration-300 flex items-center justify-center'
 						>
-							Continue Shopping
+							ادامه خرید
 							<ArrowRight className='ml-2' size={18} />
 						</Link>
 					</div>
