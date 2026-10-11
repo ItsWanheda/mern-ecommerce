@@ -34,7 +34,7 @@ const GiftCouponCard = () => {
 			<div className='space-y-4'>
 				<div>
 					<label htmlFor='voucher' className='mb-2 block text-sm font-medium text-gray-300'>
-						Do you have a voucher or gift card?
+						کد تخفیف یا کارت هدیه دارید؟
 					</label>
 					<input
 						type='text'
@@ -42,7 +42,7 @@ const GiftCouponCard = () => {
 						className='block w-full rounded-lg border border-gray-600 bg-gray-700 
             p-2.5 text-sm text-white placeholder-gray-400 focus:border-emerald-500 
             focus:ring-emerald-500'
-						placeholder='Enter code here'
+						placeholder='کد را اینجا وارد کنید'
 						value={userInputCode}
 						onChange={(e) => setUserInputCode(e.target.value)}
 						required
@@ -56,15 +56,15 @@ const GiftCouponCard = () => {
 					whileTap={{ scale: 0.95 }}
 					onClick={handleApplyCoupon}
 				>
-					Apply Code
+					اعمال کد
 				</motion.button>
 			</div>
 			{isCouponApplied && coupon && (
 				<div className='mt-4'>
-					<h3 className='text-lg font-medium text-gray-300'>Applied Coupon</h3>
+					<h3 className='text-lg font-medium text-gray-300'>کد تخفیف اعمال‌شده</h3>
 
 					<p className='mt-2 text-sm text-gray-400'>
-						{coupon.code} - {coupon.discountPercentage}% off
+						{coupon.code} - {coupon.discountPercentage}٪ تخفیف
 					</p>
 
 					<motion.button
@@ -76,16 +76,16 @@ const GiftCouponCard = () => {
 						whileTap={{ scale: 0.95 }}
 						onClick={handleRemoveCoupon}
 					>
-						Remove Coupon
+						حذف کد تخفیف
 					</motion.button>
 				</div>
 			)}
 
 			{coupon && (
 				<div className='mt-4'>
-					<h3 className='text-lg font-medium text-gray-300'>Your Available Coupon:</h3>
+					<h3 className='text-lg font-medium text-gray-300'>کد تخفیف در دسترس شما:</h3>
 					<p className='mt-2 text-sm text-gray-400'>
-						{coupon.code} - {coupon.discountPercentage}% off
+						{coupon.code} - {coupon.discountPercentage}٪ تخفیف
 					</p>
 				</div>
 			)}
