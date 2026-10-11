@@ -2,7 +2,7 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
-const getErrorMessage = (error, fallback = "An error occurred") =>
+const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
 	error.response?.data?.message || error.message || fallback;
 
 export const useCartStore = create((set, get) => ({
@@ -17,7 +17,7 @@ export const useCartStore = create((set, get) => ({
 			const response = await axios.get("/coupons");
 			set({ coupon: response.data });
 		} catch (error) {
-			console.error("Error fetching coupon:", error);
+			console.error("خطا در دریافت کد تخفیف:", error);
 		}
 	},
 
@@ -26,16 +26,16 @@ export const useCartStore = create((set, get) => ({
 			const response = await axios.post("/coupons/validate", { code });
 			set({ coupon: response.data, isCouponApplied: true });
 			get().calculateTotals();
-			toast.success("Coupon applied successfully");
+			toast.success("کد تخفیف با موفقیت اعمال شد");
 		} catch (error) {
-			toast.error(getErrorMessage(error, "Failed to apply coupon"));
+			toast.error(getErrorMessage(error, "اعمال کد تخفیف ناموفق بود"));
 		}
 	},
 
 	removeCoupon: () => {
 		set({ coupon: null, isCouponApplied: false });
 		get().calculateTotals();
-		toast.success("Coupon removed");
+		toast.success("کد تخفیف حذف شد");
 	},
 
 	getCartItems: async () => {
@@ -43,14 +43,14 @@ export const useCartStore = create((set, get) => ({
 			const res = await axios.get("/cart");
 
 			if (!Array.isArray(res.data)) {
-				throw new Error("Invalid cart response");
+				throw new Error("پاسخ سبد خرید نامعتبر است");
 			}
 
 			set({ cart: res.data });
 			get().calculateTotals();
 		} catch (error) {
 			set({ cart: [] });
-			console.error("Failed to fetch cart:", error);
+			console.error("دریافت سبد خرید ناموفق بود:", error);
 		}
 	},
 
@@ -61,7 +61,7 @@ export const useCartStore = create((set, get) => ({
 	addToCart: async (product) => {
 		try {
 			await axios.post("/cart", { productId: product._id });
-			toast.success("Product added to cart");
+			toast.success("محصول به سبد خرید اضافه شد");
 
 			set((prevState) => {
 				const existingItem = prevState.cart.find((item) => item._id === product._id);
@@ -87,7 +87,7 @@ export const useCartStore = create((set, get) => ({
 			}));
 			get().calculateTotals();
 		} catch (error) {
-			toast.error(getErrorMessage(error, "Failed to remove item"));
+			toast.error(getErrorMessage(error, "حذف کالا ناموفق بود"));
 		}
 	},
 
@@ -106,7 +106,7 @@ export const useCartStore = create((set, get) => ({
 			}));
 			get().calculateTotals();
 		} catch (error) {
-			toast.error(getErrorMessage(error, "Failed to update quantity"));
+			toast.error(getErrorMessage(error, "به‌روزرسانی تعداد ناموفق بود"));
 		}
 	},
 
