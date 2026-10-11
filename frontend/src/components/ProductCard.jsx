@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 
-const formatPrice = (price) => Number(price).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };\n\nconst formatPrice = (price) => Number(price).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 const ProductCard = ({ product }) => {
   const { user } = useUserStore();
@@ -20,7 +20,7 @@ const ProductCard = ({ product }) => {
         <div className="aspect-[4/5] overflow-hidden">
           {product.image ? <img src={product.image} alt={product.name} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none" /> : <div className="flex h-full items-center justify-center px-6 text-center text-sm text-[#77786f]">تصویر محصول به‌زودی اضافه می‌شود</div>}
         </div>
-        <span className="absolute left-3 top-3 rounded-full border border-white/70 bg-[#fffefa]/90 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#62645c] backdrop-blur-sm">{product.category || "مجموعه"}</span>
+        <span className="absolute left-3 top-3 rounded-full border border-white/70 bg-[#fffefa]/90 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#62645c] backdrop-blur-sm">{categoryLabels[product.category] || product.category || "مجموعه"}</span>
         <span className="absolute bottom-3 right-3 inline-flex h-10 w-10 translate-y-1 items-center justify-center rounded-full bg-[#fffefa]/95 text-[#252722] opacity-0 shadow-sm transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"><ArrowUpRight size={18} aria-hidden="true" /></span>
       </Link>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
