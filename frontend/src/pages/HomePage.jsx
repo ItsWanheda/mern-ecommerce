@@ -6,13 +6,13 @@ import { useProductStore } from "../stores/useProductStore";
 import FeaturedProducts from "../components/FeaturedProducts";
 
 const categories = [
-	{ href: "/jeans", name: "Jeans", imageUrl: "/jeans.jpg" },
-	{ href: "/t-shirts", name: "T-shirts", imageUrl: "/tshirts.jpg" },
-	{ href: "/shoes", name: "Shoes", imageUrl: "/shoes.jpg" },
-	{ href: "/glasses", name: "Glasses", imageUrl: "/glasses.png" },
-	{ href: "/jackets", name: "Jackets", imageUrl: "/jackets.jpg" },
-	{ href: "/suits", name: "Suits", imageUrl: "/suits.jpg" },
-	{ href: "/bags", name: "Bags", imageUrl: "/bags.jpg" },
+	{ href: "/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
+	{ href: "/t-shirts", name: "تی‌شرت", imageUrl: "/tshirts.jpg" },
+	{ href: "/shoes", name: "کفش", imageUrl: "/shoes.jpg" },
+	{ href: "/glasses", name: "عینک", imageUrl: "/glasses.png" },
+	{ href: "/jackets", name: "کاپشن و کت", imageUrl: "/jackets.jpg" },
+	{ href: "/suits", name: "کت‌وشلوار", imageUrl: "/suits.jpg" },
+	{ href: "/bags", name: "کیف", imageUrl: "/bags.jpg" },
 ];
 
 const HomePage = () => {
@@ -30,45 +30,45 @@ const HomePage = () => {
 						<div className="relative z-10 px-6 py-12 sm:px-10 md:py-16 lg:px-14 lg:py-20">
 							<p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">
 								<Sparkles size={15} aria-hidden="true" />
-								Considered style, everyday ease
+								سبکی سنجیده، راحتی هر روز
 							</p>
 							<h1 className="max-w-xl font-serif text-4xl font-medium leading-[1.08] tracking-tight text-[#252722] sm:text-5xl lg:text-6xl">
-								Find your style.
+								سبک خودت را پیدا کن.
 								<br />
-								Keep it <span className="italic text-[#68745f]">timeless.</span>
+								همیشه <span className="italic text-[#68745f]">ماندگار.</span>
 							</h1>
 							<p className="mt-6 max-w-md text-base leading-7 text-[#62645c] sm:text-lg">
-								Explore thoughtful everyday essentials and pieces made to work together, season after season.
+								پوشاک و اکسسوری‌های کاربردی را ببینید؛ انتخاب‌هایی هماهنگ برای تمام فصل‌ها.
 							</p>
 							<div className="mt-8 flex flex-wrap items-center gap-3">
 								<Link
 									to="/category/jeans"
 									className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 								>
-									Shop the collection <ArrowRight size={17} aria-hidden="true" />
+									مشاهده مجموعه <ArrowRight size={17} aria-hidden="true" />
 								</Link>
 								<a
 									href="#shop-by-category"
 									className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 								>
-									Explore categories
+									مشاهده دسته‌بندی‌ها
 								</a>
 							</div>
 							<div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-[#d5d0c5] pt-5 text-xs text-[#62645c] sm:text-sm">
-								<span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" /> Everyday essentials</span>
-								<span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" /> Easy browsing, clear choices</span>
+								<span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" /> انتخاب‌های روزمره</span>
+								<span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" /> خرید آسان، انتخاب روشن</span>
 							</div>
 						</div>
 						<div className="relative min-h-[280px] overflow-hidden md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[48%]">
 							<img
 								src="/jackets.jpg"
-								alt="Explore timeless jacket styles"
+								alt="مدل‌های ماندگار کت و کاپشن را ببینید"
 								className="absolute inset-0 h-full w-full object-cover object-center"
 								fetchPriority="high"
 							/>
 							<div className="absolute inset-0 bg-gradient-to-r from-[#e9e5dc] via-[#e9e5dc]/20 to-transparent md:bg-gradient-to-r md:from-[#e9e5dc]/30 md:via-transparent md:to-transparent" />
 							<div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium tracking-wide text-[#252722] backdrop-blur-sm">
-								Everyday, elevated
+								سادگی با جلوه‌ای خاص
 							</div>
 						</div>
 					</div>
@@ -77,13 +77,13 @@ const HomePage = () => {
 				<section id="shop-by-category" className="scroll-mt-28 pt-16 sm:pt-20">
 					<div className="mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
 						<div>
-							<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">Find your fit</p>
+							<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب مناسب شما</p>
 							<h2 className="font-serif text-3xl font-medium tracking-tight text-[#252722] sm:text-4xl">
-								Shop by category
+								خرید بر اساس دسته‌بندی
 							</h2>
 						</div>
 						<p className="max-w-md text-sm leading-6 text-[#62645c] sm:text-right">
-							Start with the pieces you need and build a wardrobe that feels like you.
+							از آیتم‌های موردنیازتان شروع کنید و استایلی متناسب با خودتان بسازید.
 						</p>
 					</div>
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
