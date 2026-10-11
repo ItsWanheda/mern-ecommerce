@@ -2,24 +2,24 @@ import { BarChart, PlusCircle, ShoppingBasket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import AnalyticsTab from "../components/AnalyticsTab";
+import آمار و تحلیلTab from "../components/آمار و تحلیلTab";
 import CreateProductForm from "../components/CreateProductForm";
-import ProductsList from "../components/ProductsList";
+import محصولاتList from "../components/محصولاتList";
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
-	{ id: "create", label: "Create Product", icon: PlusCircle },
-	{ id: "products", label: "Products", icon: ShoppingBasket },
-	{ id: "analytics", label: "Analytics", icon: BarChart },
+	{ id: "create", label: "ایجاد محصول", icon: PlusCircle },
+	{ id: "products", label: "محصولات", icon: ShoppingBasket },
+	{ id: "analytics", label: "آمار و تحلیل", icon: BarChart },
 ];
 
 const AdminPage = () => {
 	const [activeTab, setActiveTab] = useState("create");
-	const { fetchAllProducts } = useProductStore();
+	const { fetchAllمحصولات } = useProductStore();
 
 	useEffect(() => {
-		fetchAllProducts();
-	}, [fetchAllProducts]);
+		fetchAllمحصولات();
+	}, [fetchAllمحصولات]);
 
 	return (
 		<div className='min-h-screen relative overflow-hidden'>
@@ -30,7 +30,7 @@ const AdminPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.8 }}
 				>
-					Admin Dashboard
+					داشبورد مدیریت
 				</motion.h1>
 
 				<div className='flex justify-center mb-8'>
@@ -50,8 +50,8 @@ const AdminPage = () => {
 					))}
 				</div>
 				{activeTab === "create" && <CreateProductForm />}
-				{activeTab === "products" && <ProductsList />}
-				{activeTab === "analytics" && <AnalyticsTab />}
+				{activeTab === "products" && <محصولاتList />}
+				{activeTab === "analytics" && <آمار و تحلیلTab />}
 			</div>
 		</div>
 	);
