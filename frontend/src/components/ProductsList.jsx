@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Trash, Star } from "lucide-react";
-import { useمحصولStore } from "../stores/useمحصولStore";
+import { useProductStore } from "../stores/useProductStore";
 
-const محصولsList = () => {
-	const { deleteمحصول, toggleویژهمحصول, products } = useمحصولStore();
+const محصولاتList = () => {
+	const { deleteProduct, toggleویژهProduct, products } = useProductStore();
 
 	console.log("products", products);
 
@@ -21,7 +21,7 @@ const محصولsList = () => {
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							محصول
+							Product
 						</th>
 						<th
 							scope='col'
@@ -76,7 +76,7 @@ const محصولsList = () => {
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
 								<button
-									onClick={() => toggleویژهمحصول(product._id)}
+									onClick={() => toggleویژهProduct(product._id)}
 									className={`p-1 rounded-full ${
 										product.isویژه ? "bg-yellow-400 text-gray-900" : "bg-gray-600 text-gray-300"
 									} hover:bg-yellow-500 transition-colors duration-200`}
@@ -86,7 +86,7 @@ const محصولsList = () => {
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
 								<button
-									onClick={() => deleteمحصول(product._id)}
+									onClick={() => deleteProduct(product._id)}
 									className='text-red-400 hover:text-red-300'
 								>
 									<Trash className='h-5 w-5' />
@@ -99,4 +99,4 @@ const محصولsList = () => {
 		</motion.div>
 	);
 };
-export default محصولsList;
+export default محصولاتList;
