@@ -23,7 +23,7 @@ const CategoryPage = () => {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.8 }}
 				>
-					{category.charAt(0).toUpperCase() + category.slice(1)}
+					{{ jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" }[category] || category}
 				</motion.h1>
 
 				<motion.div
