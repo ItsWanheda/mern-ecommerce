@@ -6,7 +6,9 @@ import axios from "../lib/axios";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 
-const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };\n\nconst formatPrice = (price) => Number(price).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
+
+const formatPrice = (price) => Number(price).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 const ProductDetailsPage = () => {
   const { productId } = useParams();
