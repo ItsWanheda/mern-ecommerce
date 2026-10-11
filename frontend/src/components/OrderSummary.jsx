@@ -41,7 +41,7 @@ const OrderSummary = () => {
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.5 }}
 		>
-			<p className='text-xl font-semibold text-emerald-400'>Order summary</p>
+			<p className='text-xl font-semibold text-emerald-400'>خلاصه سفارش</p>
 
 			<div className='space-y-4'>
 				<div className='space-y-2'>
