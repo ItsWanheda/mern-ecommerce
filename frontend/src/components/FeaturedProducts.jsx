@@ -53,7 +53,7 @@ const FeaturedProducts = ({ featuredProducts = [] }) => {
 				<div className="overflow-hidden">
 					<div
 						className="flex transition-transform duration-300 ease-out motion-reduce:transition-none"
-						style={{ transform: `translateX(-${currentIndex * (100 / itemsPerPage)}%)` }}
+						style={{ transform: `translateX(-${(currentIndex / featuredProducts.length) * 100}%)` }}
 					>
 						{featuredProducts.map((product) => (
 							<div
