@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Trash, Star } from "lucide-react";
-import { useProductStore } from "../stores/useProductStore";
+import { useمحصولStore } from "../stores/useمحصولStore";
 
-const ProductsList = () => {
-	const { deleteProduct, toggleFeaturedProduct, products } = useProductStore();
+const محصولsList = () => {
+	const { deleteمحصول, toggleویژهمحصول, products } = useمحصولStore();
 
 	console.log("products", products);
 
@@ -21,32 +21,32 @@ const ProductsList = () => {
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							Product
+							محصول
 						</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							Price
+							قیمت
 						</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							Category
+							دسته‌بندی
 						</th>
 
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							Featured
+							ویژه
 						</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							Actions
+							عملیات
 						</th>
 					</tr>
 				</thead>
@@ -76,9 +76,9 @@ const ProductsList = () => {
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
 								<button
-									onClick={() => toggleFeaturedProduct(product._id)}
+									onClick={() => toggleویژهمحصول(product._id)}
 									className={`p-1 rounded-full ${
-										product.isFeatured ? "bg-yellow-400 text-gray-900" : "bg-gray-600 text-gray-300"
+										product.isویژه ? "bg-yellow-400 text-gray-900" : "bg-gray-600 text-gray-300"
 									} hover:bg-yellow-500 transition-colors duration-200`}
 								>
 									<Star className='h-5 w-5' />
@@ -86,7 +86,7 @@ const ProductsList = () => {
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
 								<button
-									onClick={() => deleteProduct(product._id)}
+									onClick={() => deleteمحصول(product._id)}
 									className='text-red-400 hover:text-red-300'
 								>
 									<Trash className='h-5 w-5' />
@@ -99,4 +99,4 @@ const ProductsList = () => {
 		</motion.div>
 	);
 };
-export default ProductsList;
+export default محصولsList;
