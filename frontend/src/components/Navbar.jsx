@@ -9,76 +9,73 @@ const Navbar = () => {
 	const { cart } = useCartStore();
 
 	return (
-		<header className='fixed top-0 left-0 w-full bg-gray-900 bg-opacity-90 backdrop-blur-md shadow-lg z-40 transition-all duration-300 border-b border-emerald-800'>
-			<div className='container mx-auto px-4 py-3'>
-				<div className='flex flex-wrap justify-between items-center'>
-					<Link to='/' className='text-2xl font-bold text-emerald-400 items-center space-x-2 flex'>
-						E-Commerce
+		<header className="fixed left-0 top-0 z-40 w-full border-b border-[#e4e0d8] bg-[#f7f5f0]/95 text-[#252722] backdrop-blur-md">
+			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div className="flex min-h-20 flex-wrap items-center justify-between gap-3 py-3">
+					<Link
+						to="/"
+						className="flex items-center font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
+					>
+						E-Commerce<span className="ml-1 text-[#68745f]">.</span>
 					</Link>
 
-					<nav className='flex flex-wrap items-center gap-4'>
+					<nav aria-label="Main navigation" className="flex flex-wrap items-center gap-2 sm:gap-4">
 						<Link
-							to={"/"}
-							className='text-gray-300 hover:text-emerald-400 transition duration-300
-					 ease-in-out'
+							to="/"
+							className="rounded-full px-3 py-2 text-sm font-medium text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 						>
 							Home
 						</Link>
+
 						{user && (
 							<Link
-								to={"/cart"}
-								className='relative group text-gray-300 hover:text-emerald-400 transition duration-300 
-							ease-in-out'
+								to="/cart"
+								aria-label={cart.length > 0 ? `Cart, ${cart.length} items` : "Cart"}
+								className="relative inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 							>
-								<ShoppingCart className='inline-block mr-1 group-hover:text-emerald-400' size={20} />
-								<span className='hidden sm:inline'>Cart</span>
+								<ShoppingCart size={18} aria-hidden="true" />
+								<span className="hidden sm:inline">Cart</span>
 								{cart.length > 0 && (
-									<span
-										className='absolute -top-2 -left-2 bg-emerald-500 text-white rounded-full px-2 py-0.5 
-									text-xs group-hover:bg-emerald-400 transition duration-300 ease-in-out'
-									>
+									<span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-xs font-semibold text-white">
 										{cart.length}
 									</span>
 								)}
 							</Link>
 						)}
+
 						{isAdmin && (
 							<Link
-								className='bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1 rounded-md font-medium
-								 transition duration-300 ease-in-out flex items-center'
-								to={"/secret-dashboard"}
+								className="inline-flex items-center gap-2 rounded-full border border-[#d5d0c5] px-3 py-2 text-sm font-medium text-[#41443b] transition hover:border-[#68745f] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+								to="/secret-dashboard"
 							>
-								<Lock className='inline-block mr-1' size={18} />
-								<span className='hidden sm:inline'>Dashboard</span>
+								<Lock size={16} aria-hidden="true" />
+								<span className="hidden sm:inline">Dashboard</span>
 							</Link>
 						)}
 
 						{user ? (
 							<button
-								className='bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 
-						rounded-md flex items-center transition duration-300 ease-in-out'
+								className="inline-flex items-center gap-2 rounded-full bg-[#252722] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 								onClick={logout}
+								type="button"
 							>
-								<LogOut size={18} />
-								<span className='hidden sm:inline ml-2'>Log Out</span>
+								<LogOut size={16} aria-hidden="true" />
+								<span className="hidden sm:inline">Log out</span>
 							</button>
 						) : (
 							<>
 								<Link
-									to={"/signup"}
-									className='bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 
-									rounded-md flex items-center transition duration-300 ease-in-out'
+									to="/login"
+									className="rounded-full px-3 py-2 text-sm font-medium text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 								>
-									<UserPlus className='mr-2' size={18} />
-									Sign Up
+									Log in
 								</Link>
 								<Link
-									to={"/login"}
-									className='bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 
-									rounded-md flex items-center transition duration-300 ease-in-out'
+									to="/signup"
+									className="inline-flex items-center gap-2 rounded-full bg-[#252722] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 								>
-									<LogIn className='mr-2' size={18} />
-									Login
+									<UserPlus size={16} aria-hidden="true" />
+									<span>Sign up</span>
 								</Link>
 							</>
 						)}
@@ -88,4 +85,5 @@ const Navbar = () => {
 		</header>
 	);
 };
+
 export default Navbar;
