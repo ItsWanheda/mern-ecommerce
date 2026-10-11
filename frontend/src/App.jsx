@@ -32,7 +32,10 @@ function App() {
 	if (checkingAuth) return <LoadingSpinner />;
 
 	return (
-		<div className="relative min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
+		<div className="relative min-h-screen overflow-hidden bg-gray-900 text-white">
+			<div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+				<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18)_0%,rgba(10,80,60,0.12)_45%,rgba(0,0,0,0.1)_100%)]" />
+			</div>
 			<div className="relative z-50 pt-20">
 				<Navbar />
 				<Routes>
