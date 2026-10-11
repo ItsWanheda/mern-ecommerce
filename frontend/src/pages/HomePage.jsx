@@ -23,30 +23,53 @@ const HomePage = () => {
 	}, [fetchFeaturedProducts]);
 
 	return (
-		<main className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
+		<main
+			dir="rtl"
+			className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]"
+		>
 			<div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
 				<section className="relative isolate overflow-hidden rounded-2xl bg-[#e9e5dc]">
-					<div className="grid min-h-[480px] items-center md:grid-cols-[1.05fr_0.95fr] lg:min-h-[540px]">
-						<div className="relative z-10 px-6 py-12 sm:px-10 md:py-16 lg:px-14 lg:py-20">
+					<div className="grid min-h-[480px] grid-cols-1 items-center md:grid-cols-2 lg:min-h-[540px]">
+						{/* Hero image: above the text on mobile, beside it on desktop */}
+						<div className="relative order-first min-h-[280px] w-full overflow-hidden md:order-none md:col-start-1 md:row-start-1 md:h-full md:min-h-[480px] lg:min-h-[540px]">
+							<img
+								src="/jackets.jpg"
+								alt="مدل‌های ماندگار کت و کاپشن را ببینید"
+								className="absolute inset-0 h-full w-full object-cover object-center"
+								fetchPriority="high"
+							/>
+							<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e9e5dc]/30 md:bg-gradient-to-l md:from-transparent md:via-[#e9e5dc]/10 md:to-[#e9e5dc]/30" />
+							<div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium tracking-wide text-[#252722] backdrop-blur-sm">
+								سادگی با جلوه‌ای خاص
+							</div>
+						</div>
+
+						{/* Hero content */}
+						<div className="relative z-10 min-w-0 px-6 py-12 sm:px-10 md:col-start-2 md:row-start-1 md:py-16 lg:px-14 lg:py-20">
 							<p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">
 								<Sparkles size={15} aria-hidden="true" />
 								سبکی سنجیده، راحتی هر روز
 							</p>
+
 							<h1 className="max-w-xl font-serif text-4xl font-medium leading-[1.08] tracking-tight text-[#252722] sm:text-5xl lg:text-6xl">
 								سبک خودت را پیدا کن.
 								<br />
 								همیشه <span className="italic text-[#68745f]">ماندگار.</span>
 							</h1>
+
 							<p className="mt-6 max-w-md text-base leading-7 text-[#62645c] sm:text-lg">
 								پوشاک و اکسسوری‌های کاربردی را ببینید؛ انتخاب‌هایی هماهنگ برای تمام فصل‌ها.
 							</p>
+
 							<div className="mt-8 flex flex-wrap items-center gap-3">
 								<Link
 									to="/category/jeans"
 									className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
 								>
-									مشاهده مجموعه <ArrowRight size={17} aria-hidden="true" />
+									مشاهده مجموعه
+									<ArrowRight size={17} aria-hidden="true" />
 								</Link>
+
 								<a
 									href="#shop-by-category"
 									className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
@@ -54,38 +77,40 @@ const HomePage = () => {
 									مشاهده دسته‌بندی‌ها
 								</a>
 							</div>
+
 							<div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-[#d5d0c5] pt-5 text-xs text-[#62645c] sm:text-sm">
-								<span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" /> انتخاب‌های روزمره</span>
-								<span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" /> خرید آسان، انتخاب روشن</span>
-							</div>
-						</div>
-						<div className="relative min-h-[280px] overflow-hidden md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[48%]">
-							<img
-								src="/jackets.jpg"
-								alt="مدل‌های ماندگار کت و کاپشن را ببینید"
-								className="absolute inset-0 h-full w-full object-cover object-center"
-								fetchPriority="high"
-							/>
-							<div className="absolute inset-0 bg-gradient-to-r from-[#e9e5dc] via-[#e9e5dc]/20 to-transparent md:bg-gradient-to-r md:from-[#e9e5dc]/30 md:via-transparent md:to-transparent" />
-							<div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium tracking-wide text-[#252722] backdrop-blur-sm">
-								سادگی با جلوه‌ای خاص
+								<span className="inline-flex items-center gap-2">
+									<Leaf size={16} aria-hidden="true" />
+									انتخاب‌های روزمره
+								</span>
+								<span className="inline-flex items-center gap-2">
+									<PackageCheck size={16} aria-hidden="true" />
+									خرید آسان، انتخاب روشن
+								</span>
 							</div>
 						</div>
 					</div>
 				</section>
 
-				<section id="shop-by-category" className="scroll-mt-28 pt-16 sm:pt-20">
+				<section
+					id="shop-by-category"
+					className="scroll-mt-28 pt-16 sm:pt-20"
+				>
 					<div className="mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
 						<div>
-							<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب مناسب شما</p>
+							<p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">
+								انتخاب مناسب شما
+							</p>
 							<h2 className="font-serif text-3xl font-medium tracking-tight text-[#252722] sm:text-4xl">
 								خرید بر اساس دسته‌بندی
 							</h2>
 						</div>
+
 						<p className="max-w-md text-sm leading-6 text-[#62645c] sm:text-right">
 							از آیتم‌های موردنیازتان شروع کنید و استایلی متناسب با خودتان بسازید.
 						</p>
 					</div>
+
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{categories.map((category) => (
 							<CategoryItem category={category} key={category.name} />
