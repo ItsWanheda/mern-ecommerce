@@ -1,24 +1,32 @@
+import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CategoryItem = ({ category }) => {
 	return (
-		<div className='relative overflow-hidden h-96 w-full rounded-lg group'>
-			<Link to={"/category" + category.href}>
-				<div className='w-full h-full cursor-pointer'>
-					<div className='absolute inset-0 bg-gradient-to-b from-transparent to-gray-900 opacity-50 z-10' />
-					<img
-						src={category.imageUrl}
-						alt={category.name}
-						className='w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110'
-						loading='lazy'
-					/>
-					<div className='absolute bottom-0 left-0 right-0 p-4 z-20'>
-						<h3 className='text-white text-2xl font-bold mb-2'>{category.name}</h3>
-						<p className='text-gray-200 text-sm'>Explore {category.name}</p>
+		<article className="group relative h-72 w-full overflow-hidden rounded-xl bg-[#e9e5dc] sm:h-80 lg:h-[22rem]">
+			<Link
+				to={"/category" + category.href}
+				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
+				aria-label={`Explore ${category.name}`}
+			>
+				<img
+					src={category.imageUrl}
+					alt=""
+					className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
+					loading="lazy"
+				/>
+				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent transition-colors duration-300 group-hover:from-black/75" />
+				<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-6">
+					<div>
+						<h3 className="font-serif text-2xl font-medium text-white sm:text-3xl">{category.name}</h3>
+						<p className="mt-1 text-sm text-white/80">Explore the collection</p>
 					</div>
+					<span className="mb-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60 text-white transition group-hover:border-white group-hover:bg-white group-hover:text-[#252722]">
+						<ArrowUpRight size={19} aria-hidden="true" />
+					</span>
 				</div>
 			</Link>
-		</div>
+		</article>
 	);
 };
 
