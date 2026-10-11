@@ -10,7 +10,7 @@ const CartItem = ({ item }) => {
 				<div className='shrink-0 md:order-1'>
 					<img className='h-20 md:h-32 rounded object-cover' src={item.image} />
 				</div>
-				<label className='sr-only'>Choose quantity:</label>
+				<label className='sr-only'>انتخاب تعداد:</label>
 
 				<div className='flex items-center justify-between md:order-3 md:justify-end'>
 					<div className='flex items-center gap-2'>
@@ -50,7 +50,7 @@ const CartItem = ({ item }) => {
 							 hover:text-red-300 hover:underline'
 							onClick={() => removeFromCart(item._id)}
 						>
-							<Trash />
+							<Trash aria-hidden='true' />
 						</button>
 					</div>
 				</div>
