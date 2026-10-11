@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { Trash, Star } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
 
-const محصولاتList = () => {
-	const { deleteProduct, toggleویژهProduct, products } = useProductStore();
+const ProductsList = () => {
+	const { deleteProduct, toggleFeaturedProduct, products } = useProductStore();
 
 	console.log("products", products);
 
@@ -27,26 +27,26 @@ const محصولاتList = () => {
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							قیمت
+							Price
 						</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							دسته‌بندی
+							Category
 						</th>
 
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							ویژه
+							Featured
 						</th>
 						<th
 							scope='col'
 							className='px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider'
 						>
-							عملیات
+							Actions
 						</th>
 					</tr>
 				</thead>
@@ -76,12 +76,12 @@ const محصولاتList = () => {
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap'>
 								<button
-									onClick={() => toggleویژهProduct(product._id)}
+									onClick={() => toggleFeaturedProduct(product._id)}
 									className={`p-1 rounded-full ${
-										product.isویژه ? "bg-yellow-400 text-gray-900" : "bg-gray-600 text-gray-300"
+										product.isFeatured ? "bg-yellow-400 text-gray-900" : "bg-gray-600 text-gray-300"
 									} hover:bg-yellow-500 transition-colors duration-200`}
 								>
-									<Star className='h-5 w-5' />
+									<Star className='h-5 w-5' aria-label='تغییر وضعیت محصول ویژه' />
 								</button>
 							</td>
 							<td className='px-6 py-4 whitespace-nowrap text-sm font-medium'>
@@ -89,7 +89,7 @@ const محصولاتList = () => {
 									onClick={() => deleteProduct(product._id)}
 									className='text-red-400 hover:text-red-300'
 								>
-									<Trash className='h-5 w-5' />
+									<Trash className='h-5 w-5' aria-label='حذف محصول' />
 								</button>
 							</td>
 						</tr>
@@ -99,4 +99,4 @@ const محصولاتList = () => {
 		</motion.div>
 	);
 };
-export default محصولاتList;
+export default ProductsList;
