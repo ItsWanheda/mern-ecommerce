@@ -31,7 +31,7 @@ const PurchaseCancelPage = () => {
 							className='w-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center'
 						>
 							<ArrowLeft className='mr-2' size={18} />
-							Return to Shop
+							بازگشت به فروشگاه
 						</Link>
 					</div>
 				</div>
