@@ -7,7 +7,7 @@ const CategoryItem = ({ category }) => {
 			<Link
 				to={"/category" + category.href}
 				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
-				aria-label={`Explore ${category.name}`}
+				aria-label={`مشاهده ${category.name}`}
 			>
 				<img
 					src={category.imageUrl}
@@ -19,7 +19,7 @@ const CategoryItem = ({ category }) => {
 				<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-6">
 					<div>
 						<h3 className="font-serif text-2xl font-medium text-white sm:text-3xl">{category.name}</h3>
-						<p className="mt-1 text-sm text-white/80">Explore the collection</p>
+						<p className="mt-1 text-sm text-white/80">مشاهده مجموعه</p>
 					</div>
 					<span className="mb-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60 text-white transition group-hover:border-white group-hover:bg-white group-hover:text-[#252722]">
 						<ArrowUpRight size={19} aria-hidden="true" />
