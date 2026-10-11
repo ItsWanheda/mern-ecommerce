@@ -49,7 +49,7 @@ const ProductDetailsPage = () => {
       <div className="mt-5 grid overflow-hidden rounded-[2rem] border border-[#e4e0d8] bg-[#fffefa] lg:grid-cols-2">
         <div className="relative min-h-[360px] bg-[#f0eee8] sm:min-h-[520px]">{product.image ? <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover" /> : <div className="flex min-h-[360px] h-full items-center justify-center text-sm text-[#77786f]">تصویر محصول به‌زودی اضافه می‌شود</div>}</div>
         <div className="flex items-center px-6 py-10 sm:px-10 lg:px-14 lg:py-16"><div className="w-full">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">{product.category || "مجموعه"}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">{categoryLabels[product.category] || product.category || "مجموعه"}</p>
           <h1 className="mt-4 font-serif text-4xl font-medium leading-tight tracking-tight sm:text-5xl">{product.name}</h1>
           <p className="mt-5 text-2xl font-semibold tabular-nums">{formatPrice(product.price)}</p>
           <div className="my-7 h-px bg-[#e4e0d8]" />
