@@ -36,8 +36,8 @@ const FeaturedProducts = ({ featuredProducts = [] }) => {
         {featuredProducts.length > itemsPerPage && <div className="mt-5 flex items-center justify-between gap-4">
           <p className="text-xs tabular-nums text-[#77786f]" aria-live="polite">{Math.min(currentIndex + itemsPerPage, featuredProducts.length)} of {featuredProducts.length} pieces</p>
           <div className="flex gap-2">
-            <button type="button" onClick={prevSlide} disabled={currentIndex === 0} aria-label="Previous featured products" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35"><ChevronLeft size={19} aria-hidden="true" /></button>
-            <button type="button" onClick={nextSlide} disabled={currentIndex >= maxIndex} aria-label="Next featured products" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35"><ChevronRight size={19} aria-hidden="true" /></button>
+            <button type="button" onClick={prevSlide} disabled={currentIndex === 0} aria-label="قبلی featured products" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35"><ChevronLeft size={19} aria-hidden="true" /></button>
+            <button type="button" onClick={nextSlide} disabled={currentIndex >= maxIndex} aria-label="بعدی featured products" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35"><ChevronRight size={19} aria-hidden="true" /></button>
           </div>
         </div>}
       </div>
