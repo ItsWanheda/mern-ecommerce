@@ -6,8 +6,8 @@ import { useUserStore } from "../stores/useUserStore";
 
 const LoginPage = () => {
 	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [showPassword, setShowPassword] = useState(false);
+	const [password, setرمز عبور] = useState("");
+	const [showرمز عبور, setShowرمز عبور] = useState(false);
 	const { login, loading } = useUserStore();
 
 	const handleSubmit = (event) => {
@@ -34,14 +34,14 @@ const LoginPage = () => {
 							<div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e9ede4] text-[#68745f]">
 								<Sparkles size={20} aria-hidden="true" />
 							</div>
-							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">Welcome back</p>
+							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">خوش برگشتید</p>
 							<h1 id="login-heading" className="mt-3 font-serif text-4xl font-medium tracking-tight sm:text-5xl">Good to see you<span className="text-[#68745f]">.</span></h1>
 							<p className="mt-4 max-w-sm text-sm leading-6 text-[#77786f]">Sign in to pick up where you left off and find something you’ll love.</p>
 						</div>
 
 						<form onSubmit={handleSubmit} className="mt-9 space-y-5">
 							<div>
-								<label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#41443b]">Email address</label>
+								<label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#41443b]">آدرس ایمیل</label>
 								<div className="relative">
 									<Mail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8b82]" size={18} aria-hidden="true" />
 									<input id="login-email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-11 pr-4 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
@@ -50,13 +50,13 @@ const LoginPage = () => {
 
 							<div>
 								<div className="mb-2 flex items-center justify-between gap-3">
-									<label htmlFor="login-password" className="block text-sm font-medium text-[#41443b]">Password</label>
+									<label htmlFor="login-password" className="block text-sm font-medium text-[#41443b]">رمز عبور</label>
 								</div>
 								<div className="relative">
 									<LockKeyhole className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8b82]" size={18} aria-hidden="true" />
-									<input id="login-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-11 pr-12 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
-									<button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#8a8b82] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]">
-										{showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+									<input id="login-password" name="password" type={showرمز عبور ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setرمز عبور(event.target.value)} placeholder="Enter your password" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-11 pr-12 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
+									<button type="button" onClick={() => setShowرمز عبور((visible) => !visible)} aria-label={showرمز عبور ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#8a8b82] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]">
+										{showرمز عبور ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
 									</button>
 								</div>
 							</div>
