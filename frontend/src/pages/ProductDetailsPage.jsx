@@ -6,7 +6,7 @@ import axios from "../lib/axios";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 
-const formatPrice = (price) => Number(price).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };\n\nconst formatPrice = (price) => Number(price).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 const ProductDetailsPage = () => {
   const { productId } = useParams();
@@ -43,7 +43,7 @@ const ProductDetailsPage = () => {
 
   return <main className="min-h-screen bg-[#f7f5f0] px-4 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
     <div className="mx-auto max-w-7xl">
-      <Link to={product.category ? `/category/${encodeURIComponent(product.category)}` : "/"} className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به {product.category || "مجموعه"}</Link>
+      <Link to={product.category ? `/category/${encodeURIComponent(product.category)}` : "/"} className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به {categoryLabels[product.category] || product.category || "مجموعه"}</Link>
       <div className="mt-5 grid overflow-hidden rounded-[2rem] border border-[#e4e0d8] bg-[#fffefa] lg:grid-cols-2">
         <div className="relative min-h-[360px] bg-[#f0eee8] sm:min-h-[520px]">{product.image ? <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover" /> : <div className="flex min-h-[360px] h-full items-center justify-center text-sm text-[#77786f]">تصویر محصول به‌زودی اضافه می‌شود</div>}</div>
         <div className="flex items-center px-6 py-10 sm:px-10 lg:px-14 lg:py-16"><div className="w-full">
