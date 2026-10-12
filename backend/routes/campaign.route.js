@@ -1,0 +1,17 @@
+import express from "express";
+import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
+import {
+  createCampaign,
+  deleteCampaign,
+  getActiveCampaigns,
+  getAllCampaigns,
+  updateCampaign,
+} from "../controllers/campaign.controller.js";
+
+const router = express.Router();
+router.get("/", getActiveCampaigns);
+router.get("/admin", protectRoute, adminRoute, getAllCampaigns);
+router.post("/", protectRoute, adminRoute, createCampaign);
+router.patch("/:id", protectRoute, adminRoute, updateCampaign);
+router.delete("/:id", protectRoute, adminRoute, deleteCampaign);
+export default router;
