@@ -51,4 +51,10 @@
   .absolute.right-5 { right: auto !important; left: 1.25rem !important; }
   .md\\:right-0 { right: auto !important; left: 0 !important; }
   input[type="email"], input[type="url"], input[type="password"] { direction: ltr; text-align: left; }
+  /* Keep the custom Lucide visibility toggle as the only password-eye control.
+     Edge adds its own native reveal button to password inputs otherwise. */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
 }
