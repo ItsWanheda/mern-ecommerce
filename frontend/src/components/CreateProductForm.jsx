@@ -7,157 +7,62 @@ const categories = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits",
 const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
 
 const CreateProductForm = () => {
-	const [newProduct, setNewProduct] = useState({
-		name: "",
-		description: "",
-		price: "",
-		category: "",
-		image: "",
-	});
+  const [newProduct, setNewProduct] = useState({ name: "", description: "", price: "", stock: "0", category: "", image: "" });
+  const { createProduct, loading } = useProductStore();
 
-	const { createProduct, loading } = useProductStore();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await createProduct(newProduct);
+      setNewProduct({ name: "", description: "", price: "", stock: "0", category: "", image: "" });
+    } catch {
+      // The store displays the API error to the administrator.
+    }
+  };
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		try {
-			await createProduct(newProduct);
-			setNewProduct({ name: "", description: "", price: "", category: "", image: "" });
-		} catch {
-			console.log("error creating a product");
-		}
-	};
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setNewProduct((previous) => ({ ...previous, image: reader.result }));
+    reader.readAsDataURL(file);
+  };
+  const fieldClass = "mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500";
 
-	const handleImageChange = (e) => {
-		const file = e.target.files[0];
-		if (file) {
-			const reader = new FileReader();
-
-			reader.onloadend = () => {
-				setNewProduct({ ...newProduct, image: reader.result });
-			};
-
-			reader.readAsDataURL(file); // base64
-		}
-	};
-
-	return (
-		<motion.div
-			className='bg-gray-800 shadow-lg rounded-lg p-8 mb-8 max-w-xl mx-auto'
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.8 }}
-		>
-			<h2 className='text-2xl font-semibold mb-6 text-emerald-300'>ایجاد محصول جدید</h2>
-
-			<form onSubmit={handleSubmit} className='space-y-4'>
-				<div>
-					<label htmlFor='name' className='block text-sm font-medium text-gray-300'>
-						نام محصول
-					</label>
-					<input
-						type='text'
-						id='name'
-						name='name'
-						value={newProduct.name}
-						onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2
-						 px-3 text-white focus:outline-none focus:ring-2
-						focus:ring-emerald-500 focus:border-emerald-500'
-						required
-					/>
-				</div>
-
-				<div>
-					<label htmlFor='description' className='block text-sm font-medium text-gray-300'>
-						توضیحات
-					</label>
-					<textarea
-						id='description'
-						name='description'
-						value={newProduct.description}
-						onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-						rows='3'
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm
-						 py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 
-						 focus:border-emerald-500'
-						required
-					/>
-				</div>
-
-				<div>
-					<label htmlFor='price' className='block text-sm font-medium text-gray-300'>
-						قیمت
-					</label>
-					<input
-						type='number'
-						id='price'
-						name='price'
-						value={newProduct.price}
-						onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-						step='0.01'
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm 
-						py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500
-						 focus:border-emerald-500'
-						required
-					/>
-				</div>
-
-				<div>
-					<label htmlFor='category' className='block text-sm font-medium text-gray-300'>
-						دسته‌بندی
-					</label>
-					<select
-						id='category'
-						name='category'
-						value={newProduct.category}
-						onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-						className='mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md
-						 shadow-sm py-2 px-3 text-white focus:outline-none 
-						 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500'
-						required
-					>
-						<option value=''>یک دسته‌بندی انتخاب کنید</option>
-						{categories.map((category) => (
-							<option key={category} value={category}>
-								{category}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div className='mt-1 flex items-center'>
-					<input type='file' id='image' className='sr-only' accept='image/*' onChange={handleImageChange} />
-					<label
-						htmlFor='image'
-						className='cursor-pointer bg-gray-700 py-2 px-3 border border-gray-600 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-300 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500'
-					>
-						<Upload className='h-5 w-5 inline-block mr-2' />
-						بارگذاری تصویر
-					</label>
-					{newProduct.image && <span className='ml-3 text-sm text-gray-400'>تصویر بارگذاری شد </span>}
-				</div>
-
-				<button
-					type='submit'
-					className='w-full flex justify-center py-2 px-4 border border-transparent rounded-md 
-					shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 
-					focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50'
-					disabled={loading}
-				>
-					{loading ? (
-						<>
-							<Loader className='mr-2 h-5 w-5 animate-spin' aria-hidden='true' />
-							در حال بارگذاری...
-						</>
-					) : (
-						<>
-							<PlusCircle className='mr-2 h-5 w-5' />
-							ایجاد محصول
-						</>
-					)}
-				</button>
-			</form>
-		</motion.div>
-	);
+  return (
+    <motion.div dir="rtl" className="mx-auto mb-8 max-w-xl rounded-lg bg-gray-800 p-8 shadow-lg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+      <h2 className="mb-6 text-2xl font-semibold text-emerald-300">ایجاد محصول جدید</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <label className="block text-sm font-medium text-gray-300">نام محصول
+          <input type="text" value={newProduct.name} onChange={(event) => setNewProduct({ ...newProduct, name: event.target.value })} className={fieldClass} maxLength={160} required />
+        </label>
+        <label className="block text-sm font-medium text-gray-300">توضیحات
+          <textarea value={newProduct.description} onChange={(event) => setNewProduct({ ...newProduct, description: event.target.value })} rows={3} className={fieldClass} maxLength={5000} required />
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block text-sm font-medium text-gray-300">قیمت ({import.meta.env.VITE_STORE_CURRENCY || "USD"})
+            <input type="number" min="0" step={(import.meta.env.VITE_STORE_CURRENCY || "USD") === "IRT" ? "1" : "0.01"} value={newProduct.price} onChange={(event) => setNewProduct({ ...newProduct, price: event.target.value })} className={fieldClass} required />
+          </label>
+          <label className="block text-sm font-medium text-gray-300">موجودی انبار (عدد صحیح)
+            <input type="number" min="0" step="1" value={newProduct.stock} onChange={(event) => setNewProduct({ ...newProduct, stock: event.target.value })} className={fieldClass} required />
+          </label>
+        </div>
+        <label className="block text-sm font-medium text-gray-300">دسته‌بندی
+          <select value={newProduct.category} onChange={(event) => setNewProduct({ ...newProduct, category: event.target.value })} className={fieldClass} required>
+            <option value="">یک دسته‌بندی انتخاب کنید</option>
+            {categories.map((category) => <option key={category} value={category}>{categoryLabels[category]}</option>)}
+          </select>
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <input type="file" id="product-image" className="sr-only" accept="image/*" onChange={handleImageChange} />
+          <label htmlFor="product-image" className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-600"><Upload className="h-5 w-5" aria-hidden="true" />بارگذاری تصویر</label>
+          {newProduct.image && <span className="text-sm text-gray-400">تصویر انتخاب شد</span>}
+        </div>
+        <button type="submit" disabled={loading} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50">
+          {loading ? <><Loader className="h-5 w-5 animate-spin" aria-hidden="true" />در حال ذخیره…</> : <><PlusCircle className="h-5 w-5" aria-hidden="true" />ایجاد محصول</>}
+        </button>
+      </form>
+    </motion.div>
+  );
 };
 export default CreateProductForm;
