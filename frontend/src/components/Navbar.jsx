@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import axios from "../lib/axios";
+import { formatPrice } from "../lib/commerce";
 import {
   ShoppingCart,
   LogIn,
@@ -40,6 +42,9 @@ const defaultFilters = {
   sort: "newest",
 };
 
+const categoryLabel = (value) =>
+  categories.find(([category]) => category === value)?.[1] || value || "مجموعه";
+
 const fieldClass =
   "mt-1 min-h-11 w-full rounded-xl border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-sm text-[#252722] outline-none transition focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/20";
 
@@ -54,6 +59,18 @@ const Navbar = () => {
   const [filters, setFilters] = useState(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [activeSearchSurface, setActiveSearchSurface] = useState(null);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [searchSuggestions, setSearchSuggestions] = useState({ products: [], loading: false, error: false });
+  const suggestionQuery = filters.q.trim();
+  const categorySuggestions = suggestionQuery.length >= 2
+    ? categories
+        .filter(([value, label]) => value && (
+          label.toLowerCase().includes(suggestionQuery.toLowerCase()) ||
+          value.toLowerCase().includes(suggestionQuery.toLowerCase())
+        ))
+        .slice(0, 3)
+    : [];
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -67,9 +84,46 @@ const Navbar = () => {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
+    const query = suggestionQuery;
+    if (activeSearchSurface === null || query.length < 2) {
+      setSearchSuggestions({ products: [], loading: false, error: false });
+      setActiveSuggestionIndex(-1);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setSearchSuggestions({ products: [], loading: true, error: false });
+    setActiveSuggestionIndex(-1);
+
+    const timeoutId = window.setTimeout(() => {
+      const params = new URLSearchParams({ q: query, limit: "5", page: "1", sort: "newest" });
+      axios
+        .get(`/products/search?${params.toString()}`, { signal: controller.signal })
+        .then(({ data }) => {
+          if (controller.signal.aborted) return;
+          setSearchSuggestions({
+            products: Array.isArray(data.products) ? data.products.slice(0, 5) : [],
+            loading: false,
+            error: false,
+          });
+        })
+        .catch((error) => {
+          if (controller.signal.aborted || error.code === "ERR_CANCELED") return;
+          setSearchSuggestions({ products: [], loading: false, error: true });
+        });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [activeSearchSurface, suggestionQuery]);
+
+  useEffect(() => {
     const closeOnOutsideClick = (event) => {
       if (!desktopSearchRef.current?.contains(event.target)) {
         setDesktopFiltersOpen(false);
+        if (activeSearchSurface === "desktop") setActiveSearchSurface(null);
       }
     };
     document.addEventListener("pointerdown", closeOnOutsideClick);
@@ -102,6 +156,120 @@ const Navbar = () => {
     navigate({ pathname: "/shop", search: query ? `?${query}` : "" });
     setDesktopFiltersOpen(false);
     setMobileSearchOpen(false);
+    setActiveSearchSurface(null);
+  };
+
+  const selectProductSuggestion = (product) => {
+    setActiveSearchSurface(null);
+    setDesktopFiltersOpen(false);
+    setMobileSearchOpen(false);
+    navigate(`/product/${product._id}`);
+  };
+
+  const selectCategorySuggestion = (category) => {
+    const params = new URLSearchParams({ category, page: "1" });
+    setFilters({ ...defaultFilters, category });
+    navigateToShop(params);
+  };
+
+  const handleSuggestionKeyDown = (event) => {
+    const suggestionCount = categorySuggestions.length + searchSuggestions.products.length;
+    if (event.key === "Escape") {
+      setActiveSearchSurface(null);
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+    if (!suggestionCount) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => (current + 1) % suggestionCount);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestionIndex((current) => current <= 0 ? suggestionCount - 1 : current - 1);
+    } else if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      if (activeSuggestionIndex < categorySuggestions.length) {
+        selectCategorySuggestion(categorySuggestions[activeSuggestionIndex][0]);
+      } else {
+        selectProductSuggestion(searchSuggestions.products[activeSuggestionIndex - categorySuggestions.length]);
+      }
+    }
+  };
+
+  const renderSearchSuggestions = (surface) => {
+    if (activeSearchSurface !== surface || suggestionQuery.length < 2) return null;
+    const hasSuggestions = categorySuggestions.length > 0 || searchSuggestions.products.length > 0;
+
+    return (
+      <div
+        id={`${surface}-search-suggestions`}
+        role="listbox"
+        aria-label="پیشنهادهای جست‌وجو"
+        className={`${surface === "desktop" ? "absolute left-0 right-0 top-[calc(100%+0.65rem)] z-[60]" : "relative mt-2"} max-h-80 overflow-y-auto rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_20px_55px_-24px_rgba(37,39,34,0.35)]`}
+      >
+        {categorySuggestions.length > 0 && (
+          <div className="pb-2">
+            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold text-[#85867d]">دسته‌بندی‌های پیشنهادی</p>
+            {categorySuggestions.map(([value, label], index) => (
+              <button
+                key={value}
+                type="button"
+                role="option"
+                aria-selected={activeSuggestionIndex === index}
+                onMouseEnter={() => setActiveSuggestionIndex(index)}
+                onClick={() => selectCategorySuggestion(value)}
+                className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right text-sm transition ${activeSuggestionIndex === index ? "bg-[#e9ede4] text-[#252722]" : "text-[#62645c] hover:bg-[#f2f0e9] hover:text-[#252722]"}`}
+              >
+                <span>{label}</span>
+                <span className="text-xs text-[#85867d]">مشاهده دسته‌بندی</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {searchSuggestions.products.length > 0 && (
+          <div className={categorySuggestions.length ? "border-t border-[#eeeae2] pt-2" : ""}>
+            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold text-[#85867d]">محصولات</p>
+            {searchSuggestions.products.map((product, index) => {
+              const optionIndex = categorySuggestions.length + index;
+              return (
+                <button
+                  key={product._id}
+                  type="button"
+                  role="option"
+                  aria-selected={activeSuggestionIndex === optionIndex}
+                  onMouseEnter={() => setActiveSuggestionIndex(optionIndex)}
+                  onClick={() => selectProductSuggestion(product)}
+                  className={`flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-2.5 py-2 text-right transition ${activeSuggestionIndex === optionIndex ? "bg-[#e9ede4]" : "hover:bg-[#f7f5f0]"}`}
+                >
+                  {product.image ? (
+                    <img src={product.image} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg bg-[#f0eee8] object-cover" />
+                  ) : (
+                    <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#f0eee8] text-[#85867d]"><Search size={17} /></span>
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-[#252722]">{product.name}</span>
+                    <span className="mt-1 block truncate text-xs text-[#85867d]">{categoryLabel(product.category)}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums text-[#41443b]">{formatPrice(product.price)}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {searchSuggestions.loading && (
+          <p role="status" className="px-3 py-3 text-sm text-[#77786f]">در حال جست‌وجوی محصولات…</p>
+        )}
+        {searchSuggestions.error && !searchSuggestions.loading && (
+          <p role="status" className="px-3 py-3 text-sm text-[#77786f]">پیشنهادها موقتاً در دسترس نیستند؛ جست‌وجو را ادامه دهید.</p>
+        )}
+        {!searchSuggestions.loading && !searchSuggestions.error && !hasSuggestions && (
+          <p className="px-3 py-3 text-sm text-[#77786f]">پیشنهادی پیدا نشد؛ عبارت دیگری را امتحان کنید.</p>
+        )}
+      </div>
+    );
   };
 
   const handleDesktopSearch = (event) => {
@@ -257,8 +425,14 @@ const Navbar = () => {
                 <input
                   type="search"
                   value={filters.q}
+                  onFocus={() => setActiveSearchSurface("desktop")}
+                  onKeyDown={handleSuggestionKeyDown}
                   onChange={(event) => updateFilter("q", event.target.value)}
                   aria-label="نام یا توضیحات محصول"
+                  aria-autocomplete="list"
+                  aria-controls="desktop-search-suggestions"
+                  aria-expanded={activeSearchSurface === "desktop" && suggestionQuery.length >= 2}
+                  autoComplete="off"
                   placeholder="جست‌وجوی محصولات..."
                   className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
                 />
@@ -285,7 +459,10 @@ const Navbar = () => {
                   aria-label="نمایش فیلترها"
                   aria-expanded={desktopFiltersOpen}
                   aria-controls="desktop-product-filters"
-                  onClick={() => setDesktopFiltersOpen((open) => !open)}
+                  onClick={() => {
+                    setActiveSearchSurface(null);
+                    setDesktopFiltersOpen((open) => !open);
+                  }}
                   className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] ${desktopFiltersOpen ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#e4e0d8] bg-white text-[#62645c] hover:bg-[#f2f0e9]"}`}
                 >
                   <SlidersHorizontal size={16} aria-hidden="true" />
@@ -293,6 +470,8 @@ const Navbar = () => {
                   <ChevronDown size={14} className={`transition-transform ${desktopFiltersOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                 </button>
               </form>
+
+              {renderSearchSuggestions("desktop")}
 
               {desktopFiltersOpen && (
                 <form
@@ -375,7 +554,7 @@ const Navbar = () => {
           <button
             type="button"
             aria-label="بستن جست‌وجو"
-            onClick={() => setMobileSearchOpen(false)}
+            onClick={() => { setMobileSearchOpen(false); setActiveSearchSurface(null); }}
             className="absolute inset-0 h-full w-full bg-[#252722]/35 backdrop-blur-md"
           />
 
@@ -393,7 +572,7 @@ const Navbar = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setMobileSearchOpen(false)}
+                onClick={() => { setMobileSearchOpen(false); setActiveSearchSurface(null); }}
                 aria-label="بستن پنجره جست‌وجو"
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e4e0d8] bg-white text-[#62645c] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
               >
@@ -410,7 +589,13 @@ const Navbar = () => {
                   id="mobile-product-search"
                   type="search"
                   value={filters.q}
+                  onFocus={() => setActiveSearchSurface("mobile")}
+                  onKeyDown={handleSuggestionKeyDown}
                   onChange={(event) => updateFilter("q", event.target.value)}
+                  aria-autocomplete="list"
+                  aria-controls="mobile-search-suggestions"
+                  aria-expanded={activeSearchSurface === "mobile" && suggestionQuery.length >= 2}
+                  autoComplete="off"
                   placeholder="مثلاً کت، کیف، شلوار جین..."
                   className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
                 />
@@ -420,6 +605,8 @@ const Navbar = () => {
                   </button>
                 )}
               </div>
+
+              {renderSearchSuggestions("mobile")}
 
               <div className="mb-4 flex items-center gap-2 border-b border-[#e4e0d8] pb-3">
                 <SlidersHorizontal size={17} className="text-[#68745f]" aria-hidden="true" />
