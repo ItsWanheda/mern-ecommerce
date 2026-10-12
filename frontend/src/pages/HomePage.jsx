@@ -29,29 +29,30 @@ const HomePage = () => {
 		>
 			<div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
 				<section className="relative isolate overflow-hidden rounded-2xl bg-[#e9e5dc]">
-					<div className="grid min-h-[480px] grid-cols-1 items-center md:grid-cols-2 lg:min-h-[540px]">
-						{/* Hero image: above the text on mobile, beside it on desktop */}
-						<div className="relative order-first min-h-[280px] w-full overflow-hidden md:order-none md:col-start-1 md:row-start-1 md:h-full md:min-h-[480px] lg:min-h-[540px]">
+					<div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
+						{/* Hero image */}
+						<div className="relative order-1 min-h-[280px] overflow-hidden lg:order-2 lg:min-h-[540px]">
 							<img
 								src="/jackets.jpg"
 								alt="مدل‌های ماندگار کت و کاپشن را ببینید"
 								className="absolute inset-0 h-full w-full object-cover object-center"
 								fetchPriority="high"
 							/>
-							<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e9e5dc]/30 md:bg-gradient-to-l md:from-transparent md:via-[#e9e5dc]/10 md:to-[#e9e5dc]/30" />
+							<div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e9e5dc]/30 lg:bg-gradient-to-l lg:from-transparent lg:via-[#e9e5dc]/10 lg:to-[#e9e5dc]/30" />
+							
 							<div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium tracking-wide text-[#252722] backdrop-blur-sm">
 								سادگی با جلوه‌ای خاص
 							</div>
 						</div>
 
 						{/* Hero content */}
-						<div className="relative z-10 min-w-0 px-6 py-12 sm:px-10 md:col-start-2 md:row-start-1 md:py-16 lg:px-14 lg:py-20">
+						<div className="relative z-10 order-2 min-w-0 px-6 py-12 sm:px-10 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
 							<p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">
 								<Sparkles size={15} aria-hidden="true" />
 								سبکی سنجیده، راحتی هر روز
 							</p>
 
-							<h1 className="max-w-xl font-serif text-4xl font-medium leading-[1.08] tracking-tight text-[#252722] sm:text-5xl lg:text-6xl">
+							<h1 className="max-w-xl font-serif text-4xl font-medium leading-[1.08] tracking-tight text-[#252722] sm:text-5xl xl:text-6xl">
 								سبک خودت را پیدا کن.
 								<br />
 								همیشه <span className="italic text-[#68745f]">ماندگار.</span>
