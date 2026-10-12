@@ -6,7 +6,7 @@ const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 };
-const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
 
 export const getAllProducts = async (_req, res) => {
   try {
@@ -35,7 +35,6 @@ export const getFeaturedProducts = async (_req, res) => {
     const cacheKey = "featured_products_v2";
     const cached = await redis.get(cacheKey);
     if (cached) return res.json(JSON.parse(cached));
-
     const featuredProducts = await Product.find({ isFeatured: true, isActive: { $ne: false } })
       .sort({ createdAt: -1 }).lean();
     await redis.set(cacheKey, JSON.stringify(featuredProducts), "EX", 300);
@@ -99,11 +98,7 @@ export const getSearchedProducts = async (req, res) => {
       Product.countDocuments(filter),
       Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).lean(),
     ]);
-
-    return res.json({
-      products,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    });
+    return res.json({ products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
     console.error("Error in getSearchedProducts controller", error.message);
     return res.status(500).json({ message: "Server error" });
@@ -120,20 +115,14 @@ export const createProduct = async (req, res) => {
         (numericStock !== null && (!Number.isInteger(numericStock) || numericStock < 0))) {
       return res.status(400).json({ message: "Provide valid product details, price, and stock" });
     }
-
     let imageUrl = "";
     if (image) {
       const response = await cloudinary.uploader.upload(image, { folder: "products" });
       imageUrl = response.secure_url || "";
     }
-
     const product = await Product.create({
-      name: name.trim(),
-      description: description.trim(),
-      price: numericPrice,
-      image: imageUrl,
-      category: category.trim(),
-      stock: numericStock,
+      name: name.trim(), description: description.trim(), price: numericPrice,
+      image: imageUrl, category: category.trim(), stock: numericStock,
     });
     return res.status(201).json(product);
   } catch (error) {
@@ -142,11 +131,30 @@ export const createProduct = async (req, res) => {
   }
 };
 
+export const updateProductStock = async (req, res) => {
+  const stock = Number(req.body.stock);
+  if (!Number.isInteger(stock) || stock < 0) {
+    return res.status(400).json({ message: "Stock must be a non-negative whole number" });
+  }
+  try {
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $set: { stock } },
+      { new: true, runValidators: true }
+    ).select("_id stock");
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    return res.json({ _id: product._id, stock: product.stock });
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "Invalid product ID" });
+    console.error("Error updating product stock", error.message);
+    return res.status(500).json({ message: "Unable to update stock" });
+  }
+};
+
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
-
     if (product.image) {
       try {
         const publicId = product.image.split("/").pop().split(".")[0];
@@ -180,10 +188,8 @@ export const getRecommendedProducts = async (_req, res) => {
 
 export const getProductsByCategory = async (req, res) => {
   try {
-    const products = await Product.find({
-      category: req.params.category,
-      isActive: { $ne: false },
-    }).sort({ createdAt: -1 }).lean();
+    const products = await Product.find({ category: req.params.category, isActive: { $ne: false } })
+      .sort({ createdAt: -1 }).lean();
     return res.json({ products });
   } catch (error) {
     console.error("Error in getProductsByCategory controller", error.message);
@@ -207,7 +213,8 @@ export const toggleFeaturedProduct = async (req, res) => {
 
 async function updateFeaturedProductsCache() {
   try {
-    const products = await Product.find({ isFeatured: true, isActive: { $ne: false } }).sort({ createdAt: -1 }).lean();
+    const products = await Product.find({ isFeatured: true, isActive: { $ne: false } })
+      .sort({ createdAt: -1 }).lean();
     await redis.set("featured_products_v2", JSON.stringify(products), "EX", 300);
   } catch (error) {
     console.error("Unable to refresh featured-products cache", error.message);
