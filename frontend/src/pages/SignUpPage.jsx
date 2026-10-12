@@ -19,10 +19,10 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<main className="min-h-[calc(100vh-5rem)] bg-[#f7f5f0] px-4 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
-			<div className="mx-auto grid min-h-[min(760px,calc(100vh-10rem))] max-w-6xl overflow-hidden rounded-[2rem] border border-[#e5e0d6] bg-[#fffefa] shadow-[0_28px_90px_-42px_rgba(37,39,34,0.28)] lg:grid-cols-[1.08fr_0.92fr]">
+		<main className="min-h-screen bg-[#f7f5f0] px-0 py-0 text-[#252722]">
+			<div className="grid min-h-screen w-full overflow-hidden bg-[#fffefa] lg:grid-cols-[1.08fr_0.92fr]">
 				<motion.aside
-					className="relative hidden min-h-[680px] overflow-hidden bg-[#d8d9ce] lg:block"
+					className="relative hidden min-h-screen overflow-hidden bg-[#d8d9ce] lg:block"
 					initial={{ opacity: 0, scale: 1.015 }}
 					animate={{ opacity: 1, scale: 1 }}
 					transition={{ duration: 0.7 }}
