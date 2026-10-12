@@ -43,7 +43,7 @@ const ProductsList = () => {
                 <p className="mb-2 text-xs text-gray-400">{isStockTracked(product) ? `ثبت‌شده: ${new Intl.NumberFormat("fa-IR").format(product.stock)}` : "موجودی ثبت نشده"}</p>
                 <div className="flex items-center gap-2">
                   <input type="number" min="0" step="1" aria-label={`موجودی ${product.name}`} value={drafts[product._id] ?? (isStockTracked(product) ? String(product.stock) : "")} onChange={(event) => setDrafts((previous) => ({ ...previous, [product._id]: event.target.value }))} className="w-20 rounded-md border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-white" />
-                  <button type="button" onClick={() => saveStock(product)} aria-label={`ذخیره موجودی ${product.name}`} className="rounded-md p-2 text-emerald-300 hover:bg-gray-600"><Save size={16} aria-hidden="true" /></button>
+                  <button type="button" onClick={() => saveStock(product)} aria-label={`ذخیره موجودی ${product.name}`} className="rounded-md p-2 text-[#68745f] hover:bg-gray-600"><Save size={16} aria-hidden="true" /></button>
                 </div>
               </td>
               <td className="whitespace-nowrap px-4 py-4">
