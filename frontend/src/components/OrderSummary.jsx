@@ -27,12 +27,16 @@ const OrderSummary = () => {
     axios.get("/payments/provider")
       .then(({ data }) => {
         if (!active) return;
-        const configured = data.provider === "stripe"
-          ? Boolean(data.configured && import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
-          : Boolean(data.configured);
-        const message = data.provider === "stripe" && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
-          ? "کلید عمومی Stripe در تنظیمات فرانت‌اند تعریف نشده است."
-          : data.message;
+        const frontendCurrency = String(import.meta.env.VITE_STORE_CURRENCY || "USD").toUpperCase();
+        const backendCurrency = String(data.currency || "USD").toUpperCase();
+        const currencyMatches = frontendCurrency === backendCurrency;
+        const stripeKeyReady = data.provider !== "stripe" || Boolean(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+        const configured = Boolean(data.configured && currencyMatches && stripeKeyReady);
+        const message = !currencyMatches
+          ? "واحد پول فرانت‌اند و بک‌اند یکسان نیست؛ پیش از پرداخت تنظیمات را هماهنگ کنید."
+          : !stripeKeyReady
+            ? "کلید عمومی Stripe در تنظیمات فرانت‌اند تعریف نشده است."
+            : data.message;
         setPaymentConfig({ ...data, configured, message, loading: false });
       })
       .catch(() => {
