@@ -488,16 +488,6 @@ A successful frontend build alone does not prove that API requests or database c
 
 This README documents the current codebase and deployment configuration. It does not imply that every production hardening measure or payment-provider integration is already implemented.
 
-## 🙌 Credits
-
-This project was built while following the e-commerce tutorial and learning material originally published on YouTube.
-
-<p align="center">
-  <a href="https://youtu.be/sX57TLIPNx8">
-    <img src="https://img.shields.io/badge/Watch%20the%20original%20tutorial-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the original tutorial on YouTube" />
-  </a>
-</p>
-
 ---
 
 <div align="center">
