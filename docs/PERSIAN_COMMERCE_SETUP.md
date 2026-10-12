@@ -97,3 +97,19 @@ Newest products are available at `GET /api/products/newest?limit=8`.
 4. Test callback reachability from the public internet and verify the Zarinpal merchant's registered domain.
 5. Configure monitoring and a scheduled reconciliation/refund process for pending gateway transactions.
 6. Run frontend `npm run lint` and `npm run build`, plus backend syntax checks and a deployed staging checkout. Remote file edits alone do not prove those checks passed.
+
+## Existing MongoDB index migration before enabling Zarinpal
+
+The previous Stripe-only order schema may have created a **non-sparse unique** `stripeSessionId` index. A non-sparse unique index can prevent multiple Zarinpal orders from being inserted because those orders do not have a Stripe session ID. Before enabling the new provider on an existing database:
+
+1. Back up the database and inspect `db.orders.getIndexes()`.
+2. During a maintenance window, replace any existing non-sparse `stripeSessionId_1` index with a sparse unique index. Only run the following after confirming the existing index name/options and after taking a backup:
+
+```javascript
+db.orders.dropIndex("stripeSessionId_1");
+db.orders.createIndex({ stripeSessionId: 1 }, { unique: true, sparse: true });
+db.orders.createIndex({ zarinpalAuthority: 1 }, { unique: true, sparse: true });
+```
+
+If the indexes already have the required options, do not drop them. Confirm the application starts cleanly and that repeated Zarinpal test orders can be created before enabling production traffic.
+
