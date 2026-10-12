@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Leaf, PackageCheck, Search, ShieldCheck, Sparkles, Truck } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
 import ProductCard from "../components/ProductCard";
@@ -30,8 +30,6 @@ const benefits = [
 ];
 
 const HomePage = () => {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
   const [campaigns, setCampaigns] = useState([]);
   const {
     fetchFeaturedProducts,
@@ -49,12 +47,6 @@ const HomePage = () => {
       .catch((error) => console.error("Could not load campaigns:", error.message));
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts]);
-
-  const handleSearch = (event) => {
-    event.preventDefault();
-    const query = searchTerm.trim();
-    navigate(query ? `/shop?q=${encodeURIComponent(query)}` : "/shop");
-  };
 
   return (
     <main dir="rtl" className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
@@ -74,11 +66,6 @@ const HomePage = () => {
                 <Link to="/shop" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">مشاهده محصولات<ArrowLeft size={17} aria-hidden="true" /></Link>
                 <a href="#shop-by-category" className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">دسته‌بندی‌ها</a>
               </div>
-              <form role="search" onSubmit={handleSearch} className="mt-8 flex max-w-lg items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa]/80 p-2 focus-within:border-[#68745f]">
-                <Search className="mr-2 shrink-0 text-[#68745f]" size={19} aria-hidden="true" />
-                <input type="search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="نام محصول یا دسته‌بندی را جست‌وجو کنید" aria-label="جست‌وجوی محصولات" className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-[#252722] outline-none placeholder:text-[#89897f]" />
-                <button type="submit" className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-[#68745f] px-4 text-sm font-semibold text-white transition hover:bg-[#56614f]">جست‌وجو</button>
-              </form>
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-[#d5d0c5] pt-5 text-xs text-[#62645c] sm:text-sm">
                 <span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" />انتخاب‌های روزمره</span>
                 <span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" />اطلاعات روشن محصول</span>
