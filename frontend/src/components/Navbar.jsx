@@ -128,7 +128,7 @@ const Navbar = () => {
     };
     document.addEventListener("pointerdown", closeOnOutsideClick);
     return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
-  }, []);
+  }, [activeSearchSurface]);
 
   useEffect(() => {
     if (!mobileSearchOpen) return undefined;
@@ -425,7 +425,7 @@ const Navbar = () => {
                 <input
                   type="search"
                   value={filters.q}
-                  onFocus={() => setActiveSearchSurface("desktop")}
+                  onFocus={() => { setDesktopFiltersOpen(false); setActiveSearchSurface("desktop"); }}
                   onKeyDown={handleSuggestionKeyDown}
                   onChange={(event) => updateFilter("q", event.target.value)}
                   aria-label="نام یا توضیحات محصول"
