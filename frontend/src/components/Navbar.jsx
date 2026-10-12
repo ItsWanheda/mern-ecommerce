@@ -408,7 +408,7 @@ const Navbar = () => {
       >
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
           <div className="relative flex min-h-14 items-center justify-between gap-2 py-3 sm:gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:justify-normal">
-            <div className="flex shrink-0 items-center gap-1 lg:col-start-1 lg:row-start-1 lg:justify-self-start lg:gap-2">
+            <div className="flex shrink-0 items-center gap-1 lg:col-start-3 lg:row-start-1 lg:justify-self-end lg:gap-2">
               {user ? (
                 <button
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
@@ -461,7 +461,7 @@ const Navbar = () => {
               فروشگاه<span className="mr-1 text-[#68745f]">.</span>
             </Link>
 
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 lg:col-start-3 lg:row-start-1 lg:w-full lg:flex-initial lg:justify-self-stretch">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 lg:col-start-1 lg:row-start-1 lg:w-full lg:flex-initial lg:justify-self-stretch">
               <nav
                 aria-label="پیمایش اصلی"
                 className="hidden shrink-0 items-center gap-1 lg:flex"
