@@ -78,13 +78,13 @@ const CampaignManager = () => {
     }
   };
 
-  const fieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30";
+  const fieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white outline-none focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/30";
 
   return (
     <section dir="rtl" className="mx-auto max-w-5xl space-y-8">
       <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
         <div className="mb-6 flex items-center gap-3">
-          <Megaphone className="h-6 w-6 text-emerald-400" aria-hidden="true" />
+          <Megaphone className="h-6 w-6 text-[#68745f]" aria-hidden="true" />
           <div>
             <h2 className="text-xl font-semibold text-white">ایجاد کمپین فروشگاهی</h2>
             <p className="mt-1 text-sm text-gray-400">کمپین‌های زمان‌بندی‌شده در صفحه اصلی نمایش داده می‌شوند.</p>
@@ -99,7 +99,7 @@ const CampaignManager = () => {
           <label className="text-sm text-gray-300">پایان نمایش<input type="datetime-local" required className={fieldClass} value={form.endsAt} onChange={(event) => setForm({ ...form, endsAt: event.target.value })} /></label>
           <label className="text-sm text-gray-300">ترتیب نمایش<input type="number" min="0" step="1" className={fieldClass} value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></label>
         </div>
-        <button type="submit" disabled={loading} className="mt-5 min-h-11 rounded-full bg-emerald-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50">{loading ? "در حال ذخیره…" : "ایجاد کمپین"}</button>
+        <button type="submit" disabled={loading} className="mt-5 min-h-11 rounded-full bg-[#68745f] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">{loading ? "در حال ذخیره…" : "ایجاد کمپین"}</button>
       </form>
 
       <div className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
@@ -109,7 +109,7 @@ const CampaignManager = () => {
             {campaigns.map((campaign) => (
               <article key={campaign._id} className="flex flex-col gap-4 rounded-xl border border-gray-700 bg-gray-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
-                  {campaign.image ? <img src={campaign.image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-700"><Megaphone className="text-emerald-300" size={20} /></div>}
+                  {campaign.image ? <img src={campaign.image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-700"><Megaphone className="text-[#68745f]" size={20} /></div>}
                   <div className="min-w-0">
                     <p className="font-semibold text-white">{campaign.title}</p>
                     <p className="mt-1 truncate text-xs text-gray-400">{campaign.description || campaign.href}</p>
