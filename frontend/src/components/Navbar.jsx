@@ -63,11 +63,15 @@ const Navbar = () => {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [searchSuggestions, setSearchSuggestions] = useState({ products: [], loading: false, error: false });
   const suggestionQuery = filters.q.trim();
+  const appliedFilterParams = new URLSearchParams(
+    location.pathname === "/shop" ? location.search : "",
+  );
+  const appliedSort = appliedFilterParams.get("sort") || "newest";
   const activeFilterCount = [
-    filters.category,
-    filters.minPrice.trim(),
-    filters.maxPrice.trim(),
-    filters.sort !== "newest" ? filters.sort : "",
+    appliedFilterParams.get("category"),
+    appliedFilterParams.get("minPrice"),
+    appliedFilterParams.get("maxPrice"),
+    appliedSort !== "newest" ? appliedSort : "",
   ].filter(Boolean).length;
   const categorySuggestions = suggestionQuery.length >= 2
     ? categories
