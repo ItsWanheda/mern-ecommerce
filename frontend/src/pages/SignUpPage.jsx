@@ -19,27 +19,10 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<main className="min-h-screen bg-[#f7f5f0] px-0 py-0 text-[#252722]">
-			<div className="grid min-h-screen w-full overflow-hidden bg-[#fffefa] lg:grid-cols-[1.08fr_0.92fr]">
-				<motion.aside
-					className="relative hidden min-h-screen overflow-hidden bg-[#d8d9ce] lg:block"
-					initial={{ opacity: 0, scale: 1.015 }}
-					animate={{ opacity: 1, scale: 1 }}
-					transition={{ duration: 0.7 }}
-					aria-label="کشف مجموعه"
-				>
-					<img src="/jackets.jpg" alt="نمونه‌ای از مجموعه پوشاک منتخب" className="absolute inset-0 h-full w-full object-cover" />
-					<div className="absolute inset-0 bg-gradient-to-t from-[#171a16]/85 via-[#171a16]/10 to-[#171a16]/10" />
-					<div className="absolute left-8 top-8 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur-md">انتخاب‌های روزمره</div>
-					<div className="absolute inset-x-0 bottom-0 p-10 xl:p-14">
-						<p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/75">کمد لباسی با انتخاب‌های سنجیده</p>
-						<h2 className="mt-4 max-w-lg font-serif text-4xl leading-tight text-white xl:text-5xl">برای لباس‌هایی که دوست دارید بپوشید جا باز کنید.</h2>
-						<p className="mt-4 max-w-sm text-sm leading-6 text-white/75">حساب کاربری بسازید و انتخاب بعدی‌تان را به بخشی از داستان خود تبدیل کنید.</p>
-					</div>
-				</motion.aside>
-
-				<motion.section
-					className="flex items-center px-6 py-10 sm:px-10 lg:px-14 lg:py-14"
+		<main className="flex min-h-screen items-center justify-center bg-[#f7f5f0] px-4 py-8 text-[#252722] sm:px-6 sm:py-10">
+			<div className="w-full max-w-xl overflow-hidden rounded-[2rem] border border-[#e5e0d6] bg-[#fffefa] shadow-[0_28px_90px_-42px_rgba(37,39,34,0.28)]">
+<motion.section
+					className="flex items-center px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12"
 					initial={{ opacity: 0, y: 14 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.45, delay: 0.05 }}
