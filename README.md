@@ -2,8 +2,6 @@
 
 A full-stack e-commerce application built with MongoDB, Express, React, and Node.js. It includes a product storefront, account authentication, a persistent shopping cart, coupon support, Stripe Checkout, and an admin dashboard with product management and sales analytics.
 
-![E-Commerce Store screenshot](frontend/public/screenshot-for-readme.png)
-
 ## Features
 
 ### Storefront and shopping
@@ -200,8 +198,3 @@ An Iranian payment gateway or a different currency is **not** configured out of 
 - Restrict database/network access to the hosts and services that need it.
 - Admin access is controlled by the role stored on the user record; do not provide public ways to promote accounts.
 
-## Credits
-
-This project follows the e-commerce tutorial and learning material originally shared on YouTube:
-
-[Watch the tutorial](https://youtu.be/sX57TLIPNx8)
