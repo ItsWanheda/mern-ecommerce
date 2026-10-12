@@ -26,10 +26,10 @@ const AdminPage = () => {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="relative z-10 container mx-auto px-4 py-16">
-        <motion.h1 className="mb-8 text-center text-4xl font-bold text-emerald-400" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>داشبورد مدیریت</motion.h1>
+        <motion.h1 className="mb-8 text-center text-4xl font-bold text-[#68745f]" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>داشبورد مدیریت</motion.h1>
         <div dir="rtl" className="mb-8 flex flex-wrap justify-center gap-2">
           {tabs.map((tab) => (
-            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-sm transition-colors ${activeTab === tab.id ? "bg-emerald-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
+            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-sm transition-colors ${activeTab === tab.id ? "bg-[#68745f] text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
               <tab.icon className="h-5 w-5" aria-hidden="true" />{tab.label}
             </button>
           ))}
