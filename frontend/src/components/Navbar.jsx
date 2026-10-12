@@ -449,16 +449,6 @@ const Navbar = () => {
                   placeholder="جست‌وجوی محصولات..."
                   className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
                 />
-                {filters.q && (
-                  <button
-                    type="button"
-                    onClick={() => updateFilter("q", "")}
-                    aria-label="پاک‌کردن عبارت جست‌وجو"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#85867d] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
-                  >
-                    <X size={16} aria-hidden="true" />
-                  </button>
-                )}
                 <button
                   type="submit"
                   aria-label="جست‌وجو"
@@ -629,11 +619,6 @@ const Navbar = () => {
                   placeholder="مثلاً کت، کیف، شلوار جین..."
                   className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
                 />
-                {filters.q && (
-                  <button type="button" onClick={() => updateFilter("q", "")} aria-label="پاک‌کردن عبارت جست‌وجو" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#85867d] hover:bg-[#f2f0e9]">
-                    <X size={16} aria-hidden="true" />
-                  </button>
-                )}
               </div>
 
               {renderSearchSuggestions("mobile")}
