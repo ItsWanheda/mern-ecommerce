@@ -5,10 +5,10 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 160 },
     description: { type: String, required: true, maxlength: 5000 },
     price: { type: Number, min: 0, required: true },
-    image: { type: String, required: [true, "Image is required"], default: "" },
+    image: { type: String, trim: true, default: "" },
     category: { type: String, required: true, trim: true, maxlength: 64 },
     isFeatured: { type: Boolean, default: false },
-    // null keeps existing catalogue records available until their opening stock is entered.
+    // null preserves legacy catalogue records until opening stock is entered by an admin.
     stock: {
       type: Number,
       min: 0,
@@ -26,6 +26,4 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ createdAt: -1 });
 productSchema.index({ category: 1, price: 1, createdAt: -1 });
 
-const Product = mongoose.model("Product", productSchema);
-
-export default Product;
+export default mongoose.model("Product", productSchema);
