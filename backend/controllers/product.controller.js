@@ -108,9 +108,11 @@ export const getSearchedProducts = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const { name, description, price, image, category, stock } = req.body;
-    const numericPrice = Number(price);
+    const numericPrice = price === "" || price === undefined || price === null ? Number.NaN : Number(price);
     const numericStock = stock === "" || stock === undefined || stock === null ? null : Number(stock);
-    if (!name?.trim() || !description?.trim() || !category?.trim() ||
+    if (typeof name !== "string" || !name.trim() ||
+        typeof description !== "string" || !description.trim() ||
+        typeof category !== "string" || !category.trim() ||
         !Number.isFinite(numericPrice) || numericPrice < 0 ||
         (numericStock !== null && (!Number.isInteger(numericStock) || numericStock < 0))) {
       return res.status(400).json({ message: "Provide valid product details, price, and stock" });
