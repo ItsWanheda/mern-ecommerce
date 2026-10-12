@@ -26,18 +26,6 @@ A modern storefront with account authentication, a persistent cart, coupon valid
 
 ---
 
-## 📸 Preview
-
-<p align="center">
-  <img src="frontend/public/screenshot-for-readme.png" alt="MERN E-Commerce storefront preview" width="96%" />
-</p>
-
-<p align="center">
-  <sub>Storefront preview from the repository's README screenshot asset.</sub>
-</p>
-
----
-
 ## 📚 Table of Contents
 
 - [Features](#-features)
