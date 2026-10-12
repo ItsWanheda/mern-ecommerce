@@ -1,0 +1,314 @@
+import mongoose from "mongoose";
+import Coupon from "../models/coupon.model.js";
+import Order from "../models/order.model.js";
+import Product from "../models/product.model.js";
+import User from "../models/user.model.js";
+import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
+
+const isZarinpalEnabled = () => (process.env.PAYMENT_PROVIDER || "stripe").toLowerCase() === "zarinpal";
+const currency = () => (process.env.STORE_CURRENCY || "USD").toUpperCase();
+const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
+const apiBase = () => isSandbox()
+  ? "https://sandbox.zarinpal.com/pg/v4/payment"
+  : "https://payment.zarinpal.com/pg/v4/payment";
+const startPayBase = () => isSandbox()
+  ? "https://sandbox.zarinpal.com/pg/StartPay"
+  : "https://www.zarinpal.com/pg/StartPay";
+const isTracked = (product) => typeof product.stock === "number" && Number.isFinite(product.stock);
+const cartProductId = (item) => item.product?.toString() || item._id?.toString();
+const safeClientUrl = () => (process.env.CLIENT_URL || "").replace(/\/$/, "");
+
+export const getPaymentConfiguration = (_req, res) => {
+  const provider = isZarinpalEnabled() ? "zarinpal" : "stripe";
+  const storeCurrency = currency();
+  const configured = provider === "zarinpal"
+    ? Boolean(process.env.ZARINPAL_MERCHANT_ID && process.env.API_URL && safeClientUrl() && storeCurrency === "IRT")
+    : Boolean(process.env.STRIPE_SECRET_KEY && storeCurrency === "USD");
+  return res.json({
+    provider,
+    currency: storeCurrency,
+    configured,
+    message: !configured
+      ? (provider === "zarinpal"
+          ? "برای زرین‌پال، شناسه پذیرنده، API_URL، CLIENT_URL و STORE_CURRENCY=IRT را تنظیم کنید."
+          : "برای پرداخت Stripe، کلید سرور و STORE_CURRENCY=USD را تنظیم کنید.")
+      : "",
+  });
+};
+
+const releaseReservedInventory = async (items = []) => {
+  for (const item of items) {
+    if (item.stockReserved && item.product && item.quantity > 0) {
+      await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
+    }
+  }
+};
+
+const reserveInventory = async (items, productsById) => {
+  const reserved = [];
+  const orderItems = [];
+  try {
+    for (const item of items) {
+      const id = cartProductId(item);
+      const product = id && productsById.get(id);
+      const quantity = Number(item.quantity);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 || product.isActive === false) {
+        throw new Error("INVALID_CART");
+      }
+      if (isTracked(product)) {
+        const updated = await Product.findOneAndUpdate(
+          { _id: product._id, isActive: { $ne: false }, stock: { $gte: quantity } },
+          { $inc: { stock: -quantity } },
+          { new: true }
+        ).lean();
+        if (!updated) throw new Error("INSUFFICIENT_STOCK");
+        reserved.push({ product: product._id, quantity, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: product.price, stockReserved: true });
+      } else {
+        orderItems.push({ product: product._id, quantity, price: product.price, stockReserved: false });
+      }
+    }
+    return { orderItems, reserved };
+  } catch (error) {
+    await releaseReservedInventory(reserved);
+    throw error;
+  }
+};
+
+const expireOldPendingOrders = async () => {
+  const cutoff = new Date(Date.now() - 30 * 60 * 1000);
+  const staleOrders = await Order.find({
+    paymentProvider: "zarinpal",
+    paymentStatus: "pending",
+    createdAt: { $lt: cutoff },
+  }).limit(50);
+  for (const stale of staleOrders) {
+    const expired = await Order.findOneAndUpdate(
+      { _id: stale._id, paymentStatus: "pending" },
+      { $set: { paymentStatus: "expired", status: "expired" } },
+      { new: true }
+    );
+    if (expired) await releaseReservedInventory(expired.products);
+  }
+};
+
+export const createZarinpalCheckout = async (req, res) => {
+  if (!isZarinpalEnabled()) {
+    return res.status(409).json({ message: "Zarinpal is not the configured payment provider" });
+  }
+  if (currency() !== "IRT") {
+    return res.status(503).json({ message: "Zarinpal checkout requires STORE_CURRENCY=IRT and catalogue prices stored as whole Toman amounts" });
+  }
+  if (!process.env.ZARINPAL_MERCHANT_ID || !process.env.API_URL || !safeClientUrl()) {
+    return res.status(503).json({ message: "Zarinpal is not configured on the server" });
+  }
+
+  let reserved = [];
+  let order = null;
+  try {
+    await expireOldPendingOrders();
+    const cartItems = req.user.cartItems || [];
+    if (!cartItems.length) return res.status(400).json({ message: "سبد خرید خالی است" });
+
+    const productIds = cartItems.map(cartProductId).filter(Boolean);
+    const products = await Product.find({ _id: { $in: productIds }, isActive: { $ne: false } }).lean();
+    const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+    const validated = cartItems.map((item) => {
+      const id = cartProductId(item);
+      const product = id && productsById.get(id);
+      const quantity = Number(item.quantity);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 ||
+          !Number.isFinite(product.price) || product.price < 0 || !Number.isInteger(product.price)) return null;
+      if (isTracked(product) && product.stock < quantity) return null;
+      return { ...item.toObject?.() ?? item, productId: id, quantity, product };
+    });
+    if (validated.some((item) => !item)) {
+      return res.status(409).json({ message: "موجودی یا اطلاعات یکی از کالاهای سبد خرید معتبر نیست؛ سبد خرید را به‌روزرسانی کنید." });
+    }
+
+    const subtotal = validated.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode.trim().toUpperCase() : "";
+    let coupon = null;
+    if (couponCode) {
+      coupon = await Coupon.findOne({ code: couponCode, userId: req.user._id, isActive: true });
+      if (!coupon) return res.status(400).json({ message: "کد تخفیف معتبر نیست" });
+      if (coupon.expirationDate <= new Date()) {
+        coupon.isActive = false;
+        await coupon.save();
+        return res.status(400).json({ message: "کد تخفیف منقضی شده است" });
+      }
+    }
+
+    const discountedSubtotal = coupon
+      ? Math.round(subtotal * (1 - Number(coupon.discountPercentage) / 100))
+      : subtotal;
+    const shippingSettings = await getShippingSettings();
+    const shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
+    const totalToman = discountedSubtotal + shippingFee;
+    if (!Number.isSafeInteger(totalToman) || totalToman <= 0) {
+      return res.status(400).json({ message: "مبلغ سفارش باید مبلغی صحیح و بزرگ‌تر از صفر به تومان باشد" });
+    }
+
+    const reservations = await reserveInventory(validated.map((item) => ({
+      product: item.productId,
+      quantity: item.quantity,
+    })), productsById);
+    reserved = reservations.reserved;
+    const reservedById = new Map(reserved.map((item) => [item.product.toString(), item]));
+    const orderItems = validated.map((item) => ({
+      product: item.product._id,
+      quantity: item.quantity,
+      price: item.product.price,
+      stockReserved: reservedById.has(item.product._id.toString()),
+    }));
+
+    order = await Order.create({
+      user: req.user._id,
+      products: orderItems,
+      totalAmount: totalToman,
+      shippingFee,
+      currency: "IRT",
+      paymentProvider: "zarinpal",
+      paymentStatus: "pending",
+      status: "pending",
+      couponCode: coupon?.code || "",
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    });
+
+    const callbackUrl = new URL("/api/payments/zarinpal/verify", process.env.API_URL);
+    callbackUrl.searchParams.set("order_id", order._id.toString());
+    const gatewayResponse = await fetch(`${apiBase()}/request.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merchant_id: process.env.ZARINPAL_MERCHANT_ID,
+        amount: totalToman * 10,
+        description: `Store order ${order._id}`,
+        callback_url: callbackUrl.toString(),
+        metadata: { email: req.user.email },
+      }),
+      signal: AbortSignal.timeout(12000),
+    });
+    const payload = await gatewayResponse.json().catch(() => ({}));
+    const authority = payload?.data?.authority;
+    if (!gatewayResponse.ok || payload?.data?.code !== 100 || !authority) {
+      throw new Error("ZARINPAL_REQUEST_FAILED");
+    }
+
+    order.zarinpalAuthority = authority;
+    await order.save();
+    reserved = [];
+    return res.status(200).json({
+      provider: "zarinpal",
+      orderId: order._id,
+      totalAmount: totalToman,
+      redirectUrl: `${startPayBase()}/${encodeURIComponent(authority)}`,
+    });
+  } catch (error) {
+    if (order) {
+      await Order.updateOne(
+        { _id: order._id, paymentStatus: "pending" },
+        { $set: { paymentStatus: "failed", status: "failed" } }
+      ).catch(() => {});
+      await releaseReservedInventory(order.products).catch(() => {});
+    } else {
+      await releaseReservedInventory(reserved).catch(() => {});
+    }
+    console.error("Error creating Zarinpal checkout", error.message);
+    if (error.message === "INSUFFICIENT_STOCK" || error.message === "INVALID_CART") {
+      return res.status(409).json({ message: "موجودی یکی از کالاها تغییر کرده است؛ سبد خرید را دوباره بررسی کنید." });
+    }
+    return res.status(502).json({ message: "اتصال به درگاه پرداخت برقرار نشد. لطفاً دوباره تلاش کنید." });
+  }
+};
+
+export const verifyZarinpalPayment = async (req, res) => {
+  const authority = typeof req.query.Authority === "string" ? req.query.Authority : "";
+  const status = typeof req.query.Status === "string" ? req.query.Status.toUpperCase() : "";
+  const orderId = typeof req.query.order_id === "string" ? req.query.order_id : "";
+  const resultBase = safeClientUrl();
+
+  if (!resultBase) return res.status(503).send("CLIENT_URL is not configured");
+  if (!mongoose.isValidObjectId(orderId) || !authority) {
+    return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=invalid-callback`);
+  }
+
+  try {
+    const order = await Order.findOne({
+      _id: orderId,
+      paymentProvider: "zarinpal",
+      zarinpalAuthority: authority,
+    });
+    if (!order) return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=order-not-found`);
+    if (order.paymentStatus === "paid") {
+      return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
+    }
+    if (status !== "OK" || order.paymentStatus !== "pending") {
+      const failed = await Order.findOneAndUpdate(
+        { _id: order._id, paymentStatus: "pending" },
+        { $set: { paymentStatus: "failed", status: "cancelled" } },
+        { new: true }
+      );
+      if (failed) await releaseReservedInventory(failed.products);
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
+    }
+
+    const response = await fetch(`${apiBase()}/verify.json`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merchant_id: process.env.ZARINPAL_MERCHANT_ID,
+        amount: order.totalAmount * 10,
+        authority,
+      }),
+      signal: AbortSignal.timeout(12000),
+    });
+    const payload = await response.json().catch(() => ({}));
+    const code = payload?.data?.code;
+    if (!response.ok || (code !== 100 && code !== 101)) {
+      const failed = await Order.findOneAndUpdate(
+        { _id: order._id, paymentStatus: "pending" },
+        { $set: { paymentStatus: "failed", status: "failed" } },
+        { new: true }
+      );
+      if (failed) await releaseReservedInventory(failed.products);
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
+    }
+
+    const paid = await Order.findOneAndUpdate(
+      { _id: order._id, paymentStatus: "pending" },
+      {
+        $set: {
+          paymentStatus: "paid",
+          status: "paid",
+          zarinpalRefId: String(payload?.data?.ref_id ?? ""),
+        },
+      },
+      { new: true }
+    );
+    if (!paid) {
+      const latest = await Order.findById(order._id).lean();
+      if (latest?.paymentStatus === "paid") {
+        return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
+      }
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
+    }
+
+    if (paid.couponCode) {
+      await Coupon.findOneAndUpdate(
+        { code: paid.couponCode, userId: paid.user, isActive: true },
+        { $set: { isActive: false } }
+      );
+    }
+    const user = await User.findById(paid.user);
+    if (user) {
+      const purchasedIds = new Set(paid.products.map((item) => item.product.toString()));
+      user.cartItems = user.cartItems.filter((item) => !purchasedIds.has(cartProductId(item)));
+      await user.save();
+    }
+    return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
+  } catch (error) {
+    console.error("Error verifying Zarinpal payment", error.message);
+    return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-error`);
+  }
+};
