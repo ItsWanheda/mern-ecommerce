@@ -143,6 +143,7 @@ export const updateProductStock = async (req, res) => {
       { new: true, runValidators: true }
     ).select("_id stock");
     if (!product) return res.status(404).json({ message: "Product not found" });
+    await updateFeaturedProductsCache();
     return res.json({ _id: product._id, stock: product.stock });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid product ID" });
