@@ -27,11 +27,11 @@ const CreateProductForm = () => {
     reader.onloadend = () => setNewProduct((previous) => ({ ...previous, image: reader.result }));
     reader.readAsDataURL(file);
   };
-  const fieldClass = "mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500";
+  const fieldClass = "mt-1 block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white shadow-sm focus:border-[#68745f] focus:outline-none focus:ring-2 focus:ring-[#68745f]";
 
   return (
     <motion.div dir="rtl" className="mx-auto mb-8 max-w-xl rounded-lg bg-gray-800 p-8 shadow-lg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <h2 className="mb-6 text-2xl font-semibold text-emerald-300">ایجاد محصول جدید</h2>
+      <h2 className="mb-6 text-2xl font-semibold text-[#68745f]">ایجاد محصول جدید</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block text-sm font-medium text-gray-300">نام محصول
           <input type="text" value={newProduct.name} onChange={(event) => setNewProduct({ ...newProduct, name: event.target.value })} className={fieldClass} maxLength={160} required />
@@ -58,7 +58,7 @@ const CreateProductForm = () => {
           <label htmlFor="product-image" className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-600"><Upload className="h-5 w-5" aria-hidden="true" />بارگذاری تصویر</label>
           {newProduct.image && <span className="text-sm text-gray-400">تصویر انتخاب شد</span>}
         </div>
-        <button type="submit" disabled={loading} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50">
+        <button type="submit" disabled={loading} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#68745f] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-[#41443b] disabled:opacity-50">
           {loading ? <><Loader className="h-5 w-5 animate-spin" aria-hidden="true" />در حال ذخیره…</> : <><PlusCircle className="h-5 w-5" aria-hidden="true" />ایجاد محصول</>}
         </button>
       </form>
