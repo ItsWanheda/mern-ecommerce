@@ -39,11 +39,11 @@ const ShippingSettings = () => {
     }
   };
 
-  const fieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30";
+  const fieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white outline-none focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/30";
   return (
     <section dir="rtl" className="mx-auto max-w-3xl rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
       <div className="mb-6 flex items-center gap-3">
-        <Truck className="h-6 w-6 text-emerald-400" aria-hidden="true" />
+        <Truck className="h-6 w-6 text-[#68745f]" aria-hidden="true" />
         <div>
           <h2 className="text-xl font-semibold text-white">قوانین ارسال سفارش</h2>
           <p className="mt-1 text-sm text-gray-400">مقادیر بر اساس واحد پول فروشگاه محاسبه می‌شوند.</p>
@@ -57,7 +57,7 @@ const ShippingSettings = () => {
           <input type="number" min="0" step={currency === "IRT" || currency === "IRR" ? "1" : "0.01"} required className={fieldClass} value={form.freeShippingThreshold} onChange={(event) => setForm({ ...form, freeShippingThreshold: event.target.value })} />
         </label>
         <p className="text-sm leading-6 text-gray-400">نمونه: هزینه ارسال {formatPrice(Number(form.flatRate), currency)} و ارسال رایگان برای سفارش‌های حداقل {formatPrice(Number(form.freeShippingThreshold), currency)}. مقدار صفر برای حداقل خرید، قانون ارسال رایگان را غیرفعال می‌کند.</p>
-        <button type="submit" disabled={loading} className="min-h-11 rounded-full bg-emerald-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50">{loading ? "در حال ذخیره…" : "ذخیره قوانین ارسال"}</button>
+        <button type="submit" disabled={loading} className="min-h-11 rounded-full bg-[#68745f] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">{loading ? "در حال ذخیره…" : "ذخیره قوانین ارسال"}</button>
       </form>
     </section>
   );
