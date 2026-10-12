@@ -1,7 +1,7 @@
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
-import { stripe } from "../lib/stripe.js";
+import { getStripe } from "../lib/stripe.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 import { createZarinpalCheckout } from "./zarinpal.controller.js";
 
@@ -63,7 +63,7 @@ export const createCheckoutSession = async (req, res) => {
       quantity,
     }));
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
@@ -145,7 +145,7 @@ export const checkoutSuccess = async (req, res) => {
       return res.status(400).json({ message: "A valid session ID is required" });
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await getStripe().checkout.sessions.retrieve(sessionId);
     if (session.metadata?.userId !== req.user._id.toString()) {
       return res.status(403).json({ message: "This checkout does not belong to you" });
     }
@@ -174,7 +174,7 @@ export const checkoutSuccess = async (req, res) => {
     if (!inventory.ok) {
       if (session.payment_intent) {
         try {
-          await stripe.refunds.create({ payment_intent: session.payment_intent });
+          await getStripe().refunds.create({ payment_intent: session.payment_intent });
         } catch (refundError) {
           console.error("Automatic refund failed after inventory conflict", refundError.message);
           return res.status(502).json({ message: "Payment completed but inventory needs manual review. Contact support with your checkout session ID." });
@@ -222,6 +222,6 @@ export const checkoutSuccess = async (req, res) => {
 };
 
 async function createStripeCoupon(discountPercentage) {
-  const coupon = await stripe.coupons.create({ percent_off: discountPercentage, duration: "once" });
+  const coupon = await getStripe().coupons.create({ percent_off: discountPercentage, duration: "once" });
   return coupon.id;
 }
