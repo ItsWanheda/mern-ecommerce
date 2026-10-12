@@ -407,117 +407,27 @@ const Navbar = () => {
         className="fixed inset-x-0 top-0 z-40 w-full border-b border-[#e4e0d8] bg-[#f7f5f0]/95 text-[#252722] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
       >
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-          <div className="flex min-h-14 items-center gap-2 py-3 sm:gap-4">
-            <Link
-              to="/"
-              aria-label="صفحه اصلی فروشگاه"
-              className="flex shrink-0 items-center font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
-            >
-              فروشگاه<span className="mr-1 text-[#68745f]">.</span>
-            </Link>
-
-            <nav
-              aria-label="پیمایش اصلی"
-              className="hidden shrink-0 items-center gap-1 lg:flex"
-            >
-              <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
-              <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
-            </nav>
-
-            <div
-              ref={desktopSearchRef}
-              className="relative ml-auto hidden min-w-0 max-w-[31rem] flex-1 items-center lg:flex"
-            >
-              <form
-                onSubmit={handleDesktopSearch}
-                role="search"
-                aria-label="جست‌وجوی محصولات"
-                className="flex min-h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[#e0dcd2] bg-[#fffefa] p-1 shadow-sm transition focus-within:border-[#a0a994] focus-within:ring-4 focus-within:ring-[#68745f]/10"
-              >
-                <Search size={18} className="mr-2 shrink-0 text-[#85867d]" aria-hidden="true" />
-                <input
-                  type="search"
-                  value={filters.q}
-                  onFocus={() => { setDesktopFiltersOpen(false); setActiveSearchSurface("desktop"); }}
-                  onKeyDown={handleSuggestionKeyDown}
-                  onChange={(event) => updateFilter("q", event.target.value)}
-                  aria-label="نام یا توضیحات محصول"
-                  aria-autocomplete="list"
-                  aria-controls="desktop-search-suggestions"
-                  aria-expanded={activeSearchSurface === "desktop" && suggestionQuery.length >= 2}
-                  autoComplete="off"
-                  placeholder="جست‌وجوی محصولات..."
-                  className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
-                />
+          <div className="relative flex min-h-14 items-center justify-between gap-2 py-3 sm:gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:justify-normal">
+            <div className="flex shrink-0 items-center gap-1 lg:col-start-1 lg:row-start-1 lg:justify-self-start lg:gap-2">
+              {user ? (
                 <button
-                  type="submit"
-                  aria-label="جست‌وجو"
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
-                >
-                  <Search size={16} aria-hidden="true" />
-                  <span>جست‌وجو</span>
-                </button>
-                <button
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
+                  onClick={logout}
                   type="button"
-                  aria-label={activeFilterCount > 0
-                    ? `نمایش فیلترها، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
-                    : "نمایش فیلترها"}
-                  aria-expanded={desktopFiltersOpen}
-                  aria-controls="desktop-product-filters"
-                  onClick={() => {
-                    setActiveSearchSurface(null);
-                    setDesktopFiltersOpen((open) => !open);
-                  }}
-                  className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] ${desktopFiltersOpen ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#e4e0d8] bg-white text-[#62645c] hover:bg-[#f2f0e9]"}`}
+                  aria-label="خروج از حساب"
                 >
-                  <SlidersHorizontal size={16} aria-hidden="true" />
-                  <span>فیلترها</span>
-                  {activeFilterCount > 0 && (
-                    <span
-                      aria-label={`${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`}
-                      className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[11px] font-bold leading-none text-white"
-                    >
-                      {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
-                    </span>
-                  )}
-                  <ChevronDown size={14} className={`transition-transform ${desktopFiltersOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                  <LogOut size={16} aria-hidden="true" />
+                  <span className="hidden sm:inline">خروج</span>
                 </button>
-              </form>
-
-              {renderSearchSuggestions("desktop")}
-
-              {desktopFiltersOpen && (
-                <form
-                  id="desktop-product-filters"
-                  onSubmit={applyFilters}
-                  className="absolute left-0 right-auto top-[calc(100%+0.75rem)] z-50 max-h-[min(70vh,34rem)] w-[27rem] overflow-y-auto rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-5 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)]"
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
                 >
-                  <div className="mb-4">
-                    <p className="text-sm font-bold text-[#252722]">فیلتر محصولات</p>
-                    <p className="mt-1 text-xs text-[#85867d]">نتیجه‌ها را دقیق‌تر و سریع‌تر پیدا کنید.</p>
-                  </div>
-                  {renderFilterFields()}
-                  {renderFilterActions()}
-                </form>
+                  <LogIn size={16} aria-hidden="true" />
+                  <span>ورود</span>
+                </Link>
               )}
-            </div>
-
-            <div className="ml-auto flex shrink-0 items-center gap-1 lg:ml-0 lg:gap-2">
-              <button
-                type="button"
-                onClick={() => setMobileSearchOpen(true)}
-                aria-label={activeFilterCount > 0
-                  ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
-                  : "باز کردن جست‌وجو و فیلتر محصولات"}
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
-              >
-                <Search size={18} aria-hidden="true" />
-                {activeFilterCount > 0 && (
-                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[#f7f5f0] bg-[#68745f] px-1 py-0.5 text-[10px] font-bold leading-none text-white">
-                    {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
-                  </span>
-                )}
-              </button>
 
               {user && (
                 <Link
@@ -541,28 +451,119 @@ const Navbar = () => {
                   <span className="hidden lg:inline">مدیریت</span>
                 </Link>
               )}
-
-              {user ? (
-                <button
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
-                  onClick={logout}
-                  type="button"
-                  aria-label="خروج از حساب"
-                >
-                  <LogOut size={16} aria-hidden="true" />
-                  <span className="hidden sm:inline">خروج</span>
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
-                >
-                  <LogIn size={16} aria-hidden="true" />
-                  <span>ورود</span>
-                </Link>
-              )}
             </div>
-          </div>
+
+            <Link
+              to="/"
+              aria-label="صفحه اصلی فروشگاه"
+              className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] lg:static lg:col-start-2 lg:row-start-1 lg:translate-x-0 lg:translate-y-0 lg:justify-self-center"
+            >
+              فروشگاه<span className="mr-1 text-[#68745f]">.</span>
+            </Link>
+
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 lg:col-start-3 lg:row-start-1 lg:w-full lg:flex-initial lg:justify-self-stretch">
+              <nav
+                aria-label="پیمایش اصلی"
+                className="hidden shrink-0 items-center gap-1 lg:flex"
+              >
+                <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
+                <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
+              </nav>
+
+              <div
+                ref={desktopSearchRef}
+                className="relative hidden min-w-0 max-w-[31rem] flex-1 items-center lg:flex"
+              >
+                <form
+                  onSubmit={handleDesktopSearch}
+                  role="search"
+                  aria-label="جست‌وجوی محصولات"
+                  className="flex min-h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[#e0dcd2] bg-[#fffefa] p-1 shadow-sm transition focus-within:border-[#a0a994] focus-within:ring-4 focus-within:ring-[#68745f]/10"
+                >
+                  <Search size={18} className="mr-2 shrink-0 text-[#85867d]" aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={filters.q}
+                    onFocus={() => { setDesktopFiltersOpen(false); setActiveSearchSurface("desktop"); }}
+                    onKeyDown={handleSuggestionKeyDown}
+                    onChange={(event) => updateFilter("q", event.target.value)}
+                    aria-label="نام یا توضیحات محصول"
+                    aria-autocomplete="list"
+                    aria-controls="desktop-search-suggestions"
+                    aria-expanded={activeSearchSurface === "desktop" && suggestionQuery.length >= 2}
+                    autoComplete="off"
+                    placeholder="جست‌وجوی محصولات..."
+                    className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
+                  />
+                  <button
+                    type="submit"
+                    aria-label="جست‌وجو"
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                  >
+                    <Search size={16} aria-hidden="true" />
+                    <span>جست‌وجو</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={activeFilterCount > 0
+                      ? `نمایش فیلترها، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
+                      : "نمایش فیلترها"}
+                    aria-expanded={desktopFiltersOpen}
+                    aria-controls="desktop-product-filters"
+                    onClick={() => {
+                      setActiveSearchSurface(null);
+                      setDesktopFiltersOpen((open) => !open);
+                    }}
+                    className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] ${desktopFiltersOpen ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#e4e0d8] bg-white text-[#62645c] hover:bg-[#f2f0e9]"}`}
+                  >
+                    <SlidersHorizontal size={16} aria-hidden="true" />
+                    <span>فیلترها</span>
+                    {activeFilterCount > 0 && (
+                      <span
+                        aria-label={`${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`}
+                        className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[11px] font-bold leading-none text-white"
+                      >
+                        {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
+                      </span>
+                    )}
+                    <ChevronDown size={14} className={`transition-transform ${desktopFiltersOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                  </button>
+                </form>
+
+                {renderSearchSuggestions("desktop")}
+
+                {desktopFiltersOpen && (
+                  <form
+                    id="desktop-product-filters"
+                    onSubmit={applyFilters}
+                    className="absolute left-0 right-auto top-[calc(100%+0.75rem)] z-50 max-h-[min(70vh,34rem)] w-[27rem] overflow-y-auto rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-5 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)]"
+                  >
+                    <div className="mb-4">
+                      <p className="text-sm font-bold text-[#252722]">فیلتر محصولات</p>
+                      <p className="mt-1 text-xs text-[#85867d]">نتیجه‌ها را دقیق‌تر و سریع‌تر پیدا کنید.</p>
+                    </div>
+                    {renderFilterFields()}
+                    {renderFilterActions()}
+                  </form>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileSearchOpen(true)}
+                aria-label={activeFilterCount > 0
+                  ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
+                  : "باز کردن جست‌وجو و فیلتر محصولات"}
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
+              >
+                <Search size={18} aria-hidden="true" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[#f7f5f0] bg-[#68745f] px-1 py-0.5 text-[10px] font-bold leading-none text-white">
+                    {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
+                  </span>
+                )}
+              </button>
+            </div>
         </div>
       </header>
 
