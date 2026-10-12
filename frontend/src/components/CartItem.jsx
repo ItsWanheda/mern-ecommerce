@@ -14,16 +14,16 @@ const CartItem = ({ item }) => {
         </div>
         <div className="flex items-center justify-between md:order-3 md:justify-end">
           <div className="flex items-center gap-2">
-            <button type="button" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-600 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500" aria-label="کاهش تعداد" onClick={() => updateQuantity(item._id, item.quantity - 1)}>
+            <button type="button" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-600 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-[#68745f]" aria-label="کاهش تعداد" onClick={() => updateQuantity(item._id, item.quantity - 1)}>
               <Minus className="text-gray-300" aria-hidden="true" />
             </button>
             <p className="min-w-5 text-center tabular-nums">{new Intl.NumberFormat("fa-IR").format(item.quantity)}</p>
-            <button type="button" disabled={maxReached} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-600 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-40" aria-label="افزایش تعداد" onClick={() => updateQuantity(item._id, item.quantity + 1)}>
+            <button type="button" disabled={maxReached} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-600 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-[#68745f] disabled:cursor-not-allowed disabled:opacity-40" aria-label="افزایش تعداد" onClick={() => updateQuantity(item._id, item.quantity + 1)}>
               <Plus className="text-gray-300" aria-hidden="true" />
             </button>
           </div>
           <div className="text-end md:order-4 md:w-36">
-            <p dir="ltr" className="text-base font-bold text-emerald-400">{formatPrice(item.price)}</p>
+            <p dir="ltr" className="text-base font-bold text-[#68745f]">{formatPrice(item.price)}</p>
             {isStockTracked(item) && <p className="mt-1 text-xs text-gray-400">موجودی: {new Intl.NumberFormat("fa-IR").format(item.stock)}</p>}
           </div>
         </div>
