@@ -16,7 +16,7 @@ const OrderSummary = () => {
     loading: true,
     message: "",
   });
-  const [shipping, setShipping] = useState({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: true });
+  const [shipping, setShipping] = useState({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: true, error: "" });
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const savings = Math.max(0, subtotal - total);
@@ -26,7 +26,14 @@ const OrderSummary = () => {
     let active = true;
     axios.get("/payments/provider")
       .then(({ data }) => {
-        if (active) setPaymentConfig({ ...data, loading: false });
+        if (!active) return;
+        const configured = data.provider === "stripe"
+          ? Boolean(data.configured && import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+          : Boolean(data.configured);
+        const message = data.provider === "stripe" && !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+          ? "کلید عمومی Stripe در تنظیمات فرانت‌اند تعریف نشده است."
+          : data.message;
+        setPaymentConfig({ ...data, configured, message, loading: false });
       })
       .catch(() => {
         if (active) setPaymentConfig({
@@ -45,10 +52,10 @@ const OrderSummary = () => {
     setShipping((current) => ({ ...current, loading: true }));
     axios.get(`/shipping?subtotal=${encodeURIComponent(total)}`)
       .then(({ data }) => {
-        if (active) setShipping({ ...data, loading: false });
+        if (active) setShipping({ ...data, loading: false, error: "" });
       })
       .catch(() => {
-        if (active) setShipping({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: false });
+        if (active) setShipping({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: false, error: "دریافت قوانین ارسال ناموفق بود؛ پرداخت تا زمان مشخص‌شدن هزینه ارسال غیرفعال است." });
       });
     return () => { active = false; };
   }, [total]);
@@ -118,6 +125,8 @@ const OrderSummary = () => {
             </dd>
           </dl>
 
+          {shipping.error && <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">{shipping.error}</p>}
+
           {shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
             <p className="text-xs leading-5 text-gray-400">
               برای ارسال رایگان، مبلغ سفارش باید به {formatPrice(shipping.freeShippingThreshold, paymentConfig.currency)} برسد.
@@ -139,7 +148,7 @@ const OrderSummary = () => {
 
         <motion.button
           type="button"
-          disabled={checkoutLoading || paymentConfig.loading || !paymentConfig.configured || shipping.loading || !cart.length}
+          disabled={checkoutLoading || paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error) || !cart.length}
           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300/40 disabled:cursor-not-allowed disabled:opacity-50"
           whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
           whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
