@@ -34,7 +34,7 @@ function App() {
       <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18)_0%,rgba(10,80,60,0.12)_45%,rgba(0,0,0,0.1)_100%)]" />
       </div>
-      <div className="relative z-50 pt-20">
+      <div className="relative z-50 pt-32 md:pt-20">
         <Navbar />
         <Routes>
           <Route path="/" element={<HomePage />} />
