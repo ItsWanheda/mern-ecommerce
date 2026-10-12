@@ -1,8 +1,26 @@
 import { useEffect, useState } from "react";
-import { Search, LoaderCircle, Sparkles, ShoppingBag } from "lucide-react";
+import { Search, LoaderCircle, Sparkles, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
 import ProductCard from "../components/ProductCard";
+import { formatPrice } from "../lib/commerce";
+
+const categoryLabels = {
+  jeans: "شلوار جین",
+  "t-shirts": "تی‌شرت",
+  shoes: "کفش",
+  glasses: "عینک",
+  jackets: "کت و کاپشن",
+  suits: "کت‌وشلوار",
+  bags: "کیف",
+};
+
+const sortLabels = {
+  oldest: "قدیمی‌ترین",
+  priceAsc: "ارزان‌ترین",
+  priceDesc: "گران‌ترین",
+  nameAsc: "نام محصول (الف تا ی)",
+};
 
 const persianNumber = (value) =>
   new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
@@ -58,6 +76,31 @@ const ShopPage = () => {
   };
 
   const query = searchParams.get("q")?.trim() || "";
+  const category = searchParams.get("category") || "";
+  const minPrice = searchParams.get("minPrice") || "";
+  const maxPrice = searchParams.get("maxPrice") || "";
+  const sort = searchParams.get("sort") || "newest";
+  const activeFilters = [
+    category ? { key: "category", label: `دسته‌بندی: ${categoryLabels[category] || category}` } : null,
+    minPrice ? { key: "minPrice", label: `از ${formatPrice(minPrice)}` } : null,
+    maxPrice ? { key: "maxPrice", label: `تا ${formatPrice(maxPrice)}` } : null,
+    sort !== "newest" && sortLabels[sort]
+      ? { key: "sort", label: `مرتب‌سازی: ${sortLabels[sort]}` }
+      : null,
+  ].filter(Boolean);
+
+  const removeFilter = (key) => {
+    const next = new URLSearchParams(searchParams);
+    next.delete(key);
+    next.delete("page");
+    setSearchParams(next);
+  };
+
+  const clearAllFilters = () => {
+    const next = new URLSearchParams();
+    if (query) next.set("q", query);
+    setSearchParams(next);
+  };
 
   return (
     <main
@@ -114,6 +157,35 @@ const ShopPage = () => {
             )}
           </div>
         </header>
+
+        {activeFilters.length > 0 && (
+          <section aria-label="فیلترهای فعال" className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 pl-1 text-xs font-semibold text-[#62645c]">
+              <SlidersHorizontal size={15} className="text-[#68745f]" aria-hidden="true" />
+              فیلترهای فعال
+              <span className="tabular-nums text-[#85867d]">({persianNumber(activeFilters.length)})</span>
+            </span>
+            {activeFilters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => removeFilter(filter.key)}
+                aria-label={`حذف فیلتر ${filter.label}`}
+                className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-1.5 text-xs font-medium text-[#41443b] transition hover:border-[#a8a597] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+              >
+                <span>{filter.label}</span>
+                <X size={13} className="text-[#85867d]" aria-hidden="true" />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="inline-flex min-h-9 items-center rounded-full px-3 py-1.5 text-xs font-semibold text-[#68745f] transition hover:bg-[#e9ede4] hover:text-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+            >
+              پاک‌کردن همه فیلترها
+            </button>
+          </section>
+        )}
 
         {error && (
           <div
