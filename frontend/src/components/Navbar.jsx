@@ -63,6 +63,12 @@ const Navbar = () => {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [searchSuggestions, setSearchSuggestions] = useState({ products: [], loading: false, error: false });
   const suggestionQuery = filters.q.trim();
+  const activeFilterCount = [
+    filters.category,
+    filters.minPrice.trim(),
+    filters.maxPrice.trim(),
+    filters.sort !== "newest" ? filters.sort : "",
+  ].filter(Boolean).length;
   const categorySuggestions = suggestionQuery.length >= 2
     ? categories
         .filter(([value, label]) => value && (
@@ -296,8 +302,11 @@ const Navbar = () => {
   };
 
   const clearFilters = () => {
-    setFilters(defaultFilters);
-    navigateToShop(new URLSearchParams());
+    const query = filters.q.trim();
+    setFilters({ ...defaultFilters, q: query });
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    navigateToShop(params);
   };
 
   const updateFilter = (key, value) => {
@@ -382,7 +391,7 @@ const Navbar = () => {
         onClick={clearFilters}
         className="min-h-11 rounded-xl border border-[#d5d0c5] px-4 py-2 text-sm font-semibold text-[#41443b] transition hover:border-[#a8a597] hover:bg-[#f7f5f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
       >
-        پاک‌کردن
+        پاک‌کردن فیلترها
       </button>
     </div>
   );
@@ -456,7 +465,9 @@ const Navbar = () => {
                 </button>
                 <button
                   type="button"
-                  aria-label="نمایش فیلترها"
+                  aria-label={activeFilterCount > 0
+                    ? `نمایش فیلترها، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
+                    : "نمایش فیلترها"}
                   aria-expanded={desktopFiltersOpen}
                   aria-controls="desktop-product-filters"
                   onClick={() => {
@@ -467,6 +478,14 @@ const Navbar = () => {
                 >
                   <SlidersHorizontal size={16} aria-hidden="true" />
                   <span>فیلترها</span>
+                  {activeFilterCount > 0 && (
+                    <span
+                      aria-label={`${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`}
+                      className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[11px] font-bold leading-none text-white"
+                    >
+                      {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
+                    </span>
+                  )}
                   <ChevronDown size={14} className={`transition-transform ${desktopFiltersOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                 </button>
               </form>
@@ -493,10 +512,17 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen(true)}
-                aria-label="باز کردن جست‌وجو و فیلتر محصولات"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
+                aria-label={activeFilterCount > 0
+                  ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
+                  : "باز کردن جست‌وجو و فیلتر محصولات"}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
               >
                 <Search size={18} aria-hidden="true" />
+                {activeFilterCount > 0 && (
+                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[#f7f5f0] bg-[#68745f] px-1 py-0.5 text-[10px] font-bold leading-none text-white">
+                    {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
+                  </span>
+                )}
               </button>
 
               {user && (
