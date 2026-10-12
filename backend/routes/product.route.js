@@ -1,22 +1,27 @@
 import express from "express";
 import {
-	createProduct,
-	deleteProduct,
-	getAllProducts,
-	getFeaturedProducts,
-	getProductById,
-	getProductsByCategory,
-	getRecommendedProducts,
-	toggleFeaturedProduct,
+  createProduct,
+  deleteProduct,
+  getAllProducts,
+  getFeaturedProducts,
+  getNewestProducts,
+  getProductById,
+  getProductsByCategory,
+  getRecommendedProducts,
+  getSearchedProducts,
+  toggleFeaturedProduct,
 } from "../controllers/product.controller.js";
 import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.get("/", protectRoute, adminRoute, getAllProducts);
+// Specific paths must be registered before /:id.
+router.get("/search", getSearchedProducts);
+router.get("/newest", getNewestProducts);
 router.get("/featured", getFeaturedProducts);
 router.get("/category/:category", getProductsByCategory);
 router.get("/recommendations", getRecommendedProducts);
+router.get("/", protectRoute, adminRoute, getAllProducts);
 router.get("/:id", getProductById);
 router.post("/", protectRoute, adminRoute, createProduct);
 router.patch("/:id", protectRoute, adminRoute, toggleFeaturedProduct);
