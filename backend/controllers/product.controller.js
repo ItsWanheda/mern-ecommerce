@@ -348,8 +348,6 @@ export const getBestsellingProducts = async (req, res) => {
         orderIds: { $addToSet: "$_id" },
       } },
       { $addFields: { orderCount: { $size: "$orderIds" } } },
-      { $sort: { soldQuantity: -1, orderCount: -1, _id: 1 } },
-      { $limit: limit },
       { $lookup: {
         from: Product.collection.name,
         localField: "_id",
@@ -358,6 +356,8 @@ export const getBestsellingProducts = async (req, res) => {
       } },
       { $unwind: "$product" },
       { $match: { "product.isActive": { $ne: false } } },
+      { $sort: { soldQuantity: -1, orderCount: -1, _id: 1 } },
+      { $limit: limit },
       { $replaceRoot: { newRoot: {
         $mergeObjects: [
           "$product",
