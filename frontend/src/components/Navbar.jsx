@@ -6,6 +6,8 @@ import {
   LogIn,
   LogOut,
   Lock,
+  Menu,
+  UserRound,
   Search,
   SlidersHorizontal,
   X,
@@ -56,9 +58,11 @@ const Navbar = () => {
   const navigate = useNavigate();
   const desktopSearchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
+  const accountMenuRef = useRef(null);
   const [filters, setFilters] = useState(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [searchSuggestions, setSearchSuggestions] = useState({ products: [], loading: false, error: false });
@@ -141,6 +145,24 @@ const Navbar = () => {
   }, [activeSearchSurface]);
 
   useEffect(() => {
+    if (!accountMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!accountMenuRef.current?.contains(event.target)) setAccountMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [accountMenuOpen]);
+
+  useEffect(() => {
     if (!mobileSearchOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
@@ -157,6 +179,12 @@ const Navbar = () => {
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [mobileSearchOpen]);
+
+  const handleLogout = async () => {
+    setAccountMenuOpen(false);
+    await logout();
+    navigate("/");
+  };
 
   const linkClass = ({ isActive }) =>
     `inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] ${isActive ? "bg-[#e9e5dc] text-[#252722]" : "text-[#62645c] hover:bg-[#e9e5dc] hover:text-[#252722]"}`;
@@ -408,48 +436,92 @@ const Navbar = () => {
       >
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
           <div className="relative flex min-h-14 items-center justify-between gap-2 py-3 sm:gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:justify-normal">
-            <div className="flex shrink-0 items-center gap-1 lg:col-start-3 lg:row-start-1 lg:justify-self-end lg:gap-2">
-              {user ? (
-                <button
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
-                  onClick={logout}
-                  type="button"
-                  aria-label="خروج از حساب"
-                >
-                  <LogOut size={16} aria-hidden="true" />
-                  <span className="hidden sm:inline">خروج</span>
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-4"
-                >
-                  <LogIn size={16} aria-hidden="true" />
-                  <span>ورود</span>
-                </Link>
-              )}
+            <div
+              ref={accountMenuRef}
+              className="relative z-50 flex shrink-0 items-center gap-1 lg:col-start-3 lg:row-start-1 lg:justify-self-end lg:gap-2"
+            >
+              <button
+                type="button"
+                aria-label={accountMenuOpen ? "بستن منوی حساب کاربری" : "باز کردن منوی حساب کاربری"}
+                aria-expanded={accountMenuOpen}
+                aria-controls="account-menu"
+                onClick={() => setAccountMenuOpen((open) => !open)}
+                className="order-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:order-2"
+              >
+                {accountMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+              </button>
 
-              {user && (
-                <Link
-                  to="/cart"
-                  aria-label={cart.length > 0 ? `سبد خرید، ${new Intl.NumberFormat("fa-IR").format(cart.length)} کالا` : "سبد خرید"}
-                  className="relative inline-flex h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-3"
-                >
-                  <ShoppingCart size={18} aria-hidden="true" />
-                  <span className="hidden lg:inline">سبد خرید</span>
-                  {cart.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-xs font-semibold text-white">{new Intl.NumberFormat("fa-IR").format(cart.length)}</span>}
-                </Link>
-              )}
+              <Link
+                to="/cart"
+                aria-label={cart.length > 0 ? `سبد خرید، ${new Intl.NumberFormat("fa-IR").format(cart.length)} کالا` : "سبد خرید"}
+                className="order-2 relative inline-flex h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-3 lg:order-1"
+              >
+                <ShoppingCart size={18} aria-hidden="true" />
+                <span className="hidden lg:inline">سبد خرید</span>
+                {cart.length > 0 && (
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-xs font-semibold text-white">
+                    {new Intl.NumberFormat("fa-IR").format(cart.length)}
+                  </span>
+                )}
+              </Link>
 
-              {isAdmin && (
-                <Link
-                  className="inline-flex h-10 items-center gap-2 rounded-full border border-[#d5d0c5] px-2.5 text-sm font-medium text-[#41443b] transition hover:border-[#68745f] hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-3"
-                  to="/secret-dashboard"
-                  aria-label="داشبورد مدیریت"
+              {accountMenuOpen && (
+                <div
+                  id="account-menu"
+                  dir="rtl"
+                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] w-64 overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:left-0 lg:right-auto"
                 >
-                  <Lock size={16} aria-hidden="true" />
-                  <span className="hidden lg:inline">مدیریت</span>
-                </Link>
+                  <div className="border-b border-[#eeeae2] px-3 py-3">
+                    <p className="text-sm font-bold text-[#252722]">حساب کاربری</p>
+                    {user && (
+                      <p className="mt-1 break-words text-xs text-[#85867d]">{user.name || user.email || "کاربر فروشگاه"}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 py-2">
+                    {!user ? (
+                      <>
+                        <Link
+                          to="/login"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                        >
+                          <LogIn size={17} aria-hidden="true" />
+                          ورود به حساب
+                        </Link>
+                        <Link
+                          to="/signup"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                        >
+                          <UserRound size={17} aria-hidden="true" />
+                          ایجاد حساب کاربری
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        {isAdmin && (
+                          <Link
+                            to="/secret-dashboard"
+                            onClick={() => setAccountMenuOpen(false)}
+                            className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                          >
+                            <Lock size={17} aria-hidden="true" />
+                            داشبورد مدیریت
+                          </Link>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-right text-sm font-medium text-[#8b3d34] transition hover:bg-[#f8eeeb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                        >
+                          <LogOut size={17} aria-hidden="true" />
+                          خروج از حساب
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
