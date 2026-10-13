@@ -30,6 +30,15 @@ const benefits = [
   { icon: ShieldCheck, title: "راهنما و پشتیبانی", text: "پاسخ پرسش‌های خرید و راه ارتباط رسمی فروشگاه.", href: "/support" },
 ];
 
+// TEMPORARY HERO DEMO — set to false to restore live campaign/catalog behavior.
+const SHOW_HERO_DEMO_PRODUCT = true;
+const HERO_DEMO_PRODUCT = {
+  _id: "hero-demo-product",
+  name: "کت مینیمال پاییزی",
+  image: "/jackets.jpg",
+  isDemo: true,
+};
+
 const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
@@ -61,19 +70,20 @@ const HomePage = () => {
   const catalogProducts = [...featuredProducts, ...bestsellers, ...newestProducts]
     .filter((product, index, products) => product?._id && products.findIndex((item) => item?._id === product._id) === index);
 
-  // Campaigns are already time-filtered by the API. Only promote one in the hero
-  // when its image and local destination are both ready to use.
-  const heroCampaign = campaigns.find((campaign) => {
+  // Campaigns are time-filtered by the API. The temporary demo intentionally takes
+  // priority while enabled; turning the toggle off restores the normal live behavior.
+  const heroCampaign = SHOW_HERO_DEMO_PRODUCT ? null : campaigns.find((campaign) => {
     const hasTitle = typeof campaign?.title === "string" && campaign.title.trim();
     const hasImage = typeof campaign?.image === "string" && campaign.image.trim();
     const href = campaign?.href;
     return hasTitle && hasImage && typeof href === "string" && href.startsWith("/") && !href.startsWith("//");
   });
-  const heroProduct = catalogProducts.find((product) =>
+  const liveHeroProduct = catalogProducts.find((product) =>
     typeof product?.image === "string" &&
     product.image.trim() &&
     !(typeof product.stock === "number" && product.stock <= 0)
   );
+  const heroProduct = SHOW_HERO_DEMO_PRODUCT ? HERO_DEMO_PRODUCT : liveHeroProduct;
   const heroImage = heroCampaign?.image || heroProduct?.image || "/jackets.jpg";
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
@@ -113,6 +123,19 @@ const HomePage = () => {
                   <Sparkles size={14} aria-hidden="true" />
                   پیشنهاد فعال فروشگاه
                 </div>
+              ) : heroProduct?.isDemo ? (
+                <div
+                  aria-label="محصول آزمایشی؛ در کاتالوگ ثبت نشده"
+                  className="absolute bottom-4 right-4 max-w-[calc(100%-2rem)] rounded-2xl border border-white/70 bg-white/90 p-3 text-[#252722] shadow-lg backdrop-blur-md sm:bottom-5 sm:right-5 sm:p-4"
+                >
+                  <span className="inline-flex rounded-full bg-[#f1e3c9] px-2.5 py-1 text-[10px] font-bold text-[#805b24] sm:text-xs">
+                    نمونه نمایشی — قابل خرید نیست
+                  </span>
+                  <span className="mt-2 block text-xs font-semibold sm:text-sm">{heroProduct.name}</span>
+                  <span className="mt-1 block text-[10px] leading-4 text-[#77786f] sm:text-xs">
+                    فقط برای پیش‌نمایش طراحی؛ محصول واقعی فروشگاه نیست.
+                  </span>
+                </div>
               ) : heroProduct ? (
                 <Link
                   to={`/product/${heroProduct._id}`}
@@ -133,7 +156,7 @@ const HomePage = () => {
             <div className="relative z-10 order-2 min-w-0 px-5 py-8 sm:px-10 sm:py-12 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
               <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#68745f] sm:mb-5 sm:text-xs sm:tracking-[0.22em]">
                 <Sparkles size={15} aria-hidden="true" />
-                {heroCampaign ? "پیشنهاد ویژه تیک بوتیک" : "انتخاب‌های هماهنگ برای هر روز"}
+                {heroProduct?.isDemo ? "پیش‌نمایش موقت محصول" : heroCampaign ? "پیشنهاد ویژه تیک بوتیک" : "انتخاب‌های هماهنگ برای هر روز"}
               </p>
               <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-[#252722] sm:text-5xl sm:leading-[1.08] xl:text-6xl">
                 {heroCampaign ? heroCampaign.title : (
