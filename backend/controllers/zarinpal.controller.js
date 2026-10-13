@@ -6,7 +6,6 @@ import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 
-const currency = () => "IRT";
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
 const apiBase = () => isSandbox()
@@ -300,7 +299,7 @@ export const createZarinpalCheckout = async (req, res) => {
       throw new Error("ZARINPAL_REQUEST_AMBIGUOUS");
     }
 
-    receivedAuthority = payload?.data?.code === 100 && typeof payload?.data?.authority === "string"
+    receivedAuthority = gatewayResponse.ok && payload?.data?.code === 100 && typeof payload?.data?.authority === "string"
       ? payload.data.authority
       : "";
     if (gatewayResponse.ok && payload?.data?.code === 100 && receivedAuthority) {

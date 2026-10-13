@@ -60,12 +60,13 @@ If a reverse proxy exposes the backend under the same origin at `/api`, the fron
 A typical self-hosted deployment has a Node.js backend service, MongoDB, a private Redis instance, and a frontend build served through Nginx or the hosting panel's static-site service.
 
 1. Install a supported Node.js version and install the root and frontend dependencies using their lockfiles.
-2. Configure the backend environment and run the backend with `npm start` from the backend application directory (or use a process manager such as systemd/PM2 to keep it running).
-3. Build the frontend with `npm run build --prefix frontend` and publish `frontend/dist` through your static-site service.
-4. Configure the reverse proxy for `/api` to the backend and ensure cookies/HTTPS are handled correctly.
-5. Confirm the backend domain is publicly reachable for the payment callback.
-6. Back up the database and complete the order-index migration before live checkout.
-7. Keep secrets server-side and restrict MongoDB/Redis network access to the application and administration hosts.
+2. Use MongoDB configured as a replica set (or a managed deployment that supports transactions) for production. The inventory release path is atomic when transactions are supported; the standalone compatibility fallback is not an equivalent production safety guarantee.
+3. Configure the backend environment and run the backend with `npm start` from the backend application directory (or use a process manager such as systemd/PM2 to keep it running).
+4. Build the frontend with `npm run build --prefix frontend` and publish `frontend/dist` through your static-site service.
+5. Configure the reverse proxy for `/api` to the backend and ensure cookies/HTTPS are handled correctly.
+6. Confirm the backend domain is publicly reachable for the payment callback.
+7. Back up the database and complete the order-index migration before live checkout.
+8. Keep secrets server-side and restrict MongoDB/Redis network access to the application and administration hosts.
 
 The repository still contains optional Vercel configuration for deployments that use Vercel. Those files do not configure cron jobs on an Iranian VPS, control panel, or other hosting provider.
 
