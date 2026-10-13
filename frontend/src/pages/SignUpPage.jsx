@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
 
 const SignUpPage = () => {
+	const location = useLocation();
 	const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
 	const [showPassword, setShowPassword] = useState(false);
 	const { signup, loading } = useUserStore();
@@ -88,7 +89,7 @@ const SignUpPage = () => {
 							<ShieldCheck size={16} className="shrink-0 text-[#68745f]" aria-hidden="true" />
 							اطلاعات شما خصوصی و محافظت‌شده باقی می‌ماند.
 						</div>
-						<p className="mt-6 text-center text-sm text-[#77786f]">از قبل حساب کاربری دارید؟{" "}<Link to="/login" className="font-semibold text-[#68745f] underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-[#41443b]">ورود</Link></p>
+						<p className="mt-6 text-center text-sm text-[#77786f]">از قبل حساب کاربری دارید؟{" "}<Link to="/login" state={location.state?.from ? { from: location.state.from } : undefined} className="font-semibold text-[#68745f] underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-[#41443b]">ورود</Link></p>
 					</div>
 				</motion.section>
 			</div>
