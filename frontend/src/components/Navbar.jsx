@@ -527,10 +527,10 @@ const Navbar = () => {
 
             <Link
               to="/"
-              aria-label="صفحه اصلی فروشگاه"
+              aria-label="صفحه اصلی تیک بوتیک"
               className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
             >
-              فروشگاه<span className="mr-1 text-[#68745f]">.</span>
+              تیک بوتیک
             </Link>
 
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start min-[1680px]:order-none min-[1680px]:basis-auto min-[1680px]:col-start-1 min-[1680px]:row-start-1 min-[1680px]:w-full min-[1680px]:flex-initial min-[1680px]:justify-self-stretch">
