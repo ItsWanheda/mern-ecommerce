@@ -190,9 +190,6 @@ const reserveInventory = async (items, productsById) => {
   }
 };
 export const createZarinpalCheckout = async (req, res) => {
-  if (currency() !== "IRT") {
-    return res.status(503).json({ message: "Zarinpal checkout requires a Toman catalogue with whole-Toman prices." });
-  }
   if (!isTomanCatalogConfirmed()) {
     return res.status(503).json({ message: "پرداخت تا زمان تأیید قیمت‌های واقعی کاتالوگ به تومان غیرفعال است." });
   }
@@ -303,7 +300,9 @@ export const createZarinpalCheckout = async (req, res) => {
       throw new Error("ZARINPAL_REQUEST_AMBIGUOUS");
     }
 
-    receivedAuthority = typeof payload?.data?.authority === "string" ? payload.data.authority : "";
+    receivedAuthority = payload?.data?.code === 100 && typeof payload?.data?.authority === "string"
+      ? payload.data.authority
+      : "";
     if (gatewayResponse.ok && payload?.data?.code === 100 && receivedAuthority) {
       order.zarinpalAuthority = receivedAuthority;
       order.paymentRequestStatus = "accepted";
