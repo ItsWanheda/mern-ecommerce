@@ -101,18 +101,18 @@ const OrderSummary = () => {
   return (
     <motion.div
       dir="rtl"
-      className="space-y-4 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 shadow-sm sm:p-6 lg:sticky lg:top-24"
+      className="space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <p className="font-serif text-2xl font-medium text-[#252722]">خلاصه سفارش</p>
+      <p className="text-xl font-semibold text-[#68745f]">خلاصه سفارش</p>
 
       <div className="space-y-4">
         <div className="space-y-3">
           <dl className="flex items-center justify-between gap-4">
-            <dt className="text-sm font-normal text-[#55584f]">قیمت محصولات</dt>
-            <dd dir="ltr" className="text-sm font-semibold text-[#252722]">{formatPrice(subtotal, paymentConfig.currency)}</dd>
+            <dt className="text-sm font-normal text-gray-300">قیمت محصولات</dt>
+            <dd dir="ltr" className="text-sm font-medium text-white">{formatPrice(subtotal, paymentConfig.currency)}</dd>
           </dl>
 
           {savings > 0 && (
@@ -129,16 +129,16 @@ const OrderSummary = () => {
             </dd>
           </dl>
 
-          {shipping.error && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">{shipping.error}</p>}
+          {shipping.error && <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">{shipping.error}</p>}
 
           {shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
-            <p className="text-xs leading-5 text-[#55584f]">
+            <p className="text-xs leading-5 text-gray-400">
               برای ارسال رایگان، مبلغ سفارش باید به {formatPrice(shipping.freeShippingThreshold, paymentConfig.currency)} برسد.
             </p>
           )}
 
-          <dl className="flex items-center justify-between gap-4 border-t border-[#e4e0d8] pt-4">
-            <dt className="text-base font-bold text-[#252722]">مبلغ نهایی تقریبی</dt>
+          <dl className="flex items-center justify-between gap-4 border-t border-gray-600 pt-3">
+            <dt className="text-base font-bold text-white">مبلغ نهایی تقریبی</dt>
             <dd dir="ltr" className="text-base font-bold text-[#68745f]">{formatPrice(estimatedTotal, paymentConfig.currency)}</dd>
           </dl>
           <p className="text-xs leading-5 text-gray-400">مبلغ نهایی و موجودی کالا در سمت سرور دوباره بررسی می‌شود.</p>
@@ -153,7 +153,7 @@ const OrderSummary = () => {
         <motion.button
           type="button"
           disabled={checkoutLoading || paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error) || !cart.length}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus:outline-none focus:ring-4 focus:ring-[#68745f]/30 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus:outline-none focus:ring-4 focus:ring-[#68745f]/40 disabled:cursor-not-allowed disabled:opacity-50"
           whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
           whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
           onClick={handlePayment}
@@ -163,8 +163,8 @@ const OrderSummary = () => {
         </motion.button>
 
         <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-normal text-[#55584f]">یا</span>
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-[#536049] underline hover:text-[#252722] hover:no-underline">
+          <span className="text-sm font-normal text-gray-400">یا</span>
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#68745f] underline hover:text-[#68745f] hover:no-underline">
             <ArrowLeft size={16} aria-hidden="true" />ادامه خرید
           </Link>
         </div>
