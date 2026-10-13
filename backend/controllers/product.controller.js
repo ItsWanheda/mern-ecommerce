@@ -7,9 +7,7 @@ const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 };
-const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
-
-export const getAllProducts");
+const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
 let cacheWarningLogged = false;
 const readJsonCache = async (key) => {
   try {
