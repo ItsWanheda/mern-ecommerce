@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 
 const CategoryItem = ({ category }) => {
 	return (
-		<article className="group relative h-72 w-full overflow-hidden rounded-xl bg-[#e9e5dc] sm:h-80 lg:h-[22rem]">
+		<article className="group relative h-64 w-full overflow-hidden rounded-2xl bg-[#e9e5dc] sm:h-80 lg:h-[22rem]">
 			<Link
-				to={"/category" + category.href}
+				to={category.href}
 				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
 				aria-label={`مشاهده ${category.name}`}
 			>
@@ -16,9 +16,9 @@ const CategoryItem = ({ category }) => {
 					loading="lazy"
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent transition-colors duration-300 group-hover:from-black/75" />
-				<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-6">
+				<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:gap-4 sm:p-6">
 					<div>
-						<h3 className="font-serif text-2xl font-medium text-white sm:text-3xl">{category.name}</h3>
+						<h3 className="font-serif text-xl font-medium text-white sm:text-3xl">{category.name}</h3>
 						<p className="mt-1 text-sm text-white/80">مشاهده مجموعه</p>
 					</div>
 					<span className="mb-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/60 text-white transition group-hover:border-white group-hover:bg-white group-hover:text-[#252722]">
