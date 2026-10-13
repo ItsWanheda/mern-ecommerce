@@ -61,6 +61,24 @@ const HomePage = () => {
   const catalogProducts = [...featuredProducts, ...bestsellers, ...newestProducts]
     .filter((product, index, products) => product?._id && products.findIndex((item) => item?._id === product._id) === index);
 
+  // Campaigns are already time-filtered by the API. Only promote one in the hero
+  // when its image and local destination are both ready to use.
+  const heroCampaign = campaigns.find((campaign) => {
+    const hasTitle = typeof campaign?.title === "string" && campaign.title.trim();
+    const hasImage = typeof campaign?.image === "string" && campaign.image.trim();
+    const href = campaign?.href;
+    return hasTitle && hasImage && typeof href === "string" && href.startsWith("/") && !href.startsWith("//");
+  });
+  const heroProduct = catalogProducts.find((product) =>
+    typeof product?.image === "string" &&
+    product.image.trim() &&
+    !(typeof product.stock === "number" && product.stock <= 0)
+  );
+  const heroImage = heroCampaign?.image || heroProduct?.image || "/jackets.jpg";
+  const secondaryCampaigns = campaigns.filter(
+    (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
+  );
+
   const sampleProductsForLook = (collection) => {
     const used = new Set();
     return collection.categories
@@ -76,20 +94,70 @@ const HomePage = () => {
   return (
     <main dir="rtl" className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
       <div className="mx-auto max-w-[1920px] px-3 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 2xl:px-12">
-        <section className="relative isolate overflow-hidden rounded-2xl bg-[#e9e5dc]">
+        <section className="relative isolate overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc]">
           <div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
-            <div className="relative order-1 min-h-[200px] overflow-hidden sm:min-h-[280px] lg:order-2 lg:min-h-[540px]">
-              <img src="/jackets.jpg" alt="مدل‌های ماندگار کت و کاپشن را ببینید" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high" />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e9e5dc]/30 lg:bg-gradient-to-l lg:from-transparent lg:via-[#e9e5dc]/10 lg:to-[#e9e5dc]/30" />
-              <div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium tracking-wide text-[#252722] backdrop-blur-sm">سادگی با جلوه‌ای خاص</div>
+            <div className="relative order-1 min-h-[250px] overflow-hidden sm:min-h-[320px] lg:order-2 lg:min-h-[540px]">
+              <img
+                src={heroImage}
+                alt={heroCampaign ? heroCampaign.title : heroProduct?.name || "پوشاک تیک بوتیک"}
+                className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center p-6 sm:p-8 lg:p-10"}`}
+                fetchPriority="high"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = "/jackets.jpg";
+                }}
+              />
+              <div className={`absolute inset-0 ${heroCampaign ? "bg-gradient-to-l from-[#252722]/30 via-transparent to-transparent" : "bg-gradient-to-t from-[#e9e5dc]/20 via-transparent to-transparent"}`} />
+              {heroCampaign ? (
+                <div className="absolute bottom-5 right-5 inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-4 py-2 text-xs font-semibold text-[#252722] shadow-sm backdrop-blur-sm">
+                  <Sparkles size={14} aria-hidden="true" />
+                  پیشنهاد فعال فروشگاه
+                </div>
+              ) : heroProduct ? (
+                <Link
+                  to={`/product/${heroProduct._id}`}
+                  className="absolute bottom-4 right-4 flex max-w-[calc(100%-2rem)] items-center gap-3 rounded-2xl border border-white/70 bg-white/90 p-3 text-[#252722] shadow-lg backdrop-blur-md transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:bottom-5 sm:right-5 sm:p-4"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-medium text-[#68745f] sm:text-xs">از محصولات تیک بوتیک</span>
+                    <span className="mt-1 block line-clamp-1 text-xs font-semibold sm:text-sm">{heroProduct.name}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-[#252722] sm:text-sm">{formatPrice(heroProduct.price)}</span>
+                </Link>
+              ) : (
+                <div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium text-[#252722] backdrop-blur-sm">
+                  سادگی با جلوه‌ای خاص
+                </div>
+              )}
             </div>
             <div className="relative z-10 order-2 min-w-0 px-5 py-8 sm:px-10 sm:py-12 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
-              <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#68745f] sm:mb-5 sm:text-xs sm:tracking-[0.22em]"><Sparkles size={15} aria-hidden="true" />سبکی سنجیده، راحتی هر روز</p>
-              <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-[#252722] sm:text-5xl sm:leading-[1.08] xl:text-6xl">سبک خودت را پیدا کن.<br />همیشه <span className="italic text-[#68745f]">ماندگار.</span></h1>
-              <p className="mt-4 max-w-md text-sm leading-6 text-[#62645c] sm:mt-6 sm:text-lg sm:leading-7">پوشاک و اکسسوری‌های کاربردی را ببینید؛ انتخاب‌هایی هماهنگ برای تمام فصل‌ها.</p>
+              <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#68745f] sm:mb-5 sm:text-xs sm:tracking-[0.22em]">
+                <Sparkles size={15} aria-hidden="true" />
+                {heroCampaign ? "پیشنهاد ویژه تیک بوتیک" : "انتخاب‌های هماهنگ برای هر روز"}
+              </p>
+              <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-[#252722] sm:text-5xl sm:leading-[1.08] xl:text-6xl">
+                {heroCampaign ? heroCampaign.title : (
+                  <>استایلی که برای تو <br className="hidden sm:block" /><span className="italic text-[#68745f]">ساخته شده.</span></>
+                )}
+              </h1>
+              <p className="mt-4 max-w-md text-sm leading-6 text-[#62645c] sm:mt-6 sm:text-lg sm:leading-7">
+                {heroCampaign
+                  ? heroCampaign.description || "این پیشنهاد را ببینید و محصولات مرتبط را انتخاب کنید."
+                  : "از میان پوشاک و اکسسوری‌های فروشگاه، انتخابی هماهنگ با سبک خودت پیدا کن."}
+              </p>
               <div className="mt-6 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                <Link to="/shop" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">مشاهده محصولات<ArrowLeft size={17} aria-hidden="true" /></Link>
-                <a href="#shop-by-category" className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">دسته‌بندی‌ها</a>
+                {heroCampaign ? (
+                  <Link to={heroCampaign.href} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
+                    مشاهده پیشنهاد<ArrowLeft size={17} aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <Link to="/shop" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
+                    مشاهده محصولات<ArrowLeft size={17} aria-hidden="true" />
+                  </Link>
+                )}
+                <a href="#shop-by-category" className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
+                  {heroCampaign ? "خرید بر اساس دسته‌بندی" : "دسته‌بندی‌ها"}
+                </a>
               </div>
               <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-[#d5d0c5] pt-4 text-[11px] text-[#62645c] sm:mt-8 sm:gap-x-6 sm:gap-y-3 sm:pt-5 sm:text-sm">
                 <span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" />انتخاب‌های روزمره</span>
@@ -117,14 +185,14 @@ const HomePage = () => {
           </div>
         </section>
 
-        {campaigns.length > 0 && (
+        {secondaryCampaigns.length > 0 && (
 <section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
             <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
               <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای ویژه</h2></div>
               <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-[#d5d0c5] px-3 text-xs font-semibold text-[#68745f] transition hover:border-[#252722] hover:text-[#252722] sm:border-0 sm:px-0 sm:text-sm">همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
             </div>
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
-              {campaigns.map((campaign) => (
+              {secondaryCampaigns.map((campaign) => (
                 <Link to={campaign.href} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
                   {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
                   <div className="absolute inset-0 -z-10 bg-gradient-to-l from-[#252722]/85 via-[#252722]/55 to-transparent" />
