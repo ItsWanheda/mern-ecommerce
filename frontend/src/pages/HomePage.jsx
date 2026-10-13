@@ -121,12 +121,12 @@ const HomePage = () => {
               ))}
             </div>
             ) : (
-              <div className="relative isolate overflow-hidden rounded-2xl border border-[#d5d0c5] bg-[#e9ede4] px-5 py-6 sm:px-8 sm:py-8">
+              <div className="relative isolate overflow-hidden rounded-2xl border border-[#d5d0c5] bg-[#e9ede4] p-4 sm:p-5">
                 <div className="absolute -left-8 -top-10 -z-10 h-36 w-36 rounded-full bg-white/40 blur-2xl" />
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="max-w-xl">
                     <span className="inline-flex items-center gap-2 rounded-full border border-[#c7d0bf] bg-white/60 px-3 py-1.5 text-xs font-semibold text-[#526049]"><BadgePercent size={15} aria-hidden="true" /> پیشنهادهای فروشگاه</span>
-                    <h3 className="mt-4 font-serif text-2xl font-medium leading-snug text-[#252722] sm:text-3xl">برای پیشنهاد بعدی آماده‌ایم.</h3>
+                    <h3 className="mt-3 font-serif text-lg font-medium leading-snug text-[#252722] sm:text-xl">برای پیشنهاد بعدی آماده‌ایم.</h3>
                     <p className="mt-2 text-sm leading-6 text-[#62645c]">در حال حاضر پیشنهاد زمان‌دار فعالی نداریم؛ محصولات تازه و مجموعه‌های فروشگاه را ببینید.</p>
                   </div>
                   <Link to="/shop" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">مشاهده محصولات<ArrowLeft size={16} aria-hidden="true" /></Link>
@@ -139,7 +139,7 @@ const HomePage = () => {
           {benefits.map(({ icon: Icon, title, text }) => (
             <div key={title} className="flex items-start gap-3 px-2 py-2 sm:px-3">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9e5dc] text-[#68745f]"><Icon size={20} aria-hidden="true" /></span>
-              <div><h2 className="text-sm font-semibold text-[#252722]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#77786f]">{text}</p></div>
+              <div><h2 className="text-sm font-semibold text-[#252722]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#55584f]">{text}</p></div>
             </div>
           ))}
         </section>
@@ -152,7 +152,7 @@ const HomePage = () => {
               <p className="mt-2 max-w-md text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">با لمس و کشیدن، دسته‌بندی‌ها را مرور کنید.</p>
             </div>
             <div className="flex items-center justify-end gap-3">
-              <span className="text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
+              <span className="text-xs tabular-nums text-[#55584f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
             </div>
           </div>
           <div
@@ -209,7 +209,7 @@ const HomePage = () => {
             <div className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-5 py-8 text-center sm:py-10">
               <PackageCheck size={24} className="mx-auto text-[#68745f]" aria-hidden="true" />
               <p className="mt-3 text-sm font-semibold text-[#41443b]">محصول تازه‌ای برای نمایش نیست.</p>
-              <p className="mt-1 text-xs text-[#77786f]">بعداً دوباره سر بزنید یا محصولات فروشگاه را ببینید.</p>
+              <p className="mt-1 text-xs text-[#55584f]">بعداً دوباره سر بزنید یا محصولات فروشگاه را ببینید.</p>
               <Link to="/shop" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#252722] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b]">رفتن به فروشگاه</Link>
             </div>
           )}
