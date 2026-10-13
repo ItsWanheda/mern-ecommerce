@@ -6,6 +6,14 @@ import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 import { createZarinpalCheckout } from "./zarinpal.controller.js";
 
 const getCartProductId = (item) => item.product?.toString() || item._id?.toString();
+const optionValue = (value) => typeof value === "string" ? value.trim() : "";
+const findVariant = (product, size, color) => (product.variants || []).find((variant) =>
+  optionValue(variant.size) === optionValue(size) && optionValue(variant.color) === optionValue(color)
+);
+const sameCartLine = (item, productId, size, color) =>
+  getCartProductId(item) === productId &&
+  optionValue(item.size) === optionValue(size) &&
+  optionValue(item.color) === optionValue(color);
 const getProvider = () => (process.env.PAYMENT_PROVIDER || "stripe").toLowerCase();
 const getCurrency = () => (process.env.STORE_CURRENCY || "USD").toUpperCase();
 
@@ -26,10 +34,16 @@ export const createCheckoutSession = async (req, res) => {
       const id = getCartProductId(item);
       const product = id && productsById.get(id);
       const quantity = Number(item.quantity);
+      const size = optionValue(item.size);
+      const color = optionValue(item.color);
       if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100) return null;
-      if (typeof product.stock === "number" && product.stock < quantity) return null;
+      const hasVariant = (product.variants || []).length > 0;
+      const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
+      if (hasVariant && !selectedVariant) return null;
+      const availableStock = selectedVariant ? selectedVariant.stock : product.stock;
+      if (typeof availableStock === "number" && availableStock < quantity) return null;
       if (!Number.isFinite(product.price) || product.price < 0) return null;
-      return { product, quantity };
+      return { product, quantity, size, color, hasVariant };
     });
 
     if (checkoutProducts.some((item) => !item)) {
@@ -54,10 +68,13 @@ export const createCheckoutSession = async (req, res) => {
       : subtotal;
     const shippingSettings = await getShippingSettings();
     const shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
-    const lineItems = checkoutProducts.map(({ product, quantity }) => ({
+    const lineItems = checkoutProducts.map(({ product, quantity, size, color }) => ({
       price_data: {
         currency: "usd",
-        product_data: { name: product.name, images: product.image ? [product.image] : [] },
+        product_data: {
+          name: [product.name, size && "Size: " + size, color && "Color: " + color].filter(Boolean).join(" / "),
+          images: product.image ? [product.image] : [],
+        },
         unit_amount: Math.round(product.price * 100),
       },
       quantity,
@@ -84,10 +101,13 @@ export const createCheckoutSession = async (req, res) => {
       metadata: {
         userId: req.user._id.toString(),
         couponCode: coupon?.code || "",
-        products: JSON.stringify(checkoutProducts.map(({ product, quantity }) => ({
+        products: JSON.stringify(checkoutProducts.map(({ product, quantity, size, color, hasVariant }) => ({
           id: product._id.toString(),
           quantity,
           price: product.price,
+          size,
+          color,
+          hasVariant,
         }))),
       },
     });
@@ -111,6 +131,27 @@ const decrementInventory = async (items) => {
       await restoreInventory(changed);
       return { ok: false };
     }
+    const hasVariant = item.hasVariant || (product.variants || []).length > 0;
+    if (hasVariant) {
+      const updated = await Product.findOneAndUpdate(
+        {
+          _id: item.id,
+          variants: { $elemMatch: {
+            size: optionValue(item.size),
+            color: optionValue(item.color),
+            stock: { $gte: item.quantity },
+          } },
+        },
+        { $inc: { "variants.$.stock": -item.quantity } },
+        { new: true }
+      ).lean();
+      if (!updated) {
+        await restoreInventory(changed);
+        return { ok: false };
+      }
+      changed.push({ id: item.id, quantity: item.quantity, size: optionValue(item.size), color: optionValue(item.color), hasVariant: true });
+      continue;
+    }
     if (typeof product.stock !== "number") continue; // legacy product without tracked stock
     const updated = await Product.findOneAndUpdate(
       { _id: item.id, stock: { $gte: item.quantity } },
@@ -121,20 +162,30 @@ const decrementInventory = async (items) => {
       await restoreInventory(changed);
       return { ok: false };
     }
-    changed.push({ id: item.id, quantity: item.quantity });
+    changed.push({ id: item.id, quantity: item.quantity, hasVariant: false });
   }
   return { ok: true, changed };
 };
 
 const restoreInventory = async (items) => {
   for (const item of items) {
-    await Product.updateOne({ _id: item.id }, { $inc: { stock: item.quantity } });
+    if (item.hasVariant) {
+      await Product.updateOne(
+        { _id: item.id, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
+        { $inc: { "variants.$.stock": item.quantity } }
+      );
+    } else {
+      await Product.updateOne({ _id: item.id }, { $inc: { stock: item.quantity } });
+    }
   }
 };
 
-const removePurchasedItemsFromCart = async (user, purchasedIds) => {
-  const idSet = new Set(purchasedIds);
-  user.cartItems = user.cartItems.filter((item) => !idSet.has(getCartProductId(item)));
+const removePurchasedItemsFromCart = async (user, purchasedItems) => {
+  user.cartItems = user.cartItems.filter((item) =>
+    !purchasedItems.some((purchased) =>
+      sameCartLine(item, purchased.id, purchased.size, purchased.color)
+    )
+  );
   await user.save();
 };
 
@@ -164,6 +215,9 @@ export const checkoutSuccess = async (req, res) => {
       id: String(item.id || ""),
       quantity: Number(item.quantity),
       price: Number(item.price),
+      size: optionValue(item.size),
+      color: optionValue(item.color),
+      hasVariant: item.hasVariant === true,
     }));
     if (safeItems.some((item) => !item.id || !Number.isInteger(item.quantity) || item.quantity < 1 ||
         !Number.isFinite(item.price) || item.price < 0)) {
@@ -191,6 +245,8 @@ export const checkoutSuccess = async (req, res) => {
           product: item.id,
           quantity: item.quantity,
           price: item.price,
+          size: item.size,
+          color: item.color,
           stockReserved: false,
         })),
         totalAmount: Number(session.amount_total || 0) / 100,
@@ -213,7 +269,7 @@ export const checkoutSuccess = async (req, res) => {
         { $set: { isActive: false } }
       );
     }
-    await removePurchasedItemsFromCart(req.user, safeItems.map((item) => item.id));
+    await removePurchasedItemsFromCart(req.user, safeItems);
     return res.status(200).json({ success: true, orderId: newOrder._id });
   } catch (error) {
     console.error("Error processing successful checkout:", error.message);
