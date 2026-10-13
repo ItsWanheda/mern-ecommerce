@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, LoaderCircle, Truck } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCartStore } from "../stores/useCartStore";
+import { useUserStore } from "../stores/useUserStore";
 import axios from "../lib/axios";
 import { formatPrice, STORE_CURRENCY } from "../lib/commerce";
 
 const OrderSummary = () => {
   const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
+  const { user } = useUserStore();
+  const navigate = useNavigate();
+  const hasUnmergedItems = cart.some((item) => item.guestOnly);
   const [paymentConfig, setPaymentConfig] = useState({
     provider: "stripe",
     currency: STORE_CURRENCY,
@@ -66,6 +70,13 @@ const OrderSummary = () => {
 
   const handlePayment = async () => {
     if (!cart.length) return toast.error("سبد خرید شما خالی است");
+    if (!user) {
+      navigate("/login", { state: { from: { pathname: "/cart" } } });
+      return;
+    }
+    if (hasUnmergedItems) {
+      return toast.error("ابتدا گزینه‌های موجودی‌نامشخص را از سبد حذف کنید");
+    }
     if (!paymentConfig.configured) {
       return toast.error(paymentConfig.message || "درگاه پرداخت در حال حاضر آماده نیست");
     }
@@ -106,7 +117,18 @@ const OrderSummary = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <p className="text-xl font-semibold text-[#68745f]">خلاصه سفارش</p>
+      <p className="text-xl font-semibold text-[#9aa58e]">خلاصه سفارش</p>
+      {!user && (
+        <div className="rounded-xl border border-gray-600 bg-gray-900/40 p-3">
+          <p className="text-sm font-semibold text-white">سبد خرید شما محفوظ می‌ماند</p>
+          <p className="mt-1 text-xs leading-5 text-gray-400">برای ثبت سفارش و پرداخت، در مرحله بعد وارد حساب شوید یا حساب بسازید.</p>
+        </div>
+      )}
+      {hasUnmergedItems && (
+        <p role="alert" className="rounded-xl border border-amber-700/50 bg-amber-950/30 p-3 text-xs leading-6 text-amber-200">
+          بعضی گزینه‌های سبد پس از ورود به حساب به‌طور کامل ادغام نشده‌اند. گزینه‌های نشان‌دار را بررسی کنید و اگر موجود نیستند حذف کنید تا پرداخت ادامه پیدا کند.
+        </p>
+      )}
 
       <div className="space-y-4">
         <div className="space-y-3">
@@ -129,7 +151,7 @@ const OrderSummary = () => {
             </dd>
           </dl>
 
-          {shipping.error && <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">{shipping.error}</p>}
+          {user && shipping.error && <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">{shipping.error}</p>}
 
           {shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
             <p className="text-xs leading-5 text-gray-400">
@@ -144,7 +166,7 @@ const OrderSummary = () => {
           <p className="text-xs leading-5 text-gray-400">مبلغ نهایی و موجودی کالا در سمت سرور دوباره بررسی می‌شود.</p>
         </div>
 
-        {!paymentConfig.loading && !paymentConfig.configured && (
+        {user && !paymentConfig.loading && !paymentConfig.configured && (
           <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">
             {paymentConfig.message || "درگاه پرداخت پیکربندی نشده است."}
           </p>
@@ -152,19 +174,25 @@ const OrderSummary = () => {
 
         <motion.button
           type="button"
-          disabled={checkoutLoading || paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error) || !cart.length}
+          disabled={checkoutLoading || !cart.length || hasUnmergedItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus:outline-none focus:ring-4 focus:ring-[#68745f]/40 disabled:cursor-not-allowed disabled:opacity-50"
           whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
           whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
           onClick={handlePayment}
         >
-          {checkoutLoading || paymentConfig.loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : null}
-          {checkoutLoading ? "در حال انتقال به درگاه…" : paymentConfig.provider === "zarinpal" ? "پرداخت آنلاین با زرین‌پال" : "ادامه و پرداخت"}
+          {checkoutLoading || (user && paymentConfig.loading) ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : null}
+          {checkoutLoading ? "در حال انتقال به درگاه…" : !user ? "ورود برای ادامه و پرداخت" : paymentConfig.provider === "zarinpal" ? "پرداخت آنلاین با زرین‌پال" : "ادامه و پرداخت"}
         </motion.button>
 
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-sm font-normal text-gray-400">یا</span>
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#68745f] underline hover:text-[#68745f] hover:no-underline">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-center">
+          {!user && (
+            <>
+              <span className="text-sm text-gray-400">حساب ندارید؟</span>
+              <Link to="/signup" state={{ from: { pathname: "/cart" } }} className="text-sm font-semibold text-[#9aa58e] underline underline-offset-4">ثبت‌نام</Link>
+              <span className="mx-1 text-gray-600">·</span>
+            </>
+          )}
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#9aa58e] underline hover:no-underline">
             <ArrowLeft size={16} aria-hidden="true" />ادامه خرید
           </Link>
         </div>
