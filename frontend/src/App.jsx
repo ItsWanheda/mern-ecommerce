@@ -38,7 +38,7 @@ function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f7f5f0] text-[#252722]">
-      <div className={`relative z-50 ${isAccountPage ? "pt-0" : "pt-20 md:pt-32 min-[1680px]:pt-20"}`}>
+      <div className={`relative z-50 ${isAccountPage ? "pt-0" : "pt-32 md:pt-44 min-[1680px]:pt-32"}`}>
         {!isAccountPage && <Navbar />}
         <Routes>
           <Route path="/" element={<HomePage />} />
