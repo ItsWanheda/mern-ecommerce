@@ -7,7 +7,32 @@ const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 };
-const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+
+export const getAllProducts");
+let cacheWarningLogged = false;
+const readJsonCache = async (key) => {
+  try {
+    const cached = await redis.get(key);
+    return cached ? JSON.parse(cached) : null;
+  } catch (error) {
+    if (!cacheWarningLogged) {
+      console.warn("Redis cache unavailable; continuing with database reads:", error.message);
+      cacheWarningLogged = true;
+    }
+    return null;
+  }
+};
+const writeJsonCache = async (key, value, ttlSeconds) => {
+  try {
+    await redis.set(key, JSON.stringify(value), "EX", ttlSeconds);
+  } catch (error) {
+    if (!cacheWarningLogged) {
+      console.warn("Redis cache unavailable; continuing without cache writes:", error.message);
+      cacheWarningLogged = true;
+    }
+  }
+};
 
 export const getAllProducts = async (_req, res) => {
   try {
@@ -32,13 +57,12 @@ export const getProductById = async (req, res) => {
 };
 
 export const getFeaturedProducts = async (_req, res) => {
+  const cached = await readJsonCache("featured_products_v2");
+  if (Array.isArray(cached)) return res.json(cached);
   try {
-    const cacheKey = "featured_products_v2";
-    const cached = await redis.get(cacheKey);
-    if (cached) return res.json(JSON.parse(cached));
     const featuredProducts = await Product.find({ isFeatured: true, isActive: { $ne: false } })
-      .sort({ createdAt: -1 }).lean();
-    await redis.set(cacheKey, JSON.stringify(featuredProducts), "EX", 300);
+      .sort({ createdAt: -1, _id: -1 }).limit(100).maxTimeMS(1500).lean();
+    await writeJsonCache("featured_products_v2", featuredProducts, 300);
     return res.json(featuredProducts);
   } catch (error) {
     console.error("Error in getFeaturedProducts controller", error.message);
@@ -62,7 +86,7 @@ export const getSearchedProducts = async (req, res) => {
   try {
     const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
     const category = typeof req.query.category === "string" ? req.query.category.trim().slice(0, 64) : "";
-    const page = clampInteger(req.query.page, 1, 1, 100000);
+    const page = clampInteger(req.query.page, 1, 1, 5000);
     const limit = clampInteger(req.query.limit, 24, 1, 48);
     const minPrice = req.query.minPrice === undefined || req.query.minPrice === "" ? null : Number(req.query.minPrice);
     const maxPrice = req.query.maxPrice === undefined || req.query.maxPrice === "" ? null : Number(req.query.maxPrice);
@@ -96,8 +120,8 @@ export const getSearchedProducts = async (req, res) => {
     };
     const sort = sortMap[req.query.sort] || sortMap.newest;
     const [total, products] = await Promise.all([
-      Product.countDocuments(filter),
-      Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).lean(),
+      Product.countDocuments(filter).maxTimeMS(1500),
+      Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean(),
     ]);
     return res.json({ products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
@@ -293,11 +317,14 @@ export const deleteProduct = async (req, res) => {
 
 export const getRecommendedProducts = async (_req, res) => {
   try {
+    const cached = await readJsonCache("recommended_products_v1");
+    if (Array.isArray(cached)) return res.json(cached);
     const products = await Product.aggregate([
       { $match: { isActive: { $ne: false } } },
       { $sample: { size: 4 } },
       { $project: { _id: 1, name: 1, description: 1, image: 1, price: 1, category: 1, stock: 1 } },
-    ]);
+    ]).option({ maxTimeMS: 1500 });
+    await writeJsonCache("recommended_products_v1", products, 60);
     return res.json(products);
   } catch (error) {
     console.error("Error in getRecommendedProducts controller", error.message);
@@ -307,8 +334,9 @@ export const getRecommendedProducts = async (_req, res) => {
 
 export const getProductsByCategory = async (req, res) => {
   try {
+    // Keep the public category endpoint bounded while preserving its response shape.
     const products = await Product.find({ category: req.params.category, isActive: { $ne: false } })
-      .sort({ createdAt: -1 }).lean();
+      .sort({ createdAt: -1, _id: -1 }).limit(200).maxTimeMS(1500).lean();
     return res.json({ products });
   } catch (error) {
     console.error("Error in getProductsByCategory controller", error.message);
@@ -333,8 +361,8 @@ export const toggleFeaturedProduct = async (req, res) => {
 async function updateFeaturedProductsCache() {
   try {
     const products = await Product.find({ isFeatured: true, isActive: { $ne: false } })
-      .sort({ createdAt: -1 }).lean();
-    await redis.set("featured_products_v2", JSON.stringify(products), "EX", 300);
+      .sort({ createdAt: -1, _id: -1 }).limit(100).maxTimeMS(1500).lean();
+    await writeJsonCache("featured_products_v2", products, 300);
   } catch (error) {
     console.error("Unable to refresh featured-products cache", error.message);
   }
@@ -342,8 +370,11 @@ async function updateFeaturedProductsCache() {
 
 
 export const getBestsellingProducts = async (req, res) => {
+  const limit = clampInteger(req.query.limit, 8, 1, 24);
+  const cacheKey = `bestselling_products_v1:${limit}`;
+  const cached = await readJsonCache(cacheKey);
+  if (Array.isArray(cached)) return res.json({ products: cached });
   try {
-    const limit = clampInteger(req.query.limit, 8, 1, 24);
     const products = await Order.aggregate([
       { $match: { paymentStatus: "paid", status: "paid" } },
       { $unwind: "$products" },
@@ -369,7 +400,8 @@ export const getBestsellingProducts = async (req, res) => {
           { soldQuantity: "$soldQuantity", orderCount: "$orderCount" },
         ],
       } } },
-    ]);
+    ]).option({ maxTimeMS: 2500 });
+    await writeJsonCache(cacheKey, products, 60);
     return res.json({ products });
   } catch (error) {
     console.error("Error loading best-selling products", error.message);

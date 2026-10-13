@@ -49,6 +49,8 @@ Keep the existing required database, authentication, and upload environment vari
 
 For the local frontend, set VITE_API_URL to the API base URL including /api if you are not using the development proxy.
 
+The backend reconciliation job uses a separate `CRON_SECRET` environment variable. Generate a long random value (at least 32 characters), configure it only in the backend project, and keep it private. The endpoint returns HTTP 503 until this secret is configured. Never expose it through a `VITE_` variable.
+
 ### Frontend (Vercel client project)
 
 ~~~dotenv
@@ -93,7 +95,7 @@ Use keys from the same Stripe account. The publishable key belongs on the fronte
 - Zarinpal checkout requires STORE_CURRENCY=IRT and whole-Toman product prices; the gateway request converts Toman to Rial by multiplying the payable total by 10.
 - Existing catalogue price and saved shipping values are not automatically converted. Review them before accepting orders.
 - Existing products with stock=null are treated as having untracked stock. Enter opening stock for sellable products from **Admin → Products and inventory** before relying on stock validation.
-- Zarinpal reserves tracked inventory while a payment is pending. Monitor pending orders and add a scheduled reconciliation workflow for abandoned payments before production launch.
+- Zarinpal reserves tracked inventory while a payment is pending. The backend includes a protected reconciliation endpoint that verifies expired payments before releasing inventory and retries incomplete cleanup. Configure `CRON_SECRET` in the backend Production environment and monitor scheduled job logs. The bundled Vercel Hobby schedule is daily; for production recovery every 5 minutes, use Vercel Pro or a trusted external scheduler to call `GET /api/payments/reconcile-pending` with `Authorization: Bearer <CRON_SECRET>`. Gateway timeouts and unrecognized verification errors remain pending for retry rather than being treated as failed payments.
 
 ## Orders and MongoDB indexes
 

@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
-    "build": "node --check api/index.js",
+    "build": "node --check api/index.js && node --check app.js && node --check lib/db.js && node --check lib/redis.js && node --check middleware/rate-limit.middleware.js && node --check controllers/product.controller.js && node --check controllers/zarinpal.controller.js && node --check routes/auth.route.js && node --check routes/payment.route.js && node --check routes/newsletter.route.js",
     "start": "node server.js"
   },
   "dependencies": {

@@ -78,5 +78,7 @@ const productSchema = new mongoose.Schema(
 );
 productSchema.index({ createdAt: -1 });
 productSchema.index({ category: 1, price: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, category: 1, createdAt: -1, _id: -1 });
+productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1, _id: -1 });
 
 export default mongoose.model("Product", productSchema);

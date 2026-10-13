@@ -28,11 +28,15 @@ const orderSchema = new mongoose.Schema(
     zarinpalAuthority: { type: String, unique: true, sparse: true },
     zarinpalRefId: { type: String, default: "" },
     expiresAt: { type: Date, default: null },
+    // Set only after post-payment cleanup (coupon/cart) is successfully completed.
+    finalizedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, paymentProvider: 1, createdAt: 1 });
+orderSchema.index({ paymentProvider: 1, paymentStatus: 1, expiresAt: 1 });
+orderSchema.index({ paymentProvider: 1, paymentStatus: 1, finalizedAt: 1 });
 
 export default mongoose.model("Order", orderSchema);

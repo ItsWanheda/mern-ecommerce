@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { timingSafeEqual } from "node:crypto";
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
@@ -45,7 +46,7 @@ export const getPaymentConfiguration = (_req, res) => {
   });
 };
 
-const releaseReservedInventory = async (items = []) => {
+const releaseReservedInventoryDirect = async (items = []) => {
   for (const item of items) {
     if (!item.stockReserved || !item.product || item.quantity <= 0) continue;
     if (item.hasVariant || item.size || item.color) {
@@ -57,6 +58,88 @@ const releaseReservedInventory = async (items = []) => {
       await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
     }
   }
+};
+
+const isTransactionUnsupported = (error) =>
+  /Transaction numbers are only allowed|replica set|mongos|does not support transactions/i.test(error?.message || "");
+
+const releaseReservedInventory = async (items = [], orderId = null) => {
+  if (!orderId) return releaseReservedInventoryDirect(items);
+
+  const session = await mongoose.startSession();
+  let transactionUnsupported = false;
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findById(orderId).session(session);
+      if (!order) return;
+      let changed = false;
+      for (let index = 0; index < order.products.length; index += 1) {
+        const item = order.products[index];
+        if (!item.stockReserved || !item.product || item.quantity <= 0) continue;
+        const productExists = await Product.exists({ _id: item.product }).session(session);
+        if (productExists) {
+          let result;
+          if (item.hasVariant || item.size || item.color) {
+            result = await Product.updateOne(
+              { _id: item.product, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
+              { $inc: { "variants.$.stock": item.quantity } },
+              { session }
+            );
+          } else {
+            result = await Product.updateOne(
+              { _id: item.product },
+              { $inc: { stock: item.quantity } },
+              { session }
+            );
+          }
+          if (!result.matchedCount) throw new Error("RESERVED_INVENTORY_TARGET_NOT_FOUND");
+        }
+        item.stockReserved = false;
+        changed = true;
+      }
+      if (changed) await order.save({ session });
+    });
+  } catch (error) {
+    if (!isTransactionUnsupported(error)) throw error;
+    transactionUnsupported = true;
+    console.warn("MongoDB transactions are unavailable; using compatibility inventory release:", error.message);
+  } finally {
+    await session.endSession();
+  }
+
+  if (transactionUnsupported) {
+    // Standalone local MongoDB has no transactions. Preserve local development;
+    // production recovery is atomic on MongoDB Atlas/replica sets.
+    await releaseReservedInventoryDirect(items);
+    const updates = {};
+    items.forEach((item, index) => {
+      if (item.stockReserved) updates[`products.${index}.stockReserved`] = false;
+    });
+    if (Object.keys(updates).length) await Order.updateOne({ _id: orderId }, { $set: updates });
+  }
+};
+
+const finalizePaidOrder = async (paidOrder) => {
+  if (!paidOrder || paidOrder.finalizedAt) return;
+  if (paidOrder.couponCode) {
+    await Coupon.findOneAndUpdate(
+      { code: paidOrder.couponCode, userId: paidOrder.user, isActive: true },
+      { $set: { isActive: false } }
+    );
+  }
+  const user = await User.findById(paidOrder.user);
+  if (user) {
+    user.cartItems = (user.cartItems || []).filter((item) =>
+      !(paidOrder.products || []).some((purchased) =>
+        sameCartLine(item, purchased.product.toString(), purchased.size, purchased.color)
+      )
+    );
+    await user.save();
+  }
+  await Order.updateOne(
+    { _id: paidOrder._id, paymentStatus: "paid", finalizedAt: null },
+    { $set: { finalizedAt: new Date() } }
+  );
 };
 
 const reserveInventory = async (items, productsById) => {
@@ -229,7 +312,7 @@ export const createZarinpalCheckout = async (req, res) => {
         { _id: order._id, paymentStatus: "pending" },
         { $set: { paymentStatus: "failed", status: "failed" } }
       ).catch(() => {});
-      await releaseReservedInventory(order.products).catch(() => {});
+      await releaseReservedInventory(order.products, order._id).catch(() => {});
     } else {
       await releaseReservedInventory(reserved).catch(() => {});
     }
@@ -260,6 +343,7 @@ export const verifyZarinpalPayment = async (req, res) => {
     });
     if (!order) return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=order-not-found`);
     if (order.paymentStatus === "paid") {
+      await finalizePaidOrder(order);
       return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
     }
     if (status !== "OK" || order.paymentStatus !== "pending") {
@@ -268,7 +352,7 @@ export const verifyZarinpalPayment = async (req, res) => {
         { $set: { paymentStatus: "failed", status: "cancelled" } },
         { new: true }
       );
-      if (failed) await releaseReservedInventory(failed.products);
+      if (failed) await releaseReservedInventory(failed.products, failed._id);
       return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
     }
 
@@ -290,7 +374,7 @@ export const verifyZarinpalPayment = async (req, res) => {
         { $set: { paymentStatus: "failed", status: "failed" } },
         { new: true }
       );
-      if (failed) await releaseReservedInventory(failed.products);
+      if (failed) await releaseReservedInventory(failed.products, failed._id);
       return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
     }
 
@@ -313,21 +397,7 @@ export const verifyZarinpalPayment = async (req, res) => {
       return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
     }
 
-    if (paid.couponCode) {
-      await Coupon.findOneAndUpdate(
-        { code: paid.couponCode, userId: paid.user, isActive: true },
-        { $set: { isActive: false } }
-      );
-    }
-    const user = await User.findById(paid.user);
-    if (user) {
-      user.cartItems = user.cartItems.filter((item) =>
-        !paid.products.some((purchased) =>
-          sameCartLine(item, purchased.product.toString(), purchased.size, purchased.color)
-        )
-      );
-      await user.save();
-    }
+    await finalizePaidOrder(paid);
     return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
   } catch (error) {
     console.error("Error verifying Zarinpal payment", error.message);
@@ -359,5 +429,149 @@ export const getZarinpalOrderStatus = async (req, res) => {
   } catch (error) {
     console.error("Error loading Zarinpal order status", error.message);
     return res.status(500).json({ message: "Unable to load order status" });
+  }
+};
+
+
+const reconciliationTerminalUnpaidCodes = new Set([-11, -12, -21]);
+
+export const reconcilePendingZarinpalOrders = async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) return res.status(503).json({ message: "CRON_SECRET is not configured" });
+
+  const authorization = typeof req.headers?.authorization === "string" ? req.headers.authorization : "";
+  const suppliedBuffer = Buffer.from(authorization.replace(/^Bearer\s+/i, ""));
+  const expectedBuffer = Buffer.from(cronSecret);
+  if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const summary = {
+    stockReservationsRecovered: 0,
+    paidOrdersFinalized: 0,
+    paymentsRecovered: 0,
+    ordersExpired: 0,
+    deferredForRetry: 0,
+    failures: 0,
+  };
+
+  try {
+    const strandedOrders = await Order.find({
+      paymentProvider: "zarinpal",
+      paymentStatus: { $in: ["failed", "expired"] },
+      products: { $elemMatch: { stockReserved: true } },
+    }).sort({ updatedAt: 1 }).limit(10).lean();
+
+    for (const order of strandedOrders) {
+      try {
+        await releaseReservedInventory(order.products, order._id);
+        summary.stockReservationsRecovered += 1;
+      } catch (error) {
+        summary.failures += 1;
+        console.error("Pending inventory restoration needs retry", String(order._id), error.message);
+      }
+    }
+
+    const unfinalizedPaidOrders = await Order.find({
+      paymentProvider: "zarinpal", paymentStatus: "paid", finalizedAt: null,
+    }).sort({ updatedAt: 1 }).limit(10).lean();
+
+    for (const order of unfinalizedPaidOrders) {
+      try {
+        await finalizePaidOrder(order);
+        summary.paidOrdersFinalized += 1;
+      } catch (error) {
+        summary.failures += 1;
+        console.error("Paid order finalization needs retry", String(order._id), error.message);
+      }
+    }
+
+    const expiredPendingOrders = await Order.find({
+      paymentProvider: "zarinpal",
+      paymentStatus: "pending",
+      expiresAt: { $lte: new Date() },
+    }).sort({ expiresAt: 1, createdAt: 1 }).limit(10).lean();
+
+    for (const order of expiredPendingOrders) {
+      try {
+        if (!order.zarinpalAuthority) {
+          const expired = await Order.findOneAndUpdate(
+            { _id: order._id, paymentStatus: "pending", zarinpalAuthority: { $in: [null, ""] } },
+            { $set: { paymentStatus: "expired", status: "expired" } },
+            { new: true }
+          );
+          if (expired) {
+            summary.ordersExpired += 1;
+            await releaseReservedInventory(expired.products, expired._id);
+          }
+          continue;
+        }
+
+        const response = await fetch(`${apiBase()}/verify.json`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            merchant_id: process.env.ZARINPAL_MERCHANT_ID,
+            amount: order.totalAmount * 10,
+            authority: order.zarinpalAuthority,
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+        const payload = await response.json().catch(() => null);
+        const code = payload?.data?.code;
+
+        if (!response.ok || !Number.isInteger(code)) {
+          summary.deferredForRetry += 1;
+          continue;
+        }
+
+        if (code === 100 || code === 101) {
+          const paid = await Order.findOneAndUpdate(
+            { _id: order._id, paymentStatus: "pending" },
+            { $set: {
+              paymentStatus: "paid",
+              status: "paid",
+              zarinpalRefId: String(payload?.data?.ref_id ?? order.zarinpalRefId ?? ""),
+            } },
+            { new: true }
+          );
+          if (paid) {
+            await finalizePaidOrder(paid);
+            summary.paymentsRecovered += 1;
+          } else {
+            const current = await Order.findById(order._id).lean();
+            if (current?.paymentStatus === "paid" && !current.finalizedAt) {
+              await finalizePaidOrder(current);
+              summary.paidOrdersFinalized += 1;
+            }
+          }
+          continue;
+        }
+
+        // Unknown/provider-configuration errors are deferred so stock is never
+        // released solely because verification timed out or returned an unknown code.
+        if (reconciliationTerminalUnpaidCodes.has(code)) {
+          const expired = await Order.findOneAndUpdate(
+            { _id: order._id, paymentStatus: "pending" },
+            { $set: { paymentStatus: "expired", status: "expired" } },
+            { new: true }
+          );
+          if (expired) {
+            summary.ordersExpired += 1;
+            await releaseReservedInventory(expired.products, expired._id);
+          }
+        } else {
+          summary.deferredForRetry += 1;
+        }
+      } catch (error) {
+        summary.failures += 1;
+        console.error("Payment reconciliation item needs retry", String(order._id), error.message);
+      }
+    }
+
+    return res.status(200).json({ success: summary.failures === 0, ...summary });
+  } catch (error) {
+    console.error("Payment reconciliation failed", error.message);
+    return res.status(500).json({ message: "Payment reconciliation failed" });
   }
 };
