@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { useParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import { useProductStore } from "../stores/useProductStore";
 
 const categoryLabels = {
@@ -51,16 +52,22 @@ const normalizePersian = (value) =>
     .trim()
     .replace(/\s+/g, " ");
 
-const parseToman = (value) => {
+const priceUnitLabel = getCurrencyLabel(STORE_CURRENCY);
+const usesWholeCurrencyUnits = ["IRT", "IRR"].includes(STORE_CURRENCY);
+
+const parseStorePrice = (value) => {
   if (String(value ?? "").trim() === "") return null;
-  const normalized = normalizeDigits(value).replace(/[,\u060C\u066C\u2009\s]/g, "");
-  if (!/^\d+$/.test(normalized)) return Number.NaN;
+  const normalized = normalizeDigits(value)
+    .replace(/[,\u060C\u066C\u2009\s]/g, "")
+    .replace(/[٫]/g, ".");
+  const validFormat = usesWholeCurrencyUnits ? /^\d+$/.test(normalized) : /^\d+(?:\.\d{1,2})?$/.test(normalized);
+  if (!validFormat) return Number.NaN;
   const amount = Number(normalized);
-  return Number.isSafeInteger(amount) ? amount : Number.NaN;
+  if (!Number.isFinite(amount) || amount < 0) return Number.NaN;
+  return usesWholeCurrencyUnits && !Number.isSafeInteger(amount) ? Number.NaN : amount;
 };
 
-const formatToman = (value) =>
-  new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.round(value)) + " تومان";
+const formatStorePrice = (value) => formatPrice(value, STORE_CURRENCY);
 
 const makeEmptyFilters = () => ({
   q: "",
@@ -117,8 +124,8 @@ const isProductAvailable = (product) => {
 };
 
 const getPriceError = (filters) => {
-  const min = parseToman(filters.minPrice);
-  const max = parseToman(filters.maxPrice);
+  const min = parseStorePrice(filters.minPrice);
+  const max = parseStorePrice(filters.maxPrice);
   if (Number.isNaN(min) || Number.isNaN(max)) return "قیمت را فقط با عدد وارد کنید.";
   if (min !== null && max !== null && min > max) {
     return "حداقل قیمت نباید از حداکثر قیمت بیشتر باشد.";
@@ -127,8 +134,8 @@ const getPriceError = (filters) => {
 };
 
 const filterCatalog = (catalog, filters) => {
-  const minPrice = parseToman(filters.minPrice);
-  const maxPrice = parseToman(filters.maxPrice);
+  const minPrice = parseStorePrice(filters.minPrice);
+  const maxPrice = parseStorePrice(filters.maxPrice);
   if (getPriceError(filters)) return [];
 
   const query = normalizePersian(filters.q);
@@ -271,12 +278,12 @@ const CategoryPage = () => {
     const chips = [];
     if (filters.q.trim()) chips.push({ field: "q", label: "جست‌وجو: «" + filters.q.trim() + "»" });
     if (filters.minPrice.trim()) {
-      const value = parseToman(filters.minPrice);
-      chips.push({ field: "minPrice", label: "از " + (value !== null && Number.isFinite(value) ? formatToman(value) : filters.minPrice + " تومان") });
+      const value = parseStorePrice(filters.minPrice);
+      chips.push({ field: "minPrice", label: "از " + (value !== null && Number.isFinite(value) ? formatStorePrice(value) : filters.minPrice + " " + priceUnitLabel) });
     }
     if (filters.maxPrice.trim()) {
-      const value = parseToman(filters.maxPrice);
-      chips.push({ field: "maxPrice", label: "تا " + (value !== null && Number.isFinite(value) ? formatToman(value) : filters.maxPrice + " تومان") });
+      const value = parseStorePrice(filters.maxPrice);
+      chips.push({ field: "maxPrice", label: "تا " + (value !== null && Number.isFinite(value) ? formatStorePrice(value) : filters.maxPrice + " " + priceUnitLabel) });
     }
     filters.sizes.forEach((value) => chips.push({ field: "sizes", value, label: "سایز: " + value }));
     filters.colors.forEach((value) => chips.push({ field: "colors", value, label: "رنگ: " + value }));
@@ -293,7 +300,7 @@ const CategoryPage = () => {
   const renderFilterFields = (current, onFilterChange) => (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       <fieldset className="min-w-0 space-y-2">
-        <legend className="text-sm font-semibold text-[#41443b]">محدوده قیمت (تومان)</legend>
+        <legend className="text-sm font-semibold text-[#41443b]">محدوده قیمت ({priceUnitLabel})</legend>
         <div className="grid grid-cols-2 gap-2">
           <label className="block text-xs text-[#77786f]">
             از
@@ -305,7 +312,7 @@ const CategoryPage = () => {
               value={current.minPrice}
               onChange={(event) => onFilterChange("minPrice", event.target.value)}
               placeholder="۳۰۰۰۰۰"
-              aria-label="حداقل قیمت به تومان"
+              aria-label={"حداقل قیمت به " + priceUnitLabel}
               className="mt-1 min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm tabular-nums text-[#252722] outline-none transition placeholder:text-[#aaa99f] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
             />
           </label>
@@ -319,7 +326,7 @@ const CategoryPage = () => {
               value={current.maxPrice}
               onChange={(event) => onFilterChange("maxPrice", event.target.value)}
               placeholder="۲۰۰۰۰۰۰"
-              aria-label="حداکثر قیمت به تومان"
+              aria-label={"حداکثر قیمت به " + priceUnitLabel}
               className="mt-1 min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm tabular-nums text-[#252722] outline-none transition placeholder:text-[#aaa99f] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
             />
           </label>
@@ -327,7 +334,7 @@ const CategoryPage = () => {
         {getPriceError(current) && (
           <p role="alert" className="text-xs leading-5 text-[#a13f35]">{getPriceError(current)}</p>
         )}
-        <p className="text-[11px] leading-5 text-[#85867d]">قیمت‌ها بر اساس تومان هستند؛ اعداد فارسی و انگلیسی پذیرفته می‌شوند.</p>
+        <p className="text-[11px] leading-5 text-[#85867d]">قیمت‌ها بر اساس {priceUnitLabel} هستند؛ اعداد فارسی و انگلیسی پذیرفته می‌شوند.</p>
       </fieldset>
 
       <fieldset className="min-w-0 space-y-2">
@@ -451,7 +458,7 @@ const CategoryPage = () => {
               {pageTitle}
             </motion.h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#77786f]">
-              با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به تومان، انتخابتان را دقیق‌تر کنید.
+              با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به {priceUnitLabel}، انتخابتان را دقیق‌تر کنید.
             </p>
           </div>
 
