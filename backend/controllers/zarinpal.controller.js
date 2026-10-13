@@ -368,7 +368,15 @@ export const verifyZarinpalPayment = async (req, res) => {
     });
     const payload = await response.json().catch(() => ({}));
     const code = payload?.data?.code;
-    if (!response.ok || (code !== 100 && code !== 101)) {
+    if (!response.ok || !Number.isInteger(code)) {
+      // An HTTP/network/provider response that cannot be classified is not
+      // proof of a failed payment. Leave it pending for the reconciler.
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending`);
+    }
+    if (code !== 100 && code !== 101) {
+      if (!reconciliationTerminalUnpaidCodes.has(code)) {
+        return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending`);
+      }
       const failed = await Order.findOneAndUpdate(
         { _id: order._id, paymentStatus: "pending" },
         { $set: { paymentStatus: "failed", status: "failed" } },

@@ -6,7 +6,7 @@ import { authRateLimit, refreshTokenRateLimit } from "../middleware/rate-limit.m
 const router = express.Router();
 router.post("/signup", authRateLimit, signup);
 router.post("/login", authRateLimit, login);
-router.post("/logout", protectRoute, logout);
+router.post("/logout", logout);
 router.post("/refresh-token", refreshTokenRateLimit, refreshToken);
 router.get("/profile", protectRoute, getProfile);
 export default router;
