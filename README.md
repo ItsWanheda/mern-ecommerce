@@ -46,6 +46,7 @@ STORE_CURRENCY=IRT
 PAYMENT_PROVIDER=zarinpal
 ZARINPAL_MERCHANT_ID=your_zarinpal_merchant_id
 ZARINPAL_SANDBOX=true
+IRT_CATALOG_PRICES_CONFIRMED=false
 API_URL=https://your-public-api.example
 CLIENT_URL=https://your-store.example
 DEFAULT_SHIPPING_FEE=0
@@ -68,7 +69,7 @@ VITE_STORE_CURRENCY=IRT
 VITE_API_URL=https://your-public-api.example/api
 ```
 
-Before deploying IRT to an existing database, set every product price and saved shipping value to its approved whole-Toman amount. Currency environment variables change how amounts are interpreted; they do not convert existing data. Follow the [Persian commerce setup and migration guide](docs/PERSIAN_COMMERCE_SETUP.md) for Vercel variables, sandbox checkout tests, and the optional USD/Stripe configuration.
+Before deploying IRT to an existing database, set every product price and saved shipping value to its approved whole-Toman amount. Currency environment variables change how amounts are interpreted; they do not convert existing data. Keep IRT_CATALOG_PRICES_CONFIRMED=false until that migration is verified, then set it to true in the backend Production environment to unlock checkout. Follow the [Persian commerce setup and migration guide](docs/PERSIAN_COMMERCE_SETUP.md) for Vercel variables, sandbox checkout tests, and the optional USD/Stripe configuration.
 
 ### Run this app locally
 
