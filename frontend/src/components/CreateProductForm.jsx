@@ -5,6 +5,8 @@ import { useProductStore } from "../stores/useProductStore";
 
 const categories = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits", "bags"];
 const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
+const storeCurrency = String(import.meta.env.VITE_STORE_CURRENCY || "IRT").toUpperCase();
+const priceUnitLabel = storeCurrency === "IRT" ? "تومان" : storeCurrency === "IRR" ? "ریال" : storeCurrency;
 const fitOptions = [
   ["true-to-size", "مطابق سایز استاندارد"],
   ["slim", "جذب"],
@@ -138,8 +140,8 @@ const CreateProductForm = () => {
             <textarea value={newProduct.description} onChange={(event) => updateField("description", event.target.value)} rows={3} className={fieldClass} maxLength={5000} required />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className={labelClass}>قیمت ({import.meta.env.VITE_STORE_CURRENCY || "USD"})
-              <input type="number" min="0" step={(import.meta.env.VITE_STORE_CURRENCY || "USD") === "IRT" ? "1" : "0.01"} value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
+            <label className={labelClass}>قیمت ({priceUnitLabel})
+              <input type="number" min="0" step={storeCurrency === "IRT" || storeCurrency === "IRR" ? "1" : "0.01"} value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
             </label>
             {combinations.length === 0 ? (
               <label className={labelClass}>موجودی انبار
