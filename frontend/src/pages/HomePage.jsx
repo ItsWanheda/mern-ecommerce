@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, BadgePercent, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
@@ -31,6 +31,39 @@ const benefits = [
 
 const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const categoryTrackRef = useRef(null);
+  const categorySlideRefs = useRef([]);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+
+  const scrollToCategory = (index) => {
+    const nextIndex = Math.max(0, Math.min(categories.length - 1, index));
+    categorySlideRefs.current[nextIndex]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+    setActiveCategoryIndex(nextIndex);
+  };
+
+  const handleCategoryScroll = () => {
+    const track = categoryTrackRef.current;
+    if (!track) return;
+    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    categorySlideRefs.current.forEach((slide, index) => {
+      if (!slide) return;
+      const rect = slide.getBoundingClientRect();
+      const distance = Math.abs(rect.left + rect.width / 2 - trackCenter);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setActiveCategoryIndex((current) => current === nearestIndex ? current : nearestIndex);
+  };
   const {
     fetchFeaturedProducts,
     featuredProducts,
@@ -50,23 +83,23 @@ const HomePage = () => {
 
   return (
     <main dir="rtl" className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
-      <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8">
         <section className="relative isolate overflow-hidden rounded-2xl bg-[#e9e5dc]">
           <div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
-            <div className="relative order-1 min-h-[280px] overflow-hidden lg:order-2 lg:min-h-[540px]">
+            <div className="relative order-1 min-h-[200px] overflow-hidden sm:min-h-[280px] lg:order-2 lg:min-h-[540px]">
               <img src="/jackets.jpg" alt="مدل‌های ماندگار کت و کاپشن را ببینید" className="absolute inset-0 h-full w-full object-cover object-center" fetchPriority="high" />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e9e5dc]/30 lg:bg-gradient-to-l lg:from-transparent lg:via-[#e9e5dc]/10 lg:to-[#e9e5dc]/30" />
               <div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-white/75 px-4 py-2 text-xs font-medium tracking-wide text-[#252722] backdrop-blur-sm">سادگی با جلوه‌ای خاص</div>
             </div>
-            <div className="relative z-10 order-2 min-w-0 px-6 py-12 sm:px-10 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
-              <p className="mb-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]"><Sparkles size={15} aria-hidden="true" />سبکی سنجیده، راحتی هر روز</p>
-              <h1 className="max-w-xl font-serif text-4xl font-medium leading-[1.08] tracking-tight text-[#252722] sm:text-5xl xl:text-6xl">سبک خودت را پیدا کن.<br />همیشه <span className="italic text-[#68745f]">ماندگار.</span></h1>
-              <p className="mt-6 max-w-md text-base leading-7 text-[#62645c] sm:text-lg">پوشاک و اکسسوری‌های کاربردی را ببینید؛ انتخاب‌هایی هماهنگ برای تمام فصل‌ها.</p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link to="/shop" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">مشاهده محصولات<ArrowLeft size={17} aria-hidden="true" /></Link>
-                <a href="#shop-by-category" className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">دسته‌بندی‌ها</a>
+            <div className="relative z-10 order-2 min-w-0 px-5 py-8 sm:px-10 sm:py-12 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
+              <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#68745f] sm:mb-5 sm:text-xs sm:tracking-[0.22em]"><Sparkles size={15} aria-hidden="true" />سبکی سنجیده، راحتی هر روز</p>
+              <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-[#252722] sm:text-5xl sm:leading-[1.08] xl:text-6xl">سبک خودت را پیدا کن.<br />همیشه <span className="italic text-[#68745f]">ماندگار.</span></h1>
+              <p className="mt-4 max-w-md text-sm leading-6 text-[#62645c] sm:mt-6 sm:text-lg sm:leading-7">پوشاک و اکسسوری‌های کاربردی را ببینید؛ انتخاب‌هایی هماهنگ برای تمام فصل‌ها.</p>
+              <div className="mt-6 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                <Link to="/shop" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">مشاهده محصولات<ArrowLeft size={17} aria-hidden="true" /></Link>
+                <a href="#shop-by-category" className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[#c7c3b9] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">دسته‌بندی‌ها</a>
               </div>
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-[#d5d0c5] pt-5 text-xs text-[#62645c] sm:text-sm">
+              <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-[#d5d0c5] pt-4 text-[11px] text-[#62645c] sm:mt-8 sm:gap-x-6 sm:gap-y-3 sm:pt-5 sm:text-sm">
                 <span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" />انتخاب‌های روزمره</span>
                 <span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" />اطلاعات روشن محصول</span>
               </div>
@@ -74,15 +107,15 @@ const HomePage = () => {
           </div>
         </section>
 
-        {campaigns.length > 0 && (
-          <section aria-labelledby="campaigns-heading" className="pt-10 sm:pt-12">
-            <div className="mb-5 flex items-end justify-between gap-4">
-              <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">تازه در فروشگاه</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای جاری</h2></div>
-              <Link to="/shop" className="inline-flex items-center gap-1 text-sm font-semibold text-[#68745f] hover:text-[#252722]">همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
+        <section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
+            <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
+              <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای ویژه</h2></div>
+              <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-[#d5d0c5] px-3 text-xs font-semibold text-[#68745f] transition hover:border-[#252722] hover:text-[#252722] sm:border-0 sm:px-0 sm:text-sm">همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {campaigns.length > 0 ? (
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
               {campaigns.map((campaign) => (
-                <Link to={campaign.href} key={campaign._id} className="group relative isolate flex min-h-[190px] overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-6 transition hover:border-[#c7c3b9]">
+                <Link to={campaign.href} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
                   {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
                   <div className="absolute inset-0 -z-10 bg-gradient-to-l from-[#252722]/85 via-[#252722]/55 to-transparent" />
                   <div className="my-auto max-w-[80%] text-white">
@@ -94,10 +127,22 @@ const HomePage = () => {
                 </Link>
               ))}
             </div>
+            ) : (
+              <div className="relative isolate overflow-hidden rounded-2xl border border-[#d5d0c5] bg-[#e9ede4] px-5 py-6 sm:px-8 sm:py-8">
+                <div className="absolute -left-8 -top-10 -z-10 h-36 w-36 rounded-full bg-white/40 blur-2xl" />
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="max-w-xl">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[#c7d0bf] bg-white/60 px-3 py-1.5 text-xs font-semibold text-[#526049]"><BadgePercent size={15} aria-hidden="true" /> پیشنهادهای فروشگاه</span>
+                    <h3 className="mt-4 font-serif text-2xl font-medium leading-snug text-[#252722] sm:text-3xl">برای پیشنهاد بعدی آماده‌ایم.</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#62645c]">در حال حاضر پیشنهاد زمان‌دار فعالی نداریم؛ محصولات تازه و مجموعه‌های فروشگاه را ببینید.</p>
+                  </div>
+                  <Link to="/shop" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">مشاهده محصولات<ArrowLeft size={16} aria-hidden="true" /></Link>
+                </div>
+              </div>
+            )}
           </section>
-        )}
 
-        <section className="mt-10 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6">
+        <section className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6">
           {benefits.map(({ icon: Icon, title, text }) => (
             <div key={title} className="flex items-start gap-3 px-2 py-2 sm:px-3">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9e5dc] text-[#68745f]"><Icon size={20} aria-hidden="true" /></span>
@@ -106,24 +151,42 @@ const HomePage = () => {
           ))}
         </section>
 
-        <section id="shop-by-category" className="scroll-mt-28 pt-16 sm:pt-20">
-          <div className="mb-8 flex flex-col gap-3 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
-            <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب مناسب شما</p><h2 className="font-serif text-3xl font-medium tracking-tight text-[#252722] sm:text-4xl">خرید بر اساس دسته‌بندی</h2></div>
-            <p className="max-w-md text-sm leading-6 text-[#62645c] sm:text-right">از آیتم‌های موردنیازتان شروع کنید و استایلی متناسب با خودتان بسازید.</p>
+        <section id="shop-by-category" className="scroll-mt-28 pt-12 sm:pt-16 lg:pt-20">
+          <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">انتخاب مناسب شما</p>
+              <h2 className="font-serif text-2xl font-medium tracking-tight text-[#252722] sm:text-4xl">خرید بر اساس دسته‌بندی</h2>
+              <p className="mt-2 max-w-md text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">با لمس و کشیدن، دسته‌بندی‌ها را مرور کنید.</p>
+            </div>
+            <div className="flex items-center justify-between gap-3 sm:justify-end">
+              <span className="text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => scrollToCategory(activeCategoryIndex - 1)} disabled={activeCategoryIndex === 0} aria-label="دسته‌بندی قبلی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ChevronRight size={18} aria-hidden="true" /></button>
+                <button type="button" onClick={() => scrollToCategory(activeCategoryIndex + 1)} disabled={activeCategoryIndex >= categories.length - 1} aria-label="دسته‌بندی بعدی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ChevronLeft size={18} aria-hidden="true" /></button>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categories.map((category) => <CategoryItem category={category} key={category.name} />)}
+          <div
+            ref={categoryTrackRef}
+            onScroll={handleCategoryScroll}
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4"
+          >
+            {categories.map((category, index) => (
+              <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[82%] shrink-0 snap-center sm:min-w-[46%] lg:min-w-[31.5%]">
+                <CategoryItem category={category} />
+              </div>
+            ))}
           </div>
         </section>
 
-        <section className="pt-16 sm:pt-20" aria-labelledby="collections-heading">
+        <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="collections-heading">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب‌های هماهنگ</p><h2 id="collections-heading" className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">مجموعه‌های پیشنهادی</h2></div>
             <p className="max-w-md text-sm leading-6 text-[#62645c]">ترکیب‌های ساده برای شروع یک انتخاب تازه.</p>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4">
             {collections.map((collection) => (
-              <Link to={collection.href} key={collection.title} className="group relative isolate flex min-h-[250px] items-end overflow-hidden rounded-2xl bg-[#e9e5dc] p-6">
+              <Link to={collection.href} key={collection.title} className="group relative isolate flex min-h-[220px] min-w-[84%] snap-center items-end overflow-hidden rounded-2xl bg-[#e9e5dc] p-5 sm:min-h-[250px] sm:p-6 md:min-w-0">
                 <img src={collection.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
                 <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#252722]/85 via-[#252722]/15 to-transparent" />
                 <div className="text-white"><h3 className="font-serif text-2xl font-medium">{collection.title}</h3><p className="mt-2 text-sm text-white/85">{collection.description}</p><span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده مجموعه<ArrowLeft size={16} aria-hidden="true" /></span></div>
