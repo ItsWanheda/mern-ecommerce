@@ -148,8 +148,8 @@ const HomePage = () => {
                 <h2 id="bestsellers-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">پرفروش‌های فروشگاه</h2>
                 <p className="mt-2 text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">بر اساس تعداد کالا در سفارش‌هایی که پرداختشان تأیید شده است.</p>
               </div>
-              <Link to="/shop?sort=priceDesc" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
-                مرور همه محصولات<ArrowLeft size={15} aria-hidden="true" />
+              <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
+                مشاهده همه محصولات<ArrowLeft size={15} aria-hidden="true" />
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
