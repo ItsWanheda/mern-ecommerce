@@ -107,9 +107,50 @@ export const getSearchedProducts = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, price, image, category, stock } = req.body;
+    const {
+      name, description, price, image, images, category, stock,
+      sizes, colors, variants, fit, sizeChart,
+    } = req.body;
     const numericPrice = price === "" || price === undefined || price === null ? Number.NaN : Number(price);
     const numericStock = stock === "" || stock === undefined || stock === null ? null : Number(stock);
+    const normalizedSizes = Array.isArray(sizes)
+      ? [...new Set(sizes.filter((value) => typeof value === "string").map((value) => value.trim()).filter(Boolean))].slice(0, 24)
+      : [];
+    const normalizedColors = Array.isArray(colors)
+      ? colors.filter((value) => value && typeof value.name === "string")
+          .map((value) => ({ name: value.name.trim().slice(0, 40), hex: typeof value.hex === "string" && /^#[0-9a-fA-F]{6}$/.test(value.hex) ? value.hex : "#d5d0c5" }))
+          .filter((value) => value.name)
+          .filter((value, index, list) => list.findIndex((entry) => entry.name.toLowerCase() === value.name.toLowerCase()) === index)
+          .slice(0, 16)
+      : [];
+    const normalizedVariants = Array.isArray(variants)
+      ? variants.map((variant) => ({
+          size: typeof variant?.size === "string" ? variant.size.trim() : "",
+          color: typeof variant?.color === "string" ? variant.color.trim() : "",
+          stock: Number(variant?.stock),
+        }))
+      : [];
+    const normalizedFit = fit && typeof fit === "object" ? {
+      type: ["true-to-size", "slim", "regular", "relaxed", "oversized", "athletic"].includes(fit.type) ? fit.type : "regular",
+      description: typeof fit.description === "string" ? fit.description.trim().slice(0, 500) : "",
+      modelHeight: typeof fit.modelHeight === "string" ? fit.modelHeight.trim().slice(0, 40) : "",
+      modelSize: typeof fit.modelSize === "string" ? fit.modelSize.trim().slice(0, 24) : "",
+    } : { type: "regular", description: "", modelHeight: "", modelSize: "" };
+    const normalizedSizeChart = Array.isArray(sizeChart)
+      ? sizeChart.filter((row) => row && typeof row.size === "string" && row.size.trim())
+          .slice(0, 24)
+          .map((row) => {
+            const measurement = (value) => value === "" || value === null || value === undefined ? null : Number(value);
+            return {
+              size: row.size.trim().slice(0, 24),
+              chestCm: measurement(row.chestCm),
+              waistCm: measurement(row.waistCm),
+              hipsCm: measurement(row.hipsCm),
+              lengthCm: measurement(row.lengthCm),
+            };
+          })
+      : [];
+
     if (typeof name !== "string" || !name.trim() ||
         typeof description !== "string" || !description.trim() ||
         typeof category !== "string" || !category.trim() ||
@@ -117,14 +158,58 @@ export const createProduct = async (req, res) => {
         (numericStock !== null && (!Number.isInteger(numericStock) || numericStock < 0))) {
       return res.status(400).json({ message: "Provide valid product details, price, and stock" });
     }
-    let imageUrl = "";
-    if (image) {
-      const response = await cloudinary.uploader.upload(image, { folder: "products" });
-      imageUrl = response.secure_url || "";
+    if (normalizedVariants.some((variant) => !Number.isInteger(variant.stock) || variant.stock < 0 ||
+        (variant.size && !normalizedSizes.includes(variant.size)) ||
+        (variant.color && !normalizedColors.some((color) => color.name === variant.color)))) {
+      return res.status(400).json({ message: "Variant inventory or size/color options are invalid" });
     }
+    if ((normalizedSizes.length > 0 || normalizedColors.length > 0) && normalizedVariants.length === 0) {
+      return res.status(400).json({ message: "Add stock for each size/color combination" });
+    }
+    if (normalizedSizes.length > 0 && normalizedColors.length > 0) {
+      const expectedCount = normalizedSizes.length * normalizedColors.length;
+      if (normalizedVariants.length !== expectedCount) {
+        return res.status(400).json({ message: "Every size and color combination needs an inventory value" });
+      }
+      const keys = new Set(normalizedVariants.map((variant) => `${variant.size}::${variant.color}`));
+      if (keys.size !== expectedCount) {
+        return res.status(400).json({ message: "Duplicate size/color combinations are not allowed" });
+      }
+    }
+    if (normalizedSizeChart.some((row) =>
+      ["chestCm", "waistCm", "hipsCm", "lengthCm"].some((key) =>
+        row[key] !== null && (!Number.isFinite(row[key]) || row[key] < 0)
+      )
+    )) {
+      return res.status(400).json({ message: "Size measurements must be non-negative numbers" });
+    }
+
+    const imageInputs = (Array.isArray(images) ? images : image ? [image] : [])
+      .filter((value) => typeof value === "string" && value.trim())
+      .slice(0, 8);
+    const uploadedImages = [];
+    for (const imageInput of imageInputs) {
+      if (/^https:\/\//i.test(imageInput)) {
+        uploadedImages.push(imageInput);
+      } else {
+        const response = await cloudinary.uploader.upload(imageInput, { folder: "products" });
+        if (response.secure_url) uploadedImages.push(response.secure_url);
+      }
+    }
+
     const product = await Product.create({
-      name: name.trim(), description: description.trim(), price: numericPrice,
-      image: imageUrl, category: category.trim(), stock: numericStock,
+      name: name.trim(),
+      description: description.trim(),
+      price: numericPrice,
+      image: uploadedImages[0] || "",
+      images: uploadedImages,
+      category: category.trim(),
+      sizes: normalizedSizes,
+      colors: normalizedColors,
+      variants: normalizedVariants,
+      fit: normalizedFit,
+      sizeChart: normalizedSizeChart,
+      stock: normalizedVariants.length ? null : numericStock,
     });
     return res.status(201).json(product);
   } catch (error) {
