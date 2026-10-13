@@ -14,6 +14,9 @@ import { useUserStore } from "./stores/useUserStore";
 import LoadingSpinner from "./components/LoadingSpinner";
 import CartPage from "./pages/CartPage";
 import WishlistPage from "./pages/WishlistPage";
+import StoreInfoPage from "./pages/StoreInfoPage";
+import NewsletterUnsubscribePage from "./pages/NewsletterUnsubscribePage";
+import StoreFooter from "./components/StoreFooter";
 import { useCartStore } from "./stores/useCartStore";
 import PurchaseSuccessPage from "./pages/PurchaseSuccessPage";
 import PurchaseCancelPage from "./pages/PurchaseCancelPage";
@@ -50,10 +53,18 @@ function App() {
           <Route path="/product/:productId" element={<ProductDetailsPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/shipping-policy" element={<StoreInfoPage />} />
+          <Route path="/returns-policy" element={<StoreInfoPage />} />
+          <Route path="/support" element={<StoreInfoPage />} />
+          <Route path="/faq" element={<StoreInfoPage />} />
+          <Route path="/privacy-policy" element={<StoreInfoPage />} />
+          <Route path="/terms-of-use" element={<StoreInfoPage />} />
+          <Route path="/newsletter-unsubscribe" element={<NewsletterUnsubscribePage />} />
           <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
           <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
         </Routes>
       </div>
+      {!isAccountPage && <StoreFooter />}
       <Toaster />
     </div>
   );
