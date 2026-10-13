@@ -1,6 +1,7 @@
 import { redis } from "../lib/redis.js";
 import cloudinary from "../lib/cloudinary.js";
 import Product from "../models/product.model.js";
+import Order from "../models/order.model.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -333,3 +334,40 @@ async function updateFeaturedProductsCache() {
     console.error("Unable to refresh featured-products cache", error.message);
   }
 }
+
+
+export const getBestsellingProducts = async (req, res) => {
+  try {
+    const limit = clampInteger(req.query.limit, 8, 1, 24);
+    const products = await Order.aggregate([
+      { $match: { paymentStatus: "paid", status: "paid" } },
+      { $unwind: "$products" },
+      { $group: {
+        _id: "$products.product",
+        soldQuantity: { $sum: "$products.quantity" },
+        orderIds: { $addToSet: "$_id" },
+      } },
+      { $addFields: { orderCount: { $size: "$orderIds" } } },
+      { $sort: { soldQuantity: -1, orderCount: -1, _id: 1 } },
+      { $limit: limit },
+      { $lookup: {
+        from: Product.collection.name,
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      } },
+      { $unwind: "$product" },
+      { $match: { "product.isActive": { $ne: false } } },
+      { $replaceRoot: { newRoot: {
+        $mergeObjects: [
+          "$product",
+          { soldQuantity: "$soldQuantity", orderCount: "$orderCount" },
+        ],
+      } } },
+    ]);
+    return res.json({ products });
+  } catch (error) {
+    console.error("Error loading best-selling products", error.message);
+    return res.status(500).json({ message: "Unable to load best-selling products" });
+  }
+};
