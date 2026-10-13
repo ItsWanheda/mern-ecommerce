@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
+import { useUserStore } from "../stores/useUserStore";
 import { motion } from "framer-motion";
 import { ShoppingCart } from "lucide-react";
 import CartItem from "../components/CartItem";
@@ -9,6 +10,7 @@ import GiftCouponCard from "../components/GiftCouponCard";
 
 const CartPage = () => {
 	const { cart } = useCartStore();
+	const { user } = useUserStore();
 
 	return (
 		<div className='py-8 md:py-16'>
