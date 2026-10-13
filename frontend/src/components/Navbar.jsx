@@ -434,11 +434,11 @@ const Navbar = () => {
         dir="rtl"
         className="fixed inset-x-0 top-0 z-40 w-full border-b border-[#e4e0d8] bg-[#f7f5f0]/95 text-[#252722] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
       >
-        <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-          <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] 2xl:justify-normal">
+        <div className="mx-auto max-w-[1920px] px-3 sm:px-6 lg:px-8 min-[1680px]:px-12">
+          <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 min-[1680px]:grid min-[1680px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1680px]:justify-normal">
             <div
               ref={accountMenuRef}
-              className="relative z-50 flex shrink-0 items-center gap-1 2xl:col-start-3 2xl:row-start-1 2xl:justify-self-end 2xl:gap-2"
+              className="relative z-50 flex shrink-0 items-center gap-1 min-[1680px]:col-start-3 min-[1680px]:row-start-1 min-[1680px]:justify-self-end min-[1680px]:gap-2"
             >
               <button
                 type="button"
@@ -528,12 +528,12 @@ const Navbar = () => {
             <Link
               to="/"
               aria-label="صفحه اصلی فروشگاه"
-              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] 2xl:static 2xl:col-start-2 2xl:row-start-1 2xl:translate-x-0 2xl:justify-self-center"
+              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
             >
               فروشگاه<span className="mr-1 text-[#68745f]">.</span>
             </Link>
 
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start 2xl:order-none 2xl:basis-auto 2xl:col-start-1 2xl:row-start-1 2xl:w-full 2xl:flex-initial 2xl:justify-self-stretch">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start min-[1680px]:order-none min-[1680px]:basis-auto min-[1680px]:col-start-1 min-[1680px]:row-start-1 min-[1680px]:w-full min-[1680px]:flex-initial min-[1680px]:justify-self-stretch">
               <nav
                 aria-label="پیمایش اصلی"
                 className="hidden shrink-0 items-center gap-1 lg:flex"
@@ -544,7 +544,7 @@ const Navbar = () => {
 
               <div
                 ref={desktopSearchRef}
-                className="relative hidden min-w-0 max-w-none flex-1 items-center md:flex 2xl:max-w-[31rem]"
+                className="relative hidden min-w-0 max-w-none flex-1 items-center md:flex min-[1680px]:max-w-[34rem]"
               >
                 <form
                   onSubmit={handleDesktopSearch}
