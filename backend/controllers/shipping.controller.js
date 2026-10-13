@@ -24,9 +24,14 @@ export const getShippingQuote = async (req, res) => {
 export const updateShippingSettings = async (req, res) => {
   const flatRate = Number(req.body.flatRate);
   const freeShippingThreshold = Number(req.body.freeShippingThreshold);
+  const currency = getCurrency();
   if (!Number.isFinite(flatRate) || flatRate < 0 ||
       !Number.isFinite(freeShippingThreshold) || freeShippingThreshold < 0) {
     return res.status(400).json({ message: "Shipping values must be non-negative numbers" });
+  }
+  if (["IRT", "IRR"].includes(currency) &&
+      (!Number.isSafeInteger(flatRate) || !Number.isSafeInteger(freeShippingThreshold))) {
+    return res.status(400).json({ message: "Shipping amounts must be whole-number Toman or Rial values." });
   }
   try {
     const settings = await StoreSettings.findOneAndUpdate(
