@@ -1,6 +1,6 @@
 import { Minus, Plus, Trash } from "lucide-react";
 import { useCartStore } from "../stores/useCartStore";
-import { formatPrice, isStockTracked } from "../lib/commerce";
+import { formatPrice } from "../lib/commerce";
 
 const CartItem = ({ item }) => {
   const { removeFromCart, updateQuantity } = useCartStore();
