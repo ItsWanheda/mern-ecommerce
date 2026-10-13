@@ -6,8 +6,9 @@ import { formatPrice } from "../lib/commerce";
 
 const ShippingSettings = () => {
   const [form, setForm] = useState({ flatRate: "0", freeShippingThreshold: "0" });
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("IRT");
   const [loading, setLoading] = useState(false);
+  const currencyLabel = currency === "IRT" ? "تومان" : currency === "IRR" ? "ریال" : currency;
 
   useEffect(() => {
     axios.get("/shipping?subtotal=0").then(({ data }) => {
@@ -15,7 +16,7 @@ const ShippingSettings = () => {
         flatRate: String(data.flatRate ?? 0),
         freeShippingThreshold: String(data.freeShippingThreshold ?? 0),
       });
-      setCurrency(data.currency || "USD");
+      setCurrency(data.currency || "IRT");
     }).catch((error) => toast.error(error.response?.data?.message || "بارگذاری تنظیمات ارسال ناموفق بود"));
   }, []);
 
@@ -50,10 +51,10 @@ const ShippingSettings = () => {
         </div>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
-        <label className="block text-sm text-gray-300">هزینه ثابت ارسال ({currency})
+        <label className="block text-sm text-gray-300">هزینه ثابت ارسال ({currencyLabel})
           <input type="number" min="0" step={currency === "IRT" || currency === "IRR" ? "1" : "0.01"} required className={fieldClass} value={form.flatRate} onChange={(event) => setForm({ ...form, flatRate: event.target.value })} />
         </label>
-        <label className="block text-sm text-gray-300">حداقل مبلغ برای ارسال رایگان ({currency})
+        <label className="block text-sm text-gray-300">حداقل مبلغ برای ارسال رایگان ({currencyLabel})
           <input type="number" min="0" step={currency === "IRT" || currency === "IRR" ? "1" : "0.01"} required className={fieldClass} value={form.freeShippingThreshold} onChange={(event) => setForm({ ...form, freeShippingThreshold: event.target.value })} />
         </label>
         <p className="text-sm leading-6 text-gray-400">نمونه: هزینه ارسال {formatPrice(Number(form.flatRate), currency)} و ارسال رایگان برای سفارش‌های حداقل {formatPrice(Number(form.freeShippingThreshold), currency)}. مقدار صفر برای حداقل خرید، قانون ارسال رایگان را غیرفعال می‌کند.</p>
