@@ -435,10 +435,10 @@ const Navbar = () => {
         className="fixed inset-x-0 top-0 z-40 w-full border-b border-[#e4e0d8] bg-[#f7f5f0]/95 text-[#252722] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
       >
         <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-          <div className="relative flex min-h-14 items-center justify-between gap-2 py-3 sm:gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:justify-normal">
+          <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] 2xl:justify-normal">
             <div
               ref={accountMenuRef}
-              className="relative z-50 flex shrink-0 items-center gap-1 lg:col-start-3 lg:row-start-1 lg:justify-self-end lg:gap-2"
+              className="relative z-50 flex shrink-0 items-center gap-1 2xl:col-start-3 2xl:row-start-1 2xl:justify-self-end 2xl:gap-2"
             >
               <button
                 type="button"
@@ -528,12 +528,12 @@ const Navbar = () => {
             <Link
               to="/"
               aria-label="صفحه اصلی فروشگاه"
-              className="absolute left-1/2 top-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] lg:static lg:col-start-2 lg:row-start-1 lg:translate-x-0 lg:translate-y-0 lg:justify-self-center"
+              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] 2xl:static 2xl:col-start-2 2xl:row-start-1 2xl:translate-x-0 2xl:justify-self-center"
             >
               فروشگاه<span className="mr-1 text-[#68745f]">.</span>
             </Link>
 
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 lg:col-start-1 lg:row-start-1 lg:w-full lg:flex-initial lg:justify-self-stretch">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start 2xl:order-none 2xl:basis-auto 2xl:col-start-1 2xl:row-start-1 2xl:w-full 2xl:flex-initial 2xl:justify-self-stretch">
               <nav
                 aria-label="پیمایش اصلی"
                 className="hidden shrink-0 items-center gap-1 lg:flex"
@@ -544,7 +544,7 @@ const Navbar = () => {
 
               <div
                 ref={desktopSearchRef}
-                className="relative hidden min-w-0 max-w-[31rem] flex-1 items-center lg:flex"
+                className="relative hidden min-w-0 max-w-none flex-1 items-center md:flex 2xl:max-w-[31rem]"
               >
                 <form
                   onSubmit={handleDesktopSearch}
@@ -626,7 +626,7 @@ const Navbar = () => {
                 aria-label={activeFilterCount > 0
                   ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
                   : "باز کردن جست‌وجو و فیلتر محصولات"}
-                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] md:hidden"
               >
                 <Search size={18} aria-hidden="true" />
                 {activeFilterCount > 0 && (

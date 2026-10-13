@@ -33,7 +33,11 @@ const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const categoryTrackRef = useRef(null);
+  const categorySlideRefs = useRef([]);
+  const categorySliderAnimationRef = useRef(null);
+  const categorySliderSettlingRef = useRef(false);
   const [categoryScrollProgress, setCategoryScrollProgress] = useState(0);
+  const [isCategorySliderActive, setIsCategorySliderActive] = useState(false);
 
   const handleCategoryScroll = () => {
     const track = categoryTrackRef.current;
@@ -49,9 +53,25 @@ const HomePage = () => {
     setCategoryScrollProgress((current) => current === progress ? current : progress);
   };
 
+  const cancelCategorySliderSettle = () => {
+    if (categorySliderAnimationRef.current !== null) {
+      cancelAnimationFrame(categorySliderAnimationRef.current);
+      categorySliderAnimationRef.current = null;
+    }
+    categorySliderSettlingRef.current = false;
+    setIsCategorySliderActive(false);
+  };
+
   const handleCategorySliderChange = (event) => {
     const track = categoryTrackRef.current;
     if (!track) return;
+
+    if (categorySliderAnimationRef.current !== null) {
+      cancelAnimationFrame(categorySliderAnimationRef.current);
+      categorySliderAnimationRef.current = null;
+    }
+    categorySliderSettlingRef.current = false;
+    setIsCategorySliderActive(true);
 
     const progress = Number(event.target.value);
     const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
@@ -61,12 +81,82 @@ const HomePage = () => {
     track.scrollLeft = (isRtl ? -1 : 1) * (progress / 1000) * maxScroll;
   };
 
+  const finishCategorySliderInteraction = () => {
+    if (categorySliderSettlingRef.current) return;
+    const track = categoryTrackRef.current;
+    if (!track) {
+      setIsCategorySliderActive(false);
+      return;
+    }
+
+    const slides = categorySlideRefs.current.filter(Boolean);
+    if (!slides.length) {
+      setIsCategorySliderActive(false);
+      return;
+    }
+
+    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
+    const closestSlide = slides.reduce((closest, slide) => {
+      const rect = slide.getBoundingClientRect();
+      const distance = Math.abs(rect.left + rect.width / 2 - trackCenter);
+      return !closest || distance < closest.distance
+        ? { slide, distance }
+        : closest;
+    }, null)?.slide;
+
+    if (!closestSlide) {
+      setIsCategorySliderActive(false);
+      return;
+    }
+
+    const slideRect = closestSlide.getBoundingClientRect();
+    const startScrollLeft = track.scrollLeft;
+    const targetScrollLeft = startScrollLeft + slideRect.left + slideRect.width / 2 - trackCenter;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || Math.abs(targetScrollLeft - startScrollLeft) < 1) {
+      track.scrollLeft = targetScrollLeft;
+      categorySliderSettlingRef.current = false;
+      setIsCategorySliderActive(false);
+      handleCategoryScroll();
+      return;
+    }
+
+    categorySliderSettlingRef.current = true;
+    setIsCategorySliderActive(true);
+    let startTime = null;
+    const duration = 360;
+
+    const animateSettle = (timestamp) => {
+      if (startTime === null) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      track.scrollLeft = startScrollLeft + (targetScrollLeft - startScrollLeft) * easedProgress;
+
+      if (progress < 1) {
+        categorySliderAnimationRef.current = requestAnimationFrame(animateSettle);
+      } else {
+        categorySliderAnimationRef.current = null;
+        categorySliderSettlingRef.current = false;
+        setIsCategorySliderActive(false);
+        handleCategoryScroll();
+      }
+    };
+
+    categorySliderAnimationRef.current = requestAnimationFrame(animateSettle);
+  };
+
   const {
     fetchFeaturedProducts,
     featuredProducts,
     fetchNewestProducts,
     newestProducts,
   } = useProductStore();
+
+  useEffect(() => () => {
+    if (categorySliderAnimationRef.current !== null) {
+      cancelAnimationFrame(categorySliderAnimationRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -124,6 +214,17 @@ const HomePage = () => {
               step="1"
               value={categoryScrollProgress}
               onChange={handleCategorySliderChange}
+              onPointerDown={() => { categorySliderSettlingRef.current = false; setIsCategorySliderActive(true); }}
+              onPointerUp={finishCategorySliderInteraction}
+              onPointerCancel={finishCategorySliderInteraction}
+              onKeyDown={(event) => {
+                if (["ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(event.key)) {
+                  categorySliderSettlingRef.current = false;
+                  setIsCategorySliderActive(true);
+                }
+              }}
+              onKeyUp={finishCategorySliderInteraction}
+              onBlur={finishCategorySliderInteraction}
               aria-label="حرکت بین دسته‌بندی‌ها"
               aria-controls="category-carousel"
               className="h-2 w-full cursor-pointer accent-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
@@ -136,10 +237,13 @@ const HomePage = () => {
             aria-label="دسته‌بندی‌های فروشگاه"
             tabIndex={0}
             onScroll={handleCategoryScroll}
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+            onWheel={cancelCategorySliderSettle}
+            onTouchStart={cancelCategorySliderSettle}
+            onPointerDown={cancelCategorySliderSettle}
+            className={`flex ${isCategorySliderActive ? "snap-none" : "snap-x snap-mandatory"} gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]`}
           >
-            {categories.map((category) => (
-              <div key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
+            {categories.map((category, index) => (
+              <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
                 <CategoryItem category={category} />
               </div>
             ))}
