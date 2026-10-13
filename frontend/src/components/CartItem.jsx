@@ -34,6 +34,11 @@ const CartItem = ({ item }) => {
         </div>
         <div className="w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md">
           <p className="text-base font-medium text-white">{item.name}</p>
+          {item.guestOnly && (
+            <p role="status" className="rounded-lg border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-xs leading-5 text-amber-200">
+              این گزینه هنوز به حساب شما منتقل نشده؛ موجودی آن را بررسی یا از سبد حذف کنید.
+            </p>
+          )}
           <p className="text-sm text-gray-400">{item.description}</p>
           {(item.selectedSize || item.selectedColor) && (
             <p className="text-sm text-gray-300">
