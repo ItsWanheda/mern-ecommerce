@@ -67,7 +67,8 @@ const ProductDetailsPage = () => {
           <p className="mt-6 flex items-center gap-2 text-xs leading-5 text-[#77786f]"><Check size={15} className="shrink-0 text-[#68745f]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
         </div></div>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#d5d0c5] bg-[#fffefa]/95 px-4 py-3 shadow-[0_-12px_32px_-24px_rgba(37,39,34,0.35)] backdrop-blur-xl lg:hidden">
+    </div>
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#d5d0c5] bg-[#fffefa]/95 px-4 py-3 shadow-[0_-12px_32px_-24px_rgba(37,39,34,0.35)] backdrop-blur-xl lg:hidden">
         <div dir="rtl" className="mx-auto flex max-w-7xl items-center gap-3">
           <div className="min-w-0 flex-1"><p className="text-[11px] text-[#55584f]">قیمت محصول</p><p className="truncate text-base font-bold tabular-nums text-[#252722]">{formatPrice(product.price)}</p></div>
           {!user ? <Link to="/login" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b]"><ShoppingCart size={17} aria-hidden="true" />ورود برای خرید</Link> : <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:cursor-not-allowed disabled:bg-[#d5d0c5] disabled:text-[#707267]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد"}</button>}
