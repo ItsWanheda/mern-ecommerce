@@ -7,6 +7,7 @@ const orderProductSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     size: { type: String, trim: true, default: "" },
     color: { type: String, trim: true, default: "" },
+    hasVariant: { type: Boolean, default: false },
     stockReserved: { type: Boolean, default: false },
   },
   { _id: false }
