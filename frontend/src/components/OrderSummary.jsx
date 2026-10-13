@@ -14,7 +14,7 @@ const OrderSummary = () => {
   const navigate = useNavigate();
   const hasUnmergedItems = cart.some((item) => item.guestOnly);
   const [paymentConfig, setPaymentConfig] = useState({
-    provider: "stripe",
+    provider: "zarinpal",
     currency: STORE_CURRENCY,
     configured: false,
     loading: true,
@@ -31,8 +31,8 @@ const OrderSummary = () => {
     axios.get("/payments/provider")
       .then(({ data }) => {
         if (!active) return;
-        const frontendCurrency = String(import.meta.env.VITE_STORE_CURRENCY || "USD").toUpperCase();
-        const backendCurrency = String(data.currency || "USD").toUpperCase();
+        const frontendCurrency = String(import.meta.env.VITE_STORE_CURRENCY || "IRT").toUpperCase();
+        const backendCurrency = String(data.currency || "IRT").toUpperCase();
         const currencyMatches = frontendCurrency === backendCurrency;
         const stripeKeyReady = data.provider !== "stripe" || Boolean(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
         const configured = Boolean(data.configured && currencyMatches && stripeKeyReady);
@@ -45,7 +45,7 @@ const OrderSummary = () => {
       })
       .catch(() => {
         if (active) setPaymentConfig({
-          provider: "stripe",
+          provider: "zarinpal",
           currency: STORE_CURRENCY,
           configured: false,
           loading: false,
