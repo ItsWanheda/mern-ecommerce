@@ -9,6 +9,7 @@ import paymentRoutes from "./routes/payment.route.js";
 import analyticsRoutes from "./routes/analytics.route.js";
 import campaignRoutes from "./routes/campaign.route.js";
 import shippingRoutes from "./routes/shipping.route.js";
+import newsletterRoutes from "./routes/newsletter.route.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/shipping", shippingRoutes);
+app.use("/api/newsletter", newsletterRoutes);
 
 app.use("/api", (_req, res) => {
   res.status(404).json({ message: "API route not found" });
