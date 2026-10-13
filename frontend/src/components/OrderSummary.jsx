@@ -9,7 +9,7 @@ import axios from "../lib/axios";
 import { formatPrice, STORE_CURRENCY } from "../lib/commerce";
 
 const OrderSummary = () => {
-  const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
+  const { total, subtotal, coupon, isCouponApplied, cart, isMergingGuestCart } = useCartStore();
   const { user } = useUserStore();
   const navigate = useNavigate();
   const hasUnmergedItems = cart.some((item) => item.guestOnly);
@@ -118,6 +118,7 @@ const OrderSummary = () => {
       transition={{ duration: 0.5 }}
     >
       <p className="text-xl font-semibold text-[#9aa58e]">خلاصه سفارش</p>
+      {isMergingGuestCart && <p role="status" className="rounded-xl border border-gray-600 bg-gray-900/40 p-3 text-xs text-gray-300">در حال ادغام سبد خرید با حساب شما…</p>}
       {!user && (
         <div className="rounded-xl border border-gray-600 bg-gray-900/40 p-3">
           <p className="text-sm font-semibold text-white">سبد خرید شما محفوظ می‌ماند</p>
@@ -174,7 +175,7 @@ const OrderSummary = () => {
 
         <motion.button
           type="button"
-          disabled={checkoutLoading || !cart.length || hasUnmergedItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
+          disabled={checkoutLoading || isMergingGuestCart || !cart.length || hasUnmergedItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus:outline-none focus:ring-4 focus:ring-[#68745f]/40 disabled:cursor-not-allowed disabled:opacity-50"
           whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
           whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
