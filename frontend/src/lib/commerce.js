@@ -2,6 +2,14 @@ const configuredCurrency = import.meta.env.VITE_STORE_CURRENCY || "IRT";
 
 export const STORE_CURRENCY = String(configuredCurrency).toUpperCase();
 
+export const getCurrencyLabel = (currency = STORE_CURRENCY) => {
+  const normalizedCurrency = String(currency || "IRT").toUpperCase();
+  if (normalizedCurrency === "IRT") return "تومان";
+  if (normalizedCurrency === "IRR") return "ریال";
+  if (normalizedCurrency === "USD") return "دلار آمریکا";
+  return normalizedCurrency;
+};
+
 export const formatPrice = (value, currency = STORE_CURRENCY) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "—";
