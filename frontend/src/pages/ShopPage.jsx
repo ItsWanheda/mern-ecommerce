@@ -107,7 +107,7 @@ const ShopPage = () => {
       dir="rtl"
       className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8"
     >
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[#68745f]">
