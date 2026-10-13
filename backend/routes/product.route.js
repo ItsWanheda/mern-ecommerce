@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  createProduct, deleteProduct, getAllProducts, getFeaturedProducts, getNewestProducts,
+  createProduct, deleteProduct, getAllProducts, getBestsellingProducts, getFeaturedProducts, getNewestProducts,
   getProductById, getProductsByCategory, getRecommendedProducts, getSearchedProducts,
   toggleFeaturedProduct, updateProductStock, updateProductVariantStock,
 } from "../controllers/product.controller.js";
@@ -10,6 +10,7 @@ const router = express.Router();
 
 // Specific paths must be registered before /:id.
 router.get("/search", getSearchedProducts);
+router.get("/bestsellers", getBestsellingProducts);
 router.get("/newest", getNewestProducts);
 router.get("/featured", getFeaturedProducts);
 router.get("/category/:category", getProductsByCategory);
