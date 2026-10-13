@@ -1,7 +1,14 @@
 import Product from "../models/product.model.js";
 
 const getCartProductId = (item) => item.product?.toString() || item._id?.toString();
+const normalizedOption = (value) => typeof value === "string" ? value.trim() : "";
+const sameVariant = (item, size, color) =>
+  normalizedOption(item.size) === size && normalizedOption(item.color) === color;
+const variantFor = (product, size, color) =>
+  (product.variants || []).find((variant) => normalizedOption(variant.size) === size && normalizedOption(variant.color) === color);
 const isStockTracked = (product) => typeof product.stock === "number" && Number.isFinite(product.stock);
+const cartItemKey = (id, size, color) =>
+  id + "::" + encodeURIComponent(size) + "::" + encodeURIComponent(color);
 
 export const getCartProducts = async (req, res) => {
   try {
@@ -12,7 +19,18 @@ export const getCartProducts = async (req, res) => {
     return res.json(cartItems.map((item) => {
       const id = getCartProductId(item);
       const product = id && productsById.get(id);
-      return product ? { ...product, quantity: item.quantity } : null;
+      if (!product) return null;
+      const size = normalizedOption(item.size);
+      const color = normalizedOption(item.color);
+      const selectedVariant = (product.variants || []).length ? variantFor(product, size, color) : null;
+      return {
+        ...product,
+        quantity: item.quantity,
+        selectedSize: size,
+        selectedColor: color,
+        cartItemId: cartItemKey(id, size, color),
+        ...(selectedVariant ? { selectedVariantStock: selectedVariant.stock } : {}),
+      };
     }).filter(Boolean));
   } catch (error) {
     console.error("Error in getCartProducts controller", error.message);
@@ -23,23 +41,36 @@ export const getCartProducts = async (req, res) => {
 export const addToCart = async (req, res) => {
   try {
     const { productId } = req.body;
+    const size = normalizedOption(req.body.size);
+    const color = normalizedOption(req.body.color);
     if (!productId || typeof productId !== "string") {
       return res.status(400).json({ message: "Product ID is required" });
     }
     const product = await Product.findOne({ _id: productId, isActive: { $ne: false } }).lean();
     if (!product) return res.status(404).json({ message: "Product not found" });
 
+    let selectedVariant = null;
+    if ((product.variants || []).length) {
+      selectedVariant = variantFor(product, size, color);
+      if (!selectedVariant) return res.status(400).json({ message: "لطفاً سایز و رنگ معتبر محصول را انتخاب کنید" });
+    } else if (size || color) {
+      return res.status(400).json({ message: "این محصول گزینه سایز یا رنگ ندارد" });
+    }
+
     const user = req.user;
-    const existingItem = user.cartItems.find((item) => getCartProductId(item) === productId);
+    const existingItem = user.cartItems.find((item) =>
+      getCartProductId(item) === productId && sameVariant(item, size, color)
+    );
     const nextQuantity = (existingItem?.quantity || 0) + 1;
-    if (isStockTracked(product) && nextQuantity > product.stock) {
-      return res.status(409).json({ message: product.stock === 0 ? "این محصول موجود نیست" : "تعداد درخواستی بیشتر از موجودی محصول است" });
+    const trackedStock = selectedVariant ? selectedVariant.stock : product.stock;
+    if (typeof trackedStock === "number" && nextQuantity > trackedStock) {
+      return res.status(409).json({ message: trackedStock === 0 ? "این گزینه موجود نیست" : "تعداد درخواستی بیشتر از موجودی این گزینه است" });
     }
 
     if (existingItem) existingItem.quantity = nextQuantity;
-    else user.cartItems.push({ product: productId, quantity: 1 });
+    else user.cartItems.push({ product: productId, quantity: 1, size, color });
     await user.save();
-    return res.json(user.cartItems);
+    return res.json({ success: true, cartItems: user.cartItems });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid product ID" });
     console.error("Error in addToCart controller", error.message);
@@ -51,8 +82,18 @@ export const removeAllFromCart = async (req, res) => {
   try {
     const { productId } = req.body;
     const user = req.user;
-    if (!productId) user.cartItems = [];
-    else user.cartItems = user.cartItems.filter((item) => getCartProductId(item) !== productId);
+    if (!productId) {
+      user.cartItems = [];
+    } else {
+      const hasVariantSelection = Object.prototype.hasOwnProperty.call(req.body, "size") ||
+        Object.prototype.hasOwnProperty.call(req.body, "color");
+      const size = normalizedOption(req.body.size);
+      const color = normalizedOption(req.body.color);
+      user.cartItems = user.cartItems.filter((item) => {
+        if (getCartProductId(item) !== productId) return true;
+        return hasVariantSelection && !sameVariant(item, size, color);
+      });
+    }
     await user.save();
     return res.json(user.cartItems);
   } catch (error) {
@@ -65,24 +106,36 @@ export const updateQuantity = async (req, res) => {
   try {
     const { id: productId } = req.params;
     const quantity = Number(req.body.quantity);
+    const size = normalizedOption(req.body.size);
+    const color = normalizedOption(req.body.color);
     if (!Number.isInteger(quantity) || quantity < 0 || quantity > 100) {
       return res.status(400).json({ message: "Quantity must be an integer between 0 and 100" });
     }
 
     const user = req.user;
-    const existingItem = user.cartItems.find((item) => getCartProductId(item) === productId);
-    if (!existingItem) return res.status(404).json({ message: "Product not found in cart" });
+    const existingItem = user.cartItems.find((item) =>
+      getCartProductId(item) === productId && sameVariant(item, size, color)
+    );
+    if (!existingItem) return res.status(404).json({ message: "Product variant not found in cart" });
 
     if (quantity > 0) {
       const product = await Product.findOne({ _id: productId, isActive: { $ne: false } }).lean();
       if (!product) return res.status(404).json({ message: "Product not found" });
-      if (isStockTracked(product) && quantity > product.stock) {
-        return res.status(409).json({ message: "تعداد درخواستی بیشتر از موجودی محصول است" });
+      const selectedVariant = (product.variants || []).length ? variantFor(product, size, color) : null;
+      if ((product.variants || []).length && !selectedVariant) {
+        return res.status(409).json({ message: "گزینه انتخاب‌شده دیگر در دسترس نیست" });
+      }
+      const trackedStock = selectedVariant ? selectedVariant.stock : product.stock;
+      if (typeof trackedStock === "number" && quantity > trackedStock) {
+        return res.status(409).json({ message: "تعداد درخواستی بیشتر از موجودی این گزینه است" });
       }
     }
 
-    if (quantity === 0) user.cartItems = user.cartItems.filter((item) => getCartProductId(item) !== productId);
-    else existingItem.quantity = quantity;
+    if (quantity === 0) {
+      user.cartItems = user.cartItems.filter((item) => !(getCartProductId(item) === productId && sameVariant(item, size, color)));
+    } else {
+      existingItem.quantity = quantity;
+    }
     await user.save();
     return res.json(user.cartItems);
   } catch (error) {
