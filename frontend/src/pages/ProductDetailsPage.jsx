@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, LoaderCircle, Ruler, ShoppingCart,
-  X, Shirt, Ruler as RulerIcon,
+  X, Shirt,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
@@ -93,10 +93,10 @@ const ProductDetailsPage = () => {
   const hasStockValue = typeof selectedStock === "number" && Number.isFinite(selectedStock);
 
   const hasStockForSize = (size) => variants.some((variant) =>
-    variant.size === size && (colors.length === 0 || variant.color === selectedColor) && variant.stock > 0
+    variant.size === size && variant.stock > 0
   );
   const hasStockForColor = (color) => variants.some((variant) =>
-    variant.color === color && (sizes.length === 0 || variant.size === selectedSize) && variant.stock > 0
+    variant.color === color && variant.stock > 0
   );
 
   const handleSizeSelect = (size) => {
