@@ -15,22 +15,25 @@ const categoryLinks = [
   ["/terms-of-use", "شرایط استفاده"],
 ];
 
-const PageLayout = ({ eyebrow, title, intro, children }) => (
-  <main dir="rtl" className="min-h-[60vh] bg-[#f7f5f0] px-3 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
-    <div className="mx-auto max-w-5xl">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-[#68745f]">{eyebrow}</p>
-      <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
-      {intro && <p className="mt-3 max-w-3xl text-sm leading-7 text-[#62645c] sm:text-base">{intro}</p>}
-      <div className="mt-7 space-y-4">{children}</div>
-      <nav aria-label="صفحات راهنما" className="mt-9 flex flex-wrap gap-2 border-t border-[#e4e0d8] pt-5">
-        {categoryLinks.filter(([href]) => href !== window.location.pathname).map(([href, label]) => (
-          <Link key={href} to={href} className="inline-flex min-h-9 items-center rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#62645c] transition hover:border-[#a8a597] hover:text-[#252722]">{label}</Link>
-        ))}
-      </nav>
-      {supportEmail && <p className="mt-5 text-sm text-[#62645c]">راه ارتباط با پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold underline underline-offset-2" dir="ltr">{supportEmail}</a></p>}
-    </div>
-  </main>
-);
+const PageLayout = ({ eyebrow, title, intro, children }) => {
+  const { pathname } = useLocation();
+  return (
+    <main dir="rtl" className="min-h-[60vh] bg-[#f7f5f0] px-3 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        <p className="mb-2 text-xs font-semibold tracking-wide text-[#68745f]">{eyebrow}</p>
+        <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
+        {intro && <p className="mt-3 max-w-3xl text-sm leading-7 text-[#62645c] sm:text-base">{intro}</p>}
+        <div className="mt-7 space-y-4">{children}</div>
+        <nav aria-label="صفحات راهنما" className="mt-9 flex flex-wrap gap-2 border-t border-[#e4e0d8] pt-5">
+          {categoryLinks.filter(([href]) => href !== pathname).map(([href, label]) => (
+            <Link key={href} to={href} className="inline-flex min-h-9 items-center rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#62645c] transition hover:border-[#a8a597] hover:text-[#252722]">{label}</Link>
+          ))}
+        </nav>
+        {supportEmail && <p className="mt-5 text-sm text-[#62645c]">راه ارتباط با پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold underline underline-offset-2" dir="ltr">{supportEmail}</a></p>}
+      </div>
+    </main>
+  );
+};
 
 const InfoCard = ({ title, children, icon: Icon = CheckCircle2 }) => (
   <section className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-5 sm:p-6">
