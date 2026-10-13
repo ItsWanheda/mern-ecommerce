@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const CategoryItem = ({ category }) => {
 	return (
-		<article className="group relative h-56 w-full overflow-hidden rounded-2xl bg-[#e9e5dc] sm:h-72 lg:h-80">
+		<article className="group relative h-44 w-full overflow-hidden rounded-2xl bg-[#e9e5dc] sm:h-56 xl:h-64">
 			<Link
 				to={category.href}
 				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#68745f]"
