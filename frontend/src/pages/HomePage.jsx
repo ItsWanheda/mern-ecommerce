@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, BadgePercent, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
@@ -100,50 +100,6 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
-            <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
-              <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای ویژه</h2></div>
-              <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-[#d5d0c5] px-3 text-xs font-semibold text-[#68745f] transition hover:border-[#252722] hover:text-[#252722] sm:border-0 sm:px-0 sm:text-sm">همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
-            </div>
-            {campaigns.length > 0 ? (
-            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
-              {campaigns.map((campaign) => (
-                <Link to={campaign.href} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
-                  {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-l from-[#252722]/85 via-[#252722]/55 to-transparent" />
-                  <div className="my-auto max-w-[80%] text-white">
-                    <p className="text-xs font-semibold tracking-[0.16em] text-white/75">پیشنهاد ویژه</p>
-                    <h3 className="mt-3 font-serif text-2xl font-medium">{campaign.title}</h3>
-                    {campaign.description && <p className="mt-2 text-sm leading-6 text-white/85">{campaign.description}</p>}
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده پیشنهاد<ArrowLeft size={16} aria-hidden="true" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            ) : (
-              <div className="relative isolate overflow-hidden rounded-2xl border border-[#d5d0c5] bg-[#e9ede4] px-5 py-6 sm:px-8 sm:py-8">
-                <div className="absolute -left-8 -top-10 -z-10 h-36 w-36 rounded-full bg-white/40 blur-2xl" />
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="max-w-xl">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-[#c7d0bf] bg-white/60 px-3 py-1.5 text-xs font-semibold text-[#526049]"><BadgePercent size={15} aria-hidden="true" /> پیشنهادهای فروشگاه</span>
-                    <h3 className="mt-4 font-serif text-2xl font-medium leading-snug text-[#252722] sm:text-3xl">برای پیشنهاد بعدی آماده‌ایم.</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#62645c]">در حال حاضر پیشنهاد زمان‌دار فعالی نداریم؛ محصولات تازه و مجموعه‌های فروشگاه را ببینید.</p>
-                  </div>
-                  <Link to="/shop" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">مشاهده محصولات<ArrowLeft size={16} aria-hidden="true" /></Link>
-                </div>
-              </div>
-            )}
-          </section>
-
-        <section className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6">
-          {benefits.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex items-start gap-3 px-2 py-2 sm:px-3">
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9e5dc] text-[#68745f]"><Icon size={20} aria-hidden="true" /></span>
-              <div><h2 className="text-sm font-semibold text-[#252722]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#77786f]">{text}</p></div>
-            </div>
-          ))}
-        </section>
-
         <section id="shop-by-category" className="scroll-mt-28 pt-12 sm:pt-16 lg:pt-20">
           <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -167,6 +123,29 @@ const HomePage = () => {
             ))}
           </div>
         </section>
+
+        {campaigns.length > 0 && (
+<section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
+            <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
+              <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای ویژه</h2></div>
+              <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-[#d5d0c5] px-3 text-xs font-semibold text-[#68745f] transition hover:border-[#252722] hover:text-[#252722] sm:border-0 sm:px-0 sm:text-sm">همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
+            </div>
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
+              {campaigns.map((campaign) => (
+                <Link to={campaign.href} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
+                  {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-l from-[#252722]/85 via-[#252722]/55 to-transparent" />
+                  <div className="my-auto max-w-[80%] text-white">
+                    <p className="text-xs font-semibold tracking-[0.16em] text-white/75">پیشنهاد ویژه</p>
+                    <h3 className="mt-3 font-serif text-2xl font-medium">{campaign.title}</h3>
+                    {campaign.description && <p className="mt-2 text-sm leading-6 text-white/85">{campaign.description}</p>}
+                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده پیشنهاد<ArrowLeft size={16} aria-hidden="true" /></span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="newest-products-heading">
           <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
@@ -215,6 +194,8 @@ const HomePage = () => {
           )}
         </section>
 
+        {featuredProducts.length > 0 && <section className="mt-12 border-t border-[#e4e0d8] pt-8 sm:mt-16 sm:pt-12"><FeaturedProducts featuredProducts={featuredProducts} /></section>}
+
         <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="collections-heading">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب‌های هماهنگ</p><h2 id="collections-heading" className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">مجموعه‌های پیشنهادی</h2></div>
@@ -231,7 +212,14 @@ const HomePage = () => {
           </div>
         </section>
 
-        {featuredProducts.length > 0 && <section className="mt-12 border-t border-[#e4e0d8] pt-8 sm:mt-16 sm:pt-12"><FeaturedProducts featuredProducts={featuredProducts} /></section>}
+        <section className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6">
+          {benefits.map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex items-start gap-3 px-2 py-2 sm:px-3">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9e5dc] text-[#68745f]"><Icon size={20} aria-hidden="true" /></span>
+              <div><h2 className="text-sm font-semibold text-[#252722]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#77786f]">{text}</p></div>
+            </div>
+          ))}
+        </section>
       </div>
     </main>
   );
