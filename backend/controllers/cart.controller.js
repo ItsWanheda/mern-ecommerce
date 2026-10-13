@@ -75,7 +75,8 @@ export const mergeGuestCart = async (req, res) => {
       );
       const alreadyInCart = Number(existingItem?.quantity || 0) + Number(pendingQuantity.get(key) || 0);
       const stock = selectedVariant ? selectedVariant.stock : product.stock;
-      if (typeof stock === "number" && alreadyInCart + item.quantity > stock) {
+      if (alreadyInCart + item.quantity > 100 ||
+          (typeof stock === "number" && alreadyInCart + item.quantity > stock)) {
         skippedKeys.push(key);
         continue;
       }
@@ -130,6 +131,9 @@ export const addToCart = async (req, res) => {
     );
     const nextQuantity = (existingItem?.quantity || 0) + 1;
     const trackedStock = selectedVariant ? selectedVariant.stock : product.stock;
+    if (nextQuantity > 100) {
+      return res.status(409).json({ message: "تعداد هر گزینه نمی‌تواند بیشتر از ۱۰۰ عدد باشد" });
+    }
     if (typeof trackedStock === "number" && nextQuantity > trackedStock) {
       return res.status(409).json({ message: trackedStock === 0 ? "این گزینه موجود نیست" : "تعداد درخواستی بیشتر از موجودی این گزینه است" });
     }
