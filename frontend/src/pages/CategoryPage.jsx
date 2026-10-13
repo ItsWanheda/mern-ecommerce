@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { useParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
-import { formatPrice } from "../lib/commerce";
 import { useProductStore } from "../stores/useProductStore";
 
 const categoryLabels = {
@@ -103,12 +102,6 @@ const getProductBrand = (product) => {
   if (typeof product.brand === "string") return product.brand.trim();
   if (typeof product.brandName === "string") return product.brandName.trim();
   if (typeof product.brand?.name === "string") return product.brand.name.trim();
-  return "";
-};
-
-const getBrandLabel = (brand) => {
-  if (typeof brand === "string") return brand;
-  if (typeof brand?.name === "string") return brand.name;
   return "";
 };
 
@@ -277,8 +270,14 @@ const CategoryPage = () => {
   const activeChips = useMemo(() => {
     const chips = [];
     if (filters.q.trim()) chips.push({ field: "q", label: "جست‌وجو: «" + filters.q.trim() + "»" });
-    if (filters.minPrice.trim()) chips.push({ field: "minPrice", label: "از " + formatToman(parseToman(filters.minPrice) || 0) });
-    if (filters.maxPrice.trim()) chips.push({ field: "maxPrice", label: "تا " + formatToman(parseToman(filters.maxPrice) || 0) });
+    if (filters.minPrice.trim()) {
+      const value = parseToman(filters.minPrice);
+      chips.push({ field: "minPrice", label: "از " + (value !== null && Number.isFinite(value) ? formatToman(value) : filters.minPrice + " تومان") });
+    }
+    if (filters.maxPrice.trim()) {
+      const value = parseToman(filters.maxPrice);
+      chips.push({ field: "maxPrice", label: "تا " + (value !== null && Number.isFinite(value) ? formatToman(value) : filters.maxPrice + " تومان") });
+    }
     filters.sizes.forEach((value) => chips.push({ field: "sizes", value, label: "سایز: " + value }));
     filters.colors.forEach((value) => chips.push({ field: "colors", value, label: "رنگ: " + value }));
     filters.fits.forEach((value) => chips.push({ field: "fits", value, label: "تن‌خور: " + (fitLabels[value] || value) }));
@@ -291,7 +290,7 @@ const CategoryPage = () => {
     return chips;
   }, [filters]);
 
-  const renderFilterFields = (current, onFilterChange, prefix) => (
+  const renderFilterFields = (current, onFilterChange) => (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       <fieldset className="min-w-0 space-y-2">
         <legend className="text-sm font-semibold text-[#41443b]">محدوده قیمت (تومان)</legend>
@@ -528,7 +527,7 @@ const CategoryPage = () => {
               پاک‌کردن فیلترها
             </button>
           </div>
-          {renderFilterFields(filters, (field, value) => updateFilter(setFilters, field, value), "desktop")}
+          {renderFilterFields(filters, (field, value) => updateFilter(setFilters, field, value))}
         </section>
 
         {activeChips.length > 0 && (
@@ -635,7 +634,7 @@ const CategoryPage = () => {
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
-              {renderFilterFields(draftFilters, (field, value) => updateFilter(setDraftFilters, field, value), "mobile")}
+              {renderFilterFields(draftFilters, (field, value) => updateFilter(setDraftFilters, field, value))}
             </div>
             <div className="border-t border-[#e4e0d8] bg-[#fffefa] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <p aria-live="polite" className="mb-3 text-center text-sm font-semibold text-[#62645c]">
