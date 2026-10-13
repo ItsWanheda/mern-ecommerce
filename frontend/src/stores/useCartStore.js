@@ -5,6 +5,9 @@ import { toast } from "react-hot-toast";
 const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
 	error.response?.data?.message || error.message || fallback;
 
+const cartItemKey = (item) => item.cartItemId ||
+	String(item._id) + "::" + encodeURIComponent(item.selectedSize || "") + "::" + encodeURIComponent(item.selectedColor || "");
+
 export const useCartStore = create((set, get) => ({
 	cart: [],
 	coupon: null,
@@ -58,18 +61,28 @@ export const useCartStore = create((set, get) => ({
 		set({ cart: [], coupon: null, total: 0, subtotal: 0 });
 	},
 
-	addToCart: async (product) => {
+	addToCart: async (product, selection = {}) => {
+		const size = selection.size || "";
+		const color = selection.color || "";
 		try {
-			await axios.post("/cart", { productId: product._id });
+			await axios.post("/cart", { productId: product._id, size, color });
 			toast.success("محصول به سبد خرید اضافه شد");
 
 			set((prevState) => {
-				const existingItem = prevState.cart.find((item) => item._id === product._id);
+				const newItem = {
+					...product,
+					selectedSize: size,
+					selectedColor: color,
+					cartItemId: cartItemKey({ _id: product._id, selectedSize: size, selectedColor: color }),
+					quantity: 1,
+				};
+				const key = cartItemKey(newItem);
+				const existingItem = prevState.cart.find((item) => cartItemKey(item) === key);
 				const newCart = existingItem
 					? prevState.cart.map((item) =>
-							item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
+							cartItemKey(item) === key ? { ...item, quantity: item.quantity + 1 } : item
 					  )
-					: [...prevState.cart, { ...product, quantity: 1 }];
+					: [...prevState.cart, newItem];
 
 				return { cart: newCart };
 			});
@@ -79,11 +92,17 @@ export const useCartStore = create((set, get) => ({
 		}
 	},
 
-	removeFromCart: async (productId) => {
+	removeFromCart: async (itemOrId) => {
+		const isItem = itemOrId && typeof itemOrId === "object";
+		const productId = isItem ? itemOrId._id : itemOrId;
+		const size = isItem ? itemOrId.selectedSize || "" : "";
+		const color = isItem ? itemOrId.selectedColor || "" : "";
 		try {
-			await axios.delete("/cart", { data: { productId } });
+			await axios.delete("/cart", { data: isItem ? { productId, size, color } : { productId } });
 			set((prevState) => ({
-				cart: prevState.cart.filter((item) => item._id !== productId),
+				cart: prevState.cart.filter((item) => isItem
+					? cartItemKey(item) !== cartItemKey(itemOrId)
+					: item._id !== productId),
 			}));
 			get().calculateTotals();
 		} catch (error) {
@@ -91,17 +110,23 @@ export const useCartStore = create((set, get) => ({
 		}
 	},
 
-	updateQuantity: async (productId, quantity) => {
+	updateQuantity: async (itemOrId, quantity) => {
+		const isItem = itemOrId && typeof itemOrId === "object";
+		const productId = isItem ? itemOrId._id : itemOrId;
 		if (quantity === 0) {
-			await get().removeFromCart(productId);
+			await get().removeFromCart(itemOrId);
 			return;
 		}
 
+		const size = isItem ? itemOrId.selectedSize || "" : "";
+		const color = isItem ? itemOrId.selectedColor || "" : "";
 		try {
-			await axios.put(`/cart/${productId}`, { quantity });
+			await axios.put("/cart/" + productId, { quantity, size, color });
 			set((prevState) => ({
 				cart: prevState.cart.map((item) =>
-					item._id === productId ? { ...item, quantity } : item
+					(isItem ? cartItemKey(item) === cartItemKey(itemOrId) : item._id === productId)
+						? { ...item, quantity }
+						: item
 				),
 			}));
 			get().calculateTotals();
