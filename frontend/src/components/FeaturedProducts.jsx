@@ -30,16 +30,16 @@ const FeaturedProducts = ({ featuredProducts = [] }) => {
         <p className="max-w-sm text-sm leading-6 text-[#62645c] sm:text-right">مجموعه‌ای گزیده از محصولاتی که ارزش دیدن دارند.</p>
       </div>
       <div className="relative">
-        <div className="overflow-hidden">
+        <div id="featured-products-track" className="overflow-hidden">
           <div className="flex items-stretch transition-transform duration-300 ease-out motion-reduce:transition-none" style={{ transform: `translateX(${(currentIndex / Math.max(featuredProducts.length, 1)) * 100}%)` }}>
-            {featuredProducts.map((product) => <div key={product._id} className="min-w-0 shrink-0 px-2 pb-2" style={{ flexBasis: `${100 / itemsPerPage}%`, boxSizing: "border-box" }}><ProductCard product={product} /></div>)}
+            {featuredProducts.map((product) => <div key={product._id} className="min-w-0 shrink-0 px-1.5 pb-2 sm:px-2" style={{ flexBasis: `${100 / itemsPerPage}%`, boxSizing: "border-box" }}><ProductCard product={product} /></div>)}
           </div>
         </div>
         {featuredProducts.length > itemsPerPage && <div className="mt-5 flex items-center justify-between gap-4">
           <p className="text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(Math.min(currentIndex + itemsPerPage, featuredProducts.length))} از {new Intl.NumberFormat("fa-IR").format(featuredProducts.length)} محصول</p>
           <div className="flex gap-2">
-            <button type="button" onClick={prevSlide} disabled={currentIndex === 0} aria-label="محصولات قبلی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35"><ChevronRight size={19} aria-hidden="true" /></button>
-            <button type="button" onClick={nextSlide} disabled={currentIndex >= maxIndex} aria-label="محصولات بعدی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35"><ChevronLeft size={19} aria-hidden="true" /></button>
+            <button type="button" aria-controls="featured-products-track" onClick={prevSlide} disabled={currentIndex === 0} aria-label="محصولات قبلی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-35"><ChevronRight size={19} aria-hidden="true" /></button>
+            <button type="button" aria-controls="featured-products-track" onClick={nextSlide} disabled={currentIndex >= maxIndex} aria-label="محصولات بعدی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-35"><ChevronLeft size={19} aria-hidden="true" /></button>
           </div>
         </div>}
       </div>

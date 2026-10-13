@@ -117,7 +117,7 @@ const HomePage = () => {
             className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4"
           >
             {categories.map((category, index) => (
-              <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[82%] shrink-0 snap-center sm:min-w-[46%] lg:min-w-[31.5%]">
+              <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
                 <CategoryItem category={category} />
               </div>
             ))}
@@ -166,7 +166,7 @@ const HomePage = () => {
           {!newestLoaded ? (
             <div aria-label="در حال بارگذاری محصولات تازه" className="flex gap-3 overflow-hidden sm:gap-4">
               {[0, 1, 2].map((item) => (
-                <div key={item} className="min-w-[72%] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-[#e4e0d8] bg-white sm:min-w-[38%] lg:min-w-[24%]">
+                <div key={item} className="min-w-[68%] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-[#e4e0d8] bg-white sm:min-w-[36%] lg:min-w-[24%]">
                   <div className="aspect-[4/5] bg-[#e9e5dc]" />
                   <div className="space-y-3 p-4">
                     <div className="h-4 w-3/4 rounded-full bg-[#e9e5dc]" />
@@ -179,7 +179,7 @@ const HomePage = () => {
           ) : newestProducts.length > 0 ? (
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
               {newestProducts.slice(0, 8).map((product) => (
-                <div key={product._id} className="min-w-[72%] shrink-0 snap-start sm:min-w-[38%] lg:min-w-[24%]">
+                <div key={product._id} className="min-w-[68%] shrink-0 snap-start sm:min-w-[36%] lg:min-w-[24%]">
                   <ProductCard product={product} />
                 </div>
               ))}
