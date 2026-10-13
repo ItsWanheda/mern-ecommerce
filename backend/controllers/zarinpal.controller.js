@@ -5,8 +5,8 @@ import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 
-const isZarinpalEnabled = () => (process.env.PAYMENT_PROVIDER || "stripe").toLowerCase() === "zarinpal";
-const currency = () => (process.env.STORE_CURRENCY || "USD").toUpperCase();
+const isZarinpalEnabled = () => (process.env.PAYMENT_PROVIDER || "zarinpal").toLowerCase() === "zarinpal";
+const currency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const apiBase = () => isSandbox()
   ? "https://sandbox.zarinpal.com/pg/v4/payment"
