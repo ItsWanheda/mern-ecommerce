@@ -15,7 +15,7 @@ const ProductCard = ({ product }) => {
   const { addToCart } = useCartStore();
   const navigate = useNavigate();
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
-  const outOfStock = isOutOfStock(product);
+  const outOfStock = hasVariants ? product.variants.every((variant) => Number(variant.stock) <= 0) : isOutOfStock(product);
 
   const handleAddToCart = () => {
     if (hasVariants) {
