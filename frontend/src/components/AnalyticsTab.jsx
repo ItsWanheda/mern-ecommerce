@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import axios from "../lib/axios";
-import { Users, Package, ShoppingCart, DollarSign } from "lucide-react";
+import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
+import { Users, Package, ShoppingCart, Banknote } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const AnalyticsTab = () => {
@@ -56,9 +57,9 @@ const AnalyticsTab = () => {
 					color='from-[#68745f] to-[#41443b]'
 				/>
 				<AnalyticsCard
-					title='مجموع درآمد'
-					value={`$${analyticsData.totalRevenue.toLocaleString()}`}
-					icon={DollarSign}
+					title={`مجموع درآمد (${getCurrencyLabel(STORE_CURRENCY)})`}
+					value={formatPrice(analyticsData.totalRevenue, STORE_CURRENCY)}
+					icon={Banknote}
 					color='from-[#68745f] to-[#41443b]'
 				/>
 			</div>
