@@ -21,13 +21,17 @@ function App() {
   const location = useLocation();
   const isAccountPage = location.pathname === "/login" || location.pathname === "/signup";
   const { user, checkAuth, checkingAuth } = useUserStore();
-  const { getCartItems } = useCartStore();
+  const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
 
   useEffect(() => { checkAuth(); }, [checkAuth]);
   useEffect(() => {
-    if (!user) return;
-    getCartItems();
-  }, [getCartItems, user]);
+    setAuthenticated(Boolean(user));
+    if (!user) {
+      initializeGuestCart();
+      return;
+    }
+    mergeGuestCart();
+  }, [user, setAuthenticated, initializeGuestCart, mergeGuestCart]);
 
   if (checkingAuth) return <LoadingSpinner />;
 
@@ -38,12 +42,12 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
-          <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to="/" />} />
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
+          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
           <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/product/:productId" element={<ProductDetailsPage />} />
-          <Route path="/cart" element={user ? <CartPage /> : <Navigate to="/login" />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
           <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
         </Routes>
