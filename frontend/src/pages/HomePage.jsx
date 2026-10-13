@@ -35,12 +35,14 @@ const HomePage = () => {
   const categoryTrackRef = useRef(null);
   const categorySlideRefs = useRef([]);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const [isCategoryAnimating, setIsCategoryAnimating] = useState(false);
   const categoryAnimationFrameRef = useRef(null);
 
   const cancelCategoryAnimation = () => {
     if (categoryAnimationFrameRef.current !== null) {
       cancelAnimationFrame(categoryAnimationFrameRef.current);
       categoryAnimationFrameRef.current = null;
+      setIsCategoryAnimating(false);
     }
   };
 
@@ -84,6 +86,7 @@ const HomePage = () => {
     }
 
     const duration = 620;
+    setIsCategoryAnimating(true);
     let startTime = null;
 
     const animateScroll = (timestamp) => {
@@ -99,6 +102,7 @@ const HomePage = () => {
         categoryAnimationFrameRef.current = requestAnimationFrame(animateScroll);
       } else {
         categoryAnimationFrameRef.current = null;
+        setIsCategoryAnimating(false);
         handleCategoryScroll();
       }
     };
@@ -206,7 +210,7 @@ const HomePage = () => {
             onWheel={cancelCategoryAnimation}
             onTouchStart={cancelCategoryAnimation}
             onPointerDown={cancelCategoryAnimation}
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+            className={`flex ${isCategoryAnimating ? "snap-none" : "snap-x snap-mandatory"} gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]`}
           >
             {categories.map((category, index) => (
               <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
