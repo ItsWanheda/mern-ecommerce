@@ -84,6 +84,23 @@ export const useProductStore = create((set) => ({
     }
   },
 
+
+  updateProductVariantStock: async (productId, size, color, stock) => {
+    try {
+      const response = await axios.patch(`/products/${productId}/variant-stock`, { size, color, stock });
+      set((state) => ({
+        products: state.products.map((product) =>
+          product._id === productId ? { ...product, variants: response.data.variants } : product
+        ),
+      }));
+      toast.success("موجودی این گزینه به‌روزرسانی شد");
+      return true;
+    } catch (error) {
+      toast.error(getErrorMessage(error, "به‌روزرسانی موجودی گزینه ناموفق بود"));
+      return false;
+    }
+  },
+
   toggleFeaturedProduct: async (productId) => {
     set({ loading: true });
     try {
