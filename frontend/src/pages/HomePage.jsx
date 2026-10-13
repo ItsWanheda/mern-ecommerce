@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, BadgePercent, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowLeft, BadgePercent, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
@@ -34,16 +34,6 @@ const HomePage = () => {
   const categoryTrackRef = useRef(null);
   const categorySlideRefs = useRef([]);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
-
-  const scrollToCategory = (index) => {
-    const nextIndex = Math.max(0, Math.min(categories.length - 1, index));
-    categorySlideRefs.current[nextIndex]?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "center",
-    });
-    setActiveCategoryIndex(nextIndex);
-  };
 
   const handleCategoryScroll = () => {
     const track = categoryTrackRef.current;
@@ -158,12 +148,8 @@ const HomePage = () => {
               <h2 className="font-serif text-2xl font-medium tracking-tight text-[#252722] sm:text-4xl">خرید بر اساس دسته‌بندی</h2>
               <p className="mt-2 max-w-md text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">با لمس و کشیدن، دسته‌بندی‌ها را مرور کنید.</p>
             </div>
-            <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <div className="flex items-center justify-end gap-3">
               <span className="text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => scrollToCategory(activeCategoryIndex - 1)} disabled={activeCategoryIndex === 0} aria-label="دسته‌بندی قبلی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ChevronRight size={18} aria-hidden="true" /></button>
-                <button type="button" onClick={() => scrollToCategory(activeCategoryIndex + 1)} disabled={activeCategoryIndex >= categories.length - 1} aria-label="دسته‌بندی بعدی" className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#252722] transition hover:border-[#252722] disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ChevronLeft size={18} aria-hidden="true" /></button>
-              </div>
             </div>
           </div>
           <div
