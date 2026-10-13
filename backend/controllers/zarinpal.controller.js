@@ -371,11 +371,11 @@ export const verifyZarinpalPayment = async (req, res) => {
     if (!response.ok || !Number.isInteger(code)) {
       // An HTTP/network/provider response that cannot be classified is not
       // proof of a failed payment. Leave it pending for the reconciler.
-      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending`);
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending&order_id=${order._id}`);
     }
     if (code !== 100 && code !== 101) {
       if (!reconciliationTerminalUnpaidCodes.has(code)) {
-        return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending`);
+        return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending&order_id=${order._id}`);
       }
       const failed = await Order.findOneAndUpdate(
         { _id: order._id, paymentStatus: "pending" },
