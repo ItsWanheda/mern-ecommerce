@@ -57,3 +57,31 @@ export const unsubscribeFromNewsletter = async (req, res) => {
     return res.status(500).json({ message: "لغو عضویت انجام نشد. بعداً دوباره تلاش کنید." });
   }
 };
+
+
+export const getNewsletterSubscribers = async (_req, res) => {
+  try {
+    const [subscribers, totals] = await Promise.all([
+      NewsletterSubscriber.find({})
+        .select("email isSubscribed consentedAt unsubscribedAt createdAt updatedAt")
+        .sort({ updatedAt: -1 })
+        .limit(500)
+        .lean(),
+      NewsletterSubscriber.aggregate([
+        { $group: {
+          _id: null,
+          total: { $sum: 1 },
+          subscribed: { $sum: { $cond: ["$isSubscribed", 1, 0] } },
+        } },
+      ]),
+    ]);
+    return res.json({
+      subscribers,
+      summary: totals[0] || { total: 0, subscribed: 0 },
+      emailDeliveryConfigured: false,
+    });
+  } catch (error) {
+    console.error("Error loading newsletter subscribers", error.message);
+    return res.status(500).json({ message: "Unable to load newsletter subscribers" });
+  }
+};
