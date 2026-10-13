@@ -28,7 +28,7 @@ app.get("/api/ready", (_req, res) => {
 
 // Run the broad limit before parsing request bodies. Health probes remain lightweight.
 app.use("/api", apiRateLimit);
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
