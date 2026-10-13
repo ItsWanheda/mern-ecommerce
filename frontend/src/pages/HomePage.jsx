@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
@@ -33,89 +33,32 @@ const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const categoryTrackRef = useRef(null);
-  const categorySlideRefs = useRef([]);
-  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
-  const [isCategoryAnimating, setIsCategoryAnimating] = useState(false);
-  const categoryAnimationFrameRef = useRef(null);
-
-  const cancelCategoryAnimation = () => {
-    if (categoryAnimationFrameRef.current !== null) {
-      cancelAnimationFrame(categoryAnimationFrameRef.current);
-      categoryAnimationFrameRef.current = null;
-      setIsCategoryAnimating(false);
-    }
-  };
+  const [categoryScrollProgress, setCategoryScrollProgress] = useState(0);
 
   const handleCategoryScroll = () => {
     const track = categoryTrackRef.current;
     if (!track) return;
-    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
-    let nearestIndex = 0;
-    let nearestDistance = Number.POSITIVE_INFINITY;
 
-    categorySlideRefs.current.forEach((slide, index) => {
-      if (!slide) return;
-      const rect = slide.getBoundingClientRect();
-      const distance = Math.abs(rect.left + rect.width / 2 - trackCenter);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = index;
-      }
-    });
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const isRtl = window.getComputedStyle(track).direction === "rtl";
+    const normalizedScrollLeft = isRtl ? Math.max(0, -track.scrollLeft) : Math.max(0, track.scrollLeft);
+    const progress = maxScroll > 0
+      ? Math.min(1000, Math.round((normalizedScrollLeft / maxScroll) * 1000))
+      : 0;
 
-    setActiveCategoryIndex((current) => current === nearestIndex ? current : nearestIndex);
+    setCategoryScrollProgress((current) => current === progress ? current : progress);
   };
 
-  const scrollToCategory = (index) => {
+  const handleCategorySliderChange = (event) => {
     const track = categoryTrackRef.current;
-    const slide = categorySlideRefs.current[index];
-    if (!track || !slide) return;
+    if (!track) return;
 
-    cancelCategoryAnimation();
+    const progress = Number(event.target.value);
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const isRtl = window.getComputedStyle(track).direction === "rtl";
 
-    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
-    const slideRect = slide.getBoundingClientRect();
-    const slideCenter = slideRect.left + slideRect.width / 2;
-    const startScrollLeft = track.scrollLeft;
-    const targetScrollLeft = startScrollLeft + slideCenter - trackCenter;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      track.scrollLeft = targetScrollLeft;
-      handleCategoryScroll();
-      return;
-    }
-
-    const duration = 620;
-    setIsCategoryAnimating(true);
-    let startTime = null;
-
-    const animateScroll = (timestamp) => {
-      if (startTime === null) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easedProgress = progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-      track.scrollLeft = startScrollLeft + (targetScrollLeft - startScrollLeft) * easedProgress;
-
-      if (progress < 1) {
-        categoryAnimationFrameRef.current = requestAnimationFrame(animateScroll);
-      } else {
-        categoryAnimationFrameRef.current = null;
-        setIsCategoryAnimating(false);
-        handleCategoryScroll();
-      }
-    };
-
-    categoryAnimationFrameRef.current = requestAnimationFrame(animateScroll);
-  };
-
-  const handlePreviousCategory = () => {
-    scrollToCategory(Math.max(0, activeCategoryIndex - 1));
-  };
-
-  const handleNextCategory = () => {
-    scrollToCategory(Math.min(categories.length - 1, activeCategoryIndex + 1));
+    setCategoryScrollProgress(progress);
+    track.scrollLeft = (isRtl ? -1 : 1) * (progress / 1000) * maxScroll;
   };
 
   const {
@@ -124,12 +67,6 @@ const HomePage = () => {
     fetchNewestProducts,
     newestProducts,
   } = useProductStore();
-
-  useEffect(() => () => {
-    if (categoryAnimationFrameRef.current !== null) {
-      cancelAnimationFrame(categoryAnimationFrameRef.current);
-    }
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -176,29 +113,21 @@ const HomePage = () => {
               <h2 className="font-serif text-2xl font-medium tracking-tight text-[#252722] sm:text-4xl">خرید بر اساس دسته‌بندی</h2>
               <p className="mt-2 max-w-md text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">با لمس و کشیدن، دسته‌بندی‌ها را مرور کنید.</p>
             </div>
-            <div className="flex items-center justify-end gap-2">
-              
-              <button
-                type="button"
-                onClick={handlePreviousCategory}
-                disabled={activeCategoryIndex === 0}
-                aria-label="دسته‌بندی قبلی"
-                aria-controls="category-carousel"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-35"
-              >
-                <ChevronRight size={19} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNextCategory}
-                disabled={activeCategoryIndex >= categories.length - 1}
-                aria-label="دسته‌بندی بعدی"
-                aria-controls="category-carousel"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-35"
-              >
-                <ChevronLeft size={19} aria-hidden="true" />
-              </button>
-            </div>
+          </div>
+          <div className="mb-4 px-1">
+            <label htmlFor="category-carousel-slider" className="sr-only">حرکت بین دسته‌بندی‌ها</label>
+            <input
+              id="category-carousel-slider"
+              type="range"
+              min="0"
+              max="1000"
+              step="1"
+              value={categoryScrollProgress}
+              onChange={handleCategorySliderChange}
+              aria-label="حرکت بین دسته‌بندی‌ها"
+              aria-controls="category-carousel"
+              className="h-2 w-full cursor-pointer accent-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
+            />
           </div>
           <div
             id="category-carousel"
@@ -207,13 +136,10 @@ const HomePage = () => {
             aria-label="دسته‌بندی‌های فروشگاه"
             tabIndex={0}
             onScroll={handleCategoryScroll}
-            onWheel={cancelCategoryAnimation}
-            onTouchStart={cancelCategoryAnimation}
-            onPointerDown={cancelCategoryAnimation}
-            className={`flex ${isCategoryAnimating ? "snap-none" : "snap-x snap-mandatory"} gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]`}
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
           >
-            {categories.map((category, index) => (
-              <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
+            {categories.map((category) => (
+              <div key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
                 <CategoryItem category={category} />
               </div>
             ))}
