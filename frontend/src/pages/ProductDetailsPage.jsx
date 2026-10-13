@@ -73,7 +73,6 @@ const ProductDetailsPage = () => {
           <div className="min-w-0 flex-1"><p className="text-[11px] text-[#55584f]">قیمت محصول</p><p className="truncate text-base font-bold tabular-nums text-[#252722]">{formatPrice(product.price)}</p></div>
           {!user ? <Link to="/login" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b]"><ShoppingCart size={17} aria-hidden="true" />ورود برای خرید</Link> : <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:cursor-not-allowed disabled:bg-[#d5d0c5] disabled:text-[#707267]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد"}</button>}
         </div>
-      </div>
     </main>;
 };
 export default ProductDetailsPage;
