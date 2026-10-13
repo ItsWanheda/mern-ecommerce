@@ -99,21 +99,8 @@ const ProductDetailsPage = () => {
     variant.color === color && variant.stock > 0
   );
 
-  const handleSizeSelect = (size) => {
-    setSelectedSize(size);
-    if (colors.length && !variants.some((variant) => variant.size === size && variant.color === selectedColor && variant.stock > 0)) {
-      const alternative = variants.find((variant) => variant.size === size && variant.stock > 0);
-      if (alternative) setSelectedColor(alternative.color || "");
-    }
-  };
-
-  const handleColorSelect = (color) => {
-    setSelectedColor(color);
-    if (sizes.length && !variants.some((variant) => variant.color === color && variant.size === selectedSize && variant.stock > 0)) {
-      const alternative = variants.find((variant) => variant.color === color && variant.stock > 0);
-      if (alternative) setSelectedSize(alternative.size || "");
-    }
-  };
+  const handleSizeSelect = (size) => setSelectedSize(size);
+  const handleColorSelect = (color) => setSelectedColor(color);
 
   const handleAddToCart = () => {
     if (outOfStock) return toast.error(hasVariants ? "این ترکیب سایز و رنگ موجود نیست" : "این محصول در حال حاضر موجود نیست");
@@ -244,7 +231,7 @@ const ProductDetailsPage = () => {
                     </tbody>
                   </table>
                 </div>
-                <p className="px-4 py-3 text-[11px] leading-5 text-[#77786f]">اندازه‌ها ممکن است با توجه به مدل لباس اندکی تفاوت داشته باشند؛ برای مقایسه دقیق، اندازه‌های بدن را با جدول بالا بسنجید.</p>
+                <p className="px-4 py-3 text-[11px] leading-5 text-[#77786f]">این جدول راهنمای اندازه‌گیری محصول است؛ برای مقایسه دقیق، اندازه‌های درج‌شده و توضیح تن‌خور را در نظر بگیرید.</p>
               </section>
             )}
 
