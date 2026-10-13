@@ -31,6 +31,7 @@ const benefits = [
 
 const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const [newestLoaded, setNewestLoaded] = useState(false);
   const categoryTrackRef = useRef(null);
   const categorySlideRefs = useRef([]);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
@@ -62,9 +63,11 @@ const HomePage = () => {
   } = useProductStore();
 
   useEffect(() => {
-    fetchFeaturedProducts();
-    fetchNewestProducts();
     let active = true;
+    fetchFeaturedProducts();
+    Promise.resolve(fetchNewestProducts()).finally(() => {
+      if (active) setNewestLoaded(true);
+    });
     axios.get("/campaigns")
       .then(({ data }) => { if (active) setCampaigns(data.campaigns || []); })
       .catch((error) => console.error("Could not load campaigns:", error.message));
@@ -165,6 +168,53 @@ const HomePage = () => {
           </div>
         </section>
 
+        <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="newest-products-heading">
+          <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+            <div className="min-w-0">
+              <p className="mb-1.5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">
+                <Sparkles size={14} aria-hidden="true" />
+                تازه به فروشگاه اضافه شده
+              </p>
+              <h2 id="newest-products-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">تازه‌واردها</h2>
+              <p className="mt-2 text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">محصولات جدید را با کشیدن به چپ و راست مرور کنید.</p>
+            </div>
+            <Link to="/shop?sort=newest" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
+              مشاهده همه
+              <ArrowLeft size={15} aria-hidden="true" />
+            </Link>
+          </div>
+
+          {!newestLoaded ? (
+            <div aria-label="در حال بارگذاری محصولات تازه" className="flex gap-3 overflow-hidden sm:gap-4">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className="min-w-[72%] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-[#e4e0d8] bg-white sm:min-w-[38%] lg:min-w-[24%]">
+                  <div className="aspect-[4/5] bg-[#e9e5dc]" />
+                  <div className="space-y-3 p-4">
+                    <div className="h-4 w-3/4 rounded-full bg-[#e9e5dc]" />
+                    <div className="h-4 w-1/2 rounded-full bg-[#e9e5dc]" />
+                    <div className="h-10 rounded-full bg-[#e9e5dc]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : newestProducts.length > 0 ? (
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
+              {newestProducts.slice(0, 8).map((product) => (
+                <div key={product._id} className="min-w-[72%] shrink-0 snap-start sm:min-w-[38%] lg:min-w-[24%]">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-5 py-8 text-center sm:py-10">
+              <PackageCheck size={24} className="mx-auto text-[#68745f]" aria-hidden="true" />
+              <p className="mt-3 text-sm font-semibold text-[#41443b]">محصول تازه‌ای برای نمایش نیست.</p>
+              <p className="mt-1 text-xs text-[#77786f]">بعداً دوباره سر بزنید یا محصولات فروشگاه را ببینید.</p>
+              <Link to="/shop" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#252722] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b]">رفتن به فروشگاه</Link>
+            </div>
+          )}
+        </section>
+
         <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="collections-heading">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب‌های هماهنگ</p><h2 id="collections-heading" className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">مجموعه‌های پیشنهادی</h2></div>
@@ -180,18 +230,6 @@ const HomePage = () => {
             ))}
           </div>
         </section>
-
-        {newestProducts.length > 0 && (
-          <section className="pt-16 sm:pt-20" aria-labelledby="newest-products-heading">
-            <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-              <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">به‌تازگی اضافه‌شده</p><h2 id="newest-products-heading" className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">جدیدترین محصولات</h2></div>
-              <Link to="/shop?sort=newest" className="inline-flex min-h-10 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-sm font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto">مشاهده همه<ArrowLeft size={15} aria-hidden="true" /></Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-              {newestProducts.slice(0, 8).map((product) => <ProductCard key={product._id} product={product} />)}
-            </div>
-          </section>
-        )}
 
         {featuredProducts.length > 0 && <section className="mt-12 border-t border-[#e4e0d8] pt-8 sm:mt-16 sm:pt-12"><FeaturedProducts featuredProducts={featuredProducts} /></section>}
       </div>
