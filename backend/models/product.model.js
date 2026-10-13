@@ -1,12 +1,66 @@
 import mongoose from "mongoose";
 
+const colorSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 40 },
+    hex: { type: String, default: "#d5d0c5", match: /^#[0-9a-fA-F]{6}$/ },
+  },
+  { _id: false }
+);
+
+const variantSchema = new mongoose.Schema(
+  {
+    size: { type: String, default: "", trim: true, maxlength: 24 },
+    color: { type: String, default: "", trim: true, maxlength: 40 },
+    stock: {
+      type: Number,
+      required: true,
+      min: 0,
+      validate: { validator: Number.isInteger, message: "Variant stock must be a whole number" },
+    },
+  },
+  { _id: false }
+);
+
+const sizeMeasurementSchema = new mongoose.Schema(
+  {
+    size: { type: String, required: true, trim: true, maxlength: 24 },
+    chestCm: { type: Number, min: 0, default: null },
+    waistCm: { type: Number, min: 0, default: null },
+    hipsCm: { type: Number, min: 0, default: null },
+    lengthCm: { type: Number, min: 0, default: null },
+  },
+  { _id: false }
+);
+
+const fitSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ["true-to-size", "slim", "regular", "relaxed", "oversized", "athletic"],
+      default: "regular",
+    },
+    description: { type: String, trim: true, maxlength: 500, default: "" },
+    modelHeight: { type: String, trim: true, maxlength: 40, default: "" },
+    modelSize: { type: String, trim: true, maxlength: 24, default: "" },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 160 },
     description: { type: String, required: true, maxlength: 5000 },
     price: { type: Number, min: 0, required: true },
     image: { type: String, trim: true, default: "" },
+    // Keep image for existing integrations while allowing a proper product gallery.
+    images: { type: [String], default: [] },
     category: { type: String, required: true, trim: true, maxlength: 64 },
+    sizes: { type: [String], default: [] },
+    colors: { type: [colorSchema], default: [] },
+    variants: { type: [variantSchema], default: [] },
+    fit: { type: fitSchema, default: () => ({}) },
+    sizeChart: { type: [sizeMeasurementSchema], default: [] },
     isFeatured: { type: Boolean, default: false },
     // null preserves legacy catalogue records until opening stock is entered by an admin.
     stock: {
@@ -22,7 +76,6 @@ const productSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 productSchema.index({ createdAt: -1 });
 productSchema.index({ category: 1, price: 1, createdAt: -1 });
 
