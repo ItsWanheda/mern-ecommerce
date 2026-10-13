@@ -5,7 +5,7 @@ dotenv.config();
 
 const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
 const unavailable = async () => {
-  throw new Error("UPSTASH_REDIS_URL is not configured");
+  throw new Error("REDIS_URL (or legacy UPSTASH_REDIS_URL) is not configured");
 };
 
 const redisClient = redisUrl
