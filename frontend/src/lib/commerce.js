@@ -1,4 +1,4 @@
-const configuredCurrency = import.meta.env.VITE_STORE_CURRENCY || "USD";
+const configuredCurrency = import.meta.env.VITE_STORE_CURRENCY || "IRT";
 
 export const STORE_CURRENCY = String(configuredCurrency).toUpperCase();
 
@@ -6,7 +6,7 @@ export const formatPrice = (value, currency = STORE_CURRENCY) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "—";
 
-  const normalizedCurrency = String(currency || "USD").toUpperCase();
+  const normalizedCurrency = String(currency || "IRT").toUpperCase();
   if (normalizedCurrency === "IRT") {
     return `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.round(amount))} تومان`;
   }
