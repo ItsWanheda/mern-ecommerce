@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 import { ArrowUpLeft, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
@@ -13,9 +13,15 @@ const categoryLabels = {
 const ProductCard = ({ product }) => {
   const { user } = useUserStore();
   const { addToCart } = useCartStore();
+  const navigate = useNavigate();
+  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
   const outOfStock = isOutOfStock(product);
 
   const handleAddToCart = () => {
+    if (hasVariants) {
+      navigate("/product/" + product._id);
+      return;
+    }
     if (outOfStock) return toast.error("این محصول در حال حاضر موجود نیست");
     if (!user) return toast.error("برای افزودن کالا به سبد خرید، ابتدا وارد حساب کاربری شوید.", { id: "login" });
     addToCart(product);
@@ -46,7 +52,7 @@ const ProductCard = ({ product }) => {
           <p className="mt-2 text-lg font-semibold tabular-nums tracking-tight text-[#252722]">{formatPrice(product.price)}</p>
         </div>
         <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#252722] px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-[#41443b] sm:px-4 sm:text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:bg-[#d5d0c5] disabled:text-[#77786f]">
-          <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
+          <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : hasVariants ? "انتخاب سایز و رنگ" : "افزودن به سبد خرید"}
         </button>
       </div>
     </article>
