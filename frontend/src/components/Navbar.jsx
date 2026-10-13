@@ -499,12 +499,12 @@ const Navbar = () => {
               <Truck size={15} className="shrink-0 text-[#d3dbc9]" aria-hidden="true" />
               <span>
                 {shippingAnnouncement.loading || shippingAnnouncement.error
-                  ? "شرایط و هزینه ارسال پیش از پرداخت نمایش داده می‌شود"
-                  : shippingAnnouncement.freeShippingThreshold > 0
-                    ? `ارسال رایگان سفارش‌های بالای ${formatPrice(shippingAnnouncement.freeShippingThreshold, shippingAnnouncement.currency)}`
-                    : shippingAnnouncement.flatRate <= 0
-                      ? "ارسال سفارش‌ها در حال حاضر رایگان است"
-                      : `هزینه ارسال ${formatPrice(shippingAnnouncement.flatRate, shippingAnnouncement.currency)} است؛ مبلغ نهایی پیش از پرداخت مشخص می‌شود`}
+                  ? "هزینه نهایی و شرایط ارسال در سبد خرید مشخص می‌شود"
+                  : shippingAnnouncement.flatRate <= 0
+                    ? "ارسال سفارش‌ها در حال حاضر رایگان است"
+                    : shippingAnnouncement.freeShippingThreshold > 0
+                      ? `ارسال رایگان برای سفارش‌های حداقل ${formatPrice(shippingAnnouncement.freeShippingThreshold, shippingAnnouncement.currency)}`
+                      : `هزینه ارسال ${formatPrice(shippingAnnouncement.flatRate, shippingAnnouncement.currency)} · مبلغ نهایی در سبد خرید`}
               </span>
             </p>
             <Link
