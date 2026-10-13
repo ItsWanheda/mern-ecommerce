@@ -35,6 +35,14 @@ const HomePage = () => {
   const categoryTrackRef = useRef(null);
   const categorySlideRefs = useRef([]);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const categoryAnimationFrameRef = useRef(null);
+
+  const cancelCategoryAnimation = () => {
+    if (categoryAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(categoryAnimationFrameRef.current);
+      categoryAnimationFrameRef.current = null;
+    }
+  };
 
   const handleCategoryScroll = () => {
     const track = categoryTrackRef.current;
@@ -57,11 +65,45 @@ const HomePage = () => {
   };
 
   const scrollToCategory = (index) => {
+    const track = categoryTrackRef.current;
     const slide = categorySlideRefs.current[index];
-    if (!slide) return;
+    if (!track || !slide) return;
 
-    setActiveCategoryIndex(index);
-    slide.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    cancelCategoryAnimation();
+
+    const trackCenter = track.getBoundingClientRect().left + track.clientWidth / 2;
+    const slideRect = slide.getBoundingClientRect();
+    const slideCenter = slideRect.left + slideRect.width / 2;
+    const startScrollLeft = track.scrollLeft;
+    const targetScrollLeft = startScrollLeft + slideCenter - trackCenter;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      track.scrollLeft = targetScrollLeft;
+      handleCategoryScroll();
+      return;
+    }
+
+    const duration = 620;
+    let startTime = null;
+
+    const animateScroll = (timestamp) => {
+      if (startTime === null) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const easedProgress = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      track.scrollLeft = startScrollLeft + (targetScrollLeft - startScrollLeft) * easedProgress;
+
+      if (progress < 1) {
+        categoryAnimationFrameRef.current = requestAnimationFrame(animateScroll);
+      } else {
+        categoryAnimationFrameRef.current = null;
+        handleCategoryScroll();
+      }
+    };
+
+    categoryAnimationFrameRef.current = requestAnimationFrame(animateScroll);
   };
 
   const handlePreviousCategory = () => {
@@ -78,6 +120,12 @@ const HomePage = () => {
     fetchNewestProducts,
     newestProducts,
   } = useProductStore();
+
+  useEffect(() => () => {
+    if (categoryAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(categoryAnimationFrameRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -155,7 +203,10 @@ const HomePage = () => {
             aria-label="دسته‌بندی‌های فروشگاه"
             tabIndex={0}
             onScroll={handleCategoryScroll}
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+            onWheel={cancelCategoryAnimation}
+            onTouchStart={cancelCategoryAnimation}
+            onPointerDown={cancelCategoryAnimation}
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
           >
             {categories.map((category, index) => (
               <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
