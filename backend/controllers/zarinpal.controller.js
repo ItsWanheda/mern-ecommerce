@@ -16,6 +16,14 @@ const startPayBase = () => isSandbox()
   : "https://www.zarinpal.com/pg/StartPay";
 const isTracked = (product) => typeof product.stock === "number" && Number.isFinite(product.stock);
 const cartProductId = (item) => item.product?.toString() || item._id?.toString();
+const optionValue = (value) => typeof value === "string" ? value.trim() : "";
+const findVariant = (product, size, color) => (product.variants || []).find((variant) =>
+  optionValue(variant.size) === optionValue(size) && optionValue(variant.color) === optionValue(color)
+);
+const sameCartLine = (item, productId, size, color) =>
+  cartProductId(item) === productId &&
+  optionValue(item.size) === optionValue(size) &&
+  optionValue(item.color) === optionValue(color);
 const safeClientUrl = () => (process.env.CLIENT_URL || "").replace(/\/$/, "");
 
 export const getPaymentConfiguration = (_req, res) => {
@@ -38,7 +46,13 @@ export const getPaymentConfiguration = (_req, res) => {
 
 const releaseReservedInventory = async (items = []) => {
   for (const item of items) {
-    if (item.stockReserved && item.product && item.quantity > 0) {
+    if (!item.stockReserved || !item.product || item.quantity <= 0) continue;
+    if (item.hasVariant || item.size || item.color) {
+      await Product.updateOne(
+        { _id: item.product, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
+        { $inc: { "variants.$.stock": item.quantity } }
+      );
+    } else {
       await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
     }
   }
@@ -52,20 +66,39 @@ const reserveInventory = async (items, productsById) => {
       const id = cartProductId(item);
       const product = id && productsById.get(id);
       const quantity = Number(item.quantity);
+      const size = optionValue(item.size);
+      const color = optionValue(item.color);
       if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 || product.isActive === false) {
         throw new Error("INVALID_CART");
       }
-      if (isTracked(product)) {
+      const hasVariant = (product.variants || []).length > 0;
+      const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
+      if (hasVariant && !selectedVariant) throw new Error("INVALID_CART");
+
+      if (hasVariant) {
+        const updated = await Product.findOneAndUpdate(
+          {
+            _id: product._id,
+            isActive: { $ne: false },
+            variants: { $elemMatch: { size, color, stock: { $gte: quantity } } },
+          },
+          { $inc: { "variants.$.stock": -quantity } },
+          { new: true }
+        ).lean();
+        if (!updated) throw new Error("INSUFFICIENT_STOCK");
+        reserved.push({ product: product._id, quantity, size, color, hasVariant: true, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: product.price, size, color, hasVariant: true, stockReserved: true });
+      } else if (isTracked(product)) {
         const updated = await Product.findOneAndUpdate(
           { _id: product._id, isActive: { $ne: false }, stock: { $gte: quantity } },
           { $inc: { stock: -quantity } },
           { new: true }
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
-        reserved.push({ product: product._id, quantity, stockReserved: true });
-        orderItems.push({ product: product._id, quantity, price: product.price, stockReserved: true });
+        reserved.push({ product: product._id, quantity, hasVariant: false, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: product.price, size, color, hasVariant: false, stockReserved: true });
       } else {
-        orderItems.push({ product: product._id, quantity, price: product.price, stockReserved: false });
+        orderItems.push({ product: product._id, quantity, price: product.price, size, color, hasVariant: false, stockReserved: false });
       }
     }
     return { orderItems, reserved };
@@ -74,7 +107,6 @@ const reserveInventory = async (items, productsById) => {
     throw error;
   }
 };
-
 export const createZarinpalCheckout = async (req, res) => {
   if (!isZarinpalEnabled()) {
     return res.status(409).json({ message: "Zarinpal is not the configured payment provider" });
@@ -99,10 +131,15 @@ export const createZarinpalCheckout = async (req, res) => {
       const id = cartProductId(item);
       const product = id && productsById.get(id);
       const quantity = Number(item.quantity);
+      const size = optionValue(item.size);
+      const color = optionValue(item.color);
       if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 ||
           !Number.isFinite(product.price) || product.price < 0 || !Number.isInteger(product.price)) return null;
-      if (isTracked(product) && product.stock < quantity) return null;
-      return { productId: id, quantity, product };
+      const hasVariant = (product.variants || []).length > 0;
+      const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
+      if (hasVariant && (!selectedVariant || selectedVariant.stock < quantity)) return null;
+      if (!hasVariant && isTracked(product) && product.stock < quantity) return null;
+      return { productId: id, quantity, product, size, color, hasVariant };
     });
     if (validated.some((item) => !item)) {
       return res.status(409).json({ message: "موجودی یا اطلاعات یکی از کالاهای سبد خرید معتبر نیست؛ سبد خرید را به‌روزرسانی کنید." });
@@ -134,15 +171,11 @@ export const createZarinpalCheckout = async (req, res) => {
     const reservations = await reserveInventory(validated.map((item) => ({
       product: item.productId,
       quantity: item.quantity,
+      size: item.size,
+      color: item.color,
     })), productsById);
     reserved = reservations.reserved;
-    const reservedById = new Map(reserved.map((item) => [item.product.toString(), item]));
-    const orderItems = validated.map((item) => ({
-      product: item.product._id,
-      quantity: item.quantity,
-      price: item.product.price,
-      stockReserved: reservedById.has(item.product._id.toString()),
-    }));
+    const orderItems = reservations.orderItems;
 
     order = await Order.create({
       user: req.user._id,
@@ -284,8 +317,11 @@ export const verifyZarinpalPayment = async (req, res) => {
     }
     const user = await User.findById(paid.user);
     if (user) {
-      const purchasedIds = new Set(paid.products.map((item) => item.product.toString()));
-      user.cartItems = user.cartItems.filter((item) => !purchasedIds.has(cartProductId(item)));
+      user.cartItems = user.cartItems.filter((item) =>
+        !paid.products.some((purchased) =>
+          sameCartLine(item, purchased.product.toString(), purchased.size, purchased.color)
+        )
+      );
       await user.save();
     }
     return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
