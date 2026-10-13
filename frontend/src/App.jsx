@@ -9,6 +9,7 @@ import AdminPage from "./pages/AdminPage";
 import CategoryPage from "./pages/CategoryPage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import { Toaster } from "react-hot-toast";
 import { useUserStore } from "./stores/useUserStore";
 import LoadingSpinner from "./components/LoadingSpinner";
@@ -20,6 +21,7 @@ import PurchaseCancelPage from "./pages/PurchaseCancelPage";
 function App() {
   const location = useLocation();
   const isAccountPage = location.pathname === "/login" || location.pathname === "/signup";
+  const isAdminPage = location.pathname === "/secret-dashboard";
   const { user, checkAuth, checkingAuth } = useUserStore();
   const { getCartItems } = useCartStore();
 
@@ -48,6 +50,7 @@ function App() {
           <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
         </Routes>
       </div>
+      {!isAccountPage && !isAdminPage && <Footer />}
       <Toaster />
     </div>
   );
