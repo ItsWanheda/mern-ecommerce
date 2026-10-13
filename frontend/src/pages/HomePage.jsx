@@ -24,13 +24,15 @@ const collections = [
 ];
 
 const benefits = [
-  { icon: Truck, title: "ارسال شفاف", text: "هزینه ارسال پیش از پرداخت مشخص است." },
-  { icon: ShieldCheck, title: "پرداخت تأییدشده", text: "نتیجه پرداخت در سمت سرور بررسی می‌شود." },
-  { icon: PackageCheck, title: "موجودی به‌روز", text: "تعداد قابل سفارش پیش از خرید بررسی می‌شود." },
+  { icon: Truck, title: "ارسال و تحویل", text: "هزینه و شرط ارسال رایگان را پیش از پرداخت بررسی کنید.", href: "/shipping-policy" },
+  { icon: PackageCheck, title: "مرجوعی و تعویض", text: "وضعیت سیاست مرجوعی و راه هماهنگی پیش از خرید.", href: "/returns-policy" },
+  { icon: ShieldCheck, title: "راهنما و پشتیبانی", text: "پاسخ پرسش‌های خرید و راه ارتباط رسمی فروشگاه.", href: "/support" },
 ];
 
 const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const [bestsellers, setBestsellers] = useState([]);
+  const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const {
     fetchFeaturedProducts,
@@ -48,6 +50,10 @@ const HomePage = () => {
     axios.get("/campaigns")
       .then(({ data }) => { if (active) setCampaigns(data.campaigns || []); })
       .catch((error) => console.error("Could not load campaigns:", error.message));
+    axios.get("/products/bestsellers?limit=8")
+      .then(({ data }) => { if (active) setBestsellers(Array.isArray(data.products) ? data.products : []); })
+      .catch((error) => console.error("Could not load bestsellers:", error.message))
+      .finally(() => { if (active) setBestsellersLoaded(true); });
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts]);
 
@@ -118,6 +124,24 @@ const HomePage = () => {
           </section>
         )}
 
+        {bestsellersLoaded && bestsellers.length > 0 && (
+          <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="bestsellers-heading">
+            <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+              <div>
+                <p className="mb-1.5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]"><Sparkles size={14} aria-hidden="true" />محبوب بر اساس سفارش‌های تکمیل‌شده</p>
+                <h2 id="bestsellers-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">پرفروش‌های فروشگاه</h2>
+                <p className="mt-2 text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">بر اساس تعداد کالا در سفارش‌هایی که پرداختشان تأیید شده است.</p>
+              </div>
+              <Link to="/shop?sort=priceDesc" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
+                مرور همه محصولات<ArrowLeft size={15} aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+              {bestsellers.slice(0, 8).map((product) => <ProductCard key={product._id} product={product} />)}
+            </div>
+          </section>
+        )}
+
         <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="newest-products-heading">
           <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <div className="min-w-0">
@@ -183,12 +207,12 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6">
-          {benefits.map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex items-start gap-3 px-2 py-2 sm:px-3">
+        <section className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6" aria-label="اطلاعات پیش از خرید">
+          {benefits.map(({ icon: Icon, title, text, href }) => (
+            <Link key={title} to={href} className="group flex items-start gap-3 rounded-xl px-2 py-2 transition hover:bg-[#f7f5f0] sm:px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9e5dc] text-[#68745f]"><Icon size={20} aria-hidden="true" /></span>
-              <div><h2 className="text-sm font-semibold text-[#252722]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#77786f]">{text}</p></div>
-            </div>
+              <div className="min-w-0"><h2 className="text-sm font-semibold text-[#252722]">{title}</h2><p className="mt-1 text-xs leading-5 text-[#77786f]">{text}</p><span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#68745f]">بیشتر بدانید<ArrowLeft size={13} aria-hidden="true" /></span></div>
+            </Link>
           ))}
         </section>
       </div>
