@@ -6,6 +6,7 @@ import CategoryItem from "../components/CategoryItem";
 import ProductCard from "../components/ProductCard";
 import { useProductStore } from "../stores/useProductStore";
 import FeaturedProducts from "../components/FeaturedProducts";
+import { formatPrice } from "../lib/commerce";
 
 const categories = [
   { href: "/category/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
@@ -226,7 +227,7 @@ const HomePage = () => {
                         {lookProducts.slice(0, 2).map((product) => (
                           <span key={product._id} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/25 bg-[#fffefa]/95 p-2 text-[#252722] shadow-sm backdrop-blur-sm">
                             {product.image ? <img src={product.image} alt="" loading="lazy" className="h-12 w-10 shrink-0 rounded-lg bg-[#e9e5dc] object-cover" /> : <span className="h-12 w-10 shrink-0 rounded-lg bg-[#e9e5dc]" />}
-                            <span className="min-w-0"><span className="block line-clamp-2 text-[11px] font-semibold leading-4">{product.name}</span><span className="mt-1 block text-[10px] tabular-nums text-[#68745f]">{new Intl.NumberFormat("fa-IR").format(Math.round(Number(product.price) || 0))} تومان</span></span>
+                            <span className="min-w-0"><span className="block line-clamp-2 text-[11px] font-semibold leading-4">{product.name}</span><span className="mt-1 block text-[10px] tabular-nums text-[#68745f]">{formatPrice(product.price)}</span></span>
                           </span>
                         ))}
                       </div>
