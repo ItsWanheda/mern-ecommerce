@@ -3,6 +3,7 @@ import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
 import {
   ShoppingCart,
+  Truck,
   Heart,
   Home,
   ShoppingBag,
@@ -66,6 +67,13 @@ const Navbar = () => {
   const desktopSearchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
   const accountMenuRef = useRef(null);
+  const [shippingAnnouncement, setShippingAnnouncement] = useState({
+    loading: true,
+    error: false,
+    flatRate: 0,
+    freeShippingThreshold: 0,
+    currency: "IRT",
+  });
   const [filters, setFilters] = useState(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -93,6 +101,25 @@ const Navbar = () => {
         ))
         .slice(0, 3)
     : [];
+
+  useEffect(() => {
+    let active = true;
+    axios.get("/shipping?subtotal=0")
+      .then(({ data }) => {
+        if (!active) return;
+        setShippingAnnouncement({
+          loading: false,
+          error: false,
+          flatRate: Number(data.flatRate || 0),
+          freeShippingThreshold: Number(data.freeShippingThreshold || 0),
+          currency: String(data.currency || "IRT").toUpperCase(),
+        });
+      })
+      .catch(() => {
+        if (active) setShippingAnnouncement((current) => ({ ...current, loading: false, error: true }));
+      });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -466,6 +493,29 @@ const Navbar = () => {
         dir="rtl"
         className="fixed inset-x-0 top-0 z-40 w-full border-b border-[#e4e0d8] bg-[#f7f5f0]/95 text-[#252722] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
       >
+        <div className="bg-[#252722] text-[#fffefa]">
+          <div className="mx-auto flex min-h-9 max-w-[1920px] items-center justify-center gap-2 px-3 py-2 text-center sm:justify-between sm:px-6 lg:px-8 min-[1680px]:px-12">
+            <p className="flex min-w-0 items-center justify-center gap-2 text-[11px] font-medium leading-5 sm:justify-start sm:text-xs">
+              <Truck size={15} className="shrink-0 text-[#d3dbc9]" aria-hidden="true" />
+              <span>
+                {shippingAnnouncement.loading || shippingAnnouncement.error
+                  ? "شرایط و هزینه ارسال پیش از پرداخت نمایش داده می‌شود"
+                  : shippingAnnouncement.freeShippingThreshold > 0
+                    ? `ارسال رایگان سفارش‌های بالای ${formatPrice(shippingAnnouncement.freeShippingThreshold, shippingAnnouncement.currency)}`
+                    : shippingAnnouncement.flatRate <= 0
+                      ? "ارسال سفارش‌ها در حال حاضر رایگان است"
+                      : `هزینه ارسال ${formatPrice(shippingAnnouncement.flatRate, shippingAnnouncement.currency)} است؛ مبلغ نهایی پیش از پرداخت مشخص می‌شود`}
+              </span>
+            </p>
+            <Link
+              to="/shop"
+              className="hidden shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold text-[#d3dbc9] transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+            >
+              مشاهده محصولات
+              <ChevronLeft size={14} aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
         <div className="mx-auto max-w-[1920px] px-3 sm:px-6 lg:px-8 min-[1680px]:px-12">
           <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 min-[1680px]:grid min-[1680px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1680px]:justify-normal">
             <div
