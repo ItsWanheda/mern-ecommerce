@@ -191,7 +191,7 @@ const reserveInventory = async (items, productsById) => {
 };
 export const createZarinpalCheckout = async (req, res) => {
   if (currency() !== "IRT") {
-    return res.status(503).json({ message: "Zarinpal checkout requires STORE_CURRENCY=IRT and catalogue prices stored as whole Toman amounts" });
+    return res.status(503).json({ message: "Zarinpal checkout requires a Toman catalogue with whole-Toman prices." });
   }
   if (!isTomanCatalogConfirmed()) {
     return res.status(503).json({ message: "پرداخت تا زمان تأیید قیمت‌های واقعی کاتالوگ به تومان غیرفعال است." });
