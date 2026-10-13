@@ -38,6 +38,73 @@ export const getCartProducts = async (req, res) => {
   }
 };
 
+export const mergeGuestCart = async (req, res) => {
+  try {
+    const inputItems = Array.isArray(req.body.items) ? req.body.items.slice(0, 100) : [];
+    if (!inputItems.length) return res.json({ mergedCount: 0, skippedKeys: [] });
+
+    const normalizedItems = inputItems.map((item) => ({
+      productId: typeof item?.productId === "string" ? item.productId : "",
+      size: normalizedOption(item?.size),
+      color: normalizedOption(item?.color),
+      quantity: Number(item?.quantity),
+    }));
+    const productIds = [...new Set(normalizedItems.map((item) => item.productId).filter(Boolean))];
+    const products = await Product.find({ _id: { $in: productIds }, isActive: { $ne: false } }).lean();
+    const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+    const skippedKeys = [];
+    const accepted = [];
+    const pendingQuantity = new Map();
+
+    for (const item of normalizedItems) {
+      const product = productsById.get(item.productId);
+      const key = cartItemKey(item.productId, item.size, item.color);
+      if (!product || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 100) {
+        skippedKeys.push(key);
+        continue;
+      }
+      const hasVariants = (product.variants || []).length > 0;
+      const selectedVariant = hasVariants ? variantFor(product, item.size, item.color) : null;
+      if ((hasVariants && !selectedVariant) || (!hasVariants && (item.size || item.color))) {
+        skippedKeys.push(key);
+        continue;
+      }
+
+      const existingItem = req.user.cartItems.find((cartItem) =>
+        getCartProductId(cartItem) === item.productId && sameVariant(cartItem, item.size, item.color)
+      );
+      const alreadyInCart = Number(existingItem?.quantity || 0) + Number(pendingQuantity.get(key) || 0);
+      const stock = selectedVariant ? selectedVariant.stock : product.stock;
+      if (typeof stock === "number" && alreadyInCart + item.quantity > stock) {
+        skippedKeys.push(key);
+        continue;
+      }
+
+      accepted.push({ ...item, key, existingItem });
+      pendingQuantity.set(key, Number(pendingQuantity.get(key) || 0) + item.quantity);
+    }
+
+    for (const item of accepted) {
+      const existingItem = req.user.cartItems.find((cartItem) =>
+        getCartProductId(cartItem) === item.productId && sameVariant(cartItem, item.size, item.color)
+      );
+      if (existingItem) existingItem.quantity += item.quantity;
+      else req.user.cartItems.push({
+        product: item.productId,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color,
+      });
+    }
+    if (accepted.length) await req.user.save();
+
+    return res.json({ mergedCount: accepted.length, skippedKeys: [...new Set(skippedKeys)] });
+  } catch (error) {
+    console.error("Error merging guest cart", error.message);
+    return res.status(500).json({ message: "Unable to merge guest cart" });
+  }
+};
+
 export const addToCart = async (req, res) => {
   try {
     const { productId } = req.body;
