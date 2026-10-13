@@ -14,8 +14,8 @@ const sameCartLine = (item, productId, size, color) =>
   getCartProductId(item) === productId &&
   optionValue(item.size) === optionValue(size) &&
   optionValue(item.color) === optionValue(color);
-const getProvider = () => (process.env.PAYMENT_PROVIDER || "stripe").toLowerCase();
-const getCurrency = () => (process.env.STORE_CURRENCY || "USD").toUpperCase();
+const getProvider = () => (process.env.PAYMENT_PROVIDER || "zarinpal").toLowerCase();
+const getCurrency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
 
 export const createCheckoutSession = async (req, res) => {
   if (getProvider() === "zarinpal") return createZarinpalCheckout(req, res);
