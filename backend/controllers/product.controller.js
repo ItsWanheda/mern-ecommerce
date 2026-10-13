@@ -239,6 +239,31 @@ export const updateProductStock = async (req, res) => {
   }
 };
 
+
+export const updateProductVariantStock = async (req, res) => {
+  const size = typeof req.body.size === "string" ? req.body.size.trim() : "";
+  const color = typeof req.body.color === "string" ? req.body.color.trim() : "";
+  const stock = Number(req.body.stock);
+  if (!Number.isInteger(stock) || stock < 0 || (req.body.size !== undefined && typeof req.body.size !== "string") ||
+      (req.body.color !== undefined && typeof req.body.color !== "string")) {
+    return res.status(400).json({ message: "Variant stock must be a non-negative whole number" });
+  }
+  try {
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, variants: { $elemMatch: { size, color } } },
+      { $set: { "variants.$.stock": stock } },
+      { new: true, runValidators: true }
+    ).select("_id variants");
+    if (!product) return res.status(404).json({ message: "Product variant not found" });
+    await updateFeaturedProductsCache();
+    return res.json({ _id: product._id, variants: product.variants });
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "Invalid product ID" });
+    console.error("Error updating variant stock", error.message);
+    return res.status(500).json({ message: "Unable to update variant stock" });
+  }
+};
+
 export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
