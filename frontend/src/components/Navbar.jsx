@@ -248,7 +248,7 @@ const Navbar = () => {
       >
         {categorySuggestions.length > 0 && (
           <div className="pb-2">
-            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold text-[#85867d]">دسته‌بندی‌های پیشنهادی</p>
+            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold text-[#707267]">دسته‌بندی‌های پیشنهادی</p>
             {categorySuggestions.map(([value, label], index) => (
               <button
                 key={value}
@@ -260,7 +260,7 @@ const Navbar = () => {
                 className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right text-sm transition ${activeSuggestionIndex === index ? "bg-[#e9ede4] text-[#252722]" : "text-[#62645c] hover:bg-[#f2f0e9] hover:text-[#252722]"}`}
               >
                 <span>{label}</span>
-                <span className="text-xs text-[#85867d]">مشاهده دسته‌بندی</span>
+                <span className="text-xs text-[#707267]">مشاهده دسته‌بندی</span>
               </button>
             ))}
           </div>
@@ -268,7 +268,7 @@ const Navbar = () => {
 
         {searchSuggestions.products.length > 0 && (
           <div className={categorySuggestions.length ? "border-t border-[#eeeae2] pt-2" : ""}>
-            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold text-[#85867d]">محصولات</p>
+            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold text-[#707267]">محصولات</p>
             {searchSuggestions.products.map((product, index) => {
               const optionIndex = categorySuggestions.length + index;
               return (
@@ -284,11 +284,11 @@ const Navbar = () => {
                   {product.image ? (
                     <img src={product.image} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg bg-[#f0eee8] object-cover" />
                   ) : (
-                    <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#f0eee8] text-[#85867d]"><Search size={17} /></span>
+                    <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#f0eee8] text-[#707267]"><Search size={17} /></span>
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-[#252722]">{product.name}</span>
-                    <span className="mt-1 block truncate text-xs text-[#85867d]">{categoryLabel(product.category)}</span>
+                    <span className="mt-1 block truncate text-xs text-[#707267]">{categoryLabel(product.category)}</span>
                   </span>
                   <span className="shrink-0 text-xs font-semibold tabular-nums text-[#41443b]">{formatPrice(product.price)}</span>
                 </button>
@@ -363,7 +363,7 @@ const Navbar = () => {
       <div>
         <p className="text-xs font-medium text-[#62645c]">محدوده قیمت</p>
         <div className="mt-1 grid grid-cols-2 gap-3">
-          <label className="text-xs text-[#85867d]">
+          <label className="text-xs text-[#707267]">
             از
             <input
               type="number"
@@ -377,7 +377,7 @@ const Navbar = () => {
               onChange={(event) => updateFilter("minPrice", event.target.value)}
             />
           </label>
-          <label className="text-xs text-[#85867d]">
+          <label className="text-xs text-[#707267]">
             تا
             <input
               type="number"
@@ -442,7 +442,7 @@ const Navbar = () => {
             >
               <button
                 type="button"
-                aria-label={accountMenuOpen ? "بستن منوی حساب کاربری" : "باز کردن منوی حساب کاربری"}
+                aria-label={accountMenuOpen ? "بستن منوی سایت" : "باز کردن منوی سایت"}
                 aria-expanded={accountMenuOpen}
                 aria-controls="account-menu"
                 onClick={() => setAccountMenuOpen((open) => !open)}
@@ -466,15 +466,25 @@ const Navbar = () => {
               </Link>
 
               {accountMenuOpen && (
-                <div
-                  id="account-menu"
-                  dir="rtl"
-                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] w-64 overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:left-0 lg:right-auto"
-                >
-                  <div className="border-b border-[#eeeae2] px-3 py-3">
+                <>
+                  <button type="button" aria-label="بستن منوی سایت" onClick={() => setAccountMenuOpen(false)} className="fixed inset-0 z-[60] bg-[#252722]/30 backdrop-blur-sm md:hidden" />
+                  <div
+                    id="account-menu"
+                    dir="rtl"
+                    className="fixed inset-x-3 bottom-3 top-[4.5rem] z-[70] max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-3xl border border-[#e4e0d8] bg-[#fffefa] p-3 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] md:absolute md:inset-auto md:top-[calc(100%+0.75rem)] md:right-0 md:w-80 md:rounded-2xl md:p-2 lg:left-0 lg:right-auto lg:w-64"
+                  >
+                    <nav aria-label="پیمایش اصلی در منو" className="mb-2 space-y-1 border-b border-[#eeeae2] pb-3 md:hidden">
+                      <NavLink to="/" end onClick={() => setAccountMenuOpen(false)} className={linkClass}>صفحه اصلی</NavLink>
+                      <NavLink to="/shop" onClick={() => setAccountMenuOpen(false)} className={linkClass}>همه محصولات</NavLink>
+                      <p className="px-3 pb-1 pt-3 text-xs font-semibold text-[#707267]">دسته‌بندی‌های محبوب</p>
+                      {categories.filter(([value]) => value).map(([value, label]) => (
+                        <Link key={value} to={`/category/${value}`} onClick={() => setAccountMenuOpen(false)} className="flex min-h-11 items-center rounded-xl px-3 py-2 text-sm text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]">{label}</Link>
+                      ))}
+                    </nav>
+                    <div className="border-b border-[#eeeae2] px-3 py-3">
                     <p className="text-sm font-bold text-[#252722]">حساب کاربری</p>
                     {user && (
-                      <p className="mt-1 break-words text-xs text-[#85867d]">{user.name || user.email || "کاربر فروشگاه"}</p>
+                      <p className="mt-1 break-words text-xs text-[#707267]">{user.name || user.email || "کاربر فروشگاه"}</p>
                     )}
                   </div>
 
@@ -520,8 +530,9 @@ const Navbar = () => {
                         </button>
                       </>
                     )}
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
@@ -552,7 +563,7 @@ const Navbar = () => {
                   aria-label="جست‌وجوی محصولات"
                   className="flex min-h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[#e0dcd2] bg-[#fffefa] p-1 shadow-sm transition focus-within:border-[#a0a994] focus-within:ring-4 focus-within:ring-[#68745f]/10"
                 >
-                  <Search size={18} className="mr-2 shrink-0 text-[#85867d]" aria-hidden="true" />
+                  <Search size={18} className="mr-2 shrink-0 text-[#707267]" aria-hidden="true" />
                   <input
                     type="search"
                     value={filters.q}
@@ -612,7 +623,7 @@ const Navbar = () => {
                   >
                     <div className="mb-4">
                       <p className="text-sm font-bold text-[#252722]">فیلتر محصولات</p>
-                      <p className="mt-1 text-xs text-[#85867d]">نتیجه‌ها را دقیق‌تر و سریع‌تر پیدا کنید.</p>
+                      <p className="mt-1 text-xs text-[#707267]">نتیجه‌ها را دقیق‌تر و سریع‌تر پیدا کنید.</p>
                     </div>
                     {renderFilterFields()}
                     {renderFilterActions()}
@@ -700,7 +711,7 @@ const Navbar = () => {
               <div className="mb-4 flex items-center gap-2 border-b border-[#e4e0d8] pb-3">
                 <SlidersHorizontal size={17} className="text-[#68745f]" aria-hidden="true" />
                 <h3 className="text-sm font-semibold text-[#252722]">فیلترها</h3>
-                <span className="text-xs text-[#85867d]">دسته‌بندی، قیمت و مرتب‌سازی</span>
+                <span className="text-xs text-[#707267]">دسته‌بندی، قیمت و مرتب‌سازی</span>
               </div>
 
               {renderFilterFields()}
