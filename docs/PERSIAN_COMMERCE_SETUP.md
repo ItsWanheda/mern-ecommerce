@@ -1,136 +1,125 @@
-# Persian commerce configuration
+# Persian commerce setup and Iranian-host deployment
 
-This guide configures the Persian RTL storefront for **Toman (IRT)** pricing and Zarinpal checkout. Stripe remains available only as an explicitly configured USD option.
+This guide configures the storefront for **Toman (IRT) only** and Zarinpal checkout. The application does not provide alternate payment providers or currency switching.
 
-## Currency model
+## 1. Currency and catalogue migration
 
-The application uses these currency codes:
+Product prices and shipping settings are numeric values; the database does not attach a separate currency to each product. Changing a label or environment variable does not convert stored values.
 
-| Code | Meaning in the storefront | Intended payment flow |
-| --- | --- | --- |
-| IRT | Whole Toman amounts; shown to shoppers as تومان | Zarinpal |
-| IRR | Whole Rial amounts; shown as ریال | Display/storage compatibility; not the configured Zarinpal checkout currency |
-| USD | US dollars | Stripe |
+Before enabling checkout on an existing database:
 
-New code defaults to STORE_CURRENCY=IRT, VITE_STORE_CURRENCY=IRT, and PAYMENT_PROVIDER=zarinpal. Explicit environment variables still override code defaults, including on Vercel. Set the backend and frontend currency to the same value.
+1. Take a verified MongoDB backup and define a rollback plan.
+2. Prepare an approved, whole-Toman retail price for every sellable product. Update each product from that price list; do not apply an assumed exchange rate automatically.
+3. Set `StoreSettings.flatRate` and `StoreSettings.freeShippingThreshold` to verified whole-Toman amounts.
+4. Review existing carts and ask customers to refresh them after catalogue migration.
+5. Keep `IRT_CATALOG_PRICES_CONFIRMED=false` until the catalogue and shipping values are reviewed. Set it to `true` only after verification.
+6. Preserve historical order records and their recorded values; do not relabel them as Toman.
 
-**Important:** product prices and shipping amounts are numeric values; product documents do not carry an individual currency field. Changing the currency setting does not convert any stored value. Do not display an old USD amount as Toman or apply an assumed exchange rate.
+New product prices and shipping fees are validated as whole numbers. Zarinpal's API amount is supplied in Rial, so checkout converts the verified Toman amount to Rial by multiplying by 10.
 
-## Required migration before switching a live catalogue
+## 2. Backend environment
 
-Do this before enabling IRT in the production environment:
+Configure these variables on the backend host. Store secrets in the host's protected environment/secret manager, not in source control.
 
-1. Take a verified backup of MongoDB and retain a rollback plan.
-2. Prepare the real retail price in whole Toman for every sellable product. Update each Product.price from an approved price list—do not automatically multiply the current amount by an exchange rate.
-3. Review existing StoreSettings.flatRate and StoreSettings.freeShippingThreshold values. Set both to the correct whole-Toman amounts in **Admin → Shipping settings** after switching the backend currency.
-4. Clear/rebuild persisted guest carts and ask signed-in customers to refresh their carts after prices are migrated. Client-side cart data can otherwise show stale price snapshots; checkout still revalidates prices and inventory from the database.
-5. Configure sandbox payment credentials, deploy both apps from the same branch, and run end-to-end checkout tests before enabling live payments.
-6. Keep IRT_CATALOG_PRICES_CONFIRMED=false until the catalogue and shipping values have been reviewed and updated to real whole-Toman amounts. Only then set it to true in the backend Production environment. The backend will refuse to initialize/accept Zarinpal checkout while this confirmation is missing.
-
-Historical order currency values are preserved; do not rewrite old USD orders as IRT. Admin sales analytics only sums paid orders recorded in the currently configured currency, so older orders with USD or missing currency records are not mixed into Toman revenue totals.
-
-## Production environment
-
-### Backend (Vercel API project)
-
-~~~dotenv
-STORE_CURRENCY=IRT
-PAYMENT_PROVIDER=zarinpal
-ZARINPAL_MERCHANT_ID=replace_with_your_merchant_id
+```dotenv
+NODE_ENV=production
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+REDIS_URL=redis://your-private-redis-host:6379
+ACCESS_TOKEN_SECRET=replace_with_a_long_random_secret
+REFRESH_TOKEN_SECRET=replace_with_a_different_long_random_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+ZARINPAL_MERCHANT_ID=your_merchant_id
 ZARINPAL_SANDBOX=true
 IRT_CATALOG_PRICES_CONFIRMED=false
-API_URL=https://your-api.example
-CLIENT_URL=https://your-store.example
+API_URL=https://api.example.ir
+CLIENT_URL=https://store.example.ir
 DEFAULT_SHIPPING_FEE=0
 FREE_SHIPPING_THRESHOLD=0
-~~~
+CRON_SECRET=replace_with_a_random_secret_of_at_least_32_characters
+```
 
-Keep the existing required database, authentication, and upload environment variables. API_URL is the backend origin only (no /api suffix); the application adds /api/payments/zarinpal/verify to form the callback URL. CLIENT_URL is the frontend origin only.
+Use your actual domain names and connection strings. Set `API_URL` to the backend origin without a trailing `/api`; set `CLIENT_URL` to the frontend origin. The payment callback is built from `API_URL` and must be reachable over HTTPS by the gateway. Keep sandbox mode enabled until real end-to-end tests have passed.
 
-For the local frontend, set VITE_API_URL to the API base URL including /api if you are not using the development proxy.
+The application supports `REDIS_URL` for a private Redis service. The older `UPSTASH_REDIS_URL` variable is still accepted for compatibility, but Redis-backed distributed rate limiting should be configured and monitored in production.
 
-The backend reconciliation job uses a separate `CRON_SECRET` environment variable. Generate a long random value (at least 32 characters), configure it only in the backend project, and keep it private. The endpoint returns HTTP 503 until this secret is configured. Never expose it through a `VITE_` variable.
+## 3. Frontend configuration
 
-### Frontend (Vercel client project)
+Set `VITE_API_URL` at frontend build time if the API is not served under the same origin:
 
-~~~dotenv
-VITE_STORE_CURRENCY=IRT
-VITE_API_URL=https://your-api.example/api
-~~~
+```dotenv
+VITE_API_URL=https://api.example.ir/api
+```
 
-Zarinpal does not require VITE_STRIPE_PUBLISHABLE_KEY. Never expose STRIPE_SECRET_KEY, database credentials, or ZARINPAL_MERCHANT_ID as frontend variables.
+If a reverse proxy exposes the backend under the same origin at `/api`, the frontend's default `/api` base URL can be used. The currency is fixed to IRT/Toman; no currency override is needed.
 
-**Vercel note:** changing source defaults does not override variables already defined in Vercel. Update STORE_CURRENCY, PAYMENT_PROVIDER, and VITE_STORE_CURRENCY in the appropriate backend/frontend Production environment scopes, then redeploy both projects. Keep the currencies aligned or checkout intentionally remains disabled.
+## 4. Deploying to an Iranian host
 
-Keep ZARINPAL_SANDBOX=true while validating the integration. Keep IRT_CATALOG_PRICES_CONFIRMED=false until after price migration; this independent safety gate prevents checkout from charging unconverted USD-number prices as Toman. Set it to false only after merchant onboarding, callback/domain verification, and successful end-to-end sandbox tests. Check current Zarinpal merchant documentation for your account's callback allowlist, request/verification response codes, and settlement procedures. The implementation uses the Zarinpal v4 request/verify endpoints; a reference sample is available at https://github.com/ZarinPal-Lab/Zarinpal-RestAPI-Sample-php/blob/master/Request.php.
+A typical self-hosted deployment has a Node.js backend service, MongoDB, a private Redis instance, and a frontend build served through Nginx or the hosting panel's static-site service.
 
-## Optional legacy Stripe configuration (USD only)
+1. Install a supported Node.js version and install the root and frontend dependencies using their lockfiles.
+2. Configure the backend environment and run the backend with `npm start` from the backend application directory (or use a process manager such as systemd/PM2 to keep it running).
+3. Build the frontend with `npm run build --prefix frontend` and publish `frontend/dist` through your static-site service.
+4. Configure the reverse proxy for `/api` to the backend and ensure cookies/HTTPS are handled correctly.
+5. Confirm the backend domain is publicly reachable for the payment callback.
+6. Back up the database and complete the order-index migration before live checkout.
+7. Keep secrets server-side and restrict MongoDB/Redis network access to the application and administration hosts.
 
-Stripe checkout is still supported when deliberately configured. Stripe must use USD; it must not be used to charge Toman amounts.
+The repository still contains optional Vercel configuration for deployments that use Vercel. Those files do not configure cron jobs on an Iranian VPS, control panel, or other hosting provider.
 
-Backend:
+## 5. Frequent payment reconciliation (needed on every host)
 
-~~~dotenv
-PAYMENT_PROVIDER=stripe
-STORE_CURRENCY=USD
-STRIPE_SECRET_KEY=sk_test_replace_with_your_key
-CLIENT_URL=https://your-store.example
-DEFAULT_SHIPPING_FEE=0
-FREE_SHIPPING_THRESHOLD=0
-~~~
+**Yes: regular reconciliation is a general application requirement, not a Vercel-only requirement.** The payment callback and browser redirect do not guarantee that the backend receives every result. Reconciliation reviews expired pending orders, verifies payments when an authority is available, retries incomplete paid-order cleanup, and releases inventory from orders that can safely expire.
 
-Frontend:
+The endpoint is:
 
-~~~dotenv
-VITE_STORE_CURRENCY=USD
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_replace_with_your_publishable_key
-~~~
+```text
+GET /api/payments/reconcile-pending
+Authorization: Bearer <CRON_SECRET>
+```
 
-Use keys from the same Stripe account. The publishable key belongs on the frontend; never put STRIPE_SECRET_KEY there. Do not combine PAYMENT_PROVIDER=stripe with STORE_CURRENCY=IRT; the server rejects that configuration.
+A scheduler must run this endpoint regularly. Vercel may use its own cron configuration; a self-hosted Iranian server should use a Linux cron job, systemd timer, or the scheduler supplied by the hosting provider. A five-minute interval is a reasonable initial target to test and tune based on order volume and the gateway's response times.
 
-## Price and shipping validation
+### Self-hosted scheduler
 
-- New IRT/IRR product prices must be non-negative whole numbers. New Toman prices are validated on the server as well as using integer-step inputs in the admin form.
-- IRT/IRR shipping fee and free-shipping threshold values must be whole numbers. A zero free-shipping threshold disables free shipping.
-- Zarinpal checkout requires STORE_CURRENCY=IRT and whole-Toman product prices; the gateway request converts Toman to Rial by multiplying the payable total by 10.
-- Existing catalogue price and saved shipping values are not automatically converted. Review them before accepting orders.
-- Existing products with stock=null are treated as having untracked stock. Enter opening stock for sellable products from **Admin → Products and inventory** before relying on stock validation.
-- Zarinpal reserves tracked inventory while a payment is pending. The backend includes a protected reconciliation endpoint that verifies expired payments before releasing inventory and retries incomplete cleanup. Configure `CRON_SECRET` in the backend Production environment and monitor scheduled job logs. The bundled Vercel Hobby schedule is daily; for production recovery every 5 minutes, use Vercel Pro or a trusted external scheduler to call `GET /api/payments/reconcile-pending` with `Authorization: Bearer <CRON_SECRET>`. Gateway timeouts and unrecognized verification errors remain pending for retry rather than being treated as failed payments.
+The repository includes `scripts/reconcile-pending-payments.mjs`. Put the following values in a root-owned environment file such as `/etc/mern-ecommerce/reconcile.env`, readable only by the service administrator:
 
-## Orders and MongoDB indexes
+```dotenv
+API_URL=https://api.example.ir
+CRON_SECRET=the_same_long_random_secret_configured_for_the_backend
+```
 
-The order schema supports both historical USD/Stripe orders and IRT/Zarinpal orders. New orders use the configured provider/currency, while existing records keep their recorded values.
+Then add a cron entry after replacing paths for your server:
 
-The previous Stripe-only schema may have created a non-sparse unique stripeSessionId index. That can prevent multiple Zarinpal orders from being inserted because they do not have a Stripe session ID. Before enabling Zarinpal on an existing database:
+```cron
+*/5 * * * * set -a; . /etc/mern-ecommerce/reconcile.env; set +a; /usr/bin/node /var/www/mern-ecommerce/scripts/reconcile-pending-payments.mjs >> /var/log/mern-ecommerce-reconciliation.log 2>&1
+```
 
-1. Back up the database and inspect db.orders.getIndexes().
-2. Only if you confirm stripeSessionId_1 exists as a non-sparse unique index, replace it during a maintenance window. Do not run the commands blindly.
+Secure the environment file (for example, owner root and mode `0600`), create/rotate the log with suitable permissions, and monitor non-zero job exits and unresolved orders. Avoid putting the secret directly into command-line arguments or logs. If your hosting platform offers scheduled tasks, configure the same endpoint and authorization header there instead.
 
-~~~javascript
-db.orders.dropIndex("stripeSessionId_1");
-db.orders.createIndex({ stripeSessionId: 1 }, { unique: true, sparse: true });
-db.orders.createIndex({ zarinpalAuthority: 1 }, { unique: true, sparse: true });
-~~~
+The schedule is not embedded in the ordinary Express process. Deploying the app alone does not start reconciliation. Also verify the endpoint actually runs successfully after deployment; a configured cron entry is not proof of successful recovery.
 
-If the indexes already have the required options, do not drop them. Verify repeated test order creation before enabling production traffic.
+## 6. Existing order indexes
 
-## Product discovery
+Inspect the live indexes before changing them:
 
-The public search endpoint is GET /api/products/search. Supported query parameters:
+```javascript
+db.orders.getIndexes()
+```
 
-- q: search product name, description, or category
-- category: category slug
-- minPrice, maxPrice: inclusive range in the configured store currency
-- sort: newest, oldest, priceAsc, priceDesc, nameAsc
-- page, limit: pagination (limit capped at 48)
+For a database created by an older version, inspect and remove the obsolete unique index on the provider-specific checkout-session field if it is present. It may be named `stripeSessionId_1`. Back up first, verify the exact index name from `getIndexes()`, and drop only that obsolete index during a maintenance window. Do not run a guessed `dropIndex` command. Keep the unique sparse Zarinpal authority index if its definition is correct.
 
-Newest products are available at GET /api/products/newest?limit=8.
+## 7. Verification checklist
 
-## Final pre-production checklist
-
-1. Confirm backend STORE_CURRENCY=IRT, backend PAYMENT_PROVIDER=zarinpal, and frontend VITE_STORE_CURRENCY=IRT in Vercel. Keep IRT_CATALOG_PRICES_CONFIRMED=false until prices/shipping are migrated; set it to true only after review and backup.
-2. Back up the database and verify every live product price and saved shipping setting has the correct whole-Toman amount.
-3. Test the payment request, redirect, successful callback, cancelled payment, failed/expired request, duplicate callback, and stock-race cases using sandbox credentials.
-4. Verify the public callback is reachable and allowed for the Zarinpal merchant.
-5. Verify legacy order indexes and confirm existing Stripe order history is preserved.
-6. Run frontend npm run lint and npm run build, backend syntax checks, and a deployed staging checkout. Editing remote files is not evidence that these checks passed.
+- [ ] Backup and restore procedure tested.
+- [ ] Product catalogue and shipping settings contain correct whole-Toman amounts.
+- [ ] `IRT_CATALOG_PRICES_CONFIRMED=true` only after price review.
+- [ ] Zarinpal sandbox request, redirect, callback, cancel, and verify flows tested.
+- [ ] Duplicate callbacks do not finalize an order twice.
+- [ ] Gateway timeouts leave uncertain orders pending; inventory is not released prematurely.
+- [ ] Expired orders without a usable authority eventually expire and restore reserved inventory.
+- [ ] Reconciliation job runs on schedule and its logs/exit status are monitored.
+- [ ] Backend and frontend production builds pass from the current branch.
+- [ ] Database and Redis are not exposed publicly; all production secrets are protected.

@@ -53,7 +53,7 @@ const normalizePersian = (value) =>
     .replace(/\s+/g, " ");
 
 const priceUnitLabel = getCurrencyLabel(STORE_CURRENCY);
-const usesWholeCurrencyUnits = ["IRT", "IRR"].includes(STORE_CURRENCY);
+const usesWholeCurrencyUnits = true;
 
 const parseStorePrice = (value) => {
   if (String(value ?? "").trim() === "") return null;

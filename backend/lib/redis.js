@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const redisUrl = process.env.UPSTASH_REDIS_URL;
+const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
 const unavailable = async () => {
   throw new Error("UPSTASH_REDIS_URL is not configured");
 };

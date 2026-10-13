@@ -1,84 +1,63 @@
-<h1 align="center">E-Commerce Store 🛒</h1>
+# Persian Commerce Store
 
-![Demo App](/frontend/public/screenshot-for-readme.png)
+A full-stack e-commerce storefront focused on Iranian customers, Persian RTL presentation, whole-Toman prices, and Zarinpal checkout.
 
-[Video Tutorial on Youtube](https://youtu.be/sX57TLIPNx8)
+## Features
 
-About This Course:
+- Persian-first, right-to-left storefront and product discovery
+- Toman (IRT) price display and whole-Toman product/shipping validation
+- Zarinpal sandbox/live checkout and server-side payment verification
+- Inventory reservation, idempotent order finalization, and recovery of unresolved payments
+- Redis-backed rate limiting with a bounded best-effort fallback
+- MongoDB product catalogue, cart, coupons, campaigns, shipping settings, and admin analytics
+- Configurable Cloudinary product media
 
--   🚀 Project Setup
--   🗄️ MongoDB & Redis Integration
--   💳 Stripe Payment Setup
--   🔐 Robust Authentication System
--   🔑 JWT with Refresh/Access Tokens
--   📝 User Signup & Login
--   🛒 E-Commerce Core
--   📦 Product & Category Management
--   🛍️ Shopping Cart Functionality
--   💰 Checkout with Stripe
--   🏷️ Coupon Code System
--   👑 Admin Dashboard
--   📊 Sales Analytics
--   🎨 Design with Tailwind
--   🛒 Cart & Checkout Process
--   🔒 Security
--   🛡️ Data Protection
--   🚀Caching with Redis
--   ⌛ And a lot more...
+## Stack
 
-### Setup .env file
+React, Vite, Tailwind CSS, Node.js, Express, MongoDB/Mongoose, Redis, and Zarinpal.
 
-```bash
+## Configuration
+
+Configure the backend environment before running the application:
+
+```dotenv
 PORT=5000
-MONGO_URI=your_mongo_uri
-
-UPSTASH_REDIS_URL=your_redis_url
-
-ACCESS_TOKEN_SECRET=your_access_token_secret
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
-
+NODE_ENV=development
+MONGO_URI=mongodb://127.0.0.1:27017/mern-ecommerce
+REDIS_URL=redis://127.0.0.1:6379
+ACCESS_TOKEN_SECRET=replace_with_a_long_random_secret
+REFRESH_TOKEN_SECRET=replace_with_a_different_long_random_secret
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
-
-# Persian storefront defaults: Toman (IRT) + Zarinpal
-STORE_CURRENCY=IRT
-PAYMENT_PROVIDER=zarinpal
-ZARINPAL_MERCHANT_ID=your_zarinpal_merchant_id
+ZARINPAL_MERCHANT_ID=your_merchant_id
 ZARINPAL_SANDBOX=true
 IRT_CATALOG_PRICES_CONFIRMED=false
 API_URL=https://your-public-api.example
 CLIENT_URL=https://your-store.example
 DEFAULT_SHIPPING_FEE=0
 FREE_SHIPPING_THRESHOLD=0
-
-# Optional legacy Stripe checkout (USD only; use instead of the Zarinpal settings)
-# STORE_CURRENCY=USD
-# PAYMENT_PROVIDER=stripe
-# STRIPE_SECRET_KEY=your_stripe_secret_key
-
-NODE_ENV=development
+CRON_SECRET=replace_with_a_long_random_secret
 ```
 
-### Persian storefront currency and payments
+The frontend can use a public API base URL through `VITE_API_URL`; use `http://localhost:5000/api` for a local API or your production API URL. The storefront currency is fixed to IRT (Toman), so no currency-switching environment variable is needed.
 
-The Persian storefront defaults to **IRT (تومان)** with Zarinpal. Configure the matching frontend variables:
+**Do not enable checkout** until the catalogue and shipping settings contain verified whole-Toman amounts. Keep `IRT_CATALOG_PRICES_CONFIRMED=false` until that migration is reviewed. For a payment-provider callback to work, `API_URL` must resolve to the publicly reachable backend origin.
 
-```dotenv
-VITE_STORE_CURRENCY=IRT
-VITE_API_URL=https://your-public-api.example/api
-```
+See [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md) for deployment, database migration, and scheduled payment recovery.
 
-Before deploying IRT to an existing database, set every product price and saved shipping value to its approved whole-Toman amount. Currency environment variables change how amounts are interpreted; they do not convert existing data. Keep IRT_CATALOG_PRICES_CONFIRMED=false until that migration is verified, then set it to true in the backend Production environment to unlock checkout. Follow the [Persian commerce setup and migration guide](docs/PERSIAN_COMMERCE_SETUP.md) for Vercel variables, sandbox checkout tests, and the optional USD/Stripe configuration.
+## Local development
 
-### Run this app locally
+Install and build from the repository root:
 
-```shell
+```bash
+npm install
+npm install --prefix frontend
 npm run build
 ```
 
-### Start the app
+Start the backend with `npm run dev`. Start the frontend in a separate terminal with `npm run dev --prefix frontend`.
 
-```shell
-npm run start
-```
+## Production guidance
+
+Back up the database before deployment, run the migration checklist, verify sandbox checkout end to end, and configure a scheduler to call the payment reconciliation endpoint. Source-level syntax checks alone do not establish production readiness.
