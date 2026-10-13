@@ -84,7 +84,8 @@ export const useCartStore = create((set, get) => ({
 
   initializeGuestCart: () => {
     if (get().authenticated) return;
-    const cart = readGuestCart();
+    const cart = readGuestCart().map((item) => ({ ...item, guestOnly: false, cartItemId: cartItemKey(item) }));
+    writeGuestCart(cart);
     set({ cart, coupon: null, isCouponApplied: false, isMergingGuestCart: false, ...totalsFor(cart, null) });
   },
 
