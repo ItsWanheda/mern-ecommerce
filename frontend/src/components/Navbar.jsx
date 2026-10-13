@@ -3,6 +3,7 @@ import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
 import {
   ShoppingCart,
+  Heart,
   Home,
   ShoppingBag,
   Grid2X2,
@@ -20,6 +21,7 @@ import {
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
+import { useWishlistStore } from "../stores/useWishlistStore";
 
 const categories = [
   ["", "همه دسته‌بندی‌ها"],
@@ -58,6 +60,7 @@ const Navbar = () => {
   const { user, logout } = useUserStore();
   const isAdmin = user?.role === "admin";
   const { cart } = useCartStore();
+  const { items: savedProducts } = useWishlistStore();
   const location = useLocation();
   const navigate = useNavigate();
   const desktopSearchRef = useRef(null);
@@ -580,6 +583,7 @@ const Navbar = () => {
               >
                 <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
                 <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
+                <NavLink to="/wishlist" className={linkClass}><Heart size={15} aria-hidden="true" />علاقه‌مندی‌ها{savedProducts.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[10px] font-bold text-white">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}</NavLink>
               </nav>
 
               <div
