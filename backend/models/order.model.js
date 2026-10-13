@@ -22,6 +22,8 @@ const orderSchema = new mongoose.Schema(
     currency: { type: String, default: "IRT", enum: ["USD", "IRT", "IRR"] },
     paymentProvider: { type: String, enum: ["stripe", "zarinpal"], default: "zarinpal" },
     paymentStatus: { type: String, enum: ["pending", "paid", "failed", "expired"], default: "pending" },
+    paymentRequestStatus: { type: String, enum: ["not_started", "in_flight", "accepted", "unknown", "rejected", "expired"], default: "not_started" },
+    paymentRequestAttemptedAt: { type: Date, default: null },
     status: { type: String, enum: ["pending", "paid", "failed", "cancelled", "expired"], default: "pending" },
     couponCode: { type: String, default: "" },
     stripeSessionId: { type: String, unique: true, sparse: true },
@@ -37,6 +39,7 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, paymentProvider: 1, createdAt: 1 });
 orderSchema.index({ paymentProvider: 1, paymentStatus: 1, expiresAt: 1 });
+orderSchema.index({ paymentProvider: 1, paymentRequestStatus: 1, expiresAt: 1 });
 orderSchema.index({ paymentProvider: 1, paymentStatus: 1, finalizedAt: 1 });
 
 export default mongoose.model("Order", orderSchema);

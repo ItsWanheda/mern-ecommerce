@@ -87,6 +87,14 @@ const OrderSummary = () => {
         couponCode: coupon && isCouponApplied ? coupon.code : null,
       });
 
+      if (response.status === 202 || response.data?.status === "pending") {
+        const orderId = response.data?.orderId;
+        const query = new URLSearchParams({ reason: "verification-pending" });
+        if (orderId) query.set("order_id", String(orderId));
+        navigate(`/purchase-cancel?${query.toString()}`);
+        return;
+      }
+
       if (paymentConfig.provider === "zarinpal") {
         const redirectUrl = response.data?.redirectUrl;
         if (!redirectUrl || !redirectUrl.startsWith("https://")) {

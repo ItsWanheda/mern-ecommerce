@@ -207,6 +207,9 @@ export const createZarinpalCheckout = async (req, res) => {
 
   let reserved = [];
   let order = null;
+  let gatewayRequestStarted = false;
+  let gatewayRequestRejected = false;
+  let receivedAuthority = "";
   try {
     const cartItems = req.user.cartItems || [];
     if (!cartItems.length) return res.status(400).json({ message: "سبد خرید خالی است" });
@@ -275,10 +278,16 @@ export const createZarinpalCheckout = async (req, res) => {
       status: "pending",
       couponCode: coupon?.code || "",
       expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      paymentRequestStatus: "not_started",
     });
+
+    order.paymentRequestStatus = "in_flight";
+    order.paymentRequestAttemptedAt = new Date();
+    await order.save();
 
     const callbackUrl = new URL("/api/payments/zarinpal/verify", process.env.API_URL);
     callbackUrl.searchParams.set("order_id", order._id.toString());
+    gatewayRequestStarted = true;
     const gatewayResponse = await fetch(`${apiBase()}/request.json`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -291,26 +300,80 @@ export const createZarinpalCheckout = async (req, res) => {
       }),
       signal: AbortSignal.timeout(12000),
     });
-    const payload = await gatewayResponse.json().catch(() => ({}));
-    const authority = payload?.data?.authority;
-    if (!gatewayResponse.ok || payload?.data?.code !== 100 || !authority) {
-      throw new Error("ZARINPAL_REQUEST_FAILED");
+
+    let payload;
+    try {
+      payload = await gatewayResponse.json();
+    } catch {
+      throw new Error("ZARINPAL_REQUEST_AMBIGUOUS");
     }
 
-    order.zarinpalAuthority = authority;
-    await order.save();
-    reserved = [];
-    return res.status(200).json({
-      provider: "zarinpal",
-      orderId: order._id,
-      totalAmount: totalToman,
-      redirectUrl: `${startPayBase()}/${encodeURIComponent(authority)}`,
-    });
+    receivedAuthority = typeof payload?.data?.authority === "string" ? payload.data.authority : "";
+    if (gatewayResponse.ok && payload?.data?.code === 100 && receivedAuthority) {
+      order.zarinpalAuthority = receivedAuthority;
+      order.paymentRequestStatus = "accepted";
+      await order.save();
+      reserved = [];
+      return res.status(200).json({
+        provider: "zarinpal",
+        orderId: order._id,
+        totalAmount: totalToman,
+        redirectUrl: `${startPayBase()}/${encodeURIComponent(receivedAuthority)}`,
+      });
+    }
+
+    // A structured provider validation/business error confirms rejection.
+    // HTTP errors, timeouts, malformed responses, and unknown payloads do not.
+    if (gatewayResponse.ok && Number.isInteger(payload?.errors?.code)) {
+      gatewayRequestRejected = true;
+      throw new Error("ZARINPAL_REQUEST_REJECTED");
+    }
+    throw new Error("ZARINPAL_REQUEST_AMBIGUOUS");
   } catch (error) {
+    if (order && gatewayRequestStarted && !gatewayRequestRejected) {
+      // The provider may have accepted the request even though our response or
+      // local persistence failed. Never release inventory on this uncertain path.
+      if (receivedAuthority) {
+        const recovered = await Order.findOneAndUpdate(
+          { _id: order._id, paymentStatus: "pending" },
+          { $set: { zarinpalAuthority: receivedAuthority, paymentRequestStatus: "accepted" } },
+          { new: true }
+        ).catch(() => null);
+        if (recovered?.zarinpalAuthority) {
+          reserved = [];
+          return res.status(200).json({
+            provider: "zarinpal",
+            orderId: order._id,
+            totalAmount: order.totalAmount,
+            redirectUrl: `${startPayBase()}/${encodeURIComponent(recovered.zarinpalAuthority)}`,
+          });
+        }
+      }
+
+      await Order.updateOne(
+        { _id: order._id, paymentStatus: "pending" },
+        { $set: { paymentRequestStatus: "unknown" } }
+      ).catch((persistenceError) => {
+        console.error("Unable to record ambiguous Zarinpal request state", persistenceError.message);
+      });
+      console.error("Zarinpal request outcome is ambiguous; keeping order pending", String(order._id), error.message);
+      return res.status(202).json({
+        status: "pending",
+        orderId: order._id,
+        message: "وضعیت درخواست پرداخت قطعی نیست؛ تا مشخص‌شدن وضعیت این سفارش، دوباره پرداخت نکنید.",
+      });
+    }
+
     if (order) {
       await Order.updateOne(
         { _id: order._id, paymentStatus: "pending" },
-        { $set: { paymentStatus: "failed", status: "failed" } }
+        {
+          $set: {
+            paymentStatus: "failed",
+            status: "failed",
+            paymentRequestStatus: gatewayRequestRejected ? "rejected" : "not_started",
+          },
+        }
       ).catch(() => {});
       await releaseReservedInventory(order.products, order._id).catch(() => {});
     } else {
@@ -320,7 +383,10 @@ export const createZarinpalCheckout = async (req, res) => {
     if (error.message === "INSUFFICIENT_STOCK" || error.message === "INVALID_CART") {
       return res.status(409).json({ message: "موجودی یکی از کالاها تغییر کرده است؛ سبد خرید را دوباره بررسی کنید." });
     }
-    return res.status(502).json({ message: "اتصال به درگاه پرداخت برقرار نشد. لطفاً دوباره تلاش کنید." });
+    if (gatewayRequestRejected) {
+      return res.status(502).json({ message: "درگاه پرداخت درخواست را نپذیرفت؛ موجودی آزاد شد. لطفاً کمی بعد دوباره تلاش کنید." });
+    }
+    return res.status(502).json({ message: "شروع پرداخت ناموفق بود. لطفاً دوباره تلاش کنید." });
   }
 };
 
@@ -392,6 +458,7 @@ export const verifyZarinpalPayment = async (req, res) => {
         $set: {
           paymentStatus: "paid",
           status: "paid",
+          paymentRequestStatus: "accepted",
           zarinpalRefId: String(payload?.data?.ref_id ?? ""),
         },
       },
@@ -505,7 +572,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
         if (!order.zarinpalAuthority) {
           const expired = await Order.findOneAndUpdate(
             { _id: order._id, paymentStatus: "pending", zarinpalAuthority: { $in: [null, ""] } },
-            { $set: { paymentStatus: "expired", status: "expired" } },
+            { $set: { paymentStatus: "expired", status: "expired", paymentRequestStatus: "expired" } },
             { new: true }
           );
           if (expired) {
@@ -539,6 +606,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
             { $set: {
               paymentStatus: "paid",
               status: "paid",
+              paymentRequestStatus: "accepted",
               zarinpalRefId: String(payload?.data?.ref_id ?? order.zarinpalRefId ?? ""),
             } },
             { new: true }
