@@ -247,6 +247,7 @@ export const checkoutSuccess = async (req, res) => {
           price: item.price,
           size: item.size,
           color: item.color,
+          hasVariant: item.hasVariant,
           stockReserved: false,
         })),
         totalAmount: Number(session.amount_total || 0) / 100,
