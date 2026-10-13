@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
-import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
@@ -35,7 +34,6 @@ const ProductDetailsPage = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-  const { user } = useUserStore();
   const { addToCart } = useCartStore();
 
   useEffect(() => {
@@ -104,7 +102,6 @@ const ProductDetailsPage = () => {
 
   const handleAddToCart = () => {
     if (outOfStock) return toast.error(hasVariants ? "این ترکیب سایز و رنگ موجود نیست" : "این محصول در حال حاضر موجود نیست");
-    if (!user) return toast.error("برای افزودن کالا به سبد خرید، ابتدا وارد حساب کاربری شوید.", { id: "login" });
     addToCart(product, { size: selectedSize, color: selectedColor });
   };
 
