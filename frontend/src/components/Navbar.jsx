@@ -3,6 +3,10 @@ import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
 import {
   ShoppingCart,
+  Home,
+  ShoppingBag,
+  Grid2X2,
+  ChevronLeft,
   LogIn,
   LogOut,
   Lock,
@@ -62,6 +66,7 @@ const Navbar = () => {
   const [filters, setFilters] = useState(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
@@ -163,6 +168,29 @@ const Navbar = () => {
   }, [accountMenuOpen]);
 
   useEffect(() => {
+    if (location.pathname || location.search) {
+      setMobileMenuOpen(false);
+      setAccountMenuOpen(false);
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
     if (!mobileSearchOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
@@ -182,6 +210,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     setAccountMenuOpen(false);
+    setMobileMenuOpen(false);
     await logout();
     navigate("/");
   };
@@ -442,13 +471,24 @@ const Navbar = () => {
             >
               <button
                 type="button"
+                aria-label={mobileMenuOpen ? "بستن منوی فروشگاه" : "باز کردن منوی فروشگاه"}
+                aria-expanded={mobileMenuOpen}
+                aria-controls="mobile-store-menu"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                className="order-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
+              >
+                {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+              </button>
+
+              <button
+                type="button"
                 aria-label={accountMenuOpen ? "بستن منوی حساب کاربری" : "باز کردن منوی حساب کاربری"}
                 aria-expanded={accountMenuOpen}
                 aria-controls="account-menu"
                 onClick={() => setAccountMenuOpen((open) => !open)}
-                className="order-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:order-2"
+                className="order-2 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:inline-flex"
               >
-                {accountMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+                {accountMenuOpen ? <X size={19} aria-hidden="true" /> : <UserRound size={19} aria-hidden="true" />}
               </button>
 
               <Link
@@ -469,7 +509,7 @@ const Navbar = () => {
                 <div
                   id="account-menu"
                   dir="rtl"
-                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] w-64 overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:left-0 lg:right-auto"
+                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] hidden w-64 overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:block lg:left-0 lg:right-auto"
                 >
                   <div className="border-b border-[#eeeae2] px-3 py-3">
                     <p className="text-sm font-bold text-[#252722]">حساب کاربری</p>
@@ -639,6 +679,177 @@ const Navbar = () => {
           </div>
         </div>
       </header>
+
+      {mobileMenuOpen && (
+        <div id="mobile-store-menu" dir="rtl" className="fixed inset-0 z-[90] lg:hidden">
+          <button
+            type="button"
+            aria-label="بستن منوی فروشگاه"
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute inset-0 h-full w-full bg-[#252722]/45 backdrop-blur-sm"
+          />
+          <aside
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-nav-heading"
+            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(90vw,25rem)] flex-col border-l border-[#e4e0d8] bg-[#f7f5f0] shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)] animate-[searchPanelIn_180ms_ease-out]"
+          >
+            <div className="flex items-center justify-between gap-4 border-b border-[#e4e0d8] px-5 py-4">
+              <div>
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="font-serif text-2xl font-semibold tracking-tight text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
+                >
+                  تیک بوتیک
+                </Link>
+                <p id="mobile-nav-heading" className="mt-1 text-xs text-[#85867d]">منوی فروشگاه</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="بستن منوی فروشگاه"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dedbd2] bg-[#fffefa] text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-4">
+              {user ? (
+                <section className="rounded-2xl border border-[#dce2d4] bg-[#e9ede4] p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#fffefa] text-[#68745f]">
+                      <UserRound size={20} aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-[#68745f]">حساب کاربری شما</p>
+                      <p className="mt-1 break-words text-sm font-bold text-[#252722]">{user.name || user.email || "کاربر تیک بوتیک"}</p>
+                      {isAdmin && <span className="mt-2 inline-flex rounded-full bg-[#252722] px-2.5 py-1 text-[11px] font-semibold text-white">مدیر فروشگاه</span>}
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                <section className="rounded-2xl bg-[#252722] p-4 text-white">
+                  <p className="text-xs font-semibold tracking-wide text-[#d3dbc9]">به تیک بوتیک خوش آمدید</p>
+                  <h2 className="mt-2 font-serif text-xl font-medium">استایل دلخواهتان را پیدا کنید.</h2>
+                  <p className="mt-2 text-xs leading-5 text-white/70">وارد حساب شوید یا برای تجربه خرید شخصی‌تر ثبت‌نام کنید.</p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <Link
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#fffefa] px-3 py-2 text-sm font-semibold text-[#252722] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      <LogIn size={16} aria-hidden="true" />
+                      ورود
+                    </Link>
+                    <Link
+                      to="/signup"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/25 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      <UserRound size={16} aria-hidden="true" />
+                      ثبت‌نام
+                    </Link>
+                  </div>
+                </section>
+              )}
+
+              <section aria-labelledby="mobile-quick-links-heading">
+                <div className="mb-3 flex items-center justify-between px-1">
+                  <h3 id="mobile-quick-links-heading" className="text-sm font-bold text-[#252722]">دسترسی سریع</h3>
+                  <span className="text-[11px] text-[#85867d]">همه‌چیز یک‌جا</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><Home size={18} aria-hidden="true" /></span>
+                    صفحه اصلی
+                  </Link>
+                  <Link
+                    to="/shop"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><ShoppingBag size={18} aria-hidden="true" /></span>
+                    همه محصولات
+                  </Link>
+                  <Link
+                    to="/cart"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                  >
+                    <span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><ShoppingCart size={18} aria-hidden="true" /></span>سبد خرید</span>
+                    {cart.length > 0 && <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#68745f] px-2 py-1 text-xs font-bold text-white">{new Intl.NumberFormat("fa-IR").format(cart.length)}</span>}
+                  </Link>
+                </div>
+              </section>
+
+              <section aria-labelledby="mobile-categories-heading">
+                <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                  <div className="flex items-center gap-2">
+                    <Grid2X2 size={17} className="text-[#68745f]" aria-hidden="true" />
+                    <h3 id="mobile-categories-heading" className="text-sm font-bold text-[#252722]">دسته‌بندی‌ها</h3>
+                  </div>
+                  <Link
+                    to="/shop"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-xs font-semibold text-[#68745f] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                  >
+                    مشاهده همه
+                    <ChevronLeft size={14} aria-hidden="true" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {categories.filter(([value]) => value).map(([value, label]) => (
+                    <Link
+                      key={value}
+                      to={`/category/${value}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="group flex min-h-12 items-center justify-between gap-2 rounded-xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-medium text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    >
+                      <span>{label}</span>
+                      <ChevronLeft size={15} className="shrink-0 text-[#a0a195] transition group-hover:-translate-x-0.5 group-hover:text-[#68745f]" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
+              {(isAdmin || user) && (
+                <section aria-label="حساب و مدیریت" className="space-y-2 border-t border-[#e4e0d8] pt-4">
+                  {isAdmin && (
+                    <Link
+                      to="/secret-dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex min-h-12 items-center gap-3 rounded-xl bg-[#e9ede4] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#dfe5d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    >
+                      <Lock size={17} aria-hidden="true" />
+                      داشبورد مدیریت
+                      <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
+                    </Link>
+                  )}
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-right text-sm font-semibold text-[#8b3d34] transition hover:bg-[#f8eeeb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    >
+                      <LogOut size={17} aria-hidden="true" />
+                      خروج از حساب کاربری
+                    </button>
+                  )}
+                </section>
+              )}
+            </div>
+            <div className="border-t border-[#e4e0d8] bg-[#fffefa]/70 px-5 py-3 text-center text-[11px] text-[#85867d]">
+              خرید آسان، استایل ماندگار
+            </div>
+          </aside>
+        </div>
+      )}
 
       {mobileSearchOpen && (
         <div
