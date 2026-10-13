@@ -564,6 +564,7 @@ const Navbar = () => {
                 )}
               </button>
             </div>
+          </div>
         </div>
       </header>
 
