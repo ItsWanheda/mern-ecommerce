@@ -141,9 +141,13 @@ const CreateProductForm = () => {
             <label className={labelClass}>قیمت ({import.meta.env.VITE_STORE_CURRENCY || "USD"})
               <input type="number" min="0" step={(import.meta.env.VITE_STORE_CURRENCY || "USD") === "IRT" ? "1" : "0.01"} value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
             </label>
-            <label className={labelClass}>موجودی پایه برای محصولات بدون سایز/رنگ
-              <input type="number" min="0" step="1" value={newProduct.stock} onChange={(event) => updateField("stock", event.target.value)} className={fieldClass} required />
-            </label>
+            {combinations.length === 0 ? (
+              <label className={labelClass}>موجودی انبار
+                <input type="number" min="0" step="1" value={newProduct.stock} onChange={(event) => updateField("stock", event.target.value)} className={fieldClass} required />
+              </label>
+            ) : (
+              <p className="self-end rounded-xl border border-gray-700 bg-gray-900/40 px-3 py-3 text-xs leading-5 text-gray-400">موجودی محصول برای هر ترکیب سایز و رنگ، در بخش گزینه‌ها جداگانه تنظیم می‌شود.</p>
+            )}
           </div>
           <label className={labelClass}>دسته‌بندی
             <select value={newProduct.category} onChange={(event) => updateField("category", event.target.value)} className={fieldClass} required>
