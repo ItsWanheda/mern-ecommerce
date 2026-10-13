@@ -8,6 +8,7 @@ import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 const isZarinpalEnabled = () => (process.env.PAYMENT_PROVIDER || "zarinpal").toLowerCase() === "zarinpal";
 const currency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
+const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
 const apiBase = () => isSandbox()
   ? "https://sandbox.zarinpal.com/pg/v4/payment"
   : "https://api.zarinpal.com/pg/v4/payment";
@@ -30,7 +31,7 @@ export const getPaymentConfiguration = (_req, res) => {
   const provider = isZarinpalEnabled() ? "zarinpal" : "stripe";
   const storeCurrency = currency();
   const configured = provider === "zarinpal"
-    ? Boolean(process.env.ZARINPAL_MERCHANT_ID && process.env.API_URL && safeClientUrl() && storeCurrency === "IRT")
+    ? Boolean(process.env.ZARINPAL_MERCHANT_ID && process.env.API_URL && safeClientUrl() && storeCurrency === "IRT" && isTomanCatalogConfirmed())
     : Boolean(process.env.STRIPE_SECRET_KEY && storeCurrency === "USD");
   return res.json({
     provider,
@@ -38,7 +39,7 @@ export const getPaymentConfiguration = (_req, res) => {
     configured,
     message: !configured
       ? (provider === "zarinpal"
-          ? "برای زرین‌پال، شناسه پذیرنده، API_URL، CLIENT_URL و STORE_CURRENCY=IRT را تنظیم کنید."
+          ? "برای زرین‌پال، شناسه پذیرنده، API_URL، CLIENT_URL و STORE_CURRENCY=IRT را تنظیم کنید؛ پس از بازبینی قیمت‌ها IRT_CATALOG_PRICES_CONFIRMED=true را نیز فعال کنید."
           : "برای پرداخت Stripe، کلید سرور و STORE_CURRENCY=USD را تنظیم کنید.")
       : "",
   });
@@ -113,6 +114,9 @@ export const createZarinpalCheckout = async (req, res) => {
   }
   if (currency() !== "IRT") {
     return res.status(503).json({ message: "Zarinpal checkout requires STORE_CURRENCY=IRT and catalogue prices stored as whole Toman amounts" });
+  }
+  if (!isTomanCatalogConfirmed()) {
+    return res.status(503).json({ message: "پرداخت تا زمان تأیید قیمت‌های واقعی کاتالوگ به تومان غیرفعال است." });
   }
   if (!process.env.ZARINPAL_MERCHANT_ID || !process.env.API_URL || !safeClientUrl()) {
     return res.status(503).json({ message: "Zarinpal is not configured on the server" });
