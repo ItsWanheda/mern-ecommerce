@@ -782,6 +782,14 @@ const Navbar = () => {
                     همه محصولات
                   </Link>
                   <Link
+                    to="/wishlist"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                  >
+                    <span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><Heart size={18} aria-hidden="true" /></span>علاقه‌مندی‌ها</span>
+                    {savedProducts.length > 0 && <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#68745f] px-2 py-1 text-xs font-bold text-white">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}
+                  </Link>
+                  <Link
                     to="/cart"
                     onClick={() => setMobileMenuOpen(false)}
                     className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
