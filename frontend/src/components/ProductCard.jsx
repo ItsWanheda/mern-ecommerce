@@ -1,7 +1,6 @@
 import toast from "react-hot-toast";
 import { ArrowUpLeft, ShoppingCart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
@@ -11,7 +10,6 @@ const categoryLabels = {
 };
 
 const ProductCard = ({ product }) => {
-  const { user } = useUserStore();
   const { addToCart } = useCartStore();
   const navigate = useNavigate();
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
@@ -23,7 +21,6 @@ const ProductCard = ({ product }) => {
       return;
     }
     if (outOfStock) return toast.error("این محصول در حال حاضر موجود نیست");
-    if (!user) return toast.error("برای افزودن کالا به سبد خرید، ابتدا وارد حساب کاربری شوید.", { id: "login" });
     addToCart(product);
   };
 
