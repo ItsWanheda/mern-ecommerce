@@ -29,6 +29,8 @@ const userSchema = new mongoose.Schema(
 					type: mongoose.Schema.Types.ObjectId,
 					ref: "Product",
 				},
+				size: { type: String, trim: true, default: "" },
+				color: { type: String, trim: true, default: "" },
 			},
 		],
 		role: {
