@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { PlusCircle, Upload, Loader, X, Ruler, Shirt } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
+import { getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 
 const categories = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits", "bags"];
 const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
-const storeCurrency = String(import.meta.env.VITE_STORE_CURRENCY || "IRT").toUpperCase();
-const priceUnitLabel = storeCurrency === "IRT" ? "تومان" : storeCurrency === "IRR" ? "ریال" : storeCurrency;
+const storeCurrency = STORE_CURRENCY;
+const priceUnitLabel = getCurrencyLabel(storeCurrency);
 const fitOptions = [
   ["true-to-size", "مطابق سایز استاندارد"],
   ["slim", "جذب"],
