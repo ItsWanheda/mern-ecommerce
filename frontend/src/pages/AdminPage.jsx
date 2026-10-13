@@ -1,4 +1,4 @@
-import { BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck } from "lucide-react";
+import { BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -7,6 +7,7 @@ import CreateProductForm from "../components/CreateProductForm";
 import ProductsList from "../components/ProductsList";
 import CampaignManager from "../components/CampaignManager";
 import ShippingSettings from "../components/ShippingSettings";
+import NewsletterManager from "../components/NewsletterManager";
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
@@ -14,6 +15,7 @@ const tabs = [
   { id: "products", label: "محصولات و موجودی", icon: ShoppingBasket },
   { id: "campaigns", label: "کمپین‌ها", icon: Megaphone },
   { id: "shipping", label: "ارسال", icon: Truck },
+  { id: "newsletter", label: "خبرنامه", icon: Mail },
   { id: "analytics", label: "آمار و تحلیل", icon: BarChart },
 ];
 
@@ -38,6 +40,7 @@ const AdminPage = () => {
         {activeTab === "products" && <ProductsList />}
         {activeTab === "campaigns" && <CampaignManager />}
         {activeTab === "shipping" && <ShippingSettings />}
+        {activeTab === "newsletter" && <NewsletterManager />}
         {activeTab === "analytics" && <AnalyticsTab />}
       </div>
     </div>
