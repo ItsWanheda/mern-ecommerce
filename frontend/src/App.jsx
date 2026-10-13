@@ -13,6 +13,7 @@ import { Toaster } from "react-hot-toast";
 import { useUserStore } from "./stores/useUserStore";
 import LoadingSpinner from "./components/LoadingSpinner";
 import CartPage from "./pages/CartPage";
+import WishlistPage from "./pages/WishlistPage";
 import { useCartStore } from "./stores/useCartStore";
 import PurchaseSuccessPage from "./pages/PurchaseSuccessPage";
 import PurchaseCancelPage from "./pages/PurchaseCancelPage";
@@ -48,6 +49,7 @@ function App() {
           <Route path="/category/:category" element={<CategoryPage />} />
           <Route path="/product/:productId" element={<ProductDetailsPage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
           <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
         </Routes>
