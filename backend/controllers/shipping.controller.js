@@ -1,7 +1,7 @@
 import StoreSettings from "../models/store-settings.model.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 
-const getCurrency = () => (process.env.STORE_CURRENCY || "USD").toUpperCase();
+const getCurrency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
 
 export const getShippingQuote = async (req, res) => {
   const subtotal = Number(req.query.subtotal ?? 0);
