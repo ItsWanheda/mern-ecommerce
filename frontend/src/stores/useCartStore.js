@@ -78,13 +78,14 @@ export const useCartStore = create((set, get) => ({
   subtotal: 0,
   isCouponApplied: false,
   authenticated: false,
+  isMergingGuestCart: false,
 
   setAuthenticated: (authenticated) => set({ authenticated: Boolean(authenticated) }),
 
   initializeGuestCart: () => {
     if (get().authenticated) return;
     const cart = readGuestCart();
-    set({ cart, coupon: null, isCouponApplied: false, ...totalsFor(cart, null) });
+    set({ cart, coupon: null, isCouponApplied: false, isMergingGuestCart: false, ...totalsFor(cart, null) });
   },
 
   getMyCoupon: async () => {
@@ -145,6 +146,7 @@ export const useCartStore = create((set, get) => ({
       get().initializeGuestCart();
       return;
     }
+    set({ isMergingGuestCart: true });
     const guestItems = readGuestCart().filter((item) => !item.guestOnly);
     try {
       let skippedItems = readGuestCart().filter((item) => item.guestOnly);
@@ -179,7 +181,7 @@ export const useCartStore = create((set, get) => ({
         cartItemId: cartItemKey(item),
       }));
       const cart = skippedItems.reduce((current, item) => mergeCartLines(current, item), accountCart);
-      set({ cart, ...totalsFor(cart, get().coupon) });
+      set({ cart, isMergingGuestCart: false, ...totalsFor(cart, get().coupon) });
     } catch (error) {
       console.error("ادغام سبد خرید مهمان ناموفق بود:", error);
       const remainingGuestItems = readGuestCart().map((item) => ({ ...item, guestOnly: true }));
@@ -189,9 +191,9 @@ export const useCartStore = create((set, get) => ({
           ...item, selectedSize: item.selectedSize || "", selectedColor: item.selectedColor || "", cartItemId: cartItemKey(item),
         })) : [];
         const cart = remainingGuestItems.reduce((current, item) => mergeCartLines(current, item), accountCart);
-        set({ cart, ...totalsFor(cart, get().coupon) });
+        set({ cart, isMergingGuestCart: false, ...totalsFor(cart, get().coupon) });
       } catch {
-        set({ cart: remainingGuestItems, ...totalsFor(remainingGuestItems, get().coupon) });
+        set({ cart: remainingGuestItems, isMergingGuestCart: false, ...totalsFor(remainingGuestItems, get().coupon) });
       }
       toast.error("سبد خرید مهمان هنوز کامل ادغام نشده است؛ گزینه‌های آن حفظ شده‌اند.");
     }
