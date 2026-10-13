@@ -25,6 +25,7 @@ Do this before enabling IRT in the production environment:
 3. Review existing StoreSettings.flatRate and StoreSettings.freeShippingThreshold values. Set both to the correct whole-Toman amounts in **Admin → Shipping settings** after switching the backend currency.
 4. Clear/rebuild persisted guest carts and ask signed-in customers to refresh their carts after prices are migrated. Client-side cart data can otherwise show stale price snapshots; checkout still revalidates prices and inventory from the database.
 5. Configure sandbox payment credentials, deploy both apps from the same branch, and run end-to-end checkout tests before enabling live payments.
+6. Keep IRT_CATALOG_PRICES_CONFIRMED=false until the catalogue and shipping values have been reviewed and updated to real whole-Toman amounts. Only then set it to true in the backend Production environment. The backend will refuse to initialize/accept Zarinpal checkout while this confirmation is missing.
 
 Historical order currency values are preserved; do not rewrite old USD orders as IRT. Admin sales analytics only sums paid orders recorded in the currently configured currency, so older orders with USD or missing currency records are not mixed into Toman revenue totals.
 
@@ -37,6 +38,7 @@ STORE_CURRENCY=IRT
 PAYMENT_PROVIDER=zarinpal
 ZARINPAL_MERCHANT_ID=replace_with_your_merchant_id
 ZARINPAL_SANDBOX=true
+IRT_CATALOG_PRICES_CONFIRMED=false
 API_URL=https://your-api.example
 CLIENT_URL=https://your-store.example
 DEFAULT_SHIPPING_FEE=0
@@ -58,7 +60,7 @@ Zarinpal does not require VITE_STRIPE_PUBLISHABLE_KEY. Never expose STRIPE_SECRE
 
 **Vercel note:** changing source defaults does not override variables already defined in Vercel. Update STORE_CURRENCY, PAYMENT_PROVIDER, and VITE_STORE_CURRENCY in the appropriate backend/frontend Production environment scopes, then redeploy both projects. Keep the currencies aligned or checkout intentionally remains disabled.
 
-Keep ZARINPAL_SANDBOX=true while validating the integration. Set it to false only after merchant onboarding, callback/domain verification, and successful end-to-end sandbox tests. Check current Zarinpal merchant documentation for your account's callback allowlist, request/verification response codes, and settlement procedures. The implementation uses the Zarinpal v4 request/verify endpoints; a reference sample is available at https://github.com/ZarinPal-Lab/Zarinpal-RestAPI-Sample-php/blob/master/Request.php.
+Keep ZARINPAL_SANDBOX=true while validating the integration. Keep IRT_CATALOG_PRICES_CONFIRMED=false until after price migration; this independent safety gate prevents checkout from charging unconverted USD-number prices as Toman. Set it to false only after merchant onboarding, callback/domain verification, and successful end-to-end sandbox tests. Check current Zarinpal merchant documentation for your account's callback allowlist, request/verification response codes, and settlement procedures. The implementation uses the Zarinpal v4 request/verify endpoints; a reference sample is available at https://github.com/ZarinPal-Lab/Zarinpal-RestAPI-Sample-php/blob/master/Request.php.
 
 ## Optional legacy Stripe configuration (USD only)
 
@@ -124,7 +126,7 @@ Newest products are available at GET /api/products/newest?limit=8.
 
 ## Final pre-production checklist
 
-1. Confirm backend STORE_CURRENCY=IRT, backend PAYMENT_PROVIDER=zarinpal, and frontend VITE_STORE_CURRENCY=IRT in Vercel.
+1. Confirm backend STORE_CURRENCY=IRT, backend PAYMENT_PROVIDER=zarinpal, and frontend VITE_STORE_CURRENCY=IRT in Vercel. Keep IRT_CATALOG_PRICES_CONFIRMED=false until prices/shipping are migrated; set it to true only after review and backup.
 2. Back up the database and verify every live product price and saved shipping setting has the correct whole-Toman amount.
 3. Test the payment request, redirect, successful callback, cancelled payment, failed/expired request, duplicate callback, and stock-race cases using sandbox credentials.
 4. Verify the public callback is reachable and allowed for the Zarinpal merchant.
