@@ -6,8 +6,7 @@ import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 
-const isZarinpalEnabled = () => (process.env.PAYMENT_PROVIDER || "zarinpal").toLowerCase() === "zarinpal";
-const currency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
+const currency = () => "IRT";
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
 const apiBase = () => isSandbox()
@@ -29,20 +28,19 @@ const sameCartLine = (item, productId, size, color) =>
 const safeClientUrl = () => (process.env.CLIENT_URL || "").replace(/\/$/, "");
 
 export const getPaymentConfiguration = (_req, res) => {
-  const provider = isZarinpalEnabled() ? "zarinpal" : "stripe";
-  const storeCurrency = currency();
-  const configured = provider === "zarinpal"
-    ? Boolean(process.env.ZARINPAL_MERCHANT_ID && process.env.API_URL && safeClientUrl() && storeCurrency === "IRT" && isTomanCatalogConfirmed())
-    : Boolean(process.env.STRIPE_SECRET_KEY && storeCurrency === "USD");
+  const configured = Boolean(
+    process.env.ZARINPAL_MERCHANT_ID &&
+    process.env.API_URL &&
+    safeClientUrl() &&
+    isTomanCatalogConfirmed()
+  );
   return res.json({
-    provider,
-    currency: storeCurrency,
+    provider: "zarinpal",
+    currency: "IRT",
     configured,
-    message: !configured
-      ? (provider === "zarinpal"
-          ? "برای زرین‌پال، شناسه پذیرنده، API_URL، CLIENT_URL و STORE_CURRENCY=IRT را تنظیم کنید؛ پس از بازبینی قیمت‌ها IRT_CATALOG_PRICES_CONFIRMED=true را نیز فعال کنید."
-          : "برای پرداخت Stripe، کلید سرور و STORE_CURRENCY=USD را تنظیم کنید.")
-      : "",
+    message: configured
+      ? ""
+      : "برای پرداخت، شناسه پذیرنده زرین‌پال، API_URL و CLIENT_URL را تنظیم کنید؛ پس از بازبینی قیمت‌های واقعی، IRT_CATALOG_PRICES_CONFIRMED=true را فعال کنید.",
   });
 };
 
@@ -192,9 +190,6 @@ const reserveInventory = async (items, productsById) => {
   }
 };
 export const createZarinpalCheckout = async (req, res) => {
-  if (!isZarinpalEnabled()) {
-    return res.status(409).json({ message: "Zarinpal is not the configured payment provider" });
-  }
   if (currency() !== "IRT") {
     return res.status(503).json({ message: "Zarinpal checkout requires STORE_CURRENCY=IRT and catalogue prices stored as whole Toman amounts" });
   }

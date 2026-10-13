@@ -31,17 +31,13 @@ const OrderSummary = () => {
     axios.get("/payments/provider")
       .then(({ data }) => {
         if (!active) return;
-        const frontendCurrency = String(import.meta.env.VITE_STORE_CURRENCY || "IRT").toUpperCase();
         const backendCurrency = String(data.currency || "IRT").toUpperCase();
-        const currencyMatches = frontendCurrency === backendCurrency;
-        const stripeKeyReady = data.provider !== "stripe" || Boolean(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-        const configured = Boolean(data.configured && currencyMatches && stripeKeyReady);
+        const currencyMatches = backendCurrency === "IRT";
+        const configured = Boolean(data.configured && currencyMatches);
         const message = !currencyMatches
-          ? "واحد پول فرانت‌اند و بک‌اند یکسان نیست؛ پیش از پرداخت تنظیمات را هماهنگ کنید."
-          : !stripeKeyReady
-            ? "کلید عمومی Stripe در تنظیمات فرانت‌اند تعریف نشده است."
-            : data.message;
-        setPaymentConfig({ ...data, configured, message, loading: false });
+          ? "واحد پول فروشگاه باید تومان (IRT) باشد؛ تنظیمات سرور را بررسی کنید."
+          : data.message;
+        setPaymentConfig({ ...data, provider: "zarinpal", currency: "IRT", configured, message, loading: false });
       })
       .catch(() => {
         if (active) setPaymentConfig({
@@ -83,7 +79,7 @@ const OrderSummary = () => {
 
     setCheckoutLoading(true);
     try {
-      const response = await axios.post("/payments/create-checkout-session", {
+      const response = await axios.post("/payments/create-checkout", {
         couponCode: coupon && isCouponApplied ? coupon.code : null,
       });
 
@@ -95,22 +91,12 @@ const OrderSummary = () => {
         return;
       }
 
-      if (paymentConfig.provider === "zarinpal") {
-        const redirectUrl = response.data?.redirectUrl;
-        if (!redirectUrl || !redirectUrl.startsWith("https://")) {
-          throw new Error("نشانی امن درگاه پرداخت دریافت نشد");
-        }
-        window.location.assign(redirectUrl);
-        return;
+      const redirectUrl = response.data?.redirectUrl;
+      if (!redirectUrl || !redirectUrl.startsWith("https://")) {
+        throw new Error("نشانی امن درگاه پرداخت دریافت نشد");
       }
-
-      const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-      if (!publishableKey) throw new Error("کلید عمومی Stripe در تنظیمات فرانت‌اند تعریف نشده است");
-      const { loadStripe } = await import("@stripe/stripe-js");
-      const stripe = await loadStripe(publishableKey);
-      if (!stripe) throw new Error("راه‌اندازی Stripe ناموفق بود");
-      const result = await stripe.redirectToCheckout({ sessionId: response.data.id });
-      if (result.error) throw result.error;
+      window.location.assign(redirectUrl);
+      return;
     } catch (error) {
       toast.error(error.response?.data?.message || error.message || "شروع پرداخت ناموفق بود");
       setCheckoutLoading(false);
@@ -190,7 +176,7 @@ const OrderSummary = () => {
           onClick={handlePayment}
         >
           {checkoutLoading || (user && paymentConfig.loading) ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : null}
-          {checkoutLoading ? "در حال انتقال به درگاه…" : !user ? "ورود برای ادامه و پرداخت" : paymentConfig.provider === "zarinpal" ? "پرداخت آنلاین با زرین‌پال" : "ادامه و پرداخت"}
+          {checkoutLoading ? "در حال انتقال به درگاه…" : !user ? "ورود برای ادامه و پرداخت" : "پرداخت آنلاین با زرین‌پال"}
         </motion.button>
 
         <div className="flex flex-wrap items-center justify-center gap-2 text-center">

@@ -15,27 +15,15 @@ const PurchaseSuccessPage = () => {
     let active = true;
     const verifyReturn = async () => {
       const params = new URLSearchParams(window.location.search);
-      const provider = params.get("provider");
       const zarinpalOrderId = params.get("order_id");
-      const sessionId = params.get("session_id");
 
       try {
-        if (provider === "zarinpal") {
-          if (!zarinpalOrderId) throw new Error("شناسه سفارش در نشانی صفحه پیدا نشد");
-          const { data } = await axios.get(`/payments/zarinpal/order/${encodeURIComponent(zarinpalOrderId)}`);
-          if (!data.paid) throw new Error("وضعیت پرداخت این سفارش هنوز تأیید نشده است.");
-          if (active) {
-            setOrderId(String(data.orderId));
-            clearCart();
-          }
-        } else if (sessionId) {
-          const { data } = await axios.post("/payments/checkout-success", { sessionId });
-          if (active) {
-            setOrderId(data.orderId ? String(data.orderId) : "");
-            clearCart();
-          }
-        } else {
-          throw new Error("اطلاعات تأیید پرداخت در نشانی صفحه پیدا نشد");
+        if (!zarinpalOrderId) throw new Error("شناسه سفارش در نشانی صفحه پیدا نشد");
+        const { data } = await axios.get(`/payments/zarinpal/order/${encodeURIComponent(zarinpalOrderId)}`);
+        if (!data.paid) throw new Error("وضعیت پرداخت این سفارش هنوز تأیید نشده است.");
+        if (active) {
+          setOrderId(String(data.orderId));
+          clearCart();
         }
       } catch (requestError) {
         if (active) setError(requestError.response?.data?.message || requestError.message || "امکان تأیید پرداخت وجود نداشت. لطفاً با پشتیبانی تماس بگیرید.");

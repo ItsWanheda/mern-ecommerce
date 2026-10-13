@@ -1,33 +1,15 @@
-const configuredCurrency = import.meta.env.VITE_STORE_CURRENCY || "IRT";
+export const STORE_CURRENCY = "IRT";
 
-export const STORE_CURRENCY = String(configuredCurrency).toUpperCase();
+const persianNumberFormat = new Intl.NumberFormat("fa-IR", {
+  maximumFractionDigits: 0,
+});
 
-export const getCurrencyLabel = (currency = STORE_CURRENCY) => {
-  const normalizedCurrency = String(currency || "IRT").toUpperCase();
-  if (normalizedCurrency === "IRT") return "تومان";
-  if (normalizedCurrency === "IRR") return "ریال";
-  if (normalizedCurrency === "USD") return "دلار آمریکا";
-  return normalizedCurrency;
-};
+export const getCurrencyLabel = () => "تومان";
 
-export const formatPrice = (value, currency = STORE_CURRENCY) => {
+export const formatPrice = (value) => {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return "—";
-
-  const normalizedCurrency = String(currency || "IRT").toUpperCase();
-  if (normalizedCurrency === "IRT") {
-    return `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.round(amount))} تومان`;
-  }
-  if (normalizedCurrency === "IRR") {
-    return `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.round(amount))} ریال`;
-  }
-
-  return new Intl.NumberFormat("fa-IR", {
-    style: "currency",
-    currency: normalizedCurrency === "USD" ? "USD" : normalizedCurrency,
-    minimumFractionDigits: normalizedCurrency === "USD" ? 2 : 0,
-    maximumFractionDigits: normalizedCurrency === "USD" ? 2 : 0,
-  }).format(amount);
+  return `${persianNumberFormat.format(Math.round(amount))} تومان`;
 };
 
 export const isStockTracked = (product) =>
