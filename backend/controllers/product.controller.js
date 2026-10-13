@@ -114,6 +114,8 @@ export const createProduct = async (req, res) => {
     } = req.body;
     const numericPrice = price === "" || price === undefined || price === null ? Number.NaN : Number(price);
     const numericStock = stock === "" || stock === undefined || stock === null ? null : Number(stock);
+    const storeCurrency = (process.env.STORE_CURRENCY || "IRT").toUpperCase();
+    const requiresWholeUnitPrices = ["IRT", "IRR"].includes(storeCurrency);
     const normalizedSizes = Array.isArray(sizes)
       ? [...new Set(sizes.filter((value) => typeof value === "string").map((value) => value.trim()).filter(Boolean))].slice(0, 24)
       : [];
@@ -152,6 +154,9 @@ export const createProduct = async (req, res) => {
           })
       : [];
 
+    if (requiresWholeUnitPrices && Number.isFinite(numericPrice) && !Number.isSafeInteger(numericPrice)) {
+      return res.status(400).json({ message: "قیمت در واحد تومان یا ریال باید عدد صحیح و بدون اعشار باشد." });
+    }
     if (typeof name !== "string" || !name.trim() ||
         typeof description !== "string" || !description.trim() ||
         typeof category !== "string" || !category.trim() ||
