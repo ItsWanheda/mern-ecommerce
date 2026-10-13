@@ -18,9 +18,9 @@ const categories = [
 ];
 
 const collections = [
-  { title: "استایل روزمره", description: "انتخاب‌های راحت برای هر روز", href: "/category/jeans", image: "/jeans.jpg" },
-  { title: "لایه‌های ماندگار", description: "کت و کاپشن برای روزهای خنک", href: "/category/jackets", image: "/jackets.jpg" },
-  { title: "جزئیات تکمیل‌کننده", description: "اکسسوری‌هایی با انتخاب هوشمندانه", href: "/category/bags", image: "/bags.jpg" },
+  { title: "استایل روزمره", description: "پایه‌های راحت برای ترکیب روزانه", href: "/category/jeans", image: "/jeans.jpg", categories: ["jeans", "t-shirts", "shoes"] },
+  { title: "لایه‌های ماندگار", description: "ترکیب کت و شلوار برای روزهای خنک", href: "/category/jackets", image: "/jackets.jpg", categories: ["jackets", "jeans", "t-shirts"] },
+  { title: "جزئیات تکمیل‌کننده", description: "اکسسوری‌های ساده برای تکمیل ظاهر", href: "/category/bags", image: "/bags.jpg", categories: ["bags", "glasses", "shoes"] },
 ];
 
 const benefits = [
@@ -56,6 +56,21 @@ const HomePage = () => {
       .finally(() => { if (active) setBestsellersLoaded(true); });
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts]);
+
+  const catalogProducts = [...featuredProducts, ...bestsellers, ...newestProducts]
+    .filter((product, index, products) => product?._id && products.findIndex((item) => item?._id === product._id) === index);
+
+  const sampleProductsForLook = (collection) => {
+    const used = new Set();
+    return collection.categories
+      .map((category) => catalogProducts.find((product) => product.category === category && !used.has(product._id)))
+      .filter((product) => {
+        if (!product) return false;
+        used.add(product._id);
+        return true;
+      })
+      .slice(0, 3);
+  };
 
   return (
     <main dir="rtl" className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
@@ -197,13 +212,30 @@ const HomePage = () => {
             <p className="max-w-md text-sm leading-6 text-[#62645c]">ترکیب‌های ساده برای شروع یک انتخاب تازه.</p>
           </div>
           <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4">
-            {collections.map((collection) => (
-              <Link to={collection.href} key={collection.title} className="group relative isolate flex min-h-[220px] min-w-[84%] snap-center items-end overflow-hidden rounded-2xl bg-[#e9e5dc] p-5 sm:min-h-[250px] sm:p-6 md:min-w-0">
-                <img src={collection.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
-                <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#252722]/85 via-[#252722]/15 to-transparent" />
-                <div className="text-white"><h3 className="font-serif text-2xl font-medium">{collection.title}</h3><p className="mt-2 text-sm text-white/85">{collection.description}</p><span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده مجموعه<ArrowLeft size={16} aria-hidden="true" /></span></div>
-              </Link>
-            ))}
+            {collections.map((collection) => {
+              const lookProducts = sampleProductsForLook(collection);
+              return (
+                <Link to={collection.href} key={collection.title} className="group relative isolate flex min-h-[260px] min-w-[84%] snap-center items-end overflow-hidden rounded-2xl bg-[#e9e5dc] p-4 sm:min-h-[290px] sm:p-5 md:min-w-0">
+                  <img src={collection.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#252722]/95 via-[#252722]/65 to-[#252722]/10" />
+                  <div className="w-full text-white">
+                    <h3 className="font-serif text-2xl font-medium">{collection.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/85">{collection.description}</p>
+                    {lookProducts.length > 0 && (
+                      <div className="mt-4 grid grid-cols-2 gap-2" aria-label="نمونه‌هایی از کالاهای این استایل">
+                        {lookProducts.slice(0, 2).map((product) => (
+                          <span key={product._id} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/25 bg-[#fffefa]/95 p-2 text-[#252722] shadow-sm backdrop-blur-sm">
+                            {product.image ? <img src={product.image} alt="" loading="lazy" className="h-12 w-10 shrink-0 rounded-lg bg-[#e9e5dc] object-cover" /> : <span className="h-12 w-10 shrink-0 rounded-lg bg-[#e9e5dc]" />}
+                            <span className="min-w-0"><span className="block line-clamp-2 text-[11px] font-semibold leading-4">{product.name}</span><span className="mt-1 block text-[10px] tabular-nums text-[#68745f]">{new Intl.NumberFormat("fa-IR").format(Math.round(Number(product.price) || 0))} تومان</span></span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده استایل<ArrowLeft size={16} aria-hidden="true" /></span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
