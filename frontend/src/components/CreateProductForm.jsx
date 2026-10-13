@@ -100,8 +100,9 @@ const CreateProductForm = () => {
 
   const handleImageChange = async (event) => {
     const files = Array.from(event.target.files || []).slice(0, 8);
-    if (files.some((file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024)) {
-      setImageError("هر تصویر باید از نوع عکس و حداکثر ۵ مگابایت باشد.");
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    if (files.some((file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) || totalSize > 6 * 1024 * 1024) {
+      setImageError("هر تصویر باید از نوع عکس و حداکثر ۵ مگابایت باشد؛ حجم کل تصاویر باید حداکثر ۶ مگابایت باشد.");
       event.target.value = "";
       return;
     }
@@ -154,7 +155,7 @@ const CreateProductForm = () => {
 
         <section className="space-y-3">
           <h3 className="border-b border-gray-700 pb-2 text-sm font-bold text-white">گالری تصاویر محصول</h3>
-          <p className="text-xs leading-5 text-gray-400">تا ۸ تصویر اضافه کنید؛ تصویر اول تصویر اصلی محصول خواهد بود. عکس مدل و نمای نزدیک جزئیات، به تصمیم خرید کمک می‌کند.</p>
+          <p className="text-xs leading-5 text-gray-400">تا ۸ تصویر اضافه کنید؛ تصویر اول تصویر اصلی محصول خواهد بود. حجم کل تصاویر باید حداکثر ۶ مگابایت باشد. عکس مدل و نمای نزدیک جزئیات، به تصمیم خرید کمک می‌کند.</p>
           <div className="flex flex-wrap items-center gap-3">
             <input type="file" id="product-images" className="sr-only" accept="image/*" multiple onChange={handleImageChange} />
             <label htmlFor="product-images" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-gray-600 bg-gray-700 px-4 py-2.5 text-sm font-medium text-gray-200 transition hover:bg-gray-600"><Upload size={18} aria-hidden="true" />انتخاب تصاویر</label>
