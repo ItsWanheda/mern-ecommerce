@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, LoaderCircle, Sparkles, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
 import ProductCard from "../components/ProductCard";
 import { formatPrice } from "../lib/commerce";
