@@ -1,7 +1,7 @@
 import StoreSettings from "../models/store-settings.model.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 
-const getCurrency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
+const getCurrency = () => "IRT";
 
 export const getShippingQuote = async (req, res) => {
   const subtotal = Number(req.query.subtotal ?? 0);
@@ -29,9 +29,8 @@ export const updateShippingSettings = async (req, res) => {
       !Number.isFinite(freeShippingThreshold) || freeShippingThreshold < 0) {
     return res.status(400).json({ message: "Shipping values must be non-negative numbers" });
   }
-  if (["IRT", "IRR"].includes(currency) &&
-      (!Number.isSafeInteger(flatRate) || !Number.isSafeInteger(freeShippingThreshold))) {
-    return res.status(400).json({ message: "Shipping amounts must be whole-number Toman or Rial values." });
+  if (!Number.isSafeInteger(flatRate) || !Number.isSafeInteger(freeShippingThreshold)) {
+    return res.status(400).json({ message: "Shipping amounts must be whole-number Toman values." });
   }
   try {
     const settings = await StoreSettings.findOneAndUpdate(

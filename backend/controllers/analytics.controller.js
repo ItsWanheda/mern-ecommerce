@@ -2,14 +2,12 @@ import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 
-const getStoreCurrency = () => (process.env.STORE_CURRENCY || "IRT").toUpperCase();
-
 export const getAnalyticsData = async () => {
 	const totalUsers = await User.countDocuments();
 	const totalProducts = await Product.countDocuments();
 
 	const salesData = await Order.aggregate([
-		{ $match: { currency: getStoreCurrency(), paymentStatus: "paid" } },
+		{ $match: { currency: "IRT", paymentStatus: "paid" } },
 		{
 			$group: {
 				_id: null,
@@ -34,7 +32,7 @@ export const getDailySalesData = async (startDate, endDate) => {
 		const dailySalesData = await Order.aggregate([
 			{
 				$match: {
-					currency: getStoreCurrency(),
+					currency: "IRT",
 					paymentStatus: "paid",
 					createdAt: {
 						$gte: startDate,

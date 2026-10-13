@@ -142,7 +142,7 @@ const CreateProductForm = () => {
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>قیمت ({priceUnitLabel})
-              <input type="number" min="0" step={storeCurrency === "IRT" || storeCurrency === "IRR" ? "1" : "0.01"} value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
+              <input type="number" min="0" step="1" value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
             </label>
             {combinations.length === 0 ? (
               <label className={labelClass}>موجودی انبار

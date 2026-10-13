@@ -52,10 +52,10 @@ const ShippingSettings = () => {
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         <label className="block text-sm text-gray-300">هزینه ثابت ارسال ({currencyLabel})
-          <input type="number" min="0" step={currency === "IRT" || currency === "IRR" ? "1" : "0.01"} required className={fieldClass} value={form.flatRate} onChange={(event) => setForm({ ...form, flatRate: event.target.value })} />
+          <input type="number" min="0" step="1" required className={fieldClass} value={form.flatRate} onChange={(event) => setForm({ ...form, flatRate: event.target.value })} />
         </label>
         <label className="block text-sm text-gray-300">حداقل مبلغ برای ارسال رایگان ({currencyLabel})
-          <input type="number" min="0" step={currency === "IRT" || currency === "IRR" ? "1" : "0.01"} required className={fieldClass} value={form.freeShippingThreshold} onChange={(event) => setForm({ ...form, freeShippingThreshold: event.target.value })} />
+          <input type="number" min="0" step="1" required className={fieldClass} value={form.freeShippingThreshold} onChange={(event) => setForm({ ...form, freeShippingThreshold: event.target.value })} />
         </label>
         <p className="text-sm leading-6 text-gray-400">نمونه: هزینه ارسال {formatPrice(Number(form.flatRate), currency)} و ارسال رایگان برای سفارش‌های حداقل {formatPrice(Number(form.freeShippingThreshold), currency)}. مقدار صفر برای حداقل خرید، قانون ارسال رایگان را غیرفعال می‌کند.</p>
         <button type="submit" disabled={loading} className="min-h-11 rounded-full bg-[#68745f] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">{loading ? "در حال ذخیره…" : "ذخیره قوانین ارسال"}</button>
