@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
@@ -55,6 +55,23 @@ const HomePage = () => {
 
     setActiveCategoryIndex((current) => current === nearestIndex ? current : nearestIndex);
   };
+
+  const scrollToCategory = (index) => {
+    const slide = categorySlideRefs.current[index];
+    if (!slide) return;
+
+    setActiveCategoryIndex(index);
+    slide.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  };
+
+  const handlePreviousCategory = () => {
+    scrollToCategory(Math.max(0, activeCategoryIndex - 1));
+  };
+
+  const handleNextCategory = () => {
+    scrollToCategory(Math.min(categories.length - 1, activeCategoryIndex + 1));
+  };
+
   const {
     fetchFeaturedProducts,
     featuredProducts,
@@ -107,14 +124,38 @@ const HomePage = () => {
               <h2 className="font-serif text-2xl font-medium tracking-tight text-[#252722] sm:text-4xl">خرید بر اساس دسته‌بندی</h2>
               <p className="mt-2 max-w-md text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">با لمس و کشیدن، دسته‌بندی‌ها را مرور کنید.</p>
             </div>
-            <div className="flex items-center justify-end gap-3">
-              <span className="text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
+            <div className="flex items-center justify-end gap-2">
+              <span className="min-w-[4.5rem] text-center text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
+              <button
+                type="button"
+                onClick={handlePreviousCategory}
+                disabled={activeCategoryIndex === 0}
+                aria-label="دسته‌بندی قبلی"
+                aria-controls="category-carousel"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <ChevronRight size={19} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextCategory}
+                disabled={activeCategoryIndex >= categories.length - 1}
+                aria-label="دسته‌بندی بعدی"
+                aria-controls="category-carousel"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-35"
+              >
+                <ChevronLeft size={19} aria-hidden="true" />
+              </button>
             </div>
           </div>
           <div
+            id="category-carousel"
             ref={categoryTrackRef}
+            role="region"
+            aria-label="دسته‌بندی‌های فروشگاه"
+            tabIndex={0}
             onScroll={handleCategoryScroll}
-            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4"
+            className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
           >
             {categories.map((category, index) => (
               <div ref={(element) => { categorySlideRefs.current[index] = element; }} key={category.name} className="min-w-[68%] shrink-0 snap-center sm:min-w-[36%] lg:min-w-[24%]">
