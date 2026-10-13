@@ -177,7 +177,7 @@ const HomePage = () => {
               <p className="mt-2 max-w-md text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">با لمس و کشیدن، دسته‌بندی‌ها را مرور کنید.</p>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <span className="min-w-[4.5rem] text-center text-xs tabular-nums text-[#77786f]" aria-live="polite">{new Intl.NumberFormat("fa-IR").format(activeCategoryIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(categories.length)}</span>
+              
               <button
                 type="button"
                 onClick={handlePreviousCategory}
