@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { Truck } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
-import { formatPrice } from "../lib/commerce";
+import { formatPrice, getCurrencyLabel } from "../lib/commerce";
 
 const ShippingSettings = () => {
   const [form, setForm] = useState({ flatRate: "0", freeShippingThreshold: "0" });
   const [currency, setCurrency] = useState("IRT");
   const [loading, setLoading] = useState(false);
-  const currencyLabel = currency === "IRT" ? "تومان" : currency === "IRR" ? "ریال" : currency;
+  const currencyLabel = getCurrencyLabel(currency);
 
   useEffect(() => {
     axios.get("/shipping?subtotal=0").then(({ data }) => {
