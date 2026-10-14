@@ -10,7 +10,7 @@ const dbName = (() => {
   try { return new URL(testUri).pathname.replace(/^\//, "").split("?")[0]; }
   catch { return ""; }
 })();
-const safeTestDatabase = /test/i.test(dbName);
+const safeTestDatabase = /(^|[_-])test($|[_-])/i.test(dbName);
 if (testUri && !safeTestDatabase) {
   throw new Error("MONGO_TEST_URI must point to a dedicated disposable database whose name includes 'test'.");
 }
