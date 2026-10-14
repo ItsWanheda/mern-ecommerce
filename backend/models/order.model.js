@@ -44,7 +44,7 @@ const orderSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     products: { type: [orderProductSchema], required: true },
     shippingAddress: { type: shippingAddressSchema, default: undefined },
-    shipmentStatus: { type: String, enum: ["not_ready", "processing", "packed", "shipped", "delivered", "returned"], default: "not_ready" },
+    shipmentStatus: { type: String, enum: ["not_ready", "processing", "packed", "shipped", "delivered", "returned"] },
     shippingCarrier: { type: String, trim: true, maxlength: 100, default: "" },
     trackingCode: { type: String, trim: true, maxlength: 120, default: "" },
     shippedAt: { type: Date, default: null },
@@ -52,13 +52,16 @@ const orderSchema = new mongoose.Schema(
     shipmentEvents: { type: [shipmentEventSchema], default: [] },
     totalAmount: { type: Number, required: true, min: 0 },
     shippingFee: { type: Number, min: 0, default: 0 },
-    // New orders are Toman/Zarinpal; generic strings preserve readability of historical records.
-    currency: { type: String, default: "IRT" },
-    paymentProvider: { type: String, default: "zarinpal" },
-    paymentStatus: { type: String, enum: ["pending", "paid", "failed", "expired"], default: "pending" },
-    paymentRequestStatus: { type: String, enum: ["not_started", "in_flight", "accepted", "unknown", "rejected", "expired"], default: "not_started" },
+    // Legacy Stripe orders have no currency/provider fields. Do not infer Toman for them.
+    currency: { type: String, default: undefined },
+    paymentProvider: { type: String, default: undefined },
+    // Keep the old session identifier readable for historical order display and migration.
+    // The legacy unique index must be handled by scripts/migrate-legacy-stripe-index.mjs.
+    stripeSessionId: { type: String, default: undefined },
+    paymentStatus: { type: String, enum: ["pending", "paid", "failed", "expired"] },
+    paymentRequestStatus: { type: String, enum: ["not_started", "in_flight", "accepted", "unknown", "rejected", "expired"] },
     paymentRequestAttemptedAt: { type: Date, default: null },
-    status: { type: String, enum: ["pending", "paid", "failed", "cancelled", "expired"], default: "pending" },
+    status: { type: String, enum: ["pending", "paid", "failed", "cancelled", "expired"] },
     couponCode: { type: String, default: "" },
     zarinpalAuthority: { type: String, unique: true, sparse: true },
     zarinpalRefId: { type: String, default: "" },
