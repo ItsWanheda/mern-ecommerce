@@ -258,7 +258,7 @@ const HomePage = () => {
           ) : newestProducts.length > 0 ? (
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
               {newestProducts.slice(0, 8).map((product) => (
-                <div key={product._id} className="min-w-[68%] shrink-0 snap-start sm:min-w-[36%] lg:min-w-[24%]">
+                <div key={product._id} className="w-[min(68%,17rem)] min-w-0 shrink-0 snap-start sm:w-[min(36%,18rem)] lg:w-[min(24%,19rem)]">
                   <ProductCard product={product} />
                 </div>
               ))}
