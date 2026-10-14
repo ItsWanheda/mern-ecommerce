@@ -52,21 +52,16 @@ const orderSchema = new mongoose.Schema(
     shipmentEvents: { type: [shipmentEventSchema], default: [] },
     totalAmount: { type: Number, required: true, min: 0 },
     shippingFee: { type: Number, min: 0, default: 0 },
-    // Legacy Stripe orders have no currency/provider fields. Do not infer Toman for them.
-    currency: { type: String, default: undefined },
-    paymentProvider: { type: String, default: undefined },
-    // Keep the old session identifier readable for historical order display and migration.
-    // The legacy unique index must be handled by scripts/migrate-legacy-stripe-index.mjs.
-    stripeSessionId: { type: String, default: undefined },
-    paymentStatus: { type: String, enum: ["pending", "paid", "failed", "expired"] },
-    paymentRequestStatus: { type: String, enum: ["not_started", "in_flight", "accepted", "unknown", "rejected", "expired"] },
+    currency: { type: String, enum: ["IRT"], default: "IRT", required: true },
+    paymentProvider: { type: String, enum: ["zarinpal"], default: "zarinpal", required: true },
+    paymentStatus: { type: String, enum: ["pending", "paid", "failed", "expired"], default: "pending", required: true },
+    paymentRequestStatus: { type: String, enum: ["not_started", "in_flight", "accepted", "unknown", "rejected", "expired"], default: "not_started" },
     paymentRequestAttemptedAt: { type: Date, default: null },
-    status: { type: String, enum: ["pending", "paid", "failed", "cancelled", "expired"] },
+    status: { type: String, enum: ["pending", "paid", "failed", "cancelled", "expired"], default: "pending" },
     couponCode: { type: String, default: "" },
     zarinpalAuthority: { type: String, unique: true, sparse: true },
     zarinpalRefId: { type: String, default: "" },
     expiresAt: { type: Date, default: null },
-    // Set only after post-payment cleanup (coupon/cart) is successfully completed.
     finalizedAt: { type: Date, default: null },
   },
   { timestamps: true }
