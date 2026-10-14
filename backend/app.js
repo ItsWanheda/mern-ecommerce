@@ -14,11 +14,14 @@ import newsletterRoutes from "./routes/newsletter.route.js";
 import orderRoutes from "./routes/order.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
+import { browserOriginAndCors, securityHeaders } from "./middleware/security.middleware.js";
 
 const app = express();
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
+app.use(securityHeaders);
+app.use(browserOriginAndCors);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/api/ready", (_req, res) => {
