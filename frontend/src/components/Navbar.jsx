@@ -593,6 +593,14 @@ const Navbar = () => {
                       </>
                     ) : (
                       <>
+                        <Link
+                          to="/orders"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                        >
+                          <Truck size={17} aria-hidden="true" />
+                          سفارش‌های من و رهگیری
+                        </Link>
                         {isAdmin && (
                           <Link
                             to="/secret-dashboard"
@@ -882,6 +890,17 @@ const Navbar = () => {
 
               {(isAdmin || user) && (
                 <section aria-label="حساب و مدیریت" className="space-y-2 border-t border-[#e4e0d8] pt-4">
+                  {user && (
+                    <Link
+                      to="/orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    >
+                      <Truck size={17} aria-hidden="true" />
+                      سفارش‌های من و رهگیری
+                      <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
+                    </Link>
+                  )}
                   {isAdmin && (
                     <Link
                       to="/secret-dashboard"

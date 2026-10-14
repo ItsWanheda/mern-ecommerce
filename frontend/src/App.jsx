@@ -21,6 +21,7 @@ const StoreInfoPage = lazy(() => import("./pages/StoreInfoPage"));
 const NewsletterUnsubscribePage = lazy(() => import("./pages/NewsletterUnsubscribePage"));
 const PurchaseSuccessPage = lazy(() => import("./pages/PurchaseSuccessPage"));
 const PurchaseCancelPage = lazy(() => import("./pages/PurchaseCancelPage"));
+const MyOrdersPage = lazy(() => import("./pages/MyOrdersPage"));
 
 const RouteLoadingFallback = () => (
   <div
@@ -65,6 +66,7 @@ function App() {
             <Route path="/category/:category" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/orders" element={user ? <MyOrdersPage /> : <Navigate to="/login" state={{ from: { pathname: "/orders" } }} />} />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/shipping-policy" element={<StoreInfoPage />} />
             <Route path="/returns-policy" element={<StoreInfoPage />} />

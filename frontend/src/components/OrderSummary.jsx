@@ -8,6 +8,26 @@ import { useUserStore } from "../stores/useUserStore";
 import axios from "../lib/axios";
 import { formatPrice, STORE_CURRENCY } from "../lib/commerce";
 
+const provinces = [
+  "آذربایجان شرقی", "آذربایجان غربی", "اردبیل", "اصفهان", "البرز", "ایلام",
+  "بوشهر", "تهران", "چهارمحال و بختیاری", "خراسان جنوبی", "خراسان رضوی",
+  "خراسان شمالی", "خوزستان", "زنجان", "سمنان", "سیستان و بلوچستان", "فارس",
+  "قزوین", "قم", "کردستان", "کرمان", "کرمانشاه", "کهگیلویه و بویراحمد",
+  "گلستان", "گیلان", "لرستان", "مازندران", "مرکزی", "هرمزگان", "همدان", "یزد",
+];
+const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+const normalizeDigits = (value) => String(value ?? "")
+  .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
+  .replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit)));
+const normalizeIranPhone = (value) => {
+  let digits = normalizeDigits(value).replace(/\\D/g, "");
+  if (digits.startsWith("0098") && digits.length === 14) digits = `0${digits.slice(4)}`;
+  else if (digits.startsWith("98") && digits.length === 12) digits = `0${digits.slice(2)}`;
+  else if (digits.length === 10 && digits.startsWith("9")) digits = `0${digits}`;
+  return digits;
+};
+
 const OrderSummary = () => {
   const { total, subtotal, coupon, isCouponApplied, cart, isMergingGuestCart } = useCartStore();
   const { user } = useUserStore();
@@ -22,6 +42,17 @@ const OrderSummary = () => {
   });
   const [shipping, setShipping] = useState({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: true, error: "" });
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState({
+    recipientName: "",
+    phone: "",
+    province: "",
+    city: "",
+    district: "",
+    addressLine: "",
+    postalCode: "",
+    notes: "",
+  });
+  const addressFieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
 
   const savings = Math.max(0, subtotal - total);
   const estimatedTotal = total + Number(shipping.shippingFee || 0);
@@ -76,11 +107,28 @@ const OrderSummary = () => {
     if (!paymentConfig.configured) {
       return toast.error(paymentConfig.message || "درگاه پرداخت در حال حاضر آماده نیست");
     }
+    const delivery = {
+      ...shippingAddress,
+      recipientName: shippingAddress.recipientName.trim(),
+      phone: normalizeIranPhone(shippingAddress.phone),
+      province: shippingAddress.province.trim(),
+      city: shippingAddress.city.trim(),
+      district: shippingAddress.district.trim(),
+      addressLine: shippingAddress.addressLine.trim(),
+      postalCode: normalizeDigits(shippingAddress.postalCode).replace(/\\D/g, ""),
+      notes: shippingAddress.notes.trim(),
+    };
+    if (delivery.recipientName.length < 2 || !/^09\\d{9}$/.test(delivery.phone) ||
+        !delivery.province || !delivery.city || delivery.addressLine.length < 10 ||
+        !/^\\d{10}$/.test(delivery.postalCode)) {
+      return toast.error("اطلاعات گیرنده و نشانی را بررسی کنید؛ موبایل باید ایرانی و کد پستی ۱۰ رقمی باشد.");
+    }
 
     setCheckoutLoading(true);
     try {
       const response = await axios.post("/payments/create-checkout", {
         couponCode: coupon && isCouponApplied ? coupon.code : null,
+        shippingAddress: delivery,
       });
 
       if (response.status === 202 || response.data?.status === "pending") {
@@ -126,6 +174,43 @@ const OrderSummary = () => {
       )}
 
       <div className="space-y-4">
+      {user && (
+        <section className="space-y-4 rounded-xl border border-gray-600 bg-gray-900/35 p-4 sm:p-5" aria-labelledby="delivery-address-title">
+          <div>
+            <h3 id="delivery-address-title" className="text-base font-bold text-white">نشانی تحویل سفارش</h3>
+            <p className="mt-1 text-xs leading-5 text-gray-400">آدرس فقط برای همین سفارش ذخیره می‌شود. شماره موبایل و کد پستی را می‌توانید با ارقام فارسی یا انگلیسی وارد کنید.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm text-gray-300">نام و نام خانوادگی گیرنده
+              <input autoComplete="name" required maxLength={100} className={addressFieldClass} value={shippingAddress.recipientName} onChange={(event) => setShippingAddress({ ...shippingAddress, recipientName: event.target.value })} placeholder="نام گیرنده" />
+            </label>
+            <label className="block text-sm text-gray-300">شماره موبایل
+              <input type="tel" inputMode="tel" autoComplete="tel" required maxLength={18} className={addressFieldClass} value={shippingAddress.phone} onChange={(event) => setShippingAddress({ ...shippingAddress, phone: event.target.value })} placeholder="09123456789" />
+            </label>
+            <label className="block text-sm text-gray-300">استان
+              <select autoComplete="address-level1" required className={addressFieldClass} value={shippingAddress.province} onChange={(event) => setShippingAddress({ ...shippingAddress, province: event.target.value })}>
+                <option value="">انتخاب استان</option>
+                {provinces.map((province) => <option key={province} value={province} className="bg-gray-800">{province}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm text-gray-300">شهر
+              <input autoComplete="address-level2" required maxLength={80} className={addressFieldClass} value={shippingAddress.city} onChange={(event) => setShippingAddress({ ...shippingAddress, city: event.target.value })} placeholder="نام شهر" />
+            </label>
+            <label className="block text-sm text-gray-300">محله (اختیاری)
+              <input maxLength={80} className={addressFieldClass} value={shippingAddress.district} onChange={(event) => setShippingAddress({ ...shippingAddress, district: event.target.value })} placeholder="محله یا منطقه" />
+            </label>
+            <label className="block text-sm text-gray-300">کد پستی ۱۰ رقمی
+              <input inputMode="numeric" autoComplete="postal-code" required maxLength={10} className={addressFieldClass} value={shippingAddress.postalCode} onChange={(event) => setShippingAddress({ ...shippingAddress, postalCode: event.target.value })} placeholder="1234567890" />
+            </label>
+          </div>
+          <label className="block text-sm text-gray-300">نشانی کامل و پلاک
+            <textarea autoComplete="street-address" required minLength={10} maxLength={500} rows={3} className={addressFieldClass} value={shippingAddress.addressLine} onChange={(event) => setShippingAddress({ ...shippingAddress, addressLine: event.target.value })} placeholder="خیابان، کوچه، پلاک، واحد و نشانه‌های لازم برای تحویل" />
+          </label>
+          <label className="block text-sm text-gray-300">توضیحات تحویل (اختیاری)
+            <textarea maxLength={500} rows={2} className={addressFieldClass} value={shippingAddress.notes} onChange={(event) => setShippingAddress({ ...shippingAddress, notes: event.target.value })} placeholder="زمان مناسب یا توضیحات تکمیلی برای پیک" />
+          </label>
+        </section>
+      )}
         <div className="space-y-3">
           <dl className="flex items-center justify-between gap-4">
             <dt className="text-sm font-normal text-gray-300">قیمت محصولات</dt>

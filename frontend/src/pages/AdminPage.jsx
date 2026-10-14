@@ -1,4 +1,4 @@
-import { BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail } from "lucide-react";
+import { Activity, BarChart, ClipboardList, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -8,6 +8,9 @@ const ProductsList = lazy(() => import("../components/ProductsList"));
 const CampaignManager = lazy(() => import("../components/CampaignManager"));
 const ShippingSettings = lazy(() => import("../components/ShippingSettings"));
 const NewsletterManager = lazy(() => import("../components/NewsletterManager"));
+const OrderManagement = lazy(() => import("../components/OrderManagement"));
+const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
+const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
@@ -17,6 +20,9 @@ const tabs = [
   { id: "shipping", label: "ارسال", icon: Truck },
   { id: "newsletter", label: "خبرنامه", icon: Mail },
   { id: "analytics", label: "آمار و تحلیل", icon: BarChart },
+  { id: "orders", label: "سفارش‌ها و رهگیری", icon: Truck },
+  { id: "audit", label: "تاریخچه اقدامات", icon: ScrollText },
+  { id: "operations", label: "وضعیت سامانه", icon: Activity },
 ];
 
 const AdminPage = () => {
@@ -43,6 +49,9 @@ const AdminPage = () => {
           {activeTab === "shipping" && <ShippingSettings />}
           {activeTab === "newsletter" && <NewsletterManager />}
           {activeTab === "analytics" && <AnalyticsTab />}
+          {activeTab === "orders" && <OrderManagement />}
+          {activeTab === "audit" && <AuditLogTab />}
+          {activeTab === "operations" && <OperationsDashboard />}
         </Suspense>
       </div>
     </div>
