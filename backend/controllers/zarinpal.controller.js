@@ -599,6 +599,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
 
     const expiredPendingOrders = await Order.find({
       paymentProvider: "zarinpal",
+      currency: "IRT",
       paymentStatus: "pending",
       expiresAt: { $lte: new Date() },
     }).sort({ expiresAt: 1, createdAt: 1 }).limit(10).lean();
