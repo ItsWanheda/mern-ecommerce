@@ -44,7 +44,7 @@ The frontend can use a public API base URL through `VITE_API_URL`; use `http://l
 
 **Do not enable checkout** until the catalogue and shipping settings contain verified whole-Toman amounts. Keep `IRT_CATALOG_PRICES_CONFIRMED=false` until that migration is reviewed. For a payment-provider callback to work, `API_URL` must resolve to the publicly reachable backend origin.
 
-See [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md) for deployment, database migration, and scheduled payment recovery.
+See [Persian commerce setup](PERSIAN_COMMERCE_SETUP.md) for deployment, database migration, and scheduled payment recovery.
 
 ## Local development
 
