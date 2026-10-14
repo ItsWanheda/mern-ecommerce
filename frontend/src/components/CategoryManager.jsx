@@ -97,7 +97,7 @@ const CategoryManager = () => {
   };
 
   const startCreate = (parentId = "") => {
-    setForm({ ...emptyForm(), parentId: idOf(parentId) });
+    setForm({ ...emptyForm(), parentId: idOf(parentId), showInNavigation: !parentId });
     setEditingId("");
     setNotice("");
     setFormOpen(true);

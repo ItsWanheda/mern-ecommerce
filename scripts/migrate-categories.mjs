@@ -84,7 +84,7 @@ try {
       { $setOnInsert: {
         name: { fa: item.fa, en: item.en }, slug: item.slug, parentId: parent?._id || null, ancestors,
         description: { fa: "", en: "" }, image: item.image || "", sortOrder: item.order || 0,
-        isActive: true, showInNavigation: item.nav !== false, attributes: item.attributes || [],
+        isActive: true, showInNavigation: item.nav === true, attributes: item.attributes || [],
       } },
       { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
     );
