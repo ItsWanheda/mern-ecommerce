@@ -12,7 +12,18 @@ export const connectDB = async () => {
 	}
 
 	if (!connectionPromise) {
-		connectionPromise = mongoose.connect(process.env.MONGO_URI).catch((error) => {
+		connectionPromise = mongoose.connect(process.env.MONGO_URI, {
+      maxPoolSize: (() => {
+        const configured = Number(process.env.MONGO_MAX_POOL_SIZE);
+        return Number.isInteger(configured) && configured >= 1 && configured <= 20 ? configured : 5;
+      })(),
+      minPoolSize: 0,
+      maxConnecting: 2,
+      waitQueueTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+      maxIdleTimeMS: 30000,
+    }).catch((error) => {
 			connectionPromise = null;
 			throw error;
 		});

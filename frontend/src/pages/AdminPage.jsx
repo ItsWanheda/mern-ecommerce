@@ -1,59 +1,60 @@
-import { BarChart, PlusCircle, ShoppingBasket } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import AnalyticsTab from "../components/AnalyticsTab";
-import CreateProductForm from "../components/CreateProductForm";
-import ProductsList from "../components/ProductsList";
+const AnalyticsTab = lazy(() => import("../components/AnalyticsTab"));
+const CreateProductForm = lazy(() => import("../components/CreateProductForm"));
+const ProductsList = lazy(() => import("../components/ProductsList"));
+const CampaignManager = lazy(() => import("../components/CampaignManager"));
+const ShippingSettings = lazy(() => import("../components/ShippingSettings"));
+const NewsletterManager = lazy(() => import("../components/NewsletterManager"));
+const OrderManagement = lazy(() => import("../components/OrderManagement"));
+const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
+const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
-	{ id: "create", label: "Create Product", icon: PlusCircle },
-	{ id: "products", label: "Products", icon: ShoppingBasket },
-	{ id: "analytics", label: "Analytics", icon: BarChart },
+  { id: "create", label: "ایجاد محصول", icon: PlusCircle },
+  { id: "products", label: "محصولات و موجودی", icon: ShoppingBasket },
+  { id: "campaigns", label: "کمپین‌ها", icon: Megaphone },
+  { id: "shipping", label: "ارسال", icon: Truck },
+  { id: "newsletter", label: "خبرنامه", icon: Mail },
+  { id: "analytics", label: "آمار و تحلیل", icon: BarChart },
+  { id: "orders", label: "سفارش‌ها و رهگیری", icon: Truck },
+  { id: "audit", label: "تاریخچه اقدامات", icon: ScrollText },
+  { id: "operations", label: "وضعیت سامانه", icon: Activity },
 ];
 
 const AdminPage = () => {
-	const [activeTab, setActiveTab] = useState("create");
-	const { fetchAllProducts } = useProductStore();
+  const [activeTab, setActiveTab] = useState("create");
+  const { fetchAllProducts } = useProductStore();
 
-	useEffect(() => {
-		fetchAllProducts();
-	}, [fetchAllProducts]);
+  useEffect(() => { if (activeTab === "products") fetchAllProducts(); }, [activeTab, fetchAllProducts]);
 
-	return (
-		<div className='min-h-screen relative overflow-hidden'>
-			<div className='relative z-10 container mx-auto px-4 py-16'>
-				<motion.h1
-					className='text-4xl font-bold mb-8 text-emerald-400 text-center'
-					initial={{ opacity: 0, y: -20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.8 }}
-				>
-					Admin Dashboard
-				</motion.h1>
-
-				<div className='flex justify-center mb-8'>
-					{tabs.map((tab) => (
-						<button
-							key={tab.id}
-							onClick={() => setActiveTab(tab.id)}
-							className={`flex items-center px-4 py-2 mx-2 rounded-md transition-colors duration-200 ${
-								activeTab === tab.id
-									? "bg-emerald-600 text-white"
-									: "bg-gray-700 text-gray-300 hover:bg-gray-600"
-							}`}
-						>
-							<tab.icon className='mr-2 h-5 w-5' />
-							{tab.label}
-						</button>
-					))}
-				</div>
-				{activeTab === "create" && <CreateProductForm />}
-				{activeTab === "products" && <ProductsList />}
-				{activeTab === "analytics" && <AnalyticsTab />}
-			</div>
-		</div>
-	);
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="relative z-10 container mx-auto px-4 py-16">
+        <motion.h1 className="mb-8 text-center text-4xl font-bold text-[#68745f]" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>داشبورد مدیریت</motion.h1>
+        <div dir="rtl" className="mb-8 flex flex-wrap justify-center gap-2">
+          {tabs.map((tab) => (
+            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-sm transition-colors ${activeTab === tab.id ? "bg-[#68745f] text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
+              <tab.icon className="h-5 w-5" aria-hidden="true" />{tab.label}
+            </button>
+          ))}
+        </div>
+        <Suspense fallback={<div role="status" className="rounded-xl border border-gray-700 bg-gray-800 p-8 text-center text-sm text-gray-400">در حال بارگذاری بخش مدیریت…</div>}>
+          {activeTab === "create" && <CreateProductForm />}
+          {activeTab === "products" && <ProductsList />}
+          {activeTab === "campaigns" && <CampaignManager />}
+          {activeTab === "shipping" && <ShippingSettings />}
+          {activeTab === "newsletter" && <NewsletterManager />}
+          {activeTab === "analytics" && <AnalyticsTab />}
+          {activeTab === "orders" && <OrderManagement />}
+          {activeTab === "audit" && <AuditLogTab />}
+          {activeTab === "operations" && <OperationsDashboard />}
+        </Suspense>
+      </div>
+    </div>
+  );
 };
 export default AdminPage;

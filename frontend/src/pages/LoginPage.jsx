@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
 
 const LoginPage = () => {
+	const location = useLocation();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -16,10 +17,10 @@ const LoginPage = () => {
 	};
 
 	return (
-		<main className="min-h-[calc(100vh-5rem)] bg-[#f7f5f0] px-4 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
-			<div className="mx-auto grid min-h-[min(760px,calc(100vh-10rem))] max-w-6xl overflow-hidden rounded-[2rem] border border-[#e5e0d6] bg-[#fffefa] shadow-[0_28px_90px_-42px_rgba(37,39,34,0.28)] lg:grid-cols-[0.92fr_1.08fr]">
+		<main className="flex min-h-screen items-center justify-center bg-[#f7f5f0] px-4 py-8 text-[#252722] sm:px-6 sm:py-10">
+			<div className="w-full max-w-xl overflow-hidden rounded-[2rem] border border-[#e5e0d6] bg-[#fffefa] shadow-[0_28px_90px_-42px_rgba(37,39,34,0.28)]">
 				<motion.section
-					className="flex items-center px-6 py-10 sm:px-10 lg:px-14 lg:py-14"
+					className="flex items-center px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12"
 					initial={{ opacity: 0, y: 14 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.45 }}
@@ -27,71 +28,54 @@ const LoginPage = () => {
 				>
 					<div className="mx-auto w-full max-w-md">
 						<Link to="/" className="inline-flex items-center font-serif text-2xl font-semibold tracking-tight text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]">
-							E-Commerce<span className="text-[#68745f]">.</span>
+							تیک بوتیک
 						</Link>
 
 						<div className="mt-10">
 							<div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e9ede4] text-[#68745f]">
 								<Sparkles size={20} aria-hidden="true" />
 							</div>
-							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">Welcome back</p>
-							<h1 id="login-heading" className="mt-3 font-serif text-4xl font-medium tracking-tight sm:text-5xl">Good to see you<span className="text-[#68745f]">.</span></h1>
-							<p className="mt-4 max-w-sm text-sm leading-6 text-[#77786f]">Sign in to pick up where you left off and find something you’ll love.</p>
+							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#68745f]">خوش آمدید</p>
+							<h1 id="login-heading" className="mt-3 font-serif text-4xl font-medium tracking-tight sm:text-5xl">خوشحالیم که برگشتید<span className="text-[#68745f]">.</span></h1>
+							<p className="mt-4 max-w-sm text-sm leading-6 text-[#77786f]">وارد شوید و ادامه خریدتان را از سر بگیرید.</p>
 						</div>
 
 						<form onSubmit={handleSubmit} className="mt-9 space-y-5">
 							<div>
-								<label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#41443b]">Email address</label>
+								<label htmlFor="login-email" className="mb-2 block text-sm font-medium text-[#41443b]">نشانی ایمیل</label>
 								<div className="relative">
 									<Mail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8b82]" size={18} aria-hidden="true" />
-									<input id="login-email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-11 pr-4 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
+									<input id="login-email" name="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" dir="ltr" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-11 pr-4 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
 								</div>
 							</div>
 
 							<div>
 								<div className="mb-2 flex items-center justify-between gap-3">
-									<label htmlFor="login-password" className="block text-sm font-medium text-[#41443b]">Password</label>
+									<label htmlFor="login-password" className="block text-sm font-medium text-[#41443b]">رمز عبور</label>
 								</div>
 								<div className="relative">
 									<LockKeyhole className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8a8b82]" size={18} aria-hidden="true" />
-									<input id="login-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-11 pr-12 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
-									<button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#8a8b82] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]">
+									<input id="login-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="رمز عبور خود را وارد کنید" className="w-full rounded-xl border border-[#dedbd2] bg-white py-3.5 pl-12 pr-11 text-sm text-[#252722] outline-none transition placeholder:text-[#a1a198] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10" />
+									<button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور"} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[#8a8b82] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]">
 										{showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
 									</button>
 								</div>
 							</div>
 
 							<button type="submit" disabled={loading} className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#252722] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-60">
-								{loading ? "Signing you in..." : "Sign in"}
+								{loading ? "در حال ورود..." : "ورود"}
 								{!loading && <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />}
 							</button>
 						</form>
 
 						<div className="mt-7 flex items-center gap-2 text-xs leading-5 text-[#85867d]">
 							<ShieldCheck size={16} className="shrink-0 text-[#68745f]" aria-hidden="true" />
-							Your account details are handled securely.
+							اطلاعات حساب شما به‌صورت امن نگهداری می‌شود.
 						</div>
-						<p className="mt-8 text-center text-sm text-[#77786f]">New here?{" "}<Link to="/signup" className="font-semibold text-[#68745f] underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-[#41443b]">Create an account</Link></p>
+						<p className="mt-8 text-center text-sm text-[#77786f]">تازه به ما پیوسته‌اید؟{" "}<Link to="/signup" state={location.state?.from ? { from: location.state.from } : undefined} className="font-semibold text-[#68745f] underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-[#41443b]">ایجاد حساب کاربری</Link></p>
 					</div>
 				</motion.section>
-
-				<motion.aside
-					className="relative hidden min-h-[620px] overflow-hidden bg-[#d8d9ce] lg:block"
-					initial={{ opacity: 0, scale: 1.015 }}
-					animate={{ opacity: 1, scale: 1 }}
-					transition={{ duration: 0.7, delay: 0.1 }}
-					aria-label="A curated look at the collection"
-				>
-					<img src="/jackets.jpg" alt="A piece from the curated clothing collection" className="absolute inset-0 h-full w-full object-cover" />
-					<div className="absolute inset-0 bg-gradient-to-t from-[#171a16]/80 via-[#171a16]/10 to-[#171a16]/10" />
-					<div className="absolute left-8 top-8 rounded-full border border-white/40 bg-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur-md">Considered essentials</div>
-					<div className="absolute inset-x-0 bottom-0 p-10 xl:p-14">
-						<p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/75">Style, made personal</p>
-						<h2 className="mt-4 max-w-lg font-serif text-4xl leading-tight text-white xl:text-5xl">Pieces you reach for. Seasons you remember.</h2>
-						<p className="mt-4 max-w-sm text-sm leading-6 text-white/75">Thoughtful finds for everyday living, chosen to stay in your rotation.</p>
-					</div>
-				</motion.aside>
-			</div>
+</div>
 		</main>
 	);
 };

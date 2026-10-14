@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import axios from "../lib/axios";
-import { Users, Package, ShoppingCart, DollarSign } from "lucide-react";
+import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
+import { Users, Package, ShoppingCart, Banknote } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const AnalyticsTab = () => {
@@ -31,35 +32,35 @@ const AnalyticsTab = () => {
 	}, []);
 
 	if (isLoading) {
-		return <div>Loading...</div>;
+		return <div>در حال بارگذاری...</div>;
 	}
 
 	return (
 		<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
 			<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
 				<AnalyticsCard
-					title='Total Users'
+					title='تعداد کاربران'
 					value={analyticsData.users.toLocaleString()}
 					icon={Users}
-					color='from-emerald-500 to-teal-700'
+					color='from-[#68745f] to-[#41443b]'
 				/>
 				<AnalyticsCard
-					title='Total Products'
+					title='تعداد محصولات'
 					value={analyticsData.products.toLocaleString()}
 					icon={Package}
-					color='from-emerald-500 to-green-700'
+					color='from-[#68745f] to-[#41443b]'
 				/>
 				<AnalyticsCard
-					title='Total Sales'
+					title='تعداد فروش'
 					value={analyticsData.totalSales.toLocaleString()}
 					icon={ShoppingCart}
-					color='from-emerald-500 to-cyan-700'
+					color='from-[#68745f] to-[#41443b]'
 				/>
 				<AnalyticsCard
-					title='Total Revenue'
-					value={`$${analyticsData.totalRevenue.toLocaleString()}`}
-					icon={DollarSign}
-					color='from-emerald-500 to-lime-700'
+					title={`مجموع درآمد (${getCurrencyLabel(STORE_CURRENCY)})`}
+					value={formatPrice(analyticsData.totalRevenue, STORE_CURRENCY)}
+					icon={Banknote}
+					color='from-[#68745f] to-[#41443b]'
 				/>
 			</div>
 			<motion.div
@@ -71,18 +72,18 @@ const AnalyticsTab = () => {
 				<ResponsiveContainer width='100%' height={400}>
 					<LineChart data={dailySalesData}>
 						<CartesianGrid strokeDasharray='3 3' />
-						<XAxis dataKey='name' stroke='#D1D5DB' />
+						<XAxis dataKey='date' stroke='#D1D5DB' tickFormatter={(value) => new Intl.DateTimeFormat("fa-IR", { month: "short", day: "numeric" }).format(new Date(value + "T00:00:00"))} />
 						<YAxis yAxisId='left' stroke='#D1D5DB' />
 						<YAxis yAxisId='right' orientation='right' stroke='#D1D5DB' />
-						<Tooltip />
+						<Tooltip formatter={(value, name) => [String(name).startsWith("درآمد") ? formatPrice(value, STORE_CURRENCY) : new Intl.NumberFormat("fa-IR").format(Number(value) || 0), name]} />
 						<Legend />
 						<Line
 							yAxisId='left'
 							type='monotone'
 							dataKey='sales'
-							stroke='#10B981'
+							stroke='#68745f'
 							activeDot={{ r: 8 }}
-							name='Sales'
+							name='فروش'
 						/>
 						<Line
 							yAxisId='right'
@@ -90,7 +91,7 @@ const AnalyticsTab = () => {
 							dataKey='revenue'
 							stroke='#3B82F6'
 							activeDot={{ r: 8 }}
-							name='Revenue'
+							name={`درآمد (${getCurrencyLabel(STORE_CURRENCY)})`}
 						/>
 					</LineChart>
 				</ResponsiveContainer>
@@ -109,12 +110,12 @@ const AnalyticsCard = ({ title, value, icon: Icon, color }) => (
 	>
 		<div className='flex justify-between items-center'>
 			<div className='z-10'>
-				<p className='text-emerald-300 text-sm mb-1 font-semibold'>{title}</p>
+				<p className='text-[#68745f] text-sm mb-1 font-semibold'>{title}</p>
 				<h3 className='text-white text-3xl font-bold'>{value}</h3>
 			</div>
 		</div>
-		<div className='absolute inset-0 bg-gradient-to-br from-emerald-600 to-emerald-900 opacity-30' />
-		<div className='absolute -bottom-4 -right-4 text-emerald-800 opacity-50'>
+		<div className='absolute inset-0 bg-gradient-to-br from-[#68745f] to-[#252722] opacity-30' />
+		<div className='absolute -bottom-4 -right-4 text-[#252722] opacity-50'>
 			<Icon className='h-32 w-32' />
 		</div>
 	</motion.div>

@@ -1,3 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    min-height: 100%;
+    direction: rtl;
+    background-color: #f7f5f0;
+    color: #252722;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    direction: rtl;
+    background-color: #f7f5f0;
+    color: #252722;
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+  }
+
+  #root {
+    min-height: 100vh;
+    background-color: #f7f5f0;
+    color: #252722;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  /* RTL-aware alignment, spacing, and form controls. */
+  [dir="ltr"],
+  input[type="email"],
+  input[type="url"],
+  input[type="password"] {
+    unicode-bidi: plaintext;
+  }
+  /* Override physical Tailwind utilities where RTL should mirror the layout. */
+  .text-left { text-align: right !important; }
+  .text-right { text-align: left !important; }
+  .ml-1 { margin-left: 0 !important; margin-right: 0.25rem !important; }
+  .ml-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+  .ml-3 { margin-left: 0 !important; margin-right: 0.75rem !important; }
+  .ml-4 { margin-left: 0 !important; margin-right: 1rem !important; }
+  .mr-1 { margin-right: 0 !important; margin-left: 0.25rem !important; }
+  .mr-2 { margin-right: 0 !important; margin-left: 0.5rem !important; }
+  .mr-3 { margin-right: 0 !important; margin-left: 0.75rem !important; }
+  .mr-4 { margin-right: 0 !important; margin-left: 1rem !important; }
+  input[type="email"], input[type="url"], input[type="password"] { direction: ltr; text-align: left; }
+  .pl-11.pr-4 { padding-left: 1rem !important; padding-right: 2.75rem !important; }
+  .pl-11.pr-12 { padding-left: 1rem !important; padding-right: 3rem !important; }
+  .absolute.left-3 { left: auto !important; right: 0.75rem !important; }
+  .absolute.left-4 { left: auto !important; right: 1rem !important; }
+  .absolute.left-8 { left: auto !important; right: 2rem !important; }
+  .absolute.right-3 { right: auto !important; left: 0.75rem !important; }
+  .absolute.right-5 { right: auto !important; left: 1.25rem !important; }
+  .md\\:right-0 { right: auto !important; left: 0 !important; }
+  input[type="email"], input[type="url"], input[type="password"] { direction: ltr; text-align: left; }
+  /* Keep the custom Lucide visibility toggle as the only password-eye control.
+     Edge adds its own native reveal button to password inputs otherwise. */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+}
+
+@keyframes searchPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[searchPanelIn_180ms_ease-out\] {
+    animation: none;
+  }
+}

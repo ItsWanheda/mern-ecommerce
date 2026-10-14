@@ -1,95 +1,284 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, LoaderCircle, Truck } from "lucide-react";
+import toast from "react-hot-toast";
 import { useCartStore } from "../stores/useCartStore";
-import { Link } from "react-router-dom";
-import { MoveRight } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
+import { useUserStore } from "../stores/useUserStore";
 import axios from "../lib/axios";
+import { formatPrice, STORE_CURRENCY } from "../lib/commerce";
 
-const stripePromise = loadStripe(
-	"pk_test_51KZYccCoOZF2UhtOwdXQl3vcizup20zqKqT9hVUIsVzsdBrhqbUI2fE0ZdEVLdZfeHjeyFXtqaNsyCJCmZWnjNZa00PzMAjlcL"
-);
+const provinces = [
+  "آذربایجان شرقی", "آذربایجان غربی", "اردبیل", "اصفهان", "البرز", "ایلام",
+  "بوشهر", "تهران", "چهارمحال و بختیاری", "خراسان جنوبی", "خراسان رضوی",
+  "خراسان شمالی", "خوزستان", "زنجان", "سمنان", "سیستان و بلوچستان", "فارس",
+  "قزوین", "قم", "کردستان", "کرمان", "کرمانشاه", "کهگیلویه و بویراحمد",
+  "گلستان", "گیلان", "لرستان", "مازندران", "مرکزی", "هرمزگان", "همدان", "یزد",
+];
+const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+const normalizeDigits = (value) => String(value ?? "")
+  .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
+  .replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit)));
+const normalizeIranPhone = (value) => {
+  let digits = normalizeDigits(value).replace(/\D/g, "");
+  if (digits.startsWith("0098") && digits.length === 14) digits = `0${digits.slice(4)}`;
+  else if (digits.startsWith("98") && digits.length === 12) digits = `0${digits.slice(2)}`;
+  else if (digits.length === 10 && digits.startsWith("9")) digits = `0${digits}`;
+  return digits;
+};
 
 const OrderSummary = () => {
-	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
+  const { total, subtotal, coupon, isCouponApplied, cart, isMergingGuestCart } = useCartStore();
+  const { user } = useUserStore();
+  const navigate = useNavigate();
+  const hasUnmergedItems = cart.some((item) => item.guestOnly);
+  const [paymentConfig, setPaymentConfig] = useState({
+    provider: "zarinpal",
+    currency: STORE_CURRENCY,
+    configured: false,
+    loading: true,
+    message: "",
+  });
+  const [shipping, setShipping] = useState({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: true, error: "" });
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState({
+    recipientName: "",
+    phone: "",
+    province: "",
+    city: "",
+    district: "",
+    addressLine: "",
+    postalCode: "",
+    notes: "",
+  });
+  const addressFieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
 
-	const savings = subtotal - total;
-	const formattedSubtotal = subtotal.toFixed(2);
-	const formattedTotal = total.toFixed(2);
-	const formattedSavings = savings.toFixed(2);
+  const savings = Math.max(0, subtotal - total);
+  const estimatedTotal = total + Number(shipping.shippingFee || 0);
 
-	const handlePayment = async () => {
-		const stripe = await stripePromise;
-		const res = await axios.post("/payments/create-checkout-session", {
-			products: cart,
-			couponCode: coupon ? coupon.code : null,
-		});
+  useEffect(() => {
+    let active = true;
+    axios.get("/payments/provider")
+      .then(({ data }) => {
+        if (!active) return;
+        const backendCurrency = String(data.currency || "IRT").toUpperCase();
+        const currencyMatches = backendCurrency === "IRT";
+        const configured = Boolean(data.configured && currencyMatches);
+        const message = !currencyMatches
+          ? "واحد پول فروشگاه باید تومان (IRT) باشد؛ تنظیمات سرور را بررسی کنید."
+          : data.message;
+        setPaymentConfig({ ...data, provider: "zarinpal", currency: "IRT", configured, message, loading: false });
+      })
+      .catch(() => {
+        if (active) setPaymentConfig({
+          provider: "zarinpal",
+          currency: STORE_CURRENCY,
+          configured: false,
+          loading: false,
+          message: "دریافت تنظیمات پرداخت ناموفق بود. لطفاً بعداً دوباره تلاش کنید.",
+        });
+      });
+    return () => { active = false; };
+  }, []);
 
-		const session = res.data;
-		const result = await stripe.redirectToCheckout({
-			sessionId: session.id,
-		});
+  useEffect(() => {
+    let active = true;
+    setShipping((current) => ({ ...current, loading: true }));
+    axios.get(`/shipping?subtotal=${encodeURIComponent(total)}`)
+      .then(({ data }) => {
+        if (active) setShipping({ ...data, loading: false, error: "" });
+      })
+      .catch(() => {
+        if (active) setShipping({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: false, error: "دریافت قوانین ارسال ناموفق بود؛ پرداخت تا زمان مشخص‌شدن هزینه ارسال غیرفعال است." });
+      });
+    return () => { active = false; };
+  }, [total]);
 
-		if (result.error) {
-			console.error("Error:", result.error);
-		}
-	};
+  const handlePayment = async () => {
+    if (!cart.length) return toast.error("سبد خرید شما خالی است");
+    if (!user) {
+      navigate("/login", { state: { from: { pathname: "/cart" } } });
+      return;
+    }
+    if (hasUnmergedItems) {
+      return toast.error("ابتدا گزینه‌های موجودی‌نامشخص را از سبد حذف کنید");
+    }
+    if (!paymentConfig.configured) {
+      return toast.error(paymentConfig.message || "درگاه پرداخت در حال حاضر آماده نیست");
+    }
+    const delivery = {
+      ...shippingAddress,
+      recipientName: shippingAddress.recipientName.trim(),
+      phone: normalizeIranPhone(shippingAddress.phone),
+      province: shippingAddress.province.trim(),
+      city: shippingAddress.city.trim(),
+      district: shippingAddress.district.trim(),
+      addressLine: shippingAddress.addressLine.trim(),
+      postalCode: normalizeDigits(shippingAddress.postalCode).replace(/\D/g, ""),
+      notes: shippingAddress.notes.trim(),
+    };
+    if (delivery.recipientName.length < 2 || !/^09\d{9}$/.test(delivery.phone) ||
+        !delivery.province || !delivery.city || delivery.addressLine.length < 10 ||
+        !/^\d{10}$/.test(delivery.postalCode)) {
+      return toast.error("اطلاعات گیرنده و نشانی را بررسی کنید؛ موبایل باید ایرانی و کد پستی ۱۰ رقمی باشد.");
+    }
 
-	return (
-		<motion.div
-			className='space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6'
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.5 }}
-		>
-			<p className='text-xl font-semibold text-emerald-400'>Order summary</p>
+    setCheckoutLoading(true);
+    try {
+      const response = await axios.post("/payments/create-checkout", {
+        couponCode: coupon && isCouponApplied ? coupon.code : null,
+        shippingAddress: delivery,
+      });
 
-			<div className='space-y-4'>
-				<div className='space-y-2'>
-					<dl className='flex items-center justify-between gap-4'>
-						<dt className='text-base font-normal text-gray-300'>Original price</dt>
-						<dd className='text-base font-medium text-white'>${formattedSubtotal}</dd>
-					</dl>
+      if (response.status === 202 || response.data?.status === "pending") {
+        const orderId = response.data?.orderId;
+        const query = new URLSearchParams({ reason: "verification-pending" });
+        if (orderId) query.set("order_id", String(orderId));
+        navigate(`/purchase-cancel?${query.toString()}`);
+        return;
+      }
 
-					{savings > 0 && (
-						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>Savings</dt>
-							<dd className='text-base font-medium text-emerald-400'>-${formattedSavings}</dd>
-						</dl>
-					)}
+      const redirectUrl = response.data?.redirectUrl;
+      if (!redirectUrl || !redirectUrl.startsWith("https://")) {
+        throw new Error("نشانی امن درگاه پرداخت دریافت نشد");
+      }
+      window.location.assign(redirectUrl);
+      return;
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || "شروع پرداخت ناموفق بود");
+      setCheckoutLoading(false);
+    }
+  };
 
-					{coupon && isCouponApplied && (
-						<dl className='flex items-center justify-between gap-4'>
-							<dt className='text-base font-normal text-gray-300'>Coupon ({coupon.code})</dt>
-							<dd className='text-base font-medium text-emerald-400'>-{coupon.discountPercentage}%</dd>
-						</dl>
-					)}
-					<dl className='flex items-center justify-between gap-4 border-t border-gray-600 pt-2'>
-						<dt className='text-base font-bold text-white'>Total</dt>
-						<dd className='text-base font-bold text-emerald-400'>${formattedTotal}</dd>
-					</dl>
-				</div>
+  return (
+    <motion.div
+      dir="rtl"
+      className="space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <p className="text-xl font-semibold text-[#9aa58e]">خلاصه سفارش</p>
+      {isMergingGuestCart && <p role="status" className="rounded-xl border border-gray-600 bg-gray-900/40 p-3 text-xs text-gray-300">در حال ادغام سبد خرید با حساب شما…</p>}
+      {!user && (
+        <div className="rounded-xl border border-gray-600 bg-gray-900/40 p-3">
+          <p className="text-sm font-semibold text-white">سبد خرید شما محفوظ می‌ماند</p>
+          <p className="mt-1 text-xs leading-5 text-gray-400">برای ثبت سفارش و پرداخت، در مرحله بعد وارد حساب شوید یا حساب بسازید.</p>
+        </div>
+      )}
+      {hasUnmergedItems && (
+        <p role="alert" className="rounded-xl border border-amber-700/50 bg-amber-950/30 p-3 text-xs leading-6 text-amber-200">
+          بعضی گزینه‌های سبد پس از ورود به حساب به‌طور کامل ادغام نشده‌اند. گزینه‌های نشان‌دار را بررسی کنید و اگر موجود نیستند حذف کنید تا پرداخت ادامه پیدا کند.
+        </p>
+      )}
 
-				<motion.button
-					className='flex w-full items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300'
-					whileHover={{ scale: 1.05 }}
-					whileTap={{ scale: 0.95 }}
-					onClick={handlePayment}
-				>
-					Proceed to Checkout
-				</motion.button>
+      <div className="space-y-4">
+      {user && (
+        <section className="space-y-4 rounded-xl border border-gray-600 bg-gray-900/35 p-4 sm:p-5" aria-labelledby="delivery-address-title">
+          <div>
+            <h3 id="delivery-address-title" className="text-base font-bold text-white">نشانی تحویل سفارش</h3>
+            <p className="mt-1 text-xs leading-5 text-gray-400">آدرس فقط برای همین سفارش ذخیره می‌شود. شماره موبایل و کد پستی را می‌توانید با ارقام فارسی یا انگلیسی وارد کنید.</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block text-sm text-gray-300">نام و نام خانوادگی گیرنده
+              <input autoComplete="name" required maxLength={100} className={addressFieldClass} value={shippingAddress.recipientName} onChange={(event) => setShippingAddress({ ...shippingAddress, recipientName: event.target.value })} placeholder="نام گیرنده" />
+            </label>
+            <label className="block text-sm text-gray-300">شماره موبایل
+              <input type="tel" inputMode="tel" autoComplete="tel" required maxLength={18} className={addressFieldClass} value={shippingAddress.phone} onChange={(event) => setShippingAddress({ ...shippingAddress, phone: event.target.value })} placeholder="09123456789" />
+            </label>
+            <label className="block text-sm text-gray-300">استان
+              <select autoComplete="address-level1" required className={addressFieldClass} value={shippingAddress.province} onChange={(event) => setShippingAddress({ ...shippingAddress, province: event.target.value })}>
+                <option value="">انتخاب استان</option>
+                {provinces.map((province) => <option key={province} value={province} className="bg-gray-800">{province}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm text-gray-300">شهر
+              <input autoComplete="address-level2" required maxLength={80} className={addressFieldClass} value={shippingAddress.city} onChange={(event) => setShippingAddress({ ...shippingAddress, city: event.target.value })} placeholder="نام شهر" />
+            </label>
+            <label className="block text-sm text-gray-300">محله (اختیاری)
+              <input maxLength={80} className={addressFieldClass} value={shippingAddress.district} onChange={(event) => setShippingAddress({ ...shippingAddress, district: event.target.value })} placeholder="محله یا منطقه" />
+            </label>
+            <label className="block text-sm text-gray-300">کد پستی ۱۰ رقمی
+              <input inputMode="numeric" autoComplete="postal-code" required maxLength={10} className={addressFieldClass} value={shippingAddress.postalCode} onChange={(event) => setShippingAddress({ ...shippingAddress, postalCode: event.target.value })} placeholder="1234567890" />
+            </label>
+          </div>
+          <label className="block text-sm text-gray-300">نشانی کامل و پلاک
+            <textarea autoComplete="street-address" required minLength={10} maxLength={500} rows={3} className={addressFieldClass} value={shippingAddress.addressLine} onChange={(event) => setShippingAddress({ ...shippingAddress, addressLine: event.target.value })} placeholder="خیابان، کوچه، پلاک، واحد و نشانه‌های لازم برای تحویل" />
+          </label>
+          <label className="block text-sm text-gray-300">توضیحات تحویل (اختیاری)
+            <textarea maxLength={500} rows={2} className={addressFieldClass} value={shippingAddress.notes} onChange={(event) => setShippingAddress({ ...shippingAddress, notes: event.target.value })} placeholder="زمان مناسب یا توضیحات تکمیلی برای پیک" />
+          </label>
+        </section>
+      )}
+        <div className="space-y-3">
+          <dl className="flex items-center justify-between gap-4">
+            <dt className="text-sm font-normal text-gray-300">قیمت محصولات</dt>
+            <dd dir="ltr" className="text-sm font-medium text-white">{formatPrice(subtotal, paymentConfig.currency)}</dd>
+          </dl>
 
-				<div className='flex items-center justify-center gap-2'>
-					<span className='text-sm font-normal text-gray-400'>or</span>
-					<Link
-						to='/'
-						className='inline-flex items-center gap-2 text-sm font-medium text-emerald-400 underline hover:text-emerald-300 hover:no-underline'
-					>
-						Continue Shopping
-						<MoveRight size={16} />
-					</Link>
-				</div>
-			</div>
-		</motion.div>
-	);
+          {savings > 0 && (
+            <dl className="flex items-center justify-between gap-4">
+              <dt className="text-sm font-normal text-gray-300">تخفیف {coupon && isCouponApplied ? `(${coupon.code})` : ""}</dt>
+              <dd dir="ltr" className="text-sm font-medium text-[#68745f]">−{formatPrice(savings, paymentConfig.currency)}</dd>
+            </dl>
+          )}
+
+          <dl className="flex items-center justify-between gap-4">
+            <dt className="flex items-center gap-2 text-sm font-normal text-gray-300"><Truck size={15} aria-hidden="true" />هزینه ارسال</dt>
+            <dd dir="ltr" className="text-sm font-medium text-white">
+              {shipping.loading ? "…" : shipping.shippingFee === 0 ? "رایگان" : formatPrice(shipping.shippingFee, paymentConfig.currency)}
+            </dd>
+          </dl>
+
+          {user && shipping.error && <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">{shipping.error}</p>}
+
+          {shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
+            <p className="text-xs leading-5 text-gray-400">
+              برای ارسال رایگان، مبلغ سفارش باید به {formatPrice(shipping.freeShippingThreshold, paymentConfig.currency)} برسد.
+            </p>
+          )}
+
+          <dl className="flex items-center justify-between gap-4 border-t border-gray-600 pt-3">
+            <dt className="text-base font-bold text-white">مبلغ نهایی تقریبی</dt>
+            <dd dir="ltr" className="text-base font-bold text-[#68745f]">{formatPrice(estimatedTotal, paymentConfig.currency)}</dd>
+          </dl>
+          <p className="text-xs leading-5 text-gray-400">مبلغ نهایی و موجودی کالا در سمت سرور دوباره بررسی می‌شود.</p>
+        </div>
+
+        {user && !paymentConfig.loading && !paymentConfig.configured && (
+          <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">
+            {paymentConfig.message || "درگاه پرداخت پیکربندی نشده است."}
+          </p>
+        )}
+
+        <motion.button
+          type="button"
+          disabled={checkoutLoading || isMergingGuestCart || !cart.length || hasUnmergedItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus:outline-none focus:ring-4 focus:ring-[#68745f]/40 disabled:cursor-not-allowed disabled:opacity-50"
+          whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
+          whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
+          onClick={handlePayment}
+        >
+          {checkoutLoading || (user && paymentConfig.loading) ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : null}
+          {checkoutLoading ? "در حال انتقال به درگاه…" : !user ? "ورود برای ادامه و پرداخت" : "پرداخت آنلاین با زرین‌پال"}
+        </motion.button>
+
+        <div className="flex flex-wrap items-center justify-center gap-2 text-center">
+          {!user && (
+            <>
+              <span className="text-sm text-gray-400">حساب ندارید؟</span>
+              <Link to="/signup" state={{ from: { pathname: "/cart" } }} className="text-sm font-semibold text-[#9aa58e] underline underline-offset-4">ثبت‌نام</Link>
+              <span className="mx-1 text-gray-600">·</span>
+            </>
+          )}
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#9aa58e] underline hover:no-underline">
+            <ArrowLeft size={16} aria-hidden="true" />ادامه خرید
+          </Link>
+        </div>
+      </div>
+    </motion.div>
+  );
 };
+
 export default OrderSummary;
