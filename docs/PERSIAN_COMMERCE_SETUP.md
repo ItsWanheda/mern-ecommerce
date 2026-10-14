@@ -157,3 +157,17 @@ The admin dashboard also exposes:
 Audit entries are written for product creation/deletion and inventory changes, featured-product changes, campaign mutations, shipping-setting updates, and shipment/tracking changes. They intentionally exclude payment secrets and customer address content. Audit writes fail independently of successful business operations; monitor server logs for any audit-write errors.
 
 The operations dashboard is an application-level snapshot, not an external alerting system. Configure host-level monitoring/alerts separately for latency, error rates, CPU/RAM, disk capacity, database capacity, TLS/domain expiry, and job failures.
+
+## Explicit API headers, origin checks and CSRF defense
+
+The API sets explicit headers for content-type sniffing, clickjacking, referrer handling, browser permissions, cross-domain policy, and a restrictive API Content Security Policy. HSTS is emitted only when production requests are identified as HTTPS. Configure Nginx/Caddy to forward the original scheme from the trusted proxy.
+
+Set CLIENT_URL to the public storefront origin. For credentialed direct API requests from more than one frontend, configure CORS_ALLOWED_ORIGINS as a comma-separated list of exact origins, for example https://store.example.ir,https://admin.example.ir. Wildcard origins are intentionally not supported. Local Vite origins are allowed only outside production.
+
+State-changing requests with a foreign Origin are rejected; requests with no Origin are rejected when Fetch Metadata identifies them as cross-site. This supplements HttpOnly/SameSite cookies, but does not replace HTTPS or safe cookie/domain configuration.
+
+## Inventory integration tests
+
+Run npm test --prefix backend. Security header/origin tests do not require external services. Inventory integration tests require MONGO_TEST_URI to point at a dedicated disposable database whose name includes test. Concurrent reservation and partial rollback are tested with atomic MongoDB updates; duplicate-release and transaction-rollback tests require a MongoDB replica set or sharded deployment.
+
+Never point MONGO_TEST_URI at production or a database containing real orders. Tests remove only records created by the tests, but the URI must still use a dedicated test database.

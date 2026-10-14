@@ -91,7 +91,7 @@ const releaseReservedInventoryDirect = async (items = []) => {
 const isTransactionUnsupported = (error) =>
   /Transaction numbers are only allowed|replica set|mongos|does not support transactions/i.test(error?.message || "");
 
-const releaseReservedInventory = async (items = [], orderId = null) => {
+export const releaseReservedInventory = async (items = [], orderId = null) => {
   if (!orderId) return releaseReservedInventoryDirect(items);
 
   const session = await mongoose.startSession();
@@ -179,7 +179,7 @@ const finalizePaidOrder = async (paidOrder) => {
   );
 };
 
-const reserveInventory = async (items, productsById) => {
+export const reserveInventory = async (items, productsById) => {
   const reserved = [];
   const orderItems = [];
   try {
