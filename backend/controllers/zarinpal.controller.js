@@ -385,7 +385,6 @@ export const createZarinpalCheckout = async (req, res) => {
 
 export const verifyZarinpalPayment = async (req, res) => {
   const authority = typeof req.query.Authority === "string" ? req.query.Authority : "";
-  const status = typeof req.query.Status === "string" ? req.query.Status.toUpperCase() : "";
   const orderId = typeof req.query.order_id === "string" ? req.query.order_id : "";
   const resultBase = safeClientUrl();
 
@@ -405,13 +404,7 @@ export const verifyZarinpalPayment = async (req, res) => {
       await finalizePaidOrder(order);
       return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
     }
-    if (status !== "OK" || order.paymentStatus !== "pending") {
-      const failed = await Order.findOneAndUpdate(
-        { _id: order._id, paymentStatus: "pending" },
-        { $set: { paymentStatus: "failed", status: "cancelled" } },
-        { new: true }
-      );
-      if (failed) await releaseReservedInventory(failed.products, failed._id);
+    if (order.paymentStatus !== "pending") {
       return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
     }
 
@@ -501,7 +494,7 @@ export const getZarinpalOrderStatus = async (req, res) => {
 };
 
 
-const reconciliationTerminalUnpaidCodes = new Set([-11, -12, -21]);
+const reconciliationTerminalUnpaidCodes = new Set([-11, -12, -21, -22, -42]);
 
 export const reconcilePendingZarinpalOrders = async (req, res) => {
   const cronSecret = process.env.CRON_SECRET;
