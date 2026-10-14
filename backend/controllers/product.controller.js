@@ -2,12 +2,12 @@ import { redis } from "../lib/redis.js";
 import cloudinary from "../lib/cloudinary.js";
 import Product from "../models/product.model.js";
 import Order from "../models/order.model.js";
+import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 };
-const escapeRegex = (value) => value.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
 let cacheWarningLogged = false;
 const readJsonCache = async (key) => {
   try {
@@ -82,7 +82,8 @@ export const getNewestProducts = async (req, res) => {
 
 export const getSearchedProducts = async (req, res) => {
   try {
-    const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+    const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+    const q = normalizePersianText(rawQuery).slice(0, 80);
     const category = typeof req.query.category === "string" ? req.query.category.trim().slice(0, 64) : "";
     const page = clampInteger(req.query.page, 1, 1, 5000);
     const limit = clampInteger(req.query.limit, 24, 1, 48);
@@ -100,8 +101,20 @@ export const getSearchedProducts = async (req, res) => {
     const filter = { isActive: { $ne: false } };
     if (category) filter.category = category;
     if (q) {
-      const expression = new RegExp(escapeRegex(q), "i");
-      filter.$or = [{ name: expression }, { description: expression }, { category: expression }];
+      // Match each normalized token so word order is flexible in Persian and Latin queries.
+      const tokens = [...new Set(q.split(" ").filter(Boolean))].slice(0, 8);
+      filter.$and = tokens.map((token) => {
+        const expression = new RegExp(escapeSearchRegex(token));
+        return {
+          $or: [
+            { searchTextNormalized: expression },
+            // Compatibility while existing catalogue documents are being backfilled.
+            { name: new RegExp(escapeSearchRegex(rawQuery), "i") },
+            { description: new RegExp(escapeSearchRegex(rawQuery), "i") },
+            { category: new RegExp(escapeSearchRegex(rawQuery), "i") },
+          ],
+        };
+      });
     }
     if (minPrice !== null || maxPrice !== null) {
       filter.price = {};

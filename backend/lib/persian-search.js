@@ -1,0 +1,22 @@
+const persianDigitMap = "۰۱۲۳۴۵۶۷۸۹";
+const arabicDigitMap = "٠١٢٣٤٥٦٧٨٩";
+
+export const normalizePersianText = (value) =>
+  String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[۰-۹]/g, (digit) => String(persianDigitMap.indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String(arabicDigitMap.indexOf(digit)))
+    .toLocaleLowerCase("fa-IR")
+    .replace(/[يىئ]/g, (char) => char === "ئ" ? "ی" : "ی")
+    .replace(/ك/g, "ک")
+    .replace(/[ۀة]/g, "ه")
+    .replace(/[ؤ]/g, "و")
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/[\u0640\u064B-\u065F\u0670]/g, "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+
+export const escapeSearchRegex = (value) =>
+  String(value).replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");

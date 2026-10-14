@@ -124,3 +124,16 @@ For a database created by an older version, inspect and remove the obsolete uniq
 - [ ] Reconciliation job runs on schedule and its logs/exit status are monitored.
 - [ ] Backend and frontend production builds pass from the current branch.
 - [ ] Database and Redis are not exposed publicly; all production secrets are protected.
+
+
+## Persian-aware search normalization
+
+The backend normalizes Persian/Arabic ya and kaf variants, Arabic/Persian digits, tatweel, common diacritics, zero-width marks, Unicode compatibility forms, punctuation, and whitespace. Every product save maintains a normalized `searchTextNormalized` field so a normalized query can match normalized product text independent of the input digit script or common character variants.
+
+Before deploying this schema change to an existing catalogue, take a database backup and run the one-time backfill from the repository root:
+
+```bash
+node scripts/backfill-persian-search.mjs
+```
+
+The migration works in batches. It only populates the derived search field and does not alter displayed product names, descriptions, categories, prices, or inventory. Re-run it after importing legacy catalogue data if those products were inserted outside the application.

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { normalizePersianText } from "../lib/persian-search.js";
 
 const colorSchema = new mongoose.Schema(
   {
@@ -56,6 +57,7 @@ const productSchema = new mongoose.Schema(
     // Keep image for existing integrations while allowing a proper product gallery.
     images: { type: [String], default: [] },
     category: { type: String, required: true, trim: true, maxlength: 64 },
+    searchTextNormalized: { type: String, default: "", select: false },
     sizes: { type: [String], default: [] },
     colors: { type: [colorSchema], default: [] },
     variants: { type: [variantSchema], default: [] },
@@ -80,5 +82,20 @@ productSchema.index({ createdAt: -1 });
 productSchema.index({ category: 1, price: 1, createdAt: -1 });
 productSchema.index({ isActive: 1, category: 1, createdAt: -1, _id: -1 });
 productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1, _id: -1 });
+
+productSchema.pre("validate", function () {
+  const options = [
+    ...(Array.isArray(this.sizes) ? this.sizes : []),
+    ...(Array.isArray(this.colors) ? this.colors.map((item) => item?.name) : []),
+    ...(Array.isArray(this.variants) ? this.variants.flatMap((item) => [item?.size, item?.color]) : []),
+    this.fit?.type,
+  ];
+  this.searchTextNormalized = normalizePersianText([
+    this.name,
+    this.description,
+    this.category,
+    ...options,
+  ].filter(Boolean).join(" "));
+});
 
 export default mongoose.model("Product", productSchema);
