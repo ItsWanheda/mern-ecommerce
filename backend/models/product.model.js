@@ -56,7 +56,9 @@ const productSchema = new mongoose.Schema(
     image: { type: String, trim: true, default: "" },
     // Keep image for existing integrations while allowing a proper product gallery.
     images: { type: [String], default: [] },
-    category: { type: String, required: true, trim: true, maxlength: 64 },
+    category: { type: String, required: true, trim: true, maxlength: 96 },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null, index: true },
+    attributes: { type: Map, of: mongoose.Schema.Types.Mixed, default: () => ({}) },
     searchTextNormalized: { type: String, default: "", select: false },
     sizes: { type: [String], default: [] },
     colors: { type: [colorSchema], default: [] },
@@ -92,6 +94,7 @@ productSchema.pre("validate", function () {
     colors: this.colors,
     variants: this.variants,
     fit: this.fit,
+    attributes: this.attributes,
   });
 });
 

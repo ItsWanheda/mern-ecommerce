@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
 import ProductCard from "../components/ProductCard";
 import { formatPrice } from "../lib/commerce";
+import { useCategoryStore } from "../stores/useCategoryStore";
 
 const categoryLabels = {
   jeans: "شلوار جین",
@@ -35,6 +36,8 @@ const ShopPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { categories, fetchCategories } = useCategoryStore();
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +84,7 @@ const ShopPage = () => {
   const maxPrice = searchParams.get("maxPrice") || "";
   const sort = searchParams.get("sort") || "newest";
   const activeFilters = [
-    category ? { key: "category", label: `دسته‌بندی: ${categoryLabels[category] || category}` } : null,
+    category ? { key: "category", label: "دسته‌بندی: " + (categories.find((item) => item.slug === category)?.name?.fa || categoryLabels[category] || category) } : null,
     minPrice ? { key: "minPrice", label: `از ${formatPrice(minPrice)}` } : null,
     maxPrice ? { key: "maxPrice", label: `تا ${formatPrice(maxPrice)}` } : null,
     sort !== "newest" && sortLabels[sort]
