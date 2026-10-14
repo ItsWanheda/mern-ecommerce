@@ -4,6 +4,7 @@ import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from 
 import { useParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
+import { normalizeDigits, normalizePersianText as normalizePersian } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
 
 const categoryLabels = {
@@ -31,26 +32,6 @@ const sortOptions = [
   ["priceDesc", "گران‌ترین"],
   ["nameAsc", "نام محصول (الف تا ی)"],
 ];
-
-const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
-const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
-
-const normalizeDigits = (value) =>
-  String(value ?? "")
-    .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
-    .replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit)));
-
-const normalizePersian = (value) =>
-  normalizeDigits(value)
-    .normalize("NFKC")
-    .toLocaleLowerCase("fa-IR")
-    .replace(/[يى]/g, "ی")
-    .replace(/ك/g, "ک")
-    .replace(/[\u0640\u064B-\u065F\u0670]/g, "")
-    .replace(/[\u200C\u200D]/g, " ")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim()
-    .replace(/\s+/g, " ");
 
 const priceUnitLabel = getCurrencyLabel(STORE_CURRENCY);
 const usesWholeCurrencyUnits = true;

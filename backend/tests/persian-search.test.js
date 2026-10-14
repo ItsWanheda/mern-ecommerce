@@ -5,6 +5,7 @@ import {
   escapeSearchRegex,
   normalizePersianText,
 } from "../lib/persian-search.js";
+import { normalizePersianText as normalizeFrontendPersianText } from "../../frontend/src/lib/persian-search.js";
 
 test("normalizes Arabic/Persian letter variants and diacritics", () => {
   assert.equal(normalizePersianText("ي كِتاب"), "ی کتاب");
@@ -40,4 +41,19 @@ test("escapes regex metacharacters supplied in search text", () => {
   const expression = new RegExp(escapeSearchRegex("test.()"));
   assert.equal(expression.test("test.()"), true);
   assert.equal(expression.test("testXYZ"), false);
+});
+
+test("frontend and backend normalize Persian search text identically", () => {
+  const inputs = [
+    "ي كِتاب",
+    "آذَرْبایجان",
+    "قیمت ۱۲۳",
+    "قیمت ١٢٣",
+    "کت‌و‌شلوار",
+    "می‌خوام",
+    "تی‌شرت آبی XL",
+  ];
+  for (const input of inputs) {
+    assert.equal(normalizePersianText(input), normalizeFrontendPersianText(input), input);
+  }
 });
