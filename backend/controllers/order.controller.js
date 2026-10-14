@@ -14,7 +14,7 @@ export const getMyOrders = async (req, res) => {
   try {
     const page = clampInteger(req.query.page, 1, 1, 1000);
     const limit = clampInteger(req.query.limit, 10, 1, 30);
-    const filter = { user: req.user._id };
+    const filter = { user: req.user._id, paymentProvider: "zarinpal", currency: "IRT" };
     const [orders, total] = await Promise.all([
       Order.find(filter)
         .populate("products.product", "name image")
@@ -41,7 +41,7 @@ export const getAdminOrders = async (req, res) => {
     if (status && !allowedStatuses.has(status)) {
       return res.status(400).json({ message: "Invalid shipment status" });
     }
-    const filter = { paymentStatus: "paid" };
+    const filter = { paymentStatus: "paid", paymentProvider: "zarinpal", currency: "IRT" };
     if (status) filter.shipmentStatus = status;
     const [orders, total] = await Promise.all([
       Order.find(filter)
@@ -80,7 +80,7 @@ export const updateShipment = async (req, res) => {
   const note = typeof noteInput === "string" ? noteInput.trim().slice(0, 500) : "";
 
   try {
-    const order = await Order.findById(orderId);
+    const order = await Order.findOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" });
     if (!order) return res.status(404).json({ message: "Order not found" });
     if (order.paymentStatus !== "paid") {
       return res.status(409).json({ message: "Only paid orders can be prepared for shipment" });
