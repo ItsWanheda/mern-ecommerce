@@ -13,7 +13,7 @@ Before enabling checkout on an existing database:
 3. Set `StoreSettings.flatRate` and `StoreSettings.freeShippingThreshold` to verified whole-Toman amounts.
 4. Review existing carts and ask customers to refresh them after catalogue migration.
 5. Keep `IRT_CATALOG_PRICES_CONFIRMED=false` until the catalogue and shipping values are reviewed. Set it to `true` only after verification.
-6. Preserve historical order records and their recorded values; do not relabel them as Toman.
+6. Preserve historical order records and their recorded amounts. Records without explicit IRT/Zarinpal metadata are excluded from active order history until they have been reconciled; do not convert amounts automatically.
 
 New product prices and shipping fees are validated as whole numbers. Zarinpal's API amount is supplied in Rial, so checkout converts the verified Toman amount to Rial by multiplying by 10.
 
@@ -102,25 +102,19 @@ Secure the environment file (for example, owner root and mode `0600`), create/ro
 
 The schedule is not embedded in the ordinary Express process. Deploying the app alone does not start reconciliation. Also verify the endpoint actually runs successfully after deployment; a configured cron entry is not proof of successful recovery.
 
-## 6. Existing order indexes and legacy order records
+## 6. Existing order index and payment metadata migration
 
-Inspect the live indexes before changing them:
+On a database used by an earlier checkout implementation, the orders collection may still contain an obsolete unique index and provider-specific metadata. Those remnants can block inserts or cause old amounts to be misrepresented after the application has switched to its single IRT/Zarinpal policy.
 
-```javascript
-db.orders.getIndexes()
-```
-
-Older databases may have the legacy non-sparse unique index `stripeSessionId_1`. It can prevent additional Zarinpal orders from being inserted because each new Zarinpal order has no Stripe session ID and a non-sparse unique index indexes missing values. Historical Stripe orders also have no explicit `currency` or `paymentProvider` fields, so they must not be assigned a Toman default.
-
-**Back up the database first.** With `MONGO_URI` set to the exact target database, run this guarded migration from the repository root:
+**Take a verified backup first.** Review the target database name and `MONGO_URI`, then run the guarded migration from the repository root:
 
 ```bash
-node scripts/migrate-legacy-stripe-index.mjs
+node scripts/migrate-orders-to-zarinpal-only.mjs
 ```
 
-The script only drops an index named `stripeSessionId_1` when its definition is exactly a single-field, non-sparse unique index on `stripeSessionId`. It refuses an unexpected key definition and leaves sparse, partial, or non-unique indexes unchanged. It does not modify or delete historical order records or session IDs. Review its output, then confirm the result with `db.orders.getIndexes()`. Do not run migration commands against production until the target URI and backup have been verified.
+The migration inspects indexes that reference the obsolete checkout-session field. It removes only the expected single-field index; it aborts if it encounters an unexpected index definition so that it does not guess at schema changes. It clears stale checkout-session/provider/currency metadata but preserves order documents, item snapshots, statuses, and numeric amount fields. It does not perform a currency conversion.
 
-Keep the unique sparse Zarinpal authority index if its definition is correct.
+Records that do not explicitly match `paymentProvider: "zarinpal"` and `currency: "IRT"` remain in the database but are excluded from active order history and current revenue/fulfillment metrics. Reconcile any such records separately using verified business records instead of assuming their amounts use the current store currency. Review the script output and run `db.orders.getIndexes()` after migration.
 
 ## 7. Verification checklist
 
