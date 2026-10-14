@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardList, LoaderCircle, RefreshCw, Truck } from "lucide-react";
 import axios from "../lib/axios";
-import { formatOrderPrice } from "../lib/commerce";
+import { formatPrice } from "../lib/commerce";
 
 const shipmentLabels = {
   not_ready: "در انتظار تکمیل اطلاعات ارسال",
@@ -82,12 +82,9 @@ const MyOrdersPage = () => {
         <div className="space-y-5">
           {orders.map((order) => {
             const address = order.shippingAddress;
-            const legacyStripeOrder = Boolean(order.stripeSessionId) && !order.paymentStatus;
-            const paymentStatus = order.paymentStatus || (legacyStripeOrder ? "paid" : "unknown");
+            const paymentStatus = order.paymentStatus || "unknown";
             const shipmentStatus = order.shipmentStatus || (paymentStatus === "paid" ? "processing" : "not_ready");
-            const shipmentStatusLabel = legacyStripeOrder && !address
-              ? "سفارش قدیمی؛ اطلاعات ارسال ثبت نشده"
-              : shipmentLabels[shipmentStatus] || shipmentStatus;
+            const shipmentStatusLabel = shipmentLabels[shipmentStatus] || shipmentStatus;
             const paymentStatusClass = paymentStatus === "paid"
               ? "bg-emerald-50 text-emerald-700"
               : paymentStatus === "pending"
@@ -119,13 +116,13 @@ const MyOrdersPage = () => {
                             <p className="break-words text-sm font-semibold text-[#252722]">{item.productName || item.product?.name || "محصول"}</p>
                             <p className="mt-1 text-xs text-[#77786f]">تعداد: {new Intl.NumberFormat("fa-IR").format(item.quantity)}{item.size ? ` · سایز ${item.size}` : ""}{item.color ? ` · ${item.color}` : ""}</p>
                           </div>
-                          <p dir="ltr" className="shrink-0 text-sm font-semibold text-[#68745f]">{formatOrderPrice(Number(item.price) * Number(item.quantity), order)}</p>
+                          <p dir="ltr" className="shrink-0 text-sm font-semibold text-[#68745f]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
                         </div>
                       ))}
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-[#eeeae2] pt-4">
                       <span className="text-sm font-bold text-[#252722]">مبلغ کل</span>
-                      <span dir="ltr" className="text-lg font-bold text-[#68745f]">{formatOrderPrice(order.totalAmount, order)}</span>
+                      <span dir="ltr" className="text-lg font-bold text-[#68745f]">{formatPrice(order.totalAmount)}</span>
                     </div>
                   </section>
                   <div className="space-y-4">
