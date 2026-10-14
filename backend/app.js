@@ -11,6 +11,7 @@ import analyticsRoutes from "./routes/analytics.route.js";
 import campaignRoutes from "./routes/campaign.route.js";
 import shippingRoutes from "./routes/shipping.route.js";
 import newsletterRoutes from "./routes/newsletter.route.js";
+import orderRoutes from "./routes/order.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
 
 const app = express();
@@ -40,6 +41,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.use("/api", (_req, res) => res.status(404).json({ message: "API route not found" }));
 app.use((error, _req, res, next) => {

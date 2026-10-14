@@ -25,6 +25,37 @@ const sameCartLine = (item, productId, size, color) =>
   optionValue(item.size) === optionValue(size) &&
   optionValue(item.color) === optionValue(color);
 const safeClientUrl = () => (process.env.CLIENT_URL || "").replace(/\/$/, "");
+const normalizeIranDigits = (value) => String(value ?? "")
+  .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+  .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+const normalizeIranPhone = (value) => {
+  let digits = normalizeIranDigits(value).replace(/\\D/g, "");
+  if (digits.startsWith("0098") && digits.length === 14) digits = `0${digits.slice(4)}`;
+  else if (digits.startsWith("98") && digits.length === 12) digits = `0${digits.slice(2)}`;
+  else if (digits.length === 10 && digits.startsWith("9")) digits = `0${digits}`;
+  return digits;
+};
+const parseShippingAddress = (input) => {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const address = {
+    recipientName: typeof input.recipientName === "string" ? input.recipientName.trim().slice(0, 100) : "",
+    phone: normalizeIranPhone(input.phone),
+    province: typeof input.province === "string" ? input.province.trim().slice(0, 80) : "",
+    city: typeof input.city === "string" ? input.city.trim().slice(0, 80) : "",
+    district: typeof input.district === "string" ? input.district.trim().slice(0, 80) : "",
+    addressLine: typeof input.addressLine === "string" ? input.addressLine.trim().slice(0, 500) : "",
+    postalCode: normalizeIranDigits(input.postalCode).replace(/\\D/g, "").slice(0, 10),
+    notes: typeof input.notes === "string" ? input.notes.trim().slice(0, 500) : "",
+  };
+  const valid = address.recipientName.length >= 2 &&
+    /^09\\d{9}$/.test(address.phone) &&
+    address.province.length > 0 &&
+    address.city.length > 0 &&
+    address.addressLine.length >= 10 &&
+    /^\\d{10}$/.test(address.postalCode);
+  return valid ? address : null;
+};
+
 
 export const getPaymentConfiguration = (_req, res) => {
   const configured = Boolean(
@@ -135,7 +166,16 @@ const finalizePaidOrder = async (paidOrder) => {
   }
   await Order.updateOne(
     { _id: paidOrder._id, paymentStatus: "paid", finalizedAt: null },
-    { $set: { finalizedAt: new Date() } }
+    {
+      $set: { finalizedAt: new Date(), shipmentStatus: "processing" },
+      $push: {
+        shipmentEvents: {
+          status: "processing",
+          note: "پرداخت تأیید شد؛ سفارش برای آماده‌سازی ارسال ثبت شد.",
+          createdAt: new Date(),
+        },
+      },
+    }
   );
 };
 
@@ -168,7 +208,7 @@ const reserveInventory = async (items, productsById) => {
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         reserved.push({ product: product._id, quantity, size, color, hasVariant: true, stockReserved: true });
-        orderItems.push({ product: product._id, quantity, price: product.price, size, color, hasVariant: true, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: true, stockReserved: true });
       } else if (isTracked(product)) {
         const updated = await Product.findOneAndUpdate(
           { _id: product._id, isActive: { $ne: false }, stock: { $gte: quantity } },
@@ -177,9 +217,9 @@ const reserveInventory = async (items, productsById) => {
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         reserved.push({ product: product._id, quantity, hasVariant: false, stockReserved: true });
-        orderItems.push({ product: product._id, quantity, price: product.price, size, color, hasVariant: false, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: true });
       } else {
-        orderItems.push({ product: product._id, quantity, price: product.price, size, color, hasVariant: false, stockReserved: false });
+        orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: false });
       }
     }
     return { orderItems, reserved };
@@ -201,6 +241,10 @@ export const createZarinpalCheckout = async (req, res) => {
   let gatewayRequestStarted = false;
   let gatewayRequestRejected = false;
   let receivedAuthority = "";
+  const shippingAddress = parseShippingAddress(req.body?.shippingAddress);
+  if (!shippingAddress) {
+    return res.status(400).json({ message: "نام گیرنده، موبایل ایرانی، استان، شهر، نشانی کامل و کد پستی ۱۰ رقمی را بررسی کنید." });
+  }
   try {
     const cartItems = req.user.cartItems || [];
     if (!cartItems.length) return res.status(400).json({ message: "سبد خرید خالی است" });
@@ -261,6 +305,8 @@ export const createZarinpalCheckout = async (req, res) => {
     order = await Order.create({
       user: req.user._id,
       products: orderItems,
+      shippingAddress,
+      shipmentStatus: "not_ready",
       totalAmount: totalToman,
       shippingFee,
       currency: "IRT",
