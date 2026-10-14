@@ -137,3 +137,23 @@ node scripts/backfill-persian-search.mjs
 ```
 
 The migration works in batches. It only populates the derived search field and does not alter displayed product names, descriptions, categories, prices, or inventory. Re-run it after importing legacy catalogue data if those products were inserted outside the application.
+
+
+## Iranian delivery addresses, shipment tracking and admin operations
+
+New checkout requests must submit a validated delivery address: recipient name, Iranian mobile number, province, city, full address, and 10-digit postal code. Persian/Arabic digits are normalized to Western digits for phone and postal-code validation. The address is saved to the order as a snapshot; editing later customer profile data does not change an existing order. Historical orders can have no delivery address because those fields were introduced after they were created.
+
+Customer endpoints:
+- `GET /api/orders/mine?page=1&limit=10` lists only the authenticated customer's orders and shipment history.
+- Admin shipment queue: `GET /api/orders/admin?page=1&limit=25`, optionally filtering with `shipmentStatus`.
+- Admin shipment update: `PATCH /api/orders/:id/shipment` with `status`, `shippingCarrier`, `trackingCode`, and optional `note`.
+
+Shipment transitions are kept in order: processing → packed → shipped → delivered → returned. The backend requires a carrier and tracking code when moving an order to shipped and records a timestamped shipment event. Customers can see the order's saved address, current shipment status, tracking details, and shipment event history on `/orders`. Only paid orders are eligible for admin shipment updates.
+
+The admin dashboard also exposes:
+- `GET /api/admin/audit-logs` for paginated administrator action history.
+- `GET /api/admin/operations` for live database/Redis reachability and operational counts for pending payments, unfinished finalization, shipments waiting, shipment records missing a tracking code, failed payments in the last 24 hours, and audit events.
+
+Audit entries are written for product creation/deletion and inventory changes, featured-product changes, campaign mutations, shipping-setting updates, and shipment/tracking changes. They intentionally exclude payment secrets and customer address content. Audit writes fail independently of successful business operations; monitor server logs for any audit-write errors.
+
+The operations dashboard is an application-level snapshot, not an external alerting system. Configure host-level monitoring/alerts separately for latency, error rates, CPU/RAM, disk capacity, database capacity, TLS/domain expiry, and job failures.

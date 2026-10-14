@@ -1,4 +1,4 @@
-import { Activity, BarChart, ClipboardList, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText } from "lucide-react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 

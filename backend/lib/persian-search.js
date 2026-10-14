@@ -1,6 +1,16 @@
 const persianDigitMap = "۰۱۲۳۴۵۶۷۸۹";
 const arabicDigitMap = "٠١٢٣٤٥٦٧٨٩";
 
+const categoryAliases = {
+  jeans: "شلوار جین",
+  "t-shirts": "تی شرت",
+  shoes: "کفش",
+  glasses: "عینک",
+  jackets: "کت و کاپشن",
+  suits: "کت و شلوار",
+  bags: "کیف",
+};
+
 export const normalizePersianText = (value) =>
   String(value ?? "")
     .normalize("NFKC")
@@ -20,3 +30,20 @@ export const normalizePersianText = (value) =>
 
 export const escapeSearchRegex = (value) =>
   String(value).replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
+
+export const buildNormalizedProductSearchText = (product) => {
+  const category = String(product?.category ?? "");
+  const options = [
+    ...(Array.isArray(product?.sizes) ? product.sizes : []),
+    ...(Array.isArray(product?.colors) ? product.colors.map((item) => item?.name) : []),
+    ...(Array.isArray(product?.variants) ? product.variants.flatMap((item) => [item?.size, item?.color]) : []),
+    product?.fit?.type,
+  ];
+  return normalizePersianText([
+    product?.name,
+    product?.description,
+    category,
+    categoryAliases[category] || "",
+    ...options,
+  ].filter(Boolean).join(" "));
+};

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { normalizePersianText } from "../lib/persian-search.js";
+import { buildNormalizedProductSearchText } from "../lib/persian-search.js";
 
 const colorSchema = new mongoose.Schema(
   {
@@ -84,18 +84,15 @@ productSchema.index({ isActive: 1, category: 1, createdAt: -1, _id: -1 });
 productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1, _id: -1 });
 
 productSchema.pre("validate", function () {
-  const options = [
-    ...(Array.isArray(this.sizes) ? this.sizes : []),
-    ...(Array.isArray(this.colors) ? this.colors.map((item) => item?.name) : []),
-    ...(Array.isArray(this.variants) ? this.variants.flatMap((item) => [item?.size, item?.color]) : []),
-    this.fit?.type,
-  ];
-  this.searchTextNormalized = normalizePersianText([
-    this.name,
-    this.description,
-    this.category,
-    ...options,
-  ].filter(Boolean).join(" "));
+  this.searchTextNormalized = buildNormalizedProductSearchText({
+    name: this.name,
+    description: this.description,
+    category: this.category,
+    sizes: this.sizes,
+    colors: this.colors,
+    variants: this.variants,
+    fit: this.fit,
+  });
 });
 
 export default mongoose.model("Product", productSchema);

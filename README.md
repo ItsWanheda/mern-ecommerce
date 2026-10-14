@@ -61,3 +61,16 @@ Start the backend with `npm run dev`. Start the frontend in a separate terminal 
 ## Production guidance
 
 Back up the database before deployment, run the migration checklist, verify sandbox checkout end to end, and configure a scheduler to call the payment reconciliation endpoint. Source-level syntax checks alone do not establish production readiness.
+
+
+## Delivery, tracking and operations
+
+Checkout captures an Iranian delivery address before sending the customer to Zarinpal. Customers can view order and shipment events at `/orders`; admins manage paid-order fulfillment, audit history, and operational counts from the secret dashboard. Existing orders created before address capture may not have a saved shipping address.
+
+After backing up the database, run the one-time normalized-search field migration for existing products:
+
+```bash
+node scripts/backfill-persian-search.mjs
+```
+
+This updates only derived search text. The migration is safe to re-run after importing legacy products.

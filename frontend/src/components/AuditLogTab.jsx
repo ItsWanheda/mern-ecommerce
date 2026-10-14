@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RefreshCw, Search, ScrollText } from "lucide-react";
 import axios from "../lib/axios";
 
@@ -13,7 +13,7 @@ const AuditLogTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -25,9 +25,9 @@ const AuditLogTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [action, page]);
 
-  useEffect(() => { loadLogs(); }, [page, action]);
+  useEffect(() => { loadLogs(); }, [loadLogs]);
 
   const applyFilter = (event) => {
     event.preventDefault();

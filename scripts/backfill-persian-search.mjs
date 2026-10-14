@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Product from "../backend/models/product.model.js";
-import { normalizePersianText } from "../backend/lib/persian-search.js";
+import { buildNormalizedProductSearchText } from "../backend/lib/persian-search.js";
 
 dotenv.config();
 
@@ -31,18 +31,7 @@ try {
   };
 
   for await (const product of cursor) {
-    const options = [
-      ...(Array.isArray(product.sizes) ? product.sizes : []),
-      ...(Array.isArray(product.colors) ? product.colors.map((item) => item?.name) : []),
-      ...(Array.isArray(product.variants) ? product.variants.flatMap((item) => [item?.size, item?.color]) : []),
-      product.fit?.type,
-    ];
-    const searchTextNormalized = normalizePersianText([
-      product.name,
-      product.description,
-      product.category,
-      ...options,
-    ].filter(Boolean).join(" "));
+    const searchTextNormalized = buildNormalizedProductSearchText(product);
     pending.push({
       updateOne: {
         filter: { _id: product._id },
