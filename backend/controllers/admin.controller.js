@@ -42,11 +42,11 @@ export const getOperationsDashboard = async (_req, res) => {
       failedPayments24h,
       auditEvents24h,
     ] = await Promise.all([
-      Order.countDocuments({ paymentStatus: "pending" }).maxTimeMS(1500),
-      Order.countDocuments({ paymentStatus: "paid", finalizedAt: null }).maxTimeMS(1500),
-      Order.countDocuments({ paymentStatus: "paid", shipmentStatus: { $in: ["not_ready", "processing", "packed"] } }).maxTimeMS(1500),
-      Order.countDocuments({ paymentStatus: "paid", shipmentStatus: { $in: ["shipped", "delivered"] }, trackingCode: { $in: ["", null] } }).maxTimeMS(1500),
-      Order.countDocuments({ paymentStatus: "failed", updatedAt: { $gte: dayAgo } }).maxTimeMS(1500),
+      Order.countDocuments({ paymentStatus: "pending", paymentProvider: "zarinpal", currency: "IRT" }).maxTimeMS(1500),
+      Order.countDocuments({ paymentStatus: "paid", finalizedAt: null, paymentProvider: "zarinpal", currency: "IRT" }).maxTimeMS(1500),
+      Order.countDocuments({ paymentStatus: "paid", shipmentStatus: { $in: ["not_ready", "processing", "packed"] }, paymentProvider: "zarinpal", currency: "IRT" }).maxTimeMS(1500),
+      Order.countDocuments({ paymentStatus: "paid", shipmentStatus: { $in: ["shipped", "delivered"] }, trackingCode: { $in: ["", null] }, paymentProvider: "zarinpal", currency: "IRT" }).maxTimeMS(1500),
+      Order.countDocuments({ paymentStatus: "failed", updatedAt: { $gte: dayAgo }, paymentProvider: "zarinpal", currency: "IRT" }).maxTimeMS(1500),
       AuditLog.countDocuments({ createdAt: { $gte: dayAgo } }).maxTimeMS(1500),
     ]);
 
