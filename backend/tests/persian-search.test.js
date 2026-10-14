@@ -32,7 +32,7 @@ test("includes localized category aliases and product options in the search text
   });
   assert.match(normalized, /تی شرت/);
   assert.match(normalized, /t shirts/);
-  assert.match(normalized, /آبی/);
+  assert.match(normalized, new RegExp(escapeSearchRegex(normalizePersianText("آبی"))));
   assert.match(normalized, /xl/);
 });
 
