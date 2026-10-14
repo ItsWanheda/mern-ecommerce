@@ -15,6 +15,7 @@ import orderRoutes from "./routes/order.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
 import { browserOriginAndCors, securityHeaders } from "./middleware/security.middleware.js";
+import { connectDB } from "./lib/db.js";
 
 const app = express();
 
@@ -24,17 +25,35 @@ app.use(securityHeaders);
 app.use(browserOriginAndCors);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
-app.get("/api/ready", (_req, res) => {
-  if (mongoose.connection.readyState !== 1) {
+app.get("/api/ready", async (_req, res) => {
+  try {
+    await connectDB();
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ status: "not_ready", database: "disconnected" });
+    }
+    return res.status(200).json({ status: "ready", database: "connected" });
+  } catch (error) {
+    console.error("Database readiness check failed:", error?.message || error);
     return res.status(503).json({ status: "not_ready", database: "disconnected" });
   }
-  return res.status(200).json({ status: "ready", database: "connected" });
 });
 
 // Run the broad limit before parsing request bodies. Health probes remain lightweight.
 app.use("/api", apiRateLimit);
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
+
+// Vercel may invoke this Express app directly rather than backend/api/index.js.
+// Establish the shared MongoDB connection before any database-backed API route.
+app.use("/api", async (_req, res, next) => {
+  try {
+    await connectDB();
+    return next();
+  } catch (error) {
+    console.error("Database connection failed before API request:", error?.message || error);
+    return res.status(503).json({ message: "Database connection unavailable" });
+  }
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
