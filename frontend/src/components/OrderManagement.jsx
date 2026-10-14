@@ -50,7 +50,7 @@ const OrderManagement = () => {
   useEffect(() => { loadOrders(); }, [loadOrders]);
 
   const draftFor = (order) => ({
-    status: order.shipmentStatus || "processing",
+    status: !order.shipmentStatus || order.shipmentStatus === "not_ready" ? "processing" : order.shipmentStatus,
     shippingCarrier: order.shippingCarrier || "",
     trackingCode: order.trackingCode || "",
     note: "",

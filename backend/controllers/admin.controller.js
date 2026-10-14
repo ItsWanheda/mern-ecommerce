@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import AuditLog from "../models/audit-log.model.js";
+import { escapeSearchRegex } from "../lib/persian-search.js";
 import Order from "../models/order.model.js";
 import { redis } from "../lib/redis.js";
 
@@ -14,7 +15,7 @@ export const getAuditLogs = async (req, res) => {
     const limit = clampInteger(req.query.limit, 30, 1, 50);
     const filter = {};
     if (typeof req.query.action === "string" && req.query.action.trim()) {
-      const safeAction = req.query.action.trim().slice(0, 120).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const safeAction = escapeSearchRegex(req.query.action.trim().slice(0, 120));
       filter.action = new RegExp(safeAction, "i");
     }
     const [logs, total] = await Promise.all([

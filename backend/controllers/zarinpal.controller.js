@@ -29,7 +29,7 @@ const normalizeIranDigits = (value) => String(value ?? "")
   .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
   .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
 const normalizeIranPhone = (value) => {
-  let digits = normalizeIranDigits(value).replace(/\\D/g, "");
+  let digits = normalizeIranDigits(value).replace(/\D/g, "");
   if (digits.startsWith("0098") && digits.length === 14) digits = `0${digits.slice(4)}`;
   else if (digits.startsWith("98") && digits.length === 12) digits = `0${digits.slice(2)}`;
   else if (digits.length === 10 && digits.startsWith("9")) digits = `0${digits}`;
@@ -44,15 +44,15 @@ const parseShippingAddress = (input) => {
     city: typeof input.city === "string" ? input.city.trim().slice(0, 80) : "",
     district: typeof input.district === "string" ? input.district.trim().slice(0, 80) : "",
     addressLine: typeof input.addressLine === "string" ? input.addressLine.trim().slice(0, 500) : "",
-    postalCode: normalizeIranDigits(input.postalCode).replace(/\\D/g, "").slice(0, 10),
+    postalCode: normalizeIranDigits(input.postalCode).replace(/\D/g, "").slice(0, 10),
     notes: typeof input.notes === "string" ? input.notes.trim().slice(0, 500) : "",
   };
   const valid = address.recipientName.length >= 2 &&
-    /^09\\d{9}$/.test(address.phone) &&
+    /^09\d{9}$/.test(address.phone) &&
     address.province.length > 0 &&
     address.city.length > 0 &&
     address.addressLine.length >= 10 &&
-    /^\\d{10}$/.test(address.postalCode);
+    /^\d{10}$/.test(address.postalCode);
   return valid ? address : null;
 };
 

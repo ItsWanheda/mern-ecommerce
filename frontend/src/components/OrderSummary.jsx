@@ -21,7 +21,7 @@ const normalizeDigits = (value) => String(value ?? "")
   .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
   .replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit)));
 const normalizeIranPhone = (value) => {
-  let digits = normalizeDigits(value).replace(/\\D/g, "");
+  let digits = normalizeDigits(value).replace(/\D/g, "");
   if (digits.startsWith("0098") && digits.length === 14) digits = `0${digits.slice(4)}`;
   else if (digits.startsWith("98") && digits.length === 12) digits = `0${digits.slice(2)}`;
   else if (digits.length === 10 && digits.startsWith("9")) digits = `0${digits}`;
@@ -115,12 +115,12 @@ const OrderSummary = () => {
       city: shippingAddress.city.trim(),
       district: shippingAddress.district.trim(),
       addressLine: shippingAddress.addressLine.trim(),
-      postalCode: normalizeDigits(shippingAddress.postalCode).replace(/\\D/g, ""),
+      postalCode: normalizeDigits(shippingAddress.postalCode).replace(/\D/g, ""),
       notes: shippingAddress.notes.trim(),
     };
-    if (delivery.recipientName.length < 2 || !/^09\\d{9}$/.test(delivery.phone) ||
+    if (delivery.recipientName.length < 2 || !/^09\d{9}$/.test(delivery.phone) ||
         !delivery.province || !delivery.city || delivery.addressLine.length < 10 ||
-        !/^\\d{10}$/.test(delivery.postalCode)) {
+        !/^\d{10}$/.test(delivery.postalCode)) {
       return toast.error("اطلاعات گیرنده و نشانی را بررسی کنید؛ موبایل باید ایرانی و کد پستی ۱۰ رقمی باشد.");
     }
 

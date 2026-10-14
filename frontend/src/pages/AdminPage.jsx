@@ -29,7 +29,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState("create");
   const { fetchAllProducts } = useProductStore();
 
-  useEffect(() => { fetchAllProducts(); }, [fetchAllProducts]);
+  useEffect(() => { if (activeTab === "products") fetchAllProducts(); }, [activeTab, fetchAllProducts]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">

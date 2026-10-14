@@ -18,12 +18,12 @@ const orderProductSchema = new mongoose.Schema(
 const shippingAddressSchema = new mongoose.Schema(
   {
     recipientName: { type: String, required: true, trim: true, maxlength: 100 },
-    phone: { type: String, required: true, match: /^09\\d{9}$/ },
+    phone: { type: String, required: true, match: /^09\d{9}$/ },
     province: { type: String, required: true, trim: true, maxlength: 80 },
     city: { type: String, required: true, trim: true, maxlength: 80 },
     district: { type: String, trim: true, maxlength: 80, default: "" },
     addressLine: { type: String, required: true, trim: true, minlength: 10, maxlength: 500 },
-    postalCode: { type: String, required: true, match: /^\\d{10}$/ },
+    postalCode: { type: String, required: true, match: /^\d{10}$/ },
     notes: { type: String, trim: true, maxlength: 500, default: "" },
   },
   { _id: false }
