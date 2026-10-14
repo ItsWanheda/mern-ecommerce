@@ -1,11 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { PlusCircle, Upload, Loader, X, Ruler, Shirt } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
+import { useCategoryStore } from "../stores/useCategoryStore";
 import { getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 
-const categories = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits", "bags"];
-const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
+const categoryPath = (category, categories) => {
+  const byId = new Map(categories.map((item) => [String(item._id), item]));
+  const parts = [];
+  let current = category;
+  let remaining = 20;
+  while (current && remaining-- > 0) {
+    parts.unshift(current.name?.fa || current.name?.en || current.slug);
+    current = byId.get(String(current.parentId || ""));
+  }
+  return parts.join(" / ");
+};
 const storeCurrency = STORE_CURRENCY;
 const priceUnitLabel = getCurrencyLabel(storeCurrency);
 const fitOptions = [
@@ -18,7 +28,7 @@ const fitOptions = [
 ];
 
 const defaults = {
-  name: "", description: "", price: "", stock: "0", category: "",
+  name: "", description: "", price: "", stock: "0", category: "", categoryId: "",
   images: [], sizesText: "", colorsText: "", fitType: "regular",
   fitDescription: "", modelHeight: "", modelSize: "",
   sizeChartText: "",
@@ -45,7 +55,28 @@ const CreateProductForm = () => {
   const [newProduct, setNewProduct] = useState(defaults);
   const [variantStocks, setVariantStocks] = useState({});
   const [imageError, setImageError] = useState("");
+  const [attributeValues, setAttributeValues] = useState({});
   const { createProduct, loading } = useProductStore();
+  const { categories: availableCategories, fetchCategories } = useCategoryStore();
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  const selectedCategory = availableCategories.find((category) => String(category._id) === String(newProduct.categoryId));
+  const selectedCategoryAttributes = useMemo(() => {
+    if (!selectedCategory) return [];
+    const byId = new Map(availableCategories.map((category) => [String(category._id), category]));
+    const ancestors = (selectedCategory.ancestors || []).map((id) => byId.get(String(id))).filter(Boolean);
+    const chain = [...ancestors, selectedCategory].sort((a, b) => (a.ancestors || []).length - (b.ancestors || []).length);
+    const definitions = new Map();
+    for (const category of chain) {
+      for (const attribute of category.attributes || []) {
+        if (String(category._id) === String(selectedCategory._id) || attribute.inherited !== false) {
+          definitions.set(attribute.key, attribute);
+        }
+      }
+    }
+    return [...definitions.values()].sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  }, [availableCategories, selectedCategory]);
 
   const sizes = useMemo(() => parseSizes(newProduct.sizesText), [newProduct.sizesText]);
   const colors = useMemo(() => parseColors(newProduct.colorsText), [newProduct.colorsText]);
@@ -79,6 +110,8 @@ const CreateProductForm = () => {
         price: newProduct.price,
         stock: newProduct.stock,
         category: newProduct.category,
+        categoryId: newProduct.categoryId,
+        attributes: attributeValues,
         image: newProduct.images[0] || "",
         images: newProduct.images,
         sizes,
@@ -153,12 +186,54 @@ const CreateProductForm = () => {
             )}
           </div>
           <label className={labelClass}>دسته‌بندی
-            <select value={newProduct.category} onChange={(event) => updateField("category", event.target.value)} className={fieldClass} required>
+            <select
+              value={newProduct.categoryId}
+              onChange={(event) => {
+                const selected = availableCategories.find((item) => String(item._id) === event.target.value);
+                setNewProduct((current) => ({ ...current, categoryId: event.target.value, category: selected?.slug || "" }));
+                setAttributeValues({});
+              }}
+              className={fieldClass}
+              required
+            >
               <option value="">یک دسته‌بندی انتخاب کنید</option>
-              {categories.map((category) => <option key={category} value={category}>{categoryLabels[category]}</option>)}
+              {availableCategories.filter((category) => category.isActive !== false).map((category) => (
+                <option key={category._id} value={category._id}>{categoryPath(category, availableCategories)}</option>
+              ))}
             </select>
+            {availableCategories.length === 0 && <span className="mt-1 block text-xs text-amber-300">دسته‌بندی‌ای یافت نشد. ابتدا migration دسته‌بندی‌ها را اجرا کنید.</span>}
           </label>
         </section>
+
+        {selectedCategoryAttributes.length > 0 && (
+          <section className="space-y-4 rounded-xl border border-gray-700 bg-gray-900/30 p-4">
+            <h3 className="border-b border-gray-700 pb-2 text-sm font-bold text-white">ویژگی‌های دسته‌بندی</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {selectedCategoryAttributes.map((attribute) => (
+                <label key={attribute.key} className={labelClass}>
+                  {attribute.name?.fa || attribute.name?.en || attribute.key}{attribute.required ? " *" : ""}
+                  {attribute.type === "select" ? (
+                    <select required={Boolean(attribute.required)} className={fieldClass} value={attributeValues[attribute.key] ?? ""} onChange={(event) => setAttributeValues((current) => ({ ...current, [attribute.key]: event.target.value }))}>
+                      <option value="">انتخاب کنید</option>
+                      {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
+                    </select>
+                  ) : attribute.type === "multi-select" ? (
+                    <select multiple className={fieldClass + " min-h-28"} value={Array.isArray(attributeValues[attribute.key]) ? attributeValues[attribute.key] : []} onChange={(event) => setAttributeValues((current) => ({ ...current, [attribute.key]: [...event.target.selectedOptions].map((option) => option.value) }))}>
+                      {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
+                    </select>
+                  ) : attribute.type === "boolean" ? (
+                    <span className="mt-2 flex min-h-10 items-center gap-2 rounded-xl border border-gray-600 bg-gray-700 px-3">
+                      <input type="checkbox" checked={Boolean(attributeValues[attribute.key])} onChange={(event) => setAttributeValues((current) => ({ ...current, [attribute.key]: event.target.checked }))} />
+                      بله
+                    </span>
+                  ) : (
+                    <input type={attribute.type === "number" ? "number" : "text"} required={Boolean(attribute.required)} min={attribute.type === "number" ? "0" : undefined} maxLength={attribute.type === "text" ? 500 : undefined} className={fieldClass} value={attributeValues[attribute.key] ?? ""} onChange={(event) => setAttributeValues((current) => ({ ...current, [attribute.key]: event.target.value }))} />
+                  )}
+                </label>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="space-y-3">
           <h3 className="border-b border-gray-700 pb-2 text-sm font-bold text-white">گالری تصاویر محصول</h3>

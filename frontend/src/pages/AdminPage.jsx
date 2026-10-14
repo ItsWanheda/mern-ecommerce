@@ -1,4 +1,4 @@
-import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText } from "lucide-react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -10,12 +10,14 @@ const ShippingSettings = lazy(() => import("../components/ShippingSettings"));
 const NewsletterManager = lazy(() => import("../components/NewsletterManager"));
 const OrderManagement = lazy(() => import("../components/OrderManagement"));
 const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
+const CategoryManager = lazy(() => import("../components/CategoryManager"));
 const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
   { id: "create", label: "ایجاد محصول", icon: PlusCircle },
   { id: "products", label: "محصولات و موجودی", icon: ShoppingBasket },
+  { id: "categories", label: "مدیریت دسته‌بندی‌ها", icon: FolderTree },
   { id: "campaigns", label: "کمپین‌ها", icon: Megaphone },
   { id: "shipping", label: "ارسال", icon: Truck },
   { id: "newsletter", label: "خبرنامه", icon: Mail },
@@ -45,6 +47,7 @@ const AdminPage = () => {
         <Suspense fallback={<div role="status" className="rounded-xl border border-gray-700 bg-gray-800 p-8 text-center text-sm text-gray-400">در حال بارگذاری بخش مدیریت…</div>}>
           {activeTab === "create" && <CreateProductForm />}
           {activeTab === "products" && <ProductsList />}
+          {activeTab === "categories" && <CategoryManager />}
           {activeTab === "campaigns" && <CampaignManager />}
           {activeTab === "shipping" && <ShippingSettings />}
           {activeTab === "newsletter" && <NewsletterManager />}

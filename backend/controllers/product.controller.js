@@ -1,9 +1,72 @@
 import { redis } from "../lib/redis.js";
 import cloudinary from "../lib/cloudinary.js";
 import Product from "../models/product.model.js";
+import Category from "../models/category.model.js";
 import Order from "../models/order.model.js";
 import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+
+const idOf = (value) => value == null ? "" : String(value);
+const getCategoryProductScope = async (slug) => {
+  const selected = await Category.findOne({ slug }).lean();
+  if (!selected) return null;
+  const all = await Category.find({}).select("_id slug parentId ancestors isActive").lean();
+  const activeIds = new Set(all.filter((category) => category.isActive).map((category) => idOf(category._id)));
+  const visible = all.filter((category) =>
+    category.isActive && (category.ancestors || []).every((ancestor) => activeIds.has(idOf(ancestor)))
+  );
+  const selectedId = idOf(selected._id);
+  if (!visible.some((category) => idOf(category._id) === selectedId)) return { ids: [], slugs: [] };
+  const scope = visible.filter((category) =>
+    idOf(category._id) === selectedId ||
+    (category.ancestors || []).some((ancestor) => idOf(ancestor) === selectedId)
+  );
+  return { ids: scope.map((category) => category._id), slugs: scope.map((category) => category.slug) };
+};
+
+const validateProductAttributes = async (category, input) => {
+  const raw = input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const ids = [...(category.ancestors || []), category._id];
+  const categories = await Category.find({ _id: { $in: ids } }).lean();
+  categories.sort((a, b) => (a.ancestors || []).length - (b.ancestors || []).length);
+  const definitions = new Map();
+  for (const item of categories) {
+    const isCurrent = idOf(item._id) === idOf(category._id);
+    for (const attribute of item.attributes || []) {
+      if (isCurrent || attribute.inherited !== false) definitions.set(attribute.key, attribute);
+    }
+  }
+  for (const key of Object.keys(raw)) {
+    if (!definitions.has(key)) return { error: "ویژگی نامعتبر برای این دسته‌بندی: " + key };
+  }
+  const values = {};
+  for (const [key, definition] of definitions) {
+    let value = raw[key];
+    const missing = value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0);
+    if (missing) {
+      if (definition.required) return { error: "ویژگی «" + (definition.name?.fa || key) + "» الزامی است." };
+      continue;
+    }
+    if (definition.type === "select") {
+      if (typeof value !== "string" || !(definition.options || []).some((option) => option.value === value)) {
+        return { error: "مقدار ویژگی «" + (definition.name?.fa || key) + "» معتبر نیست." };
+      }
+    } else if (definition.type === "multi-select") {
+      if (!Array.isArray(value) || value.some((entry) =>
+        typeof entry !== "string" || !(definition.options || []).some((option) => option.value === entry)
+      )) return { error: "گزینه‌های ویژگی «" + (definition.name?.fa || key) + "» معتبر نیستند." };
+    } else if (definition.type === "boolean") {
+      if (typeof value !== "boolean") return { error: "مقدار ویژگی «" + (definition.name?.fa || key) + "» باید بله یا خیر باشد." };
+    } else if (definition.type === "number") {
+      value = Number(value);
+      if (!Number.isFinite(value)) return { error: "مقدار ویژگی «" + (definition.name?.fa || key) + "» باید عددی باشد." };
+    } else if (definition.type === "text") {
+      if (typeof value !== "string" || value.length > 500) return { error: "مقدار متنی ویژگی «" + (definition.name?.fa || key) + "» معتبر نیست." };
+    }
+    values[key] = value;
+  }
+  return { values };
+};
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -100,7 +163,17 @@ export const getSearchedProducts = async (req, res) => {
     }
 
     const filter = { isActive: { $ne: false } };
-    if (category) filter.category = category;
+    if (category) {
+      const scope = await getCategoryProductScope(category);
+      if (scope) {
+        filter.$or = [
+          { categoryId: { $in: scope.ids } },
+          { category: { $in: scope.slugs } },
+        ];
+      } else {
+        filter.category = category;
+      }
+    }
     if (q) {
       // Match each normalized token so word order is flexible in Persian and Latin queries.
       const tokens = [...new Set(q.split(" ").filter(Boolean))].slice(0, 8);
@@ -145,9 +218,22 @@ export const getSearchedProducts = async (req, res) => {
 export const createProduct = async (req, res) => {
   try {
     const {
-      name, description, price, image, images, category, stock,
+      name, description, price, image, images, category, categoryId, attributes, stock,
       sizes, colors, variants, fit, sizeChart,
     } = req.body;
+    let categoryRecord = null;
+    if (categoryId !== undefined && categoryId !== null && categoryId !== "") {
+      if (typeof categoryId !== "string" || !/^[a-f\d]{24}$/i.test(categoryId)) {
+        return res.status(400).json({ message: "دسته‌بندی انتخاب‌شده معتبر نیست." });
+      }
+      categoryRecord = await Category.findOne({ _id: categoryId, isActive: true });
+      if (!categoryRecord) return res.status(400).json({ message: "دسته‌بندی فعال پیدا نشد." });
+    }
+    const productCategory = categoryRecord ? categoryRecord.slug : (typeof category === "string" ? category.trim() : "");
+    const normalizedAttributes = categoryRecord
+      ? await validateProductAttributes(categoryRecord, attributes)
+      : { values: attributes && typeof attributes === "object" && !Array.isArray(attributes) ? attributes : {} };
+    if (normalizedAttributes.error) return res.status(400).json({ message: normalizedAttributes.error });
     const numericPrice = price === "" || price === undefined || price === null ? Number.NaN : Number(price);
     const numericStock = stock === "" || stock === undefined || stock === null ? null : Number(stock);
     const normalizedSizes = Array.isArray(sizes)
@@ -193,7 +279,7 @@ export const createProduct = async (req, res) => {
     }
     if (typeof name !== "string" || !name.trim() ||
         typeof description !== "string" || !description.trim() ||
-        typeof category !== "string" || !category.trim() ||
+        typeof productCategory !== "string" || !productCategory ||
         !Number.isFinite(numericPrice) || numericPrice < 0 ||
         (numericStock !== null && (!Number.isInteger(numericStock) || numericStock < 0))) {
       return res.status(400).json({ message: "Provide valid product details, price, and stock" });
@@ -243,7 +329,9 @@ export const createProduct = async (req, res) => {
       price: numericPrice,
       image: uploadedImages[0] || "",
       images: uploadedImages,
-      category: category.trim(),
+      category: productCategory,
+      categoryId: categoryRecord?._id || null,
+      attributes: normalizedAttributes.values || {},
       sizes: normalizedSizes,
       colors: normalizedColors,
       variants: normalizedVariants,
@@ -372,8 +460,19 @@ export const getRecommendedProducts = async (_req, res) => {
 
 export const getProductsByCategory = async (req, res) => {
   try {
-    // Keep the public category endpoint bounded while preserving its response shape.
-    const products = await Product.find({ category: req.params.category, isActive: { $ne: false } })
+    const slug = String(req.params.category || "").trim().slice(0, 96);
+    const scope = await getCategoryProductScope(slug);
+    const filter = { isActive: { $ne: false } };
+    if (scope) {
+      filter.$or = [
+        { categoryId: { $in: scope.ids } },
+        { category: { $in: scope.slugs } },
+      ];
+    } else {
+      // Preserve access to legacy category slugs during and after migration.
+      filter.category = slug;
+    }
+    const products = await Product.find(filter)
       .sort({ createdAt: -1, _id: -1 }).limit(200).maxTimeMS(1500).lean();
     return res.json({ products });
   } catch (error) {

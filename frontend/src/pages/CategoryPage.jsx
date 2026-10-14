@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import { normalizeDigits, normalizePersianText as normalizePersian } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
+import { useCategoryStore } from "../stores/useCategoryStore";
 
 const categoryLabels = {
   jeans: "شلوار جین",
@@ -59,6 +60,7 @@ const makeEmptyFilters = () => ({
   fits: [],
   brands: [],
   inStock: false,
+  attributes: {},
   sort: "newest",
 });
 
@@ -131,6 +133,7 @@ const filterCatalog = (catalog, filters) => {
         ...getProductColors(product),
         fitLabels[product.fit?.type] || product.fit?.type || "",
         getProductBrand(product),
+        ...Object.values(product.attributes || {}).flatMap((value) => Array.isArray(value) ? value : [value]),
       ].join(" ");
       if (!normalizePersian(searchableText).includes(query)) return false;
     }
@@ -159,6 +162,22 @@ const filterCatalog = (catalog, filters) => {
       if (!filters.brands.some((value) => normalizePersian(value) === brand)) return false;
     }
 
+    for (const [key, selected] of Object.entries(filters.attributes || {})) {
+      if (selected === undefined || selected === null || selected === "" || (Array.isArray(selected) && selected.length === 0)) continue;
+      const actual = product.attributes?.[key];
+      if (actual === undefined || actual === null) return false;
+      if (Array.isArray(selected)) {
+        const actualValues = Array.isArray(actual) ? actual : [actual];
+        if (!selected.some((value) => actualValues.some((entry) => String(entry) === String(value)))) return false;
+      } else if (typeof selected === "boolean") {
+        if (actual !== selected) return false;
+      } else if (typeof selected === "number") {
+        if (Number(actual) !== selected) return false;
+      } else if (!normalizePersian(String(actual)).includes(normalizePersian(String(selected)))) {
+        return false;
+      }
+    }
+
     if (filters.inStock && !isProductAvailable(product)) return false;
     return true;
   });
@@ -175,6 +194,8 @@ const filterCatalog = (catalog, filters) => {
 const CategoryPage = () => {
   const { category = "" } = useParams();
   const { fetchProductsByCategory, products, loading } = useProductStore();
+  const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const [filters, setFilters] = useState(makeEmptyFilters);
   const [draftFilters, setDraftFilters] = useState(makeEmptyFilters);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -223,6 +244,21 @@ const CategoryPage = () => {
     [catalog],
   );
 
+  const selectedCategory = dynamicCategories.find((item) => item.slug === category);
+  const categoryAttributeDefinitions = useMemo(() => {
+    if (!selectedCategory) return [];
+    const byId = new Map(dynamicCategories.map((item) => [String(item._id), item]));
+    const ancestors = (selectedCategory.ancestors || []).map((id) => byId.get(String(id))).filter(Boolean);
+    const chain = [...ancestors, selectedCategory].sort((a, b) => (a.ancestors || []).length - (b.ancestors || []).length);
+    const definitions = new Map();
+    for (const currentCategory of chain) {
+      for (const attribute of currentCategory.attributes || []) {
+        if (String(currentCategory._id) === String(selectedCategory._id) || attribute.inherited !== false) definitions.set(attribute.key, attribute);
+      }
+    }
+    return [...definitions.values()].filter((attribute) => attribute.filterable).sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+  }, [dynamicCategories, selectedCategory]);
+
   const updateFilter = (setter, field, value) => {
     setter((current) => {
       if (["sizes", "colors", "fits", "brands"].includes(field)) {
@@ -250,6 +286,11 @@ const CategoryPage = () => {
         return { ...current, [field]: current[field].filter((entry) => entry !== value) };
       }
       if (field === "inStock") return { ...current, inStock: false };
+      if (field === "attributes") {
+        const attributes = { ...(current.attributes || {}) };
+        delete attributes[value];
+        return { ...current, attributes };
+      }
       if (field === "sort") return { ...current, sort: "newest" };
       return { ...current, [field]: "" };
     });
@@ -270,13 +311,20 @@ const CategoryPage = () => {
     filters.colors.forEach((value) => chips.push({ field: "colors", value, label: "رنگ: " + value }));
     filters.fits.forEach((value) => chips.push({ field: "fits", value, label: "تن‌خور: " + (fitLabels[value] || value) }));
     filters.brands.forEach((value) => chips.push({ field: "brands", value, label: "برند: " + value }));
+    Object.entries(filters.attributes || {}).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) return;
+      const definition = categoryAttributeDefinitions.find((attribute) => attribute.key === key);
+      const values = Array.isArray(value) ? value : [value];
+      const labels = values.map((entry) => definition?.options?.find((option) => option.value === String(entry))?.name?.fa || String(entry));
+      chips.push({ field: "attributes", value: key, label: (definition?.name?.fa || key) + ": " + labels.join("، ") });
+    });
     if (filters.inStock) chips.push({ field: "inStock", label: "فقط کالاهای موجود" });
     if (filters.sort !== "newest") {
       const sortLabel = sortOptions.find(([value]) => value === filters.sort)?.[1];
       if (sortLabel) chips.push({ field: "sort", label: "مرتب‌سازی: " + sortLabel });
     }
     return chips;
-  }, [filters]);
+  }, [filters, categoryAttributeDefinitions]);
 
   const renderFilterFields = (current, onFilterChange) => (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -397,6 +445,32 @@ const CategoryPage = () => {
         </fieldset>
       )}
 
+      {categoryAttributeDefinitions.filter((attribute) => attribute.filterable).map((attribute) => {
+        const selected = current.attributes?.[attribute.key];
+        const updateAttributeFilter = (value) => onFilterChange("attributes", { ...(current.attributes || {}), [attribute.key]: value });
+        return (
+          <fieldset key={attribute.key} className="min-w-0 space-y-2">
+            <legend className="text-sm font-semibold text-[#41443b]">{attribute.name?.fa || attribute.name?.en || attribute.key}</legend>
+            {attribute.type === "select" ? (
+              <select value={selected === undefined ? "" : String(selected)} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value)} className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10">
+                <option value="">همه</option>
+                {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
+              </select>
+            ) : attribute.type === "multi-select" ? (
+              <select multiple value={Array.isArray(selected) ? selected.map(String) : []} onChange={(event) => updateAttributeFilter([...event.target.selectedOptions].map((option) => option.value))} className="min-h-24 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10">
+                {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
+              </select>
+            ) : attribute.type === "boolean" ? (
+              <select value={selected === undefined ? "" : (selected ? "true" : "false")} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value === "true")} className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f]">
+                <option value="">همه</option><option value="true">بله</option><option value="false">خیر</option>
+              </select>
+            ) : (
+              <input type={attribute.type === "number" ? "number" : "text"} value={selected ?? ""} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : (attribute.type === "number" ? Number(event.target.value) : event.target.value))} className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f]" />
+            )}
+          </fieldset>
+        );
+      })}
+
       {brandOptions.length > 0 && (
         <fieldset className="min-w-0 space-y-2">
           <legend className="text-sm font-semibold text-[#41443b]">برند</legend>
@@ -418,7 +492,13 @@ const CategoryPage = () => {
     </div>
   );
 
-  const pageTitle = categoryLabels[category] || category.replace(/-/g, " ");
+  const pageTitle = selectedCategory?.name?.fa || categoryLabels[category] || category.replace(/-/g, " ");
+  const categoryChildren = selectedCategory
+    ? dynamicCategories.filter((item) => String(item.parentId || "") === String(selectedCategory._id))
+    : [];
+  const categoryAncestors = selectedCategory
+    ? (selectedCategory.ancestors || []).map((ancestorId) => dynamicCategories.find((item) => String(item._id) === String(ancestorId))).filter(Boolean)
+    : [];
   const priceError = getPriceError(filters);
 
   return (
@@ -475,6 +555,31 @@ const CategoryPage = () => {
             </button>
           </div>
         </header>
+
+        {selectedCategory && (categoryAncestors.length > 0 || categoryChildren.length > 0) && (
+          <nav aria-label="مسیر دسته‌بندی" className="mb-5 space-y-3">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[#77786f]">
+              <Link to="/shop" className="hover:text-[#68745f]">فروشگاه</Link>
+              {categoryAncestors.map((ancestor) => (
+                <span key={ancestor._id} className="inline-flex items-center gap-2">
+                  <span aria-hidden="true">/</span>
+                  <Link to={"/category/" + ancestor.slug} className="hover:text-[#68745f]">{ancestor.name?.fa || ancestor.name?.en}</Link>
+                </span>
+              ))}
+              <span aria-hidden="true">/</span>
+              <span className="font-semibold text-[#41443b]">{pageTitle}</span>
+            </div>
+            {categoryChildren.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {categoryChildren.map((child) => (
+                  <Link key={child._id} to={"/category/" + child.slug} className="inline-flex min-h-9 items-center rounded-full border border-[#d5d0c5] bg-white px-3 py-1.5 text-xs font-medium text-[#41443b] transition hover:border-[#68745f] hover:bg-[#e9ede4]">
+                    {child.name?.fa || child.name?.en}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </nav>
+        )}
 
         <section aria-label="جست‌وجو در این دسته‌بندی" className="mb-5 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-3 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] sm:p-4">
           <label htmlFor="category-product-search" className="mb-2 block text-sm font-semibold text-[#41443b]">جست‌وجو در {pageTitle}</label>

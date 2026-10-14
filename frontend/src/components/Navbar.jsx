@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
 import {
@@ -23,6 +23,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
+import { useCategoryStore } from "../stores/useCategoryStore";
 
 const categories = [
   ["", "همه دسته‌بندی‌ها"],
@@ -51,8 +52,21 @@ const defaultFilters = {
   sort: "newest",
 };
 
-const categoryLabel = (value) =>
+const categoryLabel = (value, dynamicCategories = []) =>
+  dynamicCategories.find((category) => category.slug === value)?.name?.fa ||
   categories.find(([category]) => category === value)?.[1] || value || "مجموعه";
+
+const categoryPath = (category, categories) => {
+  const byId = new Map(categories.map((item) => [String(item._id), item]));
+  const parts = [];
+  let current = category;
+  let remaining = 20;
+  while (current && remaining-- > 0) {
+    parts.unshift(current.name?.fa || current.name?.en || current.slug);
+    current = byId.get(String(current.parentId || ""));
+  }
+  return parts.join(" / ");
+};
 
 const fieldClass =
   "mt-1 min-h-11 w-full rounded-xl border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-sm text-[#252722] outline-none transition focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/20";
@@ -62,6 +76,21 @@ const Navbar = () => {
   const isAdmin = user?.role === "admin";
   const { cart } = useCartStore();
   const { items: savedProducts } = useWishlistStore();
+  const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
+  const categories = useMemo(() => {
+    if (!dynamicCategories.length) return [
+      ["", "همه دسته‌بندی‌ها"], ["jeans", "شلوار جین"], ["t-shirts", "تی‌شرت"],
+      ["shoes", "کفش"], ["glasses", "عینک"], ["jackets", "کت و کاپشن"],
+      ["suits", "کت‌وشلوار"], ["bags", "کیف"],
+    ];
+    return [
+      ["", "همه دسته‌بندی‌ها"],
+      ...dynamicCategories.filter((category) => category.showInNavigation !== false)
+        .map((category) => [category.slug, categoryPath(category, dynamicCategories)]),
+    ];
+  }, [dynamicCategories]);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const location = useLocation();
   const navigate = useNavigate();
   const desktopSearchRef = useRef(null);
@@ -347,7 +376,7 @@ const Navbar = () => {
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-[#252722]">{product.name}</span>
-                    <span className="mt-1 block truncate text-xs text-[#85867d]">{categoryLabel(product.category)}</span>
+                    <span className="mt-1 block truncate text-xs text-[#85867d]">{categoryLabel(product.category, dynamicCategories)}</span>
                   </span>
                   <span className="shrink-0 text-xs font-semibold tabular-nums text-[#41443b]">{formatPrice(product.price)}</span>
                 </button>

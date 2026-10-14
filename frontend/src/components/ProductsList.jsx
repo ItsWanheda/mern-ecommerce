@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Trash, Star, Save } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
+import { useCategoryStore } from "../stores/useCategoryStore";
 import { formatPrice, isStockTracked } from "../lib/commerce";
 
 const labels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
 
 const ProductsList = () => {
   const { deleteProduct, toggleFeaturedProduct, updateProductStock, updateProductVariantStock, products } = useProductStore();
+  const { categories, fetchCategories } = useCategoryStore();
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const [drafts, setDrafts] = useState({});
   const [variantDrafts, setVariantDrafts] = useState({});
 
@@ -50,7 +53,7 @@ const ProductsList = () => {
                 </div>
               </td>
               <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-300"><span dir="ltr">{formatPrice(product.price)}</span></td>
-              <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{labels[product.category] || product.category}</td>
+              <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-300">{categories.find((category) => String(category._id) === String(product.categoryId))?.name?.fa || labels[product.category] || product.category}</td>
               <td className="px-4 py-4">
                 {(product.variants || []).length > 0 ? (
                   <div className="min-w-56 space-y-2">

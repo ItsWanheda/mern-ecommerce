@@ -34,11 +34,17 @@ export const escapeSearchRegex = (value) =>
 
 export const buildNormalizedProductSearchText = (product) => {
   const category = String(product?.category ?? "");
+  const attributeEntries = product?.attributes instanceof Map
+    ? [...product.attributes.entries()]
+    : Object.entries(product?.attributes && typeof product.attributes === "object" ? product.attributes : {});
+  const attributeText = attributeEntries.flatMap(([key, value]) => [key, ...(Array.isArray(value) ? value : [value])])
+    .filter((value) => value !== null && value !== undefined && typeof value !== "object");
   const options = [
     ...(Array.isArray(product?.sizes) ? product.sizes : []),
     ...(Array.isArray(product?.colors) ? product.colors.map((item) => item?.name) : []),
     ...(Array.isArray(product?.variants) ? product.variants.flatMap((item) => [item?.size, item?.color]) : []),
     product?.fit?.type,
+    ...attributeText,
   ];
   return normalizePersianText([
     product?.name,

@@ -7,16 +7,7 @@ import ProductCard from "../components/ProductCard";
 import { useProductStore } from "../stores/useProductStore";
 import FeaturedProducts from "../components/FeaturedProducts";
 import { formatPrice } from "../lib/commerce";
-
-const categories = [
-  { href: "/category/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
-  { href: "/category/t-shirts", name: "تی‌شرت", imageUrl: "/tshirts.jpg" },
-  { href: "/category/shoes", name: "کفش", imageUrl: "/shoes.jpg" },
-  { href: "/category/glasses", name: "عینک", imageUrl: "/glasses.png" },
-  { href: "/category/jackets", name: "کاپشن و کت", imageUrl: "/jackets.jpg" },
-  { href: "/category/suits", name: "کت‌وشلوار", imageUrl: "/suits.jpg" },
-  { href: "/category/bags", name: "کیف", imageUrl: "/bags.jpg" },
-];
+import { useCategoryStore } from "../stores/useCategoryStore";
 
 const collections = [
   { title: "استایل روزمره", description: "پایه‌های راحت برای ترکیب روزانه", href: "/category/jeans", image: "/jeans.jpg", categories: ["jeans", "t-shirts", "shoes"] },
@@ -35,6 +26,14 @@ const HomePage = () => {
   const [bestsellers, setBestsellers] = useState([]);
   const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
+  const { categories: storeCategories, fetchCategories } = useCategoryStore();
+  const categories = storeCategories
+    .filter((category) => !category.parentId && category.showInNavigation !== false)
+    .map((category) => ({
+      href: "/category/" + category.slug,
+      name: category.name?.fa || category.name?.en || category.slug,
+      imageUrl: category.image || "/tshirts.jpg",
+    }));
   const {
     fetchFeaturedProducts,
     featuredProducts,
@@ -45,6 +44,7 @@ const HomePage = () => {
   useEffect(() => {
     let active = true;
     fetchFeaturedProducts();
+    fetchCategories();
     Promise.resolve(fetchNewestProducts()).finally(() => {
       if (active) setNewestLoaded(true);
     });
@@ -56,7 +56,7 @@ const HomePage = () => {
       .catch((error) => console.error("Could not load bestsellers:", error.message))
       .finally(() => { if (active) setBestsellersLoaded(true); });
     return () => { active = false; };
-  }, [fetchFeaturedProducts, fetchNewestProducts]);
+  }, [fetchFeaturedProducts, fetchNewestProducts, fetchCategories]);
 
   const catalogProducts = [...featuredProducts, ...bestsellers, ...newestProducts]
     .filter((product, index, products) => product?._id && products.findIndex((item) => item?._id === product._id) === index);
