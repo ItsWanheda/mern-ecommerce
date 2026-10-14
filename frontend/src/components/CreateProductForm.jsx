@@ -18,6 +18,15 @@ const categoryPath = (category, categories) => {
 };
 const storeCurrency = STORE_CURRENCY;
 const priceUnitLabel = getCurrencyLabel(storeCurrency);
+const legacyCategoryFallback = [
+  { _id: "legacy:jeans", slug: "jeans", name: { fa: "شلوار جین", en: "Jeans" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+  { _id: "legacy:t-shirts", slug: "t-shirts", name: { fa: "تی‌شرت", en: "T-shirts" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+  { _id: "legacy:shoes", slug: "shoes", name: { fa: "کفش", en: "Shoes" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+  { _id: "legacy:glasses", slug: "glasses", name: { fa: "عینک", en: "Glasses" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+  { _id: "legacy:jackets", slug: "jackets", name: { fa: "کت و کاپشن", en: "Jackets" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+  { _id: "legacy:suits", slug: "suits", name: { fa: "کت‌وشلوار", en: "Suits" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+  { _id: "legacy:bags", slug: "bags", name: { fa: "کیف", en: "Bags" }, parentId: null, ancestors: [], attributes: [], isActive: true, isLegacyFallback: true },
+];
 const fitOptions = [
   ["true-to-size", "مطابق سایز استاندارد"],
   ["slim", "جذب"],
@@ -61,7 +70,8 @@ const CreateProductForm = () => {
 
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
-  const selectedCategory = availableCategories.find((category) => String(category._id) === String(newProduct.categoryId));
+  const categoryChoices = availableCategories.length ? availableCategories : legacyCategoryFallback;
+  const selectedCategory = categoryChoices.find((category) => String(category._id) === String(newProduct.categoryId));
   const selectedCategoryAttributes = useMemo(() => {
     if (!selectedCategory) return [];
     const byId = new Map(availableCategories.map((category) => [String(category._id), category]));
@@ -110,7 +120,7 @@ const CreateProductForm = () => {
         price: newProduct.price,
         stock: newProduct.stock,
         category: newProduct.category,
-        categoryId: newProduct.categoryId,
+        categoryId: selectedCategory?.isLegacyFallback ? "" : newProduct.categoryId,
         attributes: attributeValues,
         image: newProduct.images[0] || "",
         images: newProduct.images,
@@ -197,11 +207,11 @@ const CreateProductForm = () => {
               required
             >
               <option value="">یک دسته‌بندی انتخاب کنید</option>
-              {availableCategories.filter((category) => category.isActive !== false).map((category) => (
+              {categoryChoices.filter((category) => category.isActive !== false).map((category) => (
                 <option key={category._id} value={category._id}>{categoryPath(category, availableCategories)}</option>
               ))}
             </select>
-            {availableCategories.length === 0 && <span className="mt-1 block text-xs text-amber-300">دسته‌بندی‌ای یافت نشد. ابتدا migration دسته‌بندی‌ها را اجرا کنید.</span>}
+            {availableCategories.length === 0 && <span className="mt-1 block text-xs text-amber-300">فهرست سازگار با نسخه قبلی فعال است؛ برای مدیریت پویا و ویژگی‌های دسته‌ها، migration را اجرا کنید.</span>}
           </label>
         </section>
 

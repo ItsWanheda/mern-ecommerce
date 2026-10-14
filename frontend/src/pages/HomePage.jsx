@@ -9,6 +9,16 @@ import FeaturedProducts from "../components/FeaturedProducts";
 import { formatPrice } from "../lib/commerce";
 import { useCategoryStore } from "../stores/useCategoryStore";
 
+const legacyCategoryCards = [
+  { href: "/category/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
+  { href: "/category/t-shirts", name: "تی‌شرت", imageUrl: "/tshirts.jpg" },
+  { href: "/category/shoes", name: "کفش", imageUrl: "/shoes.jpg" },
+  { href: "/category/glasses", name: "عینک", imageUrl: "/glasses.png" },
+  { href: "/category/jackets", name: "کاپشن و کت", imageUrl: "/jackets.jpg" },
+  { href: "/category/suits", name: "کت‌وشلوار", imageUrl: "/suits.jpg" },
+  { href: "/category/bags", name: "کیف", imageUrl: "/bags.jpg" },
+];
+
 const collections = [
   { title: "استایل روزمره", description: "پایه‌های راحت برای ترکیب روزانه", href: "/category/jeans", image: "/jeans.jpg", categories: ["jeans", "t-shirts", "shoes"] },
   { title: "لایه‌های ماندگار", description: "ترکیب کت و شلوار برای روزهای خنک", href: "/category/jackets", image: "/jackets.jpg", categories: ["jackets", "jeans", "t-shirts"] },
@@ -27,13 +37,15 @@ const HomePage = () => {
   const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const { categories: storeCategories, fetchCategories } = useCategoryStore();
-  const categories = storeCategories
-    .filter((category) => !category.parentId && category.showInNavigation !== false)
-    .map((category) => ({
-      href: "/category/" + category.slug,
-      name: category.name?.fa || category.name?.en || category.slug,
-      imageUrl: category.image || "/tshirts.jpg",
-    }));
+  const categories = storeCategories.length
+    ? storeCategories
+        .filter((category) => !category.parentId && category.showInNavigation !== false)
+        .map((category) => ({
+          href: "/category/" + category.slug,
+          name: category.name?.fa || category.name?.en || category.slug,
+          imageUrl: category.image || "/tshirts.jpg",
+        }))
+    : legacyCategoryCards;
   const {
     fetchFeaturedProducts,
     featuredProducts,
