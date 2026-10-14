@@ -98,7 +98,7 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
   let transactionUnsupported = false;
   try {
     await session.withTransaction(async () => {
-      const order = await Order.findById(orderId).session(session);
+      const order = await Order.findOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }).session(session);
       if (!order) return;
       let changed = false;
       for (let index = 0; index < order.products.length; index += 1) {
@@ -143,7 +143,7 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
     items.forEach((item, index) => {
       if (item.stockReserved) updates[`products.${index}.stockReserved`] = false;
     });
-    if (Object.keys(updates).length) await Order.updateOne({ _id: orderId }, { $set: updates });
+    if (Object.keys(updates).length) await Order.updateOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }, { $set: updates });
   }
 };
 
@@ -165,7 +165,7 @@ const finalizePaidOrder = async (paidOrder) => {
     await user.save();
   }
   await Order.updateOne(
-    { _id: paidOrder._id, paymentStatus: "paid", finalizedAt: null },
+    { _id: paidOrder._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "paid", finalizedAt: null },
     {
       $set: { finalizedAt: new Date(), shipmentStatus: "processing" },
       $push: {
@@ -311,6 +311,7 @@ export const createZarinpalCheckout = async (req, res) => {
       shippingFee,
       currency: "IRT",
       paymentProvider: "zarinpal",
+      currency: "IRT",
       paymentStatus: "pending",
       status: "pending",
       couponCode: coupon?.code || "",
@@ -374,7 +375,7 @@ export const createZarinpalCheckout = async (req, res) => {
       // local persistence failed. Never release inventory on this uncertain path.
       if (receivedAuthority) {
         const recovered = await Order.findOneAndUpdate(
-          { _id: order._id, paymentStatus: "pending" },
+          { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
           { $set: { zarinpalAuthority: receivedAuthority, paymentRequestStatus: "accepted" } },
           { new: true }
         ).catch(() => null);
@@ -390,7 +391,7 @@ export const createZarinpalCheckout = async (req, res) => {
       }
 
       await Order.updateOne(
-        { _id: order._id, paymentStatus: "pending" },
+        { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
         { $set: { paymentRequestStatus: "unknown" } }
       ).catch((persistenceError) => {
         console.error("Unable to record ambiguous Zarinpal request state", persistenceError.message);
@@ -405,7 +406,7 @@ export const createZarinpalCheckout = async (req, res) => {
 
     if (order) {
       await Order.updateOne(
-        { _id: order._id, paymentStatus: "pending" },
+        { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
         {
           $set: {
             paymentStatus: "failed",
@@ -443,6 +444,7 @@ export const verifyZarinpalPayment = async (req, res) => {
     const order = await Order.findOne({
       _id: orderId,
       paymentProvider: "zarinpal",
+      currency: "IRT",
       zarinpalAuthority: authority,
     });
     if (!order) return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=order-not-found`);
@@ -476,7 +478,7 @@ export const verifyZarinpalPayment = async (req, res) => {
         return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending&order_id=${order._id}`);
       }
       const failed = await Order.findOneAndUpdate(
-        { _id: order._id, paymentStatus: "pending" },
+        { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
         { $set: { paymentStatus: "failed", status: "failed" } },
         { new: true }
       );
@@ -485,7 +487,7 @@ export const verifyZarinpalPayment = async (req, res) => {
     }
 
     const paid = await Order.findOneAndUpdate(
-      { _id: order._id, paymentStatus: "pending" },
+      { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
       {
         $set: {
           paymentStatus: "paid",
@@ -497,7 +499,7 @@ export const verifyZarinpalPayment = async (req, res) => {
       { new: true }
     );
     if (!paid) {
-      const latest = await Order.findById(order._id).lean();
+      const latest = await Order.findOne({ _id: order._id, paymentProvider: "zarinpal", currency: "IRT" }).lean();
       if (latest?.paymentStatus === "paid") {
         return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
       }
@@ -523,6 +525,7 @@ export const getZarinpalOrderStatus = async (req, res) => {
       _id: orderId,
       user: req.user._id,
       paymentProvider: "zarinpal",
+      currency: "IRT",
     }).select("_id paymentStatus status totalAmount currency createdAt").lean();
     if (!order) return res.status(404).json({ message: "Order not found" });
     return res.json({
@@ -565,6 +568,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
   try {
     const strandedOrders = await Order.find({
       paymentProvider: "zarinpal",
+      currency: "IRT",
       paymentStatus: { $in: ["failed", "expired"] },
       products: { $elemMatch: { stockReserved: true } },
     }).sort({ updatedAt: 1 }).limit(10).lean();
@@ -580,7 +584,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
     }
 
     const unfinalizedPaidOrders = await Order.find({
-      paymentProvider: "zarinpal", paymentStatus: "paid", finalizedAt: null,
+      paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "paid", finalizedAt: null,
     }).sort({ updatedAt: 1 }).limit(10).lean();
 
     for (const order of unfinalizedPaidOrders) {
@@ -603,7 +607,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
       try {
         if (!order.zarinpalAuthority) {
           const expired = await Order.findOneAndUpdate(
-            { _id: order._id, paymentStatus: "pending", zarinpalAuthority: { $in: [null, ""] } },
+            { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending", zarinpalAuthority: { $in: [null, ""] } },
             { $set: { paymentStatus: "expired", status: "expired", paymentRequestStatus: "expired" } },
             { new: true }
           );
@@ -634,7 +638,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
 
         if (code === 100 || code === 101) {
           const paid = await Order.findOneAndUpdate(
-            { _id: order._id, paymentStatus: "pending" },
+            { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
             { $set: {
               paymentStatus: "paid",
               status: "paid",
@@ -647,7 +651,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
             await finalizePaidOrder(paid);
             summary.paymentsRecovered += 1;
           } else {
-            const current = await Order.findById(order._id).lean();
+            const current = await Order.findOne({ _id: order._id, paymentProvider: "zarinpal", currency: "IRT" }).lean();
             if (current?.paymentStatus === "paid" && !current.finalizedAt) {
               await finalizePaidOrder(current);
               summary.paidOrdersFinalized += 1;
@@ -660,7 +664,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
         // released solely because verification timed out or returned an unknown code.
         if (reconciliationTerminalUnpaidCodes.has(code)) {
           const expired = await Order.findOneAndUpdate(
-            { _id: order._id, paymentStatus: "pending" },
+            { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
             { $set: { paymentStatus: "expired", status: "expired" } },
             { new: true }
           );
