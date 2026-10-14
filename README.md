@@ -1,9 +1,3 @@
-# Current Persian-commerce implementation
-
-> **Active branch documentation:** This feature migrates checkout to Zarinpal and whole-Toman (IRT) pricing. The historical README retained below describes the original Stripe/USD implementation and is **not** the active payment configuration for this branch. Use the [Persian Commerce Overview](docs/PERSIAN_COMMERCE_OVERVIEW.md) and [Persian Commerce Setup](docs/PERSIAN_COMMERCE_SETUP.md) for current features, required data migrations, configuration, and operational checks.
-
----
-
 <div align="center">
 
 # 🛍️ MERN E-Commerce Store
