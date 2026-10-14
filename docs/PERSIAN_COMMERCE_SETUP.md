@@ -102,7 +102,7 @@ Secure the environment file (for example, owner root and mode `0600`), create/ro
 
 The schedule is not embedded in the ordinary Express process. Deploying the app alone does not start reconciliation. Also verify the endpoint actually runs successfully after deployment; a configured cron entry is not proof of successful recovery.
 
-## 6. Existing order indexes
+## 6. Existing order indexes and legacy order records
 
 Inspect the live indexes before changing them:
 
@@ -110,7 +110,17 @@ Inspect the live indexes before changing them:
 db.orders.getIndexes()
 ```
 
-For a database created by an older version, inspect and remove the obsolete unique index on the provider-specific checkout-session field if it is present. It may be named `stripeSessionId_1`. Back up first, verify the exact index name from `getIndexes()`, and drop only that obsolete index during a maintenance window. Do not run a guessed `dropIndex` command. Keep the unique sparse Zarinpal authority index if its definition is correct.
+Older databases may have the legacy non-sparse unique index `stripeSessionId_1`. It can prevent additional Zarinpal orders from being inserted because each new Zarinpal order has no Stripe session ID and a non-sparse unique index indexes missing values. Historical Stripe orders also have no explicit `currency` or `paymentProvider` fields, so they must not be assigned a Toman default.
+
+**Back up the database first.** With `MONGO_URI` set to the exact target database, run this guarded migration from the repository root:
+
+```bash
+node scripts/migrate-legacy-stripe-index.mjs
+```
+
+The script only drops an index named `stripeSessionId_1` when its definition is exactly a single-field, non-sparse unique index on `stripeSessionId`. It refuses an unexpected key definition and leaves sparse, partial, or non-unique indexes unchanged. It does not modify or delete historical order records or session IDs. Review its output, then confirm the result with `db.orders.getIndexes()`. Do not run migration commands against production until the target URI and backup have been verified.
+
+Keep the unique sparse Zarinpal authority index if its definition is correct.
 
 ## 7. Verification checklist
 
@@ -125,7 +135,6 @@ For a database created by an older version, inspect and remove the obsolete uniq
 - [ ] Backend and frontend production builds pass from the current branch.
 - [ ] Database and Redis are not exposed publicly; all production secrets are protected.
 
-
 ## Persian-aware search normalization
 
 The backend normalizes Persian/Arabic ya and kaf variants, Arabic/Persian digits, tatweel, common diacritics, zero-width marks, Unicode compatibility forms, punctuation, and whitespace. Every product save maintains a normalized `searchTextNormalized` field so a normalized query can match normalized product text independent of the input digit script or common character variants.
@@ -137,7 +146,6 @@ node scripts/backfill-persian-search.mjs
 ```
 
 The migration works in batches. It only populates the derived search field and does not alter displayed product names, descriptions, categories, prices, or inventory. Re-run it after importing legacy catalogue data if those products were inserted outside the application.
-
 
 ## Iranian delivery addresses, shipment tracking and admin operations
 
@@ -168,6 +176,6 @@ State-changing requests with a foreign Origin are rejected; requests with no Ori
 
 ## Inventory integration tests
 
-Run npm test --prefix backend. Security header/origin tests do not require external services. Inventory integration tests require MONGO_TEST_URI to point at a dedicated disposable database whose name includes test. Concurrent reservation and partial rollback are tested with atomic MongoDB updates; duplicate-release and transaction-rollback tests require a MongoDB replica set or sharded deployment.
+Run `npm test --prefix backend`. Security header/origin tests do not require external services. Inventory integration tests require `MONGO_TEST_URI` to point at a dedicated disposable database whose name includes test. Concurrent reservation and partial rollback are tested with atomic MongoDB updates; duplicate-release and transaction-rollback tests require a MongoDB replica set or sharded deployment.
 
-Never point MONGO_TEST_URI at production or a database containing real orders. Tests remove only records created by the tests, but the URI must still use a dedicated test database.
+Never point `MONGO_TEST_URI` at production or a database containing real orders. Tests remove only records created by the tests, but the URI must still use a dedicated test database.
