@@ -1,4 +1,5 @@
 import Campaign from "../models/campaign.model.js";
+import { recordAuditEvent } from "../lib/audit-log.js";
 
 const isValidCampaignInput = (body) => {
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -59,6 +60,13 @@ export const createCampaign = async (req, res) => {
       sortOrder: Number(req.body.sortOrder ?? 0),
       createdBy: req.user._id,
     });
+    await recordAuditEvent(req, {
+      action: "campaign.created",
+      targetType: "campaign",
+      targetId: campaign._id,
+      summary: "Campaign created",
+      metadata: { isActive: campaign.isActive, sortOrder: campaign.sortOrder },
+    });
     return res.status(201).json({ campaign });
   } catch (error) {
     console.error("Error creating campaign", error.message);
@@ -83,6 +91,13 @@ export const updateCampaign = async (req, res) => {
     current.isActive = next.isActive !== false;
     current.sortOrder = Number(next.sortOrder ?? 0);
     await current.save();
+    await recordAuditEvent(req, {
+      action: "campaign.updated",
+      targetType: "campaign",
+      targetId: current._id,
+      summary: "Campaign updated",
+      metadata: { isActive: current.isActive, sortOrder: current.sortOrder },
+    });
     return res.json({ campaign: current });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid campaign ID" });
@@ -95,6 +110,12 @@ export const deleteCampaign = async (req, res) => {
   try {
     const campaign = await Campaign.findByIdAndDelete(req.params.id);
     if (!campaign) return res.status(404).json({ message: "Campaign not found" });
+    await recordAuditEvent(req, {
+      action: "campaign.deleted",
+      targetType: "campaign",
+      targetId: campaign._id,
+      summary: "Campaign deleted",
+    });
     return res.json({ message: "Campaign deleted" });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid campaign ID" });

@@ -1,0 +1,22 @@
+import mongoose from "mongoose";
+
+const auditLogSchema = new mongoose.Schema(
+  {
+    actor: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    actorName: { type: String, trim: true, maxlength: 120, default: "Unknown admin" },
+    action: { type: String, required: true, trim: true, maxlength: 120 },
+    targetType: { type: String, required: true, trim: true, maxlength: 80 },
+    targetId: { type: String, trim: true, maxlength: 80, default: "" },
+    summary: { type: String, required: true, trim: true, maxlength: 500 },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
+    ip: { type: String, trim: true, maxlength: 64, default: "" },
+    userAgent: { type: String, trim: true, maxlength: 256, default: "" },
+  },
+  { timestamps: true }
+);
+
+auditLogSchema.index({ createdAt: -1 });
+auditLogSchema.index({ action: 1, createdAt: -1 });
+auditLogSchema.index({ actor: 1, createdAt: -1 });
+
+export default mongoose.model("AuditLog", auditLogSchema);

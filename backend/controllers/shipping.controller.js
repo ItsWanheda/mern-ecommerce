@@ -1,5 +1,6 @@
 import StoreSettings from "../models/store-settings.model.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
+import { recordAuditEvent } from "../lib/audit-log.js";
 
 const getCurrency = () => "IRT";
 
@@ -38,6 +39,13 @@ export const updateShippingSettings = async (req, res) => {
       { $set: { flatRate, freeShippingThreshold, updatedBy: req.user._id } },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     ).lean();
+    await recordAuditEvent(req, {
+      action: "shipping.settings_updated",
+      targetType: "store_settings",
+      targetId: settings?._id,
+      summary: "Shipping fee settings updated",
+      metadata: { flatRate, freeShippingThreshold },
+    });
     return res.json({ ...settings, currency: getCurrency() });
   } catch (error) {
     console.error("Error updating shipping settings", error.message);

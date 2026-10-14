@@ -3,6 +3,7 @@ import cloudinary from "../lib/cloudinary.js";
 import Product from "../models/product.model.js";
 import Order from "../models/order.model.js";
 import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
+import { recordAuditEvent } from "../lib/audit-log.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -250,6 +251,13 @@ export const createProduct = async (req, res) => {
       sizeChart: normalizedSizeChart,
       stock: normalizedVariants.length ? null : numericStock,
     });
+    await recordAuditEvent(req, {
+      action: "product.created",
+      targetType: "product",
+      targetId: product._id,
+      summary: "Product created",
+      metadata: { category: product.category, price: product.price, hasInventory: product.stock !== null || product.variants.length > 0 },
+    });
     return res.status(201).json(product);
   } catch (error) {
     console.error("Error in createProduct controller", error.message);
@@ -270,6 +278,13 @@ export const updateProductStock = async (req, res) => {
     ).select("_id stock");
     if (!product) return res.status(404).json({ message: "Product not found" });
     await updateFeaturedProductsCache();
+    await recordAuditEvent(req, {
+      action: "product.stock_updated",
+      targetType: "product",
+      targetId: product._id,
+      summary: "Product stock updated",
+      metadata: { stock: product.stock },
+    });
     return res.json({ _id: product._id, stock: product.stock });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid product ID" });
@@ -295,6 +310,13 @@ export const updateProductVariantStock = async (req, res) => {
     ).select("_id variants");
     if (!product) return res.status(404).json({ message: "Product variant not found" });
     await updateFeaturedProductsCache();
+    await recordAuditEvent(req, {
+      action: "product.variant_stock_updated",
+      targetType: "product",
+      targetId: product._id,
+      summary: "Product variant inventory updated",
+      metadata: { variantCount: product.variants.length },
+    });
     return res.json({ _id: product._id, variants: product.variants });
   } catch (error) {
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid product ID" });
@@ -317,6 +339,13 @@ export const deleteProduct = async (req, res) => {
     }
     await Product.findByIdAndDelete(req.params.id);
     await updateFeaturedProductsCache();
+    await recordAuditEvent(req, {
+      action: "product.deleted",
+      targetType: "product",
+      targetId: product._id,
+      summary: "Product deleted",
+      metadata: { category: product.category },
+    });
     return res.json({ message: "Product deleted successfully" });
   } catch (error) {
     console.error("Error in deleteProduct controller", error.message);
@@ -360,6 +389,13 @@ export const toggleFeaturedProduct = async (req, res) => {
     product.isFeatured = !product.isFeatured;
     await product.save();
     await updateFeaturedProductsCache();
+    await recordAuditEvent(req, {
+      action: "product.featured_toggled",
+      targetType: "product",
+      targetId: product._id,
+      summary: "Product featured setting updated",
+      metadata: { isFeatured: product.isFeatured },
+    });
     return res.json(product);
   } catch (error) {
     console.error("Error in toggleFeaturedProduct controller", error.message);
