@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardList, LoaderCircle, RefreshCw, Truck } from "lucide-react";
 import axios from "../lib/axios";
-import { formatPrice } from "../lib/commerce";
+import { formatOrderPrice } from "../lib/commerce";
 
 const shipmentLabels = {
-  not_ready: "در انتظار تأیید پرداخت",
+  not_ready: "در انتظار تکمیل اطلاعات ارسال",
   processing: "در حال آماده‌سازی",
   packed: "بسته‌بندی شد",
   shipped: "ارسال شد",
@@ -17,6 +17,7 @@ const paymentLabels = {
   paid: "پرداخت تأیید شد",
   failed: "پرداخت ناموفق",
   expired: "منقضی شد",
+  unknown: "وضعیت پرداخت ثبت نشده",
 };
 
 const formatDate = (value) => {
@@ -81,7 +82,20 @@ const MyOrdersPage = () => {
         <div className="space-y-5">
           {orders.map((order) => {
             const address = order.shippingAddress;
-            const shipmentStatus = order.shipmentStatus || (order.paymentStatus === "paid" ? "processing" : "not_ready");
+            const legacyStripeOrder = Boolean(order.stripeSessionId) && !order.paymentStatus;
+            const paymentStatus = order.paymentStatus || (legacyStripeOrder ? "paid" : "unknown");
+            const shipmentStatus = order.shipmentStatus || (paymentStatus === "paid" ? "processing" : "not_ready");
+            const shipmentStatusLabel = legacyStripeOrder && !address
+              ? "سفارش قدیمی؛ اطلاعات ارسال ثبت نشده"
+              : shipmentLabels[shipmentStatus] || shipmentStatus;
+            const paymentStatusClass = paymentStatus === "paid"
+              ? "bg-emerald-50 text-emerald-700"
+              : paymentStatus === "pending"
+                ? "bg-amber-50 text-amber-800"
+                : paymentStatus === "unknown"
+                  ? "bg-gray-100 text-gray-700"
+                  : "bg-red-50 text-red-700";
+
             return (
               <article key={order._id} className="overflow-hidden rounded-2xl border border-[#e4e0d8] bg-white shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#eeeae2] bg-[#fffefa] p-4 sm:p-5">
@@ -91,8 +105,8 @@ const MyOrdersPage = () => {
                     <p className="mt-1 text-xs text-[#85867d]">ثبت سفارش: {formatDate(order.createdAt)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${order.paymentStatus === "paid" ? "bg-emerald-50 text-emerald-700" : order.paymentStatus === "pending" ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-700"}`}>{paymentLabels[order.paymentStatus] || order.paymentStatus}</span>
-                    <span className="rounded-full bg-[#e9ede4] px-3 py-1.5 text-xs font-semibold text-[#41443b]">{shipmentLabels[shipmentStatus] || shipmentStatus}</span>
+                    <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${paymentStatusClass}`}>{paymentLabels[paymentStatus] || paymentStatus}</span>
+                    <span className="rounded-full bg-[#e9ede4] px-3 py-1.5 text-xs font-semibold text-[#41443b]">{shipmentStatusLabel}</span>
                   </div>
                 </div>
                 <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -105,13 +119,13 @@ const MyOrdersPage = () => {
                             <p className="break-words text-sm font-semibold text-[#252722]">{item.productName || item.product?.name || "محصول"}</p>
                             <p className="mt-1 text-xs text-[#77786f]">تعداد: {new Intl.NumberFormat("fa-IR").format(item.quantity)}{item.size ? ` · سایز ${item.size}` : ""}{item.color ? ` · ${item.color}` : ""}</p>
                           </div>
-                          <p dir="ltr" className="shrink-0 text-sm font-semibold text-[#68745f]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
+                          <p dir="ltr" className="shrink-0 text-sm font-semibold text-[#68745f]">{formatOrderPrice(Number(item.price) * Number(item.quantity), order)}</p>
                         </div>
                       ))}
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-[#eeeae2] pt-4">
                       <span className="text-sm font-bold text-[#252722]">مبلغ کل</span>
-                      <span dir="ltr" className="text-lg font-bold text-[#68745f]">{formatPrice(order.totalAmount)}</span>
+                      <span dir="ltr" className="text-lg font-bold text-[#68745f]">{formatOrderPrice(order.totalAmount, order)}</span>
                     </div>
                   </section>
                   <div className="space-y-4">
