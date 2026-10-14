@@ -1,25 +1,37 @@
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { useEffect } from "react";
-
-import HomePage from "./pages/HomePage";
-import ShopPage from "./pages/ShopPage";
-import SignUpPage from "./pages/SignUpPage";
-import LoginPage from "./pages/LoginPage";
-import AdminPage from "./pages/AdminPage";
-import CategoryPage from "./pages/CategoryPage";
-import ProductDetailsPage from "./pages/ProductDetailsPage";
-import Navbar from "./components/Navbar";
 import { Toaster } from "react-hot-toast";
-import { useUserStore } from "./stores/useUserStore";
-import LoadingSpinner from "./components/LoadingSpinner";
-import CartPage from "./pages/CartPage";
-import WishlistPage from "./pages/WishlistPage";
-import StoreInfoPage from "./pages/StoreInfoPage";
-import NewsletterUnsubscribePage from "./pages/NewsletterUnsubscribePage";
+
+import Navbar from "./components/Navbar";
 import StoreFooter from "./components/StoreFooter";
+import LoadingSpinner from "./components/LoadingSpinner";
+import { useUserStore } from "./stores/useUserStore";
 import { useCartStore } from "./stores/useCartStore";
-import PurchaseSuccessPage from "./pages/PurchaseSuccessPage";
-import PurchaseCancelPage from "./pages/PurchaseCancelPage";
+
+const HomePage = lazy(() => import("./pages/HomePage"));
+const ShopPage = lazy(() => import("./pages/ShopPage"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const ProductDetailsPage = lazy(() => import("./pages/ProductDetailsPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const WishlistPage = lazy(() => import("./pages/WishlistPage"));
+const StoreInfoPage = lazy(() => import("./pages/StoreInfoPage"));
+const NewsletterUnsubscribePage = lazy(() => import("./pages/NewsletterUnsubscribePage"));
+const PurchaseSuccessPage = lazy(() => import("./pages/PurchaseSuccessPage"));
+const PurchaseCancelPage = lazy(() => import("./pages/PurchaseCancelPage"));
+
+const RouteLoadingFallback = () => (
+  <div
+    role="status"
+    aria-live="polite"
+    className="flex min-h-[45vh] items-center justify-center px-4 py-16 text-sm text-[#77786f]"
+  >
+    <span className="ml-3 h-5 w-5 animate-spin rounded-full border-2 border-[#d9dccf] border-t-[#68745f] motion-reduce:animate-none" aria-hidden="true" />
+    در حال بارگذاری صفحه…
+  </div>
+);
 
 function App() {
   const location = useLocation();
@@ -43,30 +55,33 @@ function App() {
     <div className="min-h-screen overflow-x-hidden bg-[#f7f5f0] text-[#252722]">
       <div className={`relative z-50 ${isAccountPage ? "pt-0" : "pt-32 md:pt-44 min-[1680px]:pt-32"}`}>
         {!isAccountPage && <Navbar />}
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/shop" element={<ShopPage />} />
-          <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
-          <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
-          <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
-          <Route path="/category/:category" element={<CategoryPage />} />
-          <Route path="/product/:productId" element={<ProductDetailsPage />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/shipping-policy" element={<StoreInfoPage />} />
-          <Route path="/returns-policy" element={<StoreInfoPage />} />
-          <Route path="/support" element={<StoreInfoPage />} />
-          <Route path="/faq" element={<StoreInfoPage />} />
-          <Route path="/privacy-policy" element={<StoreInfoPage />} />
-          <Route path="/terms-of-use" element={<StoreInfoPage />} />
-          <Route path="/newsletter-unsubscribe" element={<NewsletterUnsubscribePage />} />
-          <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
-          <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
-        </Routes>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
+            <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
+            <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
+            <Route path="/category/:category" element={<CategoryPage />} />
+            <Route path="/product/:productId" element={<ProductDetailsPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/shipping-policy" element={<StoreInfoPage />} />
+            <Route path="/returns-policy" element={<StoreInfoPage />} />
+            <Route path="/support" element={<StoreInfoPage />} />
+            <Route path="/faq" element={<StoreInfoPage />} />
+            <Route path="/privacy-policy" element={<StoreInfoPage />} />
+            <Route path="/terms-of-use" element={<StoreInfoPage />} />
+            <Route path="/newsletter-unsubscribe" element={<NewsletterUnsubscribePage />} />
+            <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
+            <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
+          </Routes>
+        </Suspense>
       </div>
       {!isAccountPage && <StoreFooter />}
       <Toaster />
     </div>
   );
 }
+
 export default App;

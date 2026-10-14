@@ -1,13 +1,13 @@
 import { BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import AnalyticsTab from "../components/AnalyticsTab";
-import CreateProductForm from "../components/CreateProductForm";
-import ProductsList from "../components/ProductsList";
-import CampaignManager from "../components/CampaignManager";
-import ShippingSettings from "../components/ShippingSettings";
-import NewsletterManager from "../components/NewsletterManager";
+const AnalyticsTab = lazy(() => import("../components/AnalyticsTab"));
+const CreateProductForm = lazy(() => import("../components/CreateProductForm"));
+const ProductsList = lazy(() => import("../components/ProductsList"));
+const CampaignManager = lazy(() => import("../components/CampaignManager"));
+const ShippingSettings = lazy(() => import("../components/ShippingSettings"));
+const NewsletterManager = lazy(() => import("../components/NewsletterManager"));
 import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
@@ -36,12 +36,14 @@ const AdminPage = () => {
             </button>
           ))}
         </div>
-        {activeTab === "create" && <CreateProductForm />}
-        {activeTab === "products" && <ProductsList />}
-        {activeTab === "campaigns" && <CampaignManager />}
-        {activeTab === "shipping" && <ShippingSettings />}
-        {activeTab === "newsletter" && <NewsletterManager />}
-        {activeTab === "analytics" && <AnalyticsTab />}
+        <Suspense fallback={<div role="status" className="rounded-xl border border-gray-700 bg-gray-800 p-8 text-center text-sm text-gray-400">در حال بارگذاری بخش مدیریت…</div>}>
+          {activeTab === "create" && <CreateProductForm />}
+          {activeTab === "products" && <ProductsList />}
+          {activeTab === "campaigns" && <CampaignManager />}
+          {activeTab === "shipping" && <ShippingSettings />}
+          {activeTab === "newsletter" && <NewsletterManager />}
+          {activeTab === "analytics" && <AnalyticsTab />}
+        </Suspense>
       </div>
     </div>
   );
