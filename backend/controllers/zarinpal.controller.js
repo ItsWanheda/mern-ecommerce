@@ -4,6 +4,14 @@ import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
+import {
+  calculateCouponDiscount,
+  couponEligibilityError,
+  redeemCouponReservationForOrder,
+  releaseCouponReservationByCode,
+  releaseCouponReservationForOrder,
+  reserveCoupon,
+} from "../lib/coupons.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
@@ -149,11 +157,8 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
 
 const finalizePaidOrder = async (paidOrder) => {
   if (!paidOrder || paidOrder.finalizedAt) return;
-  if (paidOrder.couponCode) {
-    await Coupon.findOneAndUpdate(
-      { code: paidOrder.couponCode, userId: paidOrder.user, isActive: true },
-      { $set: { isActive: false } }
-    );
+  if (paidOrder.couponReservationStatus === "reserved") {
+    await redeemCouponReservationForOrder(paidOrder._id);
   }
   const user = await User.findById(paidOrder.user);
   if (user) {
@@ -241,6 +246,8 @@ export const createZarinpalCheckout = async (req, res) => {
   let gatewayRequestStarted = false;
   let gatewayRequestRejected = false;
   let receivedAuthority = "";
+  let couponReservedWithoutOrder = false;
+  let reservedCouponCode = "";
   const shippingAddress = parseShippingAddress(req.body?.shippingAddress);
   if (!shippingAddress) {
     return res.status(400).json({ message: "نام گیرنده، موبایل ایرانی، استان، شهر، نشانی کامل و کد پستی ۱۰ رقمی را بررسی کنید." });
@@ -271,26 +278,42 @@ export const createZarinpalCheckout = async (req, res) => {
     }
 
     const subtotal = validated.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    if (!Number.isSafeInteger(subtotal) || subtotal < 0) {
+      return res.status(400).json({ message: "مبلغ سبد خرید معتبر نیست." });
+    }
     const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode.trim().toUpperCase() : "";
     let coupon = null;
+    let couponDiscountAmount = 0;
     if (couponCode) {
-      coupon = await Coupon.findOne({ code: couponCode, userId: req.user._id, isActive: true });
-      if (!coupon) return res.status(400).json({ message: "کد تخفیف معتبر نیست" });
-      if (coupon.expirationDate <= new Date()) {
-        coupon.isActive = false;
-        await coupon.save();
-        return res.status(400).json({ message: "کد تخفیف منقضی شده است" });
-      }
+      coupon = await Coupon.findOne({ code: couponCode }).lean();
+      const couponError = couponEligibilityError(coupon, subtotal);
+      if (couponError) return res.status(400).json({ message: couponError });
+      couponDiscountAmount = calculateCouponDiscount(coupon, subtotal);
     }
 
-    const discountedSubtotal = coupon
-      ? Math.round(subtotal * (1 - Number(coupon.discountPercentage) / 100))
-      : subtotal;
     const shippingSettings = await getShippingSettings();
-    const shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
-    const totalToman = discountedSubtotal + shippingFee;
-    if (!Number.isSafeInteger(totalToman) || totalToman <= 0) {
-      return res.status(400).json({ message: "مبلغ سفارش باید مبلغی صحیح و بزرگ‌تر از صفر به تومان باشد" });
+    let discountedSubtotal = subtotal - couponDiscountAmount;
+    let shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
+    let totalToman = discountedSubtotal + shippingFee;
+    if (!Number.isSafeInteger(totalToman) || totalToman < 0) {
+      return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
+    }
+
+    if (couponCode) {
+      const reservation = await reserveCoupon(couponCode, subtotal);
+      if (reservation.error) return res.status(400).json({ message: reservation.error });
+      coupon = reservation.coupon;
+      couponDiscountAmount = reservation.discountAmount;
+      couponReservedWithoutOrder = true;
+      reservedCouponCode = coupon.code;
+      discountedSubtotal = subtotal - couponDiscountAmount;
+      shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
+      totalToman = discountedSubtotal + shippingFee;
+      if (!Number.isSafeInteger(totalToman) || totalToman < 0) {
+        await releaseCouponReservationByCode(reservedCouponCode).catch(() => {});
+        couponReservedWithoutOrder = false;
+        return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
+      }
     }
 
     const reservations = await reserveInventory(validated.map((item) => ({
@@ -308,16 +331,37 @@ export const createZarinpalCheckout = async (req, res) => {
       shippingAddress,
       shipmentStatus: "not_ready",
       totalAmount: totalToman,
+      subtotalAmount: subtotal,
       shippingFee,
       currency: "IRT",
       paymentProvider: "zarinpal",
-      currency: "IRT",
       paymentStatus: "pending",
       status: "pending",
       couponCode: coupon?.code || "",
+      couponDiscountAmount,
+      couponDiscountPercentage: coupon ? Number(coupon.discountPercentage) : 0,
+      couponReservationStatus: coupon ? "reserved" : "none",
       expiresAt: new Date(Date.now() + 30 * 60 * 1000),
       paymentRequestStatus: "not_started",
     });
+    couponReservedWithoutOrder = false;
+
+    // 100% discounts can legitimately create a zero-payable order when shipping is free.
+    // Finalize locally instead of sending a zero amount to the payment gateway.
+    if (totalToman === 0) {
+      order.paymentStatus = "paid";
+      order.status = "paid";
+      order.paymentRequestStatus = "accepted";
+      order.paymentRequestAttemptedAt = new Date();
+      await order.save();
+      reserved = [];
+      try {
+        await finalizePaidOrder(order);
+      } catch (finalizationError) {
+        console.error("Zero-payable order finalization deferred for reconciliation", String(order._id), finalizationError.message);
+      }
+      return res.status(200).json({ status: "paid", provider: "zarinpal", orderId: order._id, totalAmount: 0 });
+    }
 
     order.paymentRequestStatus = "in_flight";
     order.paymentRequestAttemptedAt = new Date();
@@ -405,7 +449,7 @@ export const createZarinpalCheckout = async (req, res) => {
     }
 
     if (order) {
-      await Order.updateOne(
+      const failedOrder = await Order.findOneAndUpdate(
         { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
         {
           $set: {
@@ -413,11 +457,20 @@ export const createZarinpalCheckout = async (req, res) => {
             status: "failed",
             paymentRequestStatus: gatewayRequestRejected ? "rejected" : "not_started",
           },
-        }
-      ).catch(() => {});
-      await releaseReservedInventory(order.products, order._id).catch(() => {});
+        },
+        { new: true }
+      ).catch(() => null);
+      if (failedOrder) {
+        await releaseReservedInventory(failedOrder.products, failedOrder._id).catch(() => {});
+        await releaseCouponReservationForOrder(failedOrder._id).catch((releaseError) => {
+          console.error("Unable to release coupon reservation", String(failedOrder._id), releaseError.message);
+        });
+      }
     } else {
       await releaseReservedInventory(reserved).catch(() => {});
+      if (couponReservedWithoutOrder && reservedCouponCode) {
+        await releaseCouponReservationByCode(reservedCouponCode).catch(() => {});
+      }
     }
     console.error("Error creating Zarinpal checkout", error.message);
     if (error.message === "INSUFFICIENT_STOCK" || error.message === "INVALID_CART") {
@@ -482,7 +535,10 @@ export const verifyZarinpalPayment = async (req, res) => {
         { $set: { paymentStatus: "failed", status: "failed" } },
         { new: true }
       );
-      if (failed) await releaseReservedInventory(failed.products, failed._id);
+      if (failed) {
+        await releaseReservedInventory(failed.products, failed._id);
+        await releaseCouponReservationForOrder(failed._id);
+      }
       return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
     }
 
@@ -576,6 +632,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
     for (const order of strandedOrders) {
       try {
         await releaseReservedInventory(order.products, order._id);
+        await releaseCouponReservationForOrder(order._id);
         summary.stockReservationsRecovered += 1;
       } catch (error) {
         summary.failures += 1;
@@ -615,6 +672,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
           if (expired) {
             summary.ordersExpired += 1;
             await releaseReservedInventory(expired.products, expired._id);
+            await releaseCouponReservationForOrder(expired._id);
           }
           continue;
         }
@@ -672,6 +730,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
           if (expired) {
             summary.ordersExpired += 1;
             await releaseReservedInventory(expired.products, expired._id);
+            await releaseCouponReservationForOrder(expired._id);
           }
         } else {
           summary.deferredForRetry += 1;

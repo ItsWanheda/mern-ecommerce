@@ -1,4 +1,4 @@
-import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree } from "lucide-react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -11,6 +11,7 @@ const NewsletterManager = lazy(() => import("../components/NewsletterManager"));
 const OrderManagement = lazy(() => import("../components/OrderManagement"));
 const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
 const CategoryManager = lazy(() => import("../components/CategoryManager"));
+const CouponManager = lazy(() => import("../components/CouponManager"));
 const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
 import { useProductStore } from "../stores/useProductStore";
 
@@ -18,6 +19,7 @@ const tabs = [
   { id: "create", label: "ایجاد محصول", icon: PlusCircle },
   { id: "products", label: "محصولات و موجودی", icon: ShoppingBasket },
   { id: "categories", label: "مدیریت دسته‌بندی‌ها", icon: FolderTree },
+  { id: "coupons", label: "کدهای تخفیف", icon: TicketPercent },
   { id: "campaigns", label: "کمپین‌ها", icon: Megaphone },
   { id: "shipping", label: "ارسال", icon: Truck },
   { id: "newsletter", label: "خبرنامه", icon: Mail },
@@ -48,6 +50,7 @@ const AdminPage = () => {
           {activeTab === "create" && <CreateProductForm />}
           {activeTab === "products" && <ProductsList />}
           {activeTab === "categories" && <CategoryManager />}
+          {activeTab === "coupons" && <CouponManager />}
           {activeTab === "campaigns" && <CampaignManager />}
           {activeTab === "shipping" && <ShippingSettings />}
           {activeTab === "newsletter" && <NewsletterManager />}

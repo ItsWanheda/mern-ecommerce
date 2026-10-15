@@ -65,10 +65,12 @@ const totalsFor = (cart, coupon) => {
   const subtotal = (Array.isArray(cart) ? cart : []).reduce(
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0
   );
-  const total = coupon
-    ? subtotal - subtotal * (Number(coupon.discountPercentage || 0) / 100)
-    : subtotal;
-  return { subtotal, total };
+  const meetsMinimum = coupon && subtotal >= Number(coupon.minOrderAmount || 0);
+  const rawDiscount = meetsMinimum ? Math.round(subtotal * Number(coupon.discountPercentage || 0) / 100) : 0;
+  const maximumDiscount = coupon?.maxDiscountAmount == null ? Number.MAX_SAFE_INTEGER : Number(coupon.maxDiscountAmount);
+  const discountAmount = Math.min(Math.max(0, rawDiscount), Number.isSafeInteger(maximumDiscount) ? maximumDiscount : Number.MAX_SAFE_INTEGER, subtotal);
+  const total = Math.max(0, subtotal - discountAmount);
+  return { subtotal, total, discountAmount };
 };
 
 export const useCartStore = create((set, get) => ({
@@ -89,17 +91,6 @@ export const useCartStore = create((set, get) => ({
     set({ cart, coupon: null, isCouponApplied: false, isMergingGuestCart: false, ...totalsFor(cart, null) });
   },
 
-  getMyCoupon: async () => {
-    if (!get().authenticated) return;
-    try {
-      const response = await axios.get("/coupons");
-      set({ coupon: response.data });
-    } catch (error) {
-      console.error("خطا در دریافت کد تخفیف:", error);
-    }
-    get().calculateTotals();
-  },
-
   applyCoupon: async (code) => {
     if (!get().authenticated) {
       toast.error("برای استفاده از کد تخفیف، هنگام ادامه خرید وارد حساب شوید");
@@ -110,8 +101,10 @@ export const useCartStore = create((set, get) => ({
       set({ coupon: response.data, isCouponApplied: true });
       get().calculateTotals();
       toast.success("کد تخفیف با موفقیت اعمال شد");
+      return true;
     } catch (error) {
       toast.error(getErrorMessage(error, "اعمال کد تخفیف ناموفق بود"));
+      return false;
     }
   },
 
