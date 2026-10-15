@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import axios from "../lib/axios";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
+import { formatIranianChartDate } from "../lib/iranian-date";
 import { Users, Package, ShoppingCart, Banknote } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
