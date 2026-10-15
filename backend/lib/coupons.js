@@ -103,3 +103,13 @@ export const redeemCouponReservationForOrder = async (orderId) => {
   }
   return true;
 };
+
+export const releaseCouponReservationByCode = async (codeInput) => {
+  const code = normalizeCouponCode(codeInput);
+  if (!code) return false;
+  const result = await Coupon.updateOne(
+    { code, reservedCount: { $gt: 0 } },
+    { $inc: { reservedCount: -1 } }
+  );
+  return result.modifiedCount === 1;
+};
