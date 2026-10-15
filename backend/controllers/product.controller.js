@@ -472,9 +472,39 @@ export const getProductsByCategory = async (req, res) => {
       // Preserve access to legacy category slugs during and after migration.
       filter.category = slug;
     }
-    const products = await Product.find(filter)
-      .sort({ createdAt: -1, _id: -1 }).limit(200).maxTimeMS(1500).lean();
-    return res.json({ products });
+
+    // Keep the product grid bounded, but calculate the slider bounds from the
+    // complete matching catalogue so the price range is not biased by 200 items.
+    const [products, priceStats] = await Promise.all([
+      Product.find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .limit(200)
+        .maxTimeMS(1500)
+        .lean(),
+      Product.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: null,
+            minPrice: { $min: "$price" },
+            maxPrice: { $max: "$price" },
+            count: { $sum: 1 },
+          },
+        },
+      ]).option({ maxTimeMS: 1500 }),
+    ]);
+
+    const stats = priceStats[0];
+    const minPrice = Number(stats?.minPrice);
+    const maxPrice = Number(stats?.maxPrice);
+    return res.json({
+      products,
+      priceBounds: {
+        minPrice: Number.isFinite(minPrice) ? Math.max(0, Math.floor(minPrice)) : 0,
+        maxPrice: Number.isFinite(maxPrice) ? Math.max(0, Math.ceil(maxPrice)) : 0,
+        count: Number(stats?.count || 0),
+      },
+    });
   } catch (error) {
     console.error("Error in getProductsByCategory controller", error.message);
     return res.status(500).json({ message: "Server error" });
