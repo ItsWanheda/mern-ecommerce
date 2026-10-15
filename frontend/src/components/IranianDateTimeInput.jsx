@@ -107,7 +107,6 @@ const IranianDateTimeInput = ({ id, label, value, onChange, required = false }) 
           role="dialog"
           aria-label={label + " - تقویم شمسی"}
           className="absolute right-0 top-full z-50 mt-2 w-[min(100%,22rem)] rounded-2xl border border-gray-600 bg-gray-900 p-4 text-gray-100 shadow-2xl"
-          onMouseDown={(event) => event.preventDefault()}
         >
           <div className="flex items-center justify-between gap-2">
             <button type="button" onClick={() => shiftMonth(-1)} aria-label="ماه قبل" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-700 hover:bg-gray-800">
