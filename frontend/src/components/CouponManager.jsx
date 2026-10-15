@@ -226,7 +226,7 @@ const CouponManager = () => {
                     <div className="flex shrink-0 flex-wrap gap-2">
                       <button type="button" onClick={() => editCoupon(coupon)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 transition hover:bg-gray-700"><Pencil size={14} aria-hidden="true" />ویرایش</button>
                       <button type="button" onClick={() => toggleCoupon(coupon)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 transition hover:bg-gray-700">
-                        {coupon.isActive ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true />"}
+                        {coupon.isActive ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
                         {coupon.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}
                       </button>
                       <button type="button" onClick={() => removeCoupon(coupon)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-red-900/70 px-3 text-xs text-red-200 transition hover:bg-red-950/40"><Trash2 size={14} aria-hidden="true" />حذف / بایگانی</button>
