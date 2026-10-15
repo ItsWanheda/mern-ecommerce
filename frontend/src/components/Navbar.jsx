@@ -151,6 +151,8 @@ const Navbar = () => {
     const root = document.documentElement;
     root.dataset.theme = theme;
     root.style.colorScheme = theme;
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) themeColorMeta.setAttribute("content", theme === "dark" ? "#171916" : "#f7f5f0");
     try {
       window.localStorage.setItem("tik-boutique-theme", theme);
     } catch {
