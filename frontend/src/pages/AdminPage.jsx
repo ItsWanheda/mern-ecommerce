@@ -1,6 +1,7 @@
 import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 
 const AnalyticsTab = lazy(() => import("../components/AnalyticsTab"));
 const CreateProductForm = lazy(() => import("../components/CreateProductForm"));
@@ -28,8 +29,15 @@ const tabs = [
 ];
 
 const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState("create");
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : "create";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { fetchAllProducts } = useProductStore();
+
+  useEffect(() => {
+    if (tabs.some((tab) => tab.id === requestedTab)) setActiveTab(requestedTab);
+  }, [requestedTab]);
 
   useEffect(() => { if (activeTab === "products") fetchAllProducts(); }, [activeTab, fetchAllProducts]);
 
