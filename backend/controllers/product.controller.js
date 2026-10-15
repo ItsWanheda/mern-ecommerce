@@ -144,6 +144,39 @@ export const getNewestProducts = async (req, res) => {
   }
 };
 
+export const getProductPriceBounds = async (_req, res) => {
+  const cacheKey = "product_price_bounds_v1";
+  const cached = await readJsonCache(cacheKey);
+  if (cached) return res.json({ priceBounds: cached });
+
+  try {
+    const [stats] = await Product.aggregate([
+      { $match: { isActive: { $ne: false }, price: { $gte: 0 } } },
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+          count: { $sum: 1 },
+        },
+      },
+    ]).option({ maxTimeMS: 1500 });
+
+    const min = Number(stats?.minPrice);
+    const max = Number(stats?.maxPrice);
+    const priceBounds = {
+      minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
+      maxPrice: Number.isFinite(max) ? Math.max(1, Math.ceil(max)) : 1,
+      count: Number(stats?.count || 0),
+    };
+    await writeJsonCache(cacheKey, priceBounds, 60);
+    return res.json({ priceBounds });
+  } catch (error) {
+    console.error("Error in getProductPriceBounds controller", error.message);
+    return res.status(500).json({ message: "Unable to load product price bounds" });
+  }
+};
+
 export const getSearchedProducts = async (req, res) => {
   try {
     const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
