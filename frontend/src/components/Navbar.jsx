@@ -18,6 +18,9 @@ import {
   SlidersHorizontal,
   X,
   ChevronDown,
+  FolderTree,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
@@ -70,6 +73,16 @@ const categoryPath = (category, categories) => {
 
 const fieldClass =
   "mt-1 min-h-11 w-full rounded-xl border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-sm text-[#252722] outline-none transition focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/20";
+
+const readSavedTheme = () => {
+  try {
+    return typeof window !== "undefined" && window.localStorage.getItem("tik-boutique-theme") === "dark"
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
+};
 
 const Navbar = () => {
   const { user, logout } = useUserStore();
@@ -133,6 +146,37 @@ const Navbar = () => {
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
+    try {
+      window.localStorage.setItem("tik-boutique-theme", theme);
+    } catch {
+      // Theme still applies for this session when browser storage is unavailable.
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    const slug = location.pathname.startsWith("/category/")
+      ? decodeURIComponent(location.pathname.slice("/category/".length))
+      : "";
+    const currentCategory = dynamicCategories.find((item) => item.slug === slug);
+    if (!currentCategory) return;
+
+    setExpandedCategories((current) => {
+      const next = { ...current };
+      const byId = new Map(dynamicCategories.map((item) => [String(item._id), item]));
+      let parentId = String(currentCategory.parentId || "");
+      let depth = 0;
+      while (parentId && depth++ < 20) {
+        next[parentId] = true;
+        parentId = String(byId.get(parentId)?.parentId || "");
+      }
+      return next;
+    });
+  }, [dynamicCategories, location.pathname]);
   const desktopSearchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
   const accountMenuRef = useRef(null);
@@ -149,6 +193,7 @@ const Navbar = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [theme, setTheme] = useState(readSavedTheme);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
@@ -463,39 +508,87 @@ const Navbar = () => {
     );
   };
 
+  const toggleTheme = () => {
+    setTheme((current) => current === "dark" ? "light" : "dark");
+  };
+
+  const renderThemeToggle = (insideMenu = false) => (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      aria-label={theme === "dark" ? "تغییر به پوسته روشن" : "تغییر به پوسته تاریک"}
+      aria-pressed={theme === "dark"}
+      title={theme === "dark" ? "پوسته روشن" : "پوسته تاریک"}
+      className={insideMenu
+        ? "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+        : "hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:inline-flex"}
+    >
+      <span className="inline-flex min-w-0 items-center gap-3">
+        {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+        {insideMenu && <span>{theme === "dark" ? "فعال‌کردن پوسته روشن" : "فعال‌کردن پوسته تاریک"}</span>}
+      </span>
+      {insideMenu && <span className="text-xs font-normal text-[#85867d]">{theme === "dark" ? "روشن" : "تیره"}</span>}
+    </button>
+  );
+
   const renderNavigationCategory = (category, depth = 0) => {
     const id = String(category._id);
     const children = navigationTree.childrenByParent.get(id) || [];
     const expanded = Boolean(expandedCategories[id]);
     const label = category.name?.fa || category.name?.en || category.slug;
+    const isRoot = depth === 0;
+    const isActive = location.pathname === "/category/" + encodeURIComponent(category.slug);
 
     return (
-      <div key={id} className="min-w-0">
-        <div
-          className="flex min-w-0 items-center gap-2 rounded-xl transition hover:bg-[#e9ede4]"
-          style={{ paddingRight: depth * 14 + "px" }}
+      <div
+        key={id}
+        className={isRoot
+          ? "overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] shadow-sm"
+          : "relative min-w-0"}
+      >
+        <div className={"relative flex min-w-0 items-center gap-2 transition " +
+          (isRoot ? "px-2 py-1" : "rounded-xl px-2 py-0.5 hover:bg-[#e9ede4]") +
+          (isActive ? " bg-[#e9ede4]" : "")}
         >
+          {!isRoot && <span aria-hidden="true" className="absolute right-0 top-1/2 h-px w-3 bg-[#c7c3b9]" />}
           <Link
             to={"/category/" + encodeURIComponent(category.slug)}
             onClick={() => setMobileMenuOpen(false)}
-            className="flex min-h-11 min-w-0 flex-1 items-center rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+            aria-current={isActive ? "page" : undefined}
+            className={"flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] " +
+              (isActive ? "font-bold text-[#68745f]" : isRoot ? "font-semibold text-[#41443b]" : "font-medium text-[#62645c]")}
           >
-            <span className="truncate">{label}</span>
+            <span className={"inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg " +
+              (isRoot ? "bg-[#f2f0e9] text-[#68745f]" : "text-[#85867d]")}>
+              {isRoot ? <FolderTree size={16} aria-hidden="true" /> : <span className="h-1.5 w-1.5 rounded-full bg-[#a0a195]" />}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+            {isRoot && children.length > 0 && (
+              <span className="shrink-0 rounded-full bg-[#f2f0e9] px-2 py-0.5 text-[10px] font-medium text-[#77786f]">
+                {new Intl.NumberFormat("fa-IR").format(children.length)} زیر‌دسته
+              </span>
+            )}
           </Link>
           {children.length > 0 && (
             <button
               type="button"
               aria-label={(expanded ? "بستن" : "نمایش") + " زیر‌دسته‌های " + label}
               aria-expanded={expanded}
+              aria-controls={"category-children-" + id}
               onClick={() => setExpandedCategories((current) => ({ ...current, [id]: !current[id] }))}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#68745f] transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#68745f] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
             >
-              <ChevronDown size={16} className={"transition-transform " + (expanded ? "rotate-180" : "")} aria-hidden="true" />
+              <ChevronDown size={17} className={"transition-transform duration-200 " + (expanded ? "rotate-180" : "")} aria-hidden="true" />
             </button>
           )}
         </div>
         {expanded && children.length > 0 && (
-          <div className="mt-1 space-y-1 border-r border-[#d5d0c5] pr-2">
+          <div
+            id={"category-children-" + id}
+            className={isRoot
+              ? "mx-3 mb-3 mt-1 space-y-1 rounded-xl bg-[#f7f5f0] p-2"
+              : "relative mr-4 space-y-1 border-r border-dashed border-[#c7c3b9] py-1 pr-3"}
+          >
             {children.map((child) => renderNavigationCategory(child, depth + 1))}
           </div>
         )}
@@ -719,10 +812,12 @@ const Navbar = () => {
                 aria-expanded={mobileMenuOpen}
                 aria-controls="store-menu-panel"
                 onClick={() => setMobileMenuOpen((open) => !open)}
-                className="order-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                className="order-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
               >
                 {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
               </button>
+
+              {renderThemeToggle(false)}
 
               <button
                 type="button"
@@ -830,6 +925,16 @@ const Navbar = () => {
                 aria-label="پیمایش اصلی"
                 className="hidden shrink-0 items-center gap-1 lg:flex"
               >
+                <button
+                  type="button"
+                  aria-label={mobileMenuOpen ? "بستن منوی دسته‌بندی‌ها" : "باز کردن منوی دسته‌بندی‌ها"}
+                  aria-expanded={mobileMenuOpen}
+                  aria-controls="store-menu-panel"
+                  onClick={() => setMobileMenuOpen((open) => !open)}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                >
+                  {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+                </button>
                 <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
                 <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
                 <NavLink to="/wishlist" className={linkClass}><Heart size={15} aria-hidden="true" />علاقه‌مندی‌ها{savedProducts.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[10px] font-bold text-white">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}</NavLink>
@@ -969,6 +1074,10 @@ const Navbar = () => {
             </div>
 
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-4">
+              <section aria-label="تنظیمات نمایش" className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2">
+                {renderThemeToggle(true)}
+              </section>
+
               {user ? (
                 <section className="rounded-2xl border border-[#dce2d4] bg-[#e9ede4] p-4">
                   <div className="flex items-start gap-3">
@@ -1081,6 +1190,17 @@ const Navbar = () => {
                     >
                       <Truck size={17} aria-hidden="true" />
                       سفارش‌های من و رهگیری
+                      <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
+                    </Link>
+                  )}
+                  {isAdmin && (
+                    <Link
+                      to="/secret-dashboard?tab=categories"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d5d0c5] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    >
+                      <FolderTree size={17} aria-hidden="true" />
+                      مدیریت دسته‌بندی‌ها
                       <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
                     </Link>
                   )}
