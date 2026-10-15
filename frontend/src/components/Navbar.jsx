@@ -146,6 +146,7 @@ const Navbar = () => {
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const location = useLocation();
   const navigate = useNavigate();
+  const [theme, setTheme] = useState(readSavedTheme);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -195,7 +196,6 @@ const Navbar = () => {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState({});
-  const [theme, setTheme] = useState(readSavedTheme);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
