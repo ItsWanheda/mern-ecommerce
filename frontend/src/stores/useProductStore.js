@@ -6,10 +6,11 @@ const getErrorMessage = (error, fallback) => error.response?.data?.message || fa
 
 export const useProductStore = create((set) => ({
   products: [],
+  priceBounds: null,
   featuredProducts: [],
   newestProducts: [],
   loading: false,
-  setProducts: (products) => set({ products }),
+  setProducts: (products) => set({ products, priceBounds: null }),
 
   createProduct: async (productData) => {
     set({ loading: true });
@@ -29,7 +30,7 @@ export const useProductStore = create((set) => ({
     set({ loading: true });
     try {
       const response = await axios.get("/products");
-      set({ products: response.data.products, loading: false });
+      set({ products: response.data.products, priceBounds: null, loading: false });
     } catch (error) {
       set({ error: "دریافت محصولات ناموفق بود", loading: false });
       toast.error(getErrorMessage(error, "دریافت محصولات ناموفق بود"));
@@ -37,16 +38,19 @@ export const useProductStore = create((set) => ({
   },
 
   fetchProductsByCategory: async (category) => {
-    set({ loading: true });
+    set({ loading: true, priceBounds: null });
     try {
       const response = await axios.get(`/products/category/${encodeURIComponent(category)}`);
-      set({ products: response.data.products, loading: false });
+      set({
+        products: Array.isArray(response.data.products) ? response.data.products : [],
+        priceBounds: response.data.priceBounds || null,
+        loading: false,
+      });
     } catch (error) {
-      set({ error: "دریافت محصولات ناموفق بود", loading: false });
+      set({ error: "دریافت محصولات ناموفق بود", priceBounds: null, loading: false });
       toast.error(getErrorMessage(error, "دریافت محصولات ناموفق بود"));
     }
   },
-
   fetchNewestProducts: async () => {
     try {
       const response = await axios.get("/products/newest?limit=8");
