@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createProduct, deleteProduct, getAllProducts, getBestsellingProducts, getFeaturedProducts, getNewestProducts,
-  getProductById, getProductsByCategory, getRecommendedProducts, getSearchedProducts,
+  getProductById, getProductsByCategory, getProductPriceBounds, getRecommendedProducts, getSearchedProducts,
   toggleFeaturedProduct, updateProductStock, updateProductVariantStock,
 } from "../controllers/product.controller.js";
 import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
@@ -9,6 +9,7 @@ import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // Specific paths must be registered before /:id.
+router.get("/price-bounds", getProductPriceBounds);
 router.get("/search", getSearchedProducts);
 router.get("/bestsellers", getBestsellingProducts);
 router.get("/newest", getNewestProducts);
