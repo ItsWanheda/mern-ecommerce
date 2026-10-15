@@ -38,7 +38,7 @@ export const useProductStore = create((set) => ({
   },
 
   fetchProductsByCategory: async (category) => {
-    set({ loading: true, priceBounds: null });
+    set({ loading: true, products: [], priceBounds: null });
     try {
       const response = await axios.get(`/products/category/${encodeURIComponent(category)}`);
       set({
