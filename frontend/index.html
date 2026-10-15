@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="تیک بوتیک؛ فروشگاه آنلاین پوشاک و اکسسوری" />
     <meta name="theme-color" content="#f7f5f0" />
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("tik-boutique-theme");
+        if (savedTheme === "dark") {
+          document.documentElement.dataset.theme = "dark";
+          document.documentElement.style.colorScheme = "dark";
+          document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#171916");
+        }
+      } catch {
+        // The application falls back to the light theme when storage is unavailable.
+      }
+    </script>
     <title>تیک بوتیک | فروشگاه آنلاین پوشاک و اکسسوری</title>
   </head>
   <body>
