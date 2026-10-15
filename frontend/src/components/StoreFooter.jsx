@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, Heart, Mail, ShieldCheck, Truck } from "lucide
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
+import { formatIranianYear } from "../lib/iranian-date";
 
 const supportEmail = import.meta.env.VITE_STORE_SUPPORT_EMAIL || "";
 
@@ -90,7 +91,7 @@ const StoreFooter = () => {
       </div>
       <div className="border-t border-[#d5d0c5]">
         <div className="mx-auto flex max-w-[1920px] flex-col gap-2 px-4 py-4 text-[11px] leading-5 text-[#77786f] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 2xl:px-12">
-          <p>© {new Date().getFullYear()} تیک بوتیک. استفاده از وب‌سایت تابع شرایط استفاده است.</p>
+          <p>© {formatIranianYear()} تیک بوتیک. استفاده از وب‌سایت تابع شرایط استفاده است.</p>
           <p>خرید آگاهانه، انتخاب ماندگار</p>
         </div>
       </div>

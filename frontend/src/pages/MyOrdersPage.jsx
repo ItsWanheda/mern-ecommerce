@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardList, LoaderCircle, RefreshCw, Truck } from "lucide-react";
 import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
+import { formatIranianDateTime } from "../lib/iranian-date";
 
 const shipmentLabels = {
   not_ready: "در انتظار تکمیل اطلاعات ارسال",
@@ -18,14 +19,6 @@ const paymentLabels = {
   failed: "پرداخت ناموفق",
   expired: "منقضی شد",
   unknown: "وضعیت پرداخت ثبت نشده",
-};
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "—"
-    : new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(date);
 };
 
 const MyOrdersPage = () => {
@@ -99,7 +92,7 @@ const MyOrdersPage = () => {
                   <div>
                     <p className="text-xs text-[#85867d]">شماره سفارش</p>
                     <p dir="ltr" className="mt-1 break-all text-sm font-bold text-[#252722]">{order._id}</p>
-                    <p className="mt-1 text-xs text-[#85867d]">ثبت سفارش: {formatDate(order.createdAt)}</p>
+                    <p className="mt-1 text-xs text-[#85867d]">ثبت سفارش: {formatIranianDateTime(order.createdAt)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${paymentStatusClass}`}>{paymentLabels[paymentStatus] || paymentStatus}</span>
@@ -147,8 +140,8 @@ const MyOrdersPage = () => {
                       </div>
                       {order.shippingCarrier && <p className="mt-3 text-sm text-[#55574f]">شرکت حمل: <span className="font-semibold">{order.shippingCarrier}</span></p>}
                       {order.trackingCode && <p className="mt-2 text-sm text-[#55574f]">کد رهگیری: <span dir="ltr" className="inline-block break-all font-semibold">{order.trackingCode}</span></p>}
-                      {order.shippedAt && <p className="mt-2 text-xs text-[#77786f]">تاریخ ارسال: {formatDate(order.shippedAt)}</p>}
-                      {order.deliveredAt && <p className="mt-1 text-xs text-[#77786f]">تاریخ تحویل: {formatDate(order.deliveredAt)}</p>}
+                      {order.shippedAt && <p className="mt-2 text-xs text-[#77786f]">تاریخ ارسال: {formatIranianDateTime(order.shippedAt)}</p>}
+                      {order.deliveredAt && <p className="mt-1 text-xs text-[#77786f]">تاریخ تحویل: {formatIranianDateTime(order.deliveredAt)}</p>}
                       {(order.shipmentEvents || []).length > 0 && (
                         <ol className="mt-4 space-y-3 border-r border-[#d5d0c5] pr-4">
                           {order.shipmentEvents.slice().reverse().map((event, index) => (
@@ -156,7 +149,7 @@ const MyOrdersPage = () => {
                               <span className="absolute -right-[1.35rem] top-1.5 h-2 w-2 rounded-full bg-[#68745f]" aria-hidden="true" />
                               <p className="font-semibold">{shipmentLabels[event.status] || event.status}</p>
                               {event.note && <p className="mt-0.5">{event.note}</p>}
-                              <p className="mt-0.5 text-[#85867d]">{formatDate(event.createdAt)}</p>
+                              <p className="mt-0.5 text-[#85867d]">{formatIranianDateTime(event.createdAt)}</p>
                             </li>
                           ))}
                         </ol>

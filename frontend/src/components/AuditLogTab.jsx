@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RefreshCw, Search, ScrollText } from "lucide-react";
 import axios from "../lib/axios";
-
-const formatDate = (value) => value ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
+import { formatIranianDateTime } from "../lib/iranian-date";
 
 const AuditLogTab = () => {
   const [logs, setLogs] = useState([]);
@@ -61,7 +60,7 @@ const AuditLogTab = () => {
                   <p className="font-semibold text-white">{log.summary}</p>
                   <p dir="ltr" className="mt-1 text-left text-xs text-[#9aa58e]">{log.action}</p>
                 </div>
-                <time className="text-xs text-gray-400">{formatDate(log.createdAt)}</time>
+                <time className="text-xs text-gray-400">{formatIranianDateTime(log.createdAt)}</time>
               </div>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
                 <span>مدیر: {log.actor?.name || log.actorName || "مدیر"}</span>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, Database, LoaderCircle, RefreshCw, Server, Truck, Wallet } from "lucide-react";
 import axios from "../lib/axios";
+import { formatIranianDateTime } from "../lib/iranian-date";
 
 const fmt = (value) => new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
 const labels = {
@@ -58,7 +59,7 @@ const OperationsDashboard = () => {
             <div>
               <p className="font-semibold text-white">{data.health?.status === "healthy" ? "سرویس‌های پایه در دسترس هستند" : "وضعیت نیاز به بررسی دارد"}</p>
               <p className="mt-1 text-xs text-gray-300">دیتابیس: {labels.database[data.health?.database] || data.health?.database} · Redis: {labels.redis[data.health?.redis] || data.health?.redis}</p>
-              <p className="mt-1 text-xs text-gray-400">آخرین بررسی: {data.generatedAt ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(data.generatedAt)) : "—"}</p>
+              <p className="mt-1 text-xs text-gray-400">آخرین بررسی: {data.generatedAt ? formatIranianDateTime(data.generatedAt) : "—"}</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">

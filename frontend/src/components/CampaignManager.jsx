@@ -2,18 +2,16 @@ import { useEffect, useState } from "react";
 import { Megaphone, Pause, Play, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
+import IranianDateTimeInput from "./IranianDateTimeInput";
+import { formatIranianDateTimeInput, formatIranianDateTime, parseIranianDateTime } from "../lib/iranian-date";
 
-const dateTimeLocal = (date) => {
-  const adjusted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return adjusted.toISOString().slice(0, 16);
-};
 const initialForm = () => ({
   title: "",
   description: "",
   image: "",
   href: "/shop",
-  startsAt: dateTimeLocal(new Date()),
-  endsAt: dateTimeLocal(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+  startsAt: formatIranianDateTimeInput(new Date()),
+  endsAt: formatIranianDateTimeInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   sortOrder: "0",
 });
 
@@ -35,12 +33,22 @@ const CampaignManager = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const startsAt = parseIranianDateTime(form.startsAt);
+    const endsAt = parseIranianDateTime(form.endsAt);
+    if (!startsAt || !endsAt) {
+      toast.error("تاریخ و ساعت را با تقویم شمسی و قالب سال/ماه/روز ساعت:دقیقه وارد کنید.");
+      return;
+    }
+    if (endsAt <= startsAt) {
+      toast.error("زمان پایان کمپین باید بعد از زمان شروع باشد.");
+      return;
+    }
     setLoading(true);
     try {
       await axios.post("/campaigns", {
         ...form,
-        startsAt: new Date(form.startsAt).toISOString(),
-        endsAt: new Date(form.endsAt).toISOString(),
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt.toISOString(),
         sortOrder: Number(form.sortOrder),
       });
       toast.success("کمپین ایجاد شد");
@@ -95,8 +103,8 @@ const CampaignManager = () => {
           <label className="text-sm text-gray-300">لینک داخلی (مثل /shop)<input required pattern="/(?!/).*" className={fieldClass} value={form.href} onChange={(event) => setForm({ ...form, href: event.target.value })} /></label>
           <label className="text-sm text-gray-300 sm:col-span-2">توضیح کوتاه<input maxLength={300} className={fieldClass} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
           <label className="text-sm text-gray-300 sm:col-span-2">نشانی تصویر (اختیاری)<input type="url" className={fieldClass} dir="ltr" placeholder="https://…" value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
-          <label className="text-sm text-gray-300">شروع نمایش<input type="datetime-local" required className={fieldClass} value={form.startsAt} onChange={(event) => setForm({ ...form, startsAt: event.target.value })} /></label>
-          <label className="text-sm text-gray-300">پایان نمایش<input type="datetime-local" required className={fieldClass} value={form.endsAt} onChange={(event) => setForm({ ...form, endsAt: event.target.value })} /></label>
+          <IranianDateTimeInput id="campaign-starts-at" label="شروع نمایش" required value={form.startsAt} onChange={(value) => setForm({ ...form, startsAt: value })} />
+          <IranianDateTimeInput id="campaign-ends-at" label="پایان نمایش" required value={form.endsAt} onChange={(value) => setForm({ ...form, endsAt: value })} />
           <label className="text-sm text-gray-300">ترتیب نمایش<input type="number" min="0" step="1" className={fieldClass} value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></label>
         </div>
         <button type="submit" disabled={loading} className="mt-5 min-h-11 rounded-full bg-[#68745f] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">{loading ? "در حال ذخیره…" : "ایجاد کمپین"}</button>
@@ -113,7 +121,7 @@ const CampaignManager = () => {
                   <div className="min-w-0">
                     <p className="font-semibold text-white">{campaign.title}</p>
                     <p className="mt-1 truncate text-xs text-gray-400">{campaign.description || campaign.href}</p>
-                    <p className="mt-1 text-xs text-gray-500">{new Date(campaign.startsAt).toLocaleDateString("fa-IR")} تا {new Date(campaign.endsAt).toLocaleDateString("fa-IR")}</p>
+                    <p className="mt-1 text-xs text-gray-500">{formatIranianDateTime(campaign.startsAt)} تا {formatIranianDateTime(campaign.endsAt)}</p>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
