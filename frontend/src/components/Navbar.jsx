@@ -90,6 +90,46 @@ const Navbar = () => {
     ];
   }, [dynamicCategories]);
 
+  const navigationTree = useMemo(() => {
+    if (!dynamicCategories.length) {
+      return {
+        roots: categories.filter(([slug]) => Boolean(slug)).map(([slug, name]) => ({
+          _id: "legacy-" + slug,
+          slug,
+          name: { fa: name },
+          parentId: null,
+        })),
+        childrenByParent: new Map(),
+      };
+    }
+
+    const navigable = dynamicCategories.filter(
+      (category) => category.isActive !== false && category.showInNavigation !== false,
+    );
+    const navigableIds = new Set(navigable.map((category) => String(category._id)));
+    const roots = [];
+    const childrenByParent = new Map();
+    const sortCategories = (items) => items.sort((a, b) =>
+      Number(a.sortOrder || 0) - Number(b.sortOrder || 0) ||
+      String(a.name?.fa || a.name?.en || "").localeCompare(String(b.name?.fa || b.name?.en || ""), "fa")
+    );
+
+    navigable.forEach((category) => {
+      const parentId = String(category.parentId || "");
+      if (parentId && !navigableIds.has(parentId)) return;
+      if (!parentId) {
+        roots.push(category);
+        return;
+      }
+      const children = childrenByParent.get(parentId) || [];
+      children.push(category);
+      childrenByParent.set(parentId, children);
+    });
+
+    childrenByParent.forEach(sortCategories);
+    return { roots: sortCategories(roots), childrenByParent };
+  }, [dynamicCategories, categories]);
+
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const location = useLocation();
   const navigate = useNavigate();
@@ -107,6 +147,7 @@ const Navbar = () => {
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
@@ -293,9 +334,11 @@ const Navbar = () => {
   };
 
   const selectCategorySuggestion = (category) => {
-    const params = new URLSearchParams({ category, page: "1" });
-    setFilters({ ...defaultFilters, category });
-    navigateToShop(params);
+    setFilters({ ...defaultFilters, category: "" });
+    setActiveSearchSurface(null);
+    setDesktopFiltersOpen(false);
+    setMobileSearchOpen(false);
+    navigate("/category/" + encodeURIComponent(category));
   };
 
   const handleSuggestionKeyDown = (event) => {
@@ -398,6 +441,46 @@ const Navbar = () => {
     );
   };
 
+  const renderNavigationCategory = (category, depth = 0) => {
+    const id = String(category._id);
+    const children = navigationTree.childrenByParent.get(id) || [];
+    const expanded = Boolean(expandedCategories[id]);
+    const label = category.name?.fa || category.name?.en || category.slug;
+
+    return (
+      <div key={id} className="min-w-0">
+        <div
+          className="flex min-w-0 items-center gap-2 rounded-xl transition hover:bg-[#e9ede4]"
+          style={{ paddingRight: depth * 14 + "px" }}
+        >
+          <Link
+            to={"/category/" + encodeURIComponent(category.slug)}
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex min-h-11 min-w-0 flex-1 items-center rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+          >
+            <span className="truncate">{label}</span>
+          </Link>
+          {children.length > 0 && (
+            <button
+              type="button"
+              aria-label={(expanded ? "بستن" : "نمایش") + " زیر‌دسته‌های " + label}
+              aria-expanded={expanded}
+              onClick={() => setExpandedCategories((current) => ({ ...current, [id]: !current[id] }))}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#68745f] transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+            >
+              <ChevronDown size={16} className={"transition-transform " + (expanded ? "rotate-180" : "")} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        {expanded && children.length > 0 && (
+          <div className="mt-1 space-y-1 border-r border-[#d5d0c5] pr-2">
+            {children.map((child) => renderNavigationCategory(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleDesktopSearch = (event) => {
     event.preventDefault();
     const params = new URLSearchParams(
@@ -435,19 +518,6 @@ const Navbar = () => {
 
   const renderFilterFields = () => (
     <div className="space-y-3">
-      <label className="block text-xs font-medium text-[#62645c]">
-        دسته‌بندی
-        <select
-          className={fieldClass}
-          value={filters.category}
-          onChange={(event) => updateFilter("category", event.target.value)}
-        >
-          {categories.map(([value, label]) => (
-            <option key={value || "all"} value={value}>{label}</option>
-          ))}
-        </select>
-      </label>
-
       <div>
         <p className="text-xs font-medium text-[#62645c]">محدوده قیمت</p>
         <div className="mt-1 grid grid-cols-2 gap-3">
@@ -555,9 +625,9 @@ const Navbar = () => {
                 type="button"
                 aria-label={mobileMenuOpen ? "بستن منوی فروشگاه" : "باز کردن منوی فروشگاه"}
                 aria-expanded={mobileMenuOpen}
-                aria-controls="mobile-store-menu"
+                aria-controls="store-menu-panel"
                 onClick={() => setMobileMenuOpen((open) => !open)}
-                className="order-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
+                className="order-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
               >
                 {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
               </button>
@@ -675,7 +745,7 @@ const Navbar = () => {
 
               <div
                 ref={desktopSearchRef}
-                className="relative hidden min-w-0 max-w-none flex-1 items-center md:flex min-[1680px]:max-w-[34rem]"
+                className="relative hidden min-w-0 max-w-none flex-1 items-center md:flex min-[1680px]:max-w-[31rem]"
               >
                 <form
                   onSubmit={handleDesktopSearch}
@@ -704,7 +774,7 @@ const Navbar = () => {
                     className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
                   >
                     <Search size={16} aria-hidden="true" />
-                    <span>جست‌وجو</span>
+                    <span className="hidden 2xl:inline">جست‌وجو</span>
                   </button>
                   <button
                     type="button"
@@ -772,7 +842,7 @@ const Navbar = () => {
       </header>
 
       {mobileMenuOpen && (
-        <div id="mobile-store-menu" dir="rtl" className="fixed inset-0 z-[90] lg:hidden">
+        <div id="store-menu-panel" dir="rtl" className="fixed inset-0 z-[90]">
           <button
             type="button"
             aria-label="بستن منوی فروشگاه"
@@ -782,8 +852,8 @@ const Navbar = () => {
           <aside
             role="dialog"
             aria-modal="true"
-            aria-labelledby="mobile-nav-heading"
-            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(90vw,25rem)] flex-col border-l border-[#e4e0d8] bg-[#f7f5f0] shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)] animate-[searchPanelIn_180ms_ease-out]"
+            aria-labelledby="store-nav-heading"
+            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(92vw,28rem)] flex-col border-l border-[#e4e0d8] bg-[#f7f5f0] shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)] animate-[searchPanelIn_180ms_ease-out]"
           >
             <div className="flex items-center justify-between gap-4 border-b border-[#e4e0d8] px-5 py-4">
               <div>
@@ -794,7 +864,7 @@ const Navbar = () => {
                 >
                   تیک بوتیک
                 </Link>
-                <p id="mobile-nav-heading" className="mt-1 text-xs text-[#85867d]">منوی فروشگاه</p>
+                <p id="store-nav-heading" className="mt-1 text-xs text-[#85867d]">منوی فروشگاه</p>
               </div>
               <button
                 type="button"
@@ -887,11 +957,11 @@ const Navbar = () => {
                 </div>
               </section>
 
-              <section aria-labelledby="mobile-categories-heading">
+              <section aria-labelledby="store-categories-heading">
                 <div className="mb-3 flex items-center justify-between gap-3 px-1">
                   <div className="flex items-center gap-2">
                     <Grid2X2 size={17} className="text-[#68745f]" aria-hidden="true" />
-                    <h3 id="mobile-categories-heading" className="text-sm font-bold text-[#252722]">دسته‌بندی‌ها</h3>
+                    <h3 id="store-categories-heading" className="text-sm font-bold text-[#252722]">دسته‌بندی‌ها</h3>
                   </div>
                   <Link
                     to="/shop"
@@ -902,18 +972,10 @@ const Navbar = () => {
                     <ChevronLeft size={14} aria-hidden="true" />
                   </Link>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {categories.filter(([value]) => value).map(([value, label]) => (
-                    <Link
-                      key={value}
-                      to={`/category/${value}`}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="group flex min-h-12 items-center justify-between gap-2 rounded-xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-medium text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
-                    >
-                      <span>{label}</span>
-                      <ChevronLeft size={15} className="shrink-0 text-[#a0a195] transition group-hover:-translate-x-0.5 group-hover:text-[#68745f]" aria-hidden="true" />
-                    </Link>
-                  ))}
+                <div className="space-y-1 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2">
+                  {navigationTree.roots.length > 0 ? navigationTree.roots.map((category) => renderNavigationCategory(category)) : (
+                    <p className="px-3 py-4 text-sm text-[#77786f]">دسته‌بندی قابل نمایشی وجود ندارد.</p>
+                  )}
                 </div>
               </section>
 
@@ -1021,7 +1083,7 @@ const Navbar = () => {
               <div className="mb-4 flex items-center gap-2 border-b border-[#e4e0d8] pb-3">
                 <SlidersHorizontal size={17} className="text-[#68745f]" aria-hidden="true" />
                 <h3 className="text-sm font-semibold text-[#252722]">فیلترها</h3>
-                <span className="text-xs text-[#85867d]">دسته‌بندی، قیمت و مرتب‌سازی</span>
+                <span className="text-xs text-[#85867d]">قیمت و مرتب‌سازی</span>
               </div>
 
               {renderFilterFields()}
