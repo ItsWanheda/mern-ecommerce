@@ -11,6 +11,8 @@ const auditLogSchema = new mongoose.Schema(
     metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
     ip: { type: String, trim: true, maxlength: 64, default: "" },
     userAgent: { type: String, trim: true, maxlength: 256, default: "" },
+    requestMethod: { type: String, trim: true, maxlength: 12, default: "" },
+    requestPath: { type: String, trim: true, maxlength: 300, default: "" },
   },
   { timestamps: true }
 );

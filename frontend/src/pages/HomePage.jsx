@@ -20,9 +20,9 @@ const legacyCategoryCards = [
 ];
 
 const collections = [
-  { title: "استایل روزمره", description: "پایه‌های راحت برای ترکیب روزانه", href: "/category/jeans", image: "/jeans.jpg", categories: ["jeans", "t-shirts", "shoes"] },
-  { title: "لایه‌های ماندگار", description: "ترکیب کت و شلوار برای روزهای خنک", href: "/category/jackets", image: "/jackets.jpg", categories: ["jackets", "jeans", "t-shirts"] },
-  { title: "جزئیات تکمیل‌کننده", description: "اکسسوری‌های ساده برای تکمیل ظاهر", href: "/category/bags", image: "/bags.jpg", categories: ["bags", "glasses", "shoes"] },
+  { title: "استایل روزمره", description: "پایه‌های راحت برای ترکیب روزانه", href: "/looks/daily-style", image: "/jeans.jpg", categories: ["jeans", "t-shirts", "shoes"] },
+  { title: "لایه‌های ماندگار", description: "ترکیب کت و شلوار برای روزهای خنک", href: "/looks/layers", image: "/jackets.jpg", categories: ["jackets", "jeans", "t-shirts"] },
+  { title: "جزئیات تکمیل‌کننده", description: "اکسسوری‌های ساده برای تکمیل ظاهر", href: "/looks/details", image: "/bags.jpg", categories: ["bags", "glasses", "shoes"] },
 ];
 
 const benefits = [
@@ -159,7 +159,7 @@ const HomePage = () => {
               </p>
               <div className="mt-6 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                 {heroCampaign ? (
-                  <Link to={heroCampaign.href} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
+                  <Link to={"/campaign/" + heroCampaign._id} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
                     مشاهده پیشنهاد<ArrowLeft size={17} aria-hidden="true" />
                   </Link>
                 ) : (
@@ -201,11 +201,11 @@ const HomePage = () => {
 <section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
             <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
               <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای ویژه</h2></div>
-              <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-[#d5d0c5] px-3 text-xs font-semibold text-[#68745f] transition hover:border-[#252722] hover:text-[#252722] sm:border-0 sm:px-0 sm:text-sm">همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
+              <Link to="/campaigns" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-[#d5d0c5] px-3 text-xs font-semibold text-[#68745f] transition hover:border-[#252722] hover:text-[#252722] sm:border-0 sm:px-0 sm:text-sm">همه پیشنهادها<ArrowLeft size={15} aria-hidden="true" /></Link>
             </div>
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
               {secondaryCampaigns.map((campaign) => (
-                <Link to={campaign.href} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
+                <Link to={"/campaign/" + campaign._id} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
                   {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
                   <div className="absolute inset-0 -z-10 bg-gradient-to-l from-[#252722]/85 via-[#252722]/55 to-transparent" />
                   <div className="my-auto max-w-[80%] text-white">
@@ -228,7 +228,7 @@ const HomePage = () => {
                 <h2 id="bestsellers-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">پرفروش‌های فروشگاه</h2>
                 <p className="mt-2 text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">بر اساس تعداد کالا در سفارش‌هایی که پرداختشان تأیید شده است.</p>
               </div>
-              <Link to="/shop" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
+              <Link to="/bestsellers" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
                 مشاهده همه محصولات<ArrowLeft size={15} aria-hidden="true" />
               </Link>
             </div>
@@ -248,7 +248,7 @@ const HomePage = () => {
               <h2 id="newest-products-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">تازه‌واردها</h2>
               <p className="mt-2 text-xs leading-5 text-[#62645c] sm:text-sm sm:leading-6">محصولات جدید را با کشیدن به چپ و راست مرور کنید.</p>
             </div>
-            <Link to="/shop?sort=newest" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
+            <Link to="/new-arrivals" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#252722] transition hover:border-[#252722] sm:self-auto sm:text-sm">
               مشاهده همه
               <ArrowLeft size={15} aria-hidden="true" />
             </Link>

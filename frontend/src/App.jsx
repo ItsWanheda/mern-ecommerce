@@ -22,6 +22,9 @@ const NewsletterUnsubscribePage = lazy(() => import("./pages/NewsletterUnsubscri
 const PurchaseSuccessPage = lazy(() => import("./pages/PurchaseSuccessPage"));
 const PurchaseCancelPage = lazy(() => import("./pages/PurchaseCancelPage"));
 const MyOrdersPage = lazy(() => import("./pages/MyOrdersPage"));
+const CampaignPage = lazy(() => import("./pages/CampaignPage"));
+const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
+const CollectionPage = lazy(() => import("./pages/CollectionPage"));
 
 const RouteLoadingFallback = () => (
   <div
@@ -60,6 +63,12 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/new-arrivals" element={<CollectionPage type="newest" />} />
+            <Route path="/bestsellers" element={<CollectionPage type="bestsellers" />} />
+            <Route path="/featured-products" element={<CollectionPage type="featured" />} />
+            <Route path="/looks/:slug" element={<CollectionPage type="look" />} />
+            <Route path="/campaigns" element={<CampaignsPage />} />
+            <Route path="/campaign/:campaignId" element={<CampaignPage />} />
             <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
             <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />

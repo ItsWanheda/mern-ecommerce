@@ -15,6 +15,8 @@ export const recordAuditEvent = async (req, event) => {
       metadata,
       ip: typeof req.ip === "string" ? req.ip.slice(0, 64) : "",
       userAgent: typeof req.get === "function" ? String(req.get("user-agent") || "").slice(0, 256) : "",
+      requestMethod: typeof req.method === "string" ? req.method.slice(0, 12) : "",
+      requestPath: typeof req.path === "string" ? String(req.baseUrl || "") + req.path : "",
     });
   } catch (error) {
     console.error("Failed to record admin audit event:", error.message);

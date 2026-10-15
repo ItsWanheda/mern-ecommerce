@@ -176,7 +176,20 @@ export const createCategory = async (req, res) => {
     });
     await recordAuditEvent(req, {
       action: "category.created", targetType: "category", targetId: category._id,
-      summary: "Category created", metadata: { slug: category.slug, parentId: idString(category.parentId) },
+      summary: "Category created: " + (category.name?.fa || category.slug),
+      metadata: {
+        after: {
+          name: category.name,
+          slug: category.slug,
+          parentId: idString(category.parentId),
+          description: category.description,
+          image: category.image,
+          sortOrder: category.sortOrder,
+          isActive: category.isActive,
+          showInNavigation: category.showInNavigation,
+          attributes: category.attributes,
+        },
+      },
     });
     return res.status(201).json({ category });
   } catch (error) {
@@ -210,6 +223,17 @@ export const updateCategory = async (req, res) => {
         return res.status(400).json({ message: "انتقال دسته باعث ایجاد چرخه در درخت می‌شود." });
       }
     }
+    const before = {
+      name: category.name,
+      slug: category.slug,
+      parentId: idString(category.parentId),
+      description: category.description,
+      image: category.image,
+      sortOrder: category.sortOrder,
+      isActive: category.isActive,
+      showInNavigation: category.showInNavigation,
+      attributes: category.attributes,
+    };
     const oldPrefix = [...category.ancestors.map(idString), idString(category._id)];
     const newAncestors = parent ? [...parent.ancestors, parent._id] : [];
     Object.assign(category, validated.value);
@@ -228,7 +252,21 @@ export const updateCategory = async (req, res) => {
     }
     await recordAuditEvent(req, {
       action: "category.updated", targetType: "category", targetId: category._id,
-      summary: "Category updated", metadata: { slug: category.slug, parentId: idString(category.parentId) },
+      summary: "Category updated: " + (category.name?.fa || category.slug),
+      metadata: {
+        before,
+        after: {
+          name: category.name,
+          slug: category.slug,
+          parentId: idString(category.parentId),
+          description: category.description,
+          image: category.image,
+          sortOrder: category.sortOrder,
+          isActive: category.isActive,
+          showInNavigation: category.showInNavigation,
+          attributes: category.attributes,
+        },
+      },
     });
     return res.json({ category });
   } catch (error) {
@@ -254,10 +292,22 @@ export const deleteCategory = async (req, res) => {
         dependencies: { childCount, productCount },
       });
     }
+    const deletedSnapshot = {
+      name: category.name,
+      slug: category.slug,
+      parentId: idString(category.parentId),
+      description: category.description,
+      image: category.image,
+      sortOrder: category.sortOrder,
+      isActive: category.isActive,
+      showInNavigation: category.showInNavigation,
+      attributes: category.attributes,
+    };
     await Category.deleteOne({ _id: category._id });
     await recordAuditEvent(req, {
       action: "category.deleted", targetType: "category", targetId: category._id,
-      summary: "Category deleted", metadata: { slug: category.slug },
+      summary: "Category deleted: " + (category.name?.fa || category.slug),
+      metadata: { before: deletedSnapshot },
     });
     return res.json({ success: true, id: category._id });
   } catch (error) {

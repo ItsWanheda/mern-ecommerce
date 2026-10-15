@@ -5,6 +5,7 @@ const campaignSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true, maxlength: 100 },
     description: { type: String, default: "", trim: true, maxlength: 300 },
     image: { type: String, default: "", trim: true, maxlength: 2048 },
+    productIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], default: [] },
     href: {
       type: String,
       required: true,
