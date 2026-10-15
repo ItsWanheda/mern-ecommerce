@@ -97,7 +97,7 @@ const CategoryManager = () => {
   };
 
   const startCreate = (parentId = "") => {
-    setForm({ ...emptyForm(), parentId: idOf(parentId), showInNavigation: !parentId });
+    setForm({ ...emptyForm(), parentId: idOf(parentId), showInNavigation: true });
     setEditingId("");
     setNotice("");
     setFormOpen(true);
@@ -245,7 +245,7 @@ const CategoryManager = () => {
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-700 bg-gray-800 p-5">
         <div>
           <h2 className="text-2xl font-semibold text-[#9aa58e]">مدیریت دسته‌بندی‌ها</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">درخت دسته‌ها، نام‌های فارسی و انگلیسی، ویژگی‌های محصول و وضعیت نمایش فروشگاه را از این بخش مدیریت کنید.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">درخت دسته‌ها، نام‌های فارسی و انگلیسی، ویژگی‌های محصول و نمایش هر دسته در منوی همبرگری موبایل و دسکتاپ را از این بخش مدیریت کنید.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => fetchAdminCategories()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-gray-600 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700"><RefreshCw size={15} aria-hidden="true" /> تازه‌سازی</button>
@@ -295,7 +295,7 @@ const CategoryManager = () => {
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-gray-900/60 p-3 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} /> فعال در فروشگاه</label>
-            <label className="flex items-center gap-2"><input type="checkbox" checked={form.showInNavigation} onChange={(event) => setForm((current) => ({ ...current, showInNavigation: event.target.checked }))} /> نمایش در ناوبری</label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={form.showInNavigation} onChange={(event) => setForm((current) => ({ ...current, showInNavigation: event.target.checked }))} /> نمایش در منوی همبرگری فروشگاه</label>
           </div>
 
           <section className="space-y-3 rounded-xl border border-gray-700 p-4">
