@@ -135,9 +135,17 @@ export function parseIranianDateTime(value) {
 export function formatIranianChartDate(value) {
   if (!value) return "—";
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return formatIranianDate(value, { month: "short", day: "numeric" });
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
-  return formatIranianDate(date, { month: "short", day: "numeric", timeZone: "UTC" });
+  if (match) {
+    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
+    return new Intl.DateTimeFormat(PERSIAN_DISPLAY_LOCALE, {
+      timeZone: "UTC", month: "short", day: "numeric",
+    }).format(date);
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(PERSIAN_DISPLAY_LOCALE, {
+    timeZone: TEHRAN_TIME_ZONE, month: "short", day: "numeric",
+  }).format(date);
 }
 
 
