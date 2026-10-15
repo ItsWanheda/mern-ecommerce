@@ -63,7 +63,7 @@ function App() {
             <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
             <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
-            <Route path="/category/:category" element={<CategoryPage />} />
+            <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/orders" element={user ? <MyOrdersPage /> : <Navigate to="/login" state={{ from: { pathname: "/orders" } }} />} />

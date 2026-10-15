@@ -192,8 +192,8 @@ const filterCatalog = (catalog, filters) => {
 };
 
 const CategoryPage = () => {
-  const { category = "" } = useParams();
-  const { fetchProductsByCategory, products, loading } = useProductStore();
+  const { slug: category = "" } = useParams();
+  const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds } = useProductStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const [filters, setFilters] = useState(makeEmptyFilters);
@@ -208,6 +208,42 @@ const CategoryPage = () => {
   }, [fetchProductsByCategory, category]);
 
   const catalog = Array.isArray(products) ? products : [];
+  const priceBounds = useMemo(() => {
+    const reportedCount = Number(remotePriceBounds?.count);
+    const reportedMin = Number(remotePriceBounds?.minPrice);
+    const reportedMax = Number(remotePriceBounds?.maxPrice);
+    if (
+      remotePriceBounds &&
+      reportedCount > 0 &&
+      Number.isFinite(reportedMin) &&
+      Number.isFinite(reportedMax)
+    ) {
+      const minPrice = Math.max(0, Math.floor(reportedMin));
+      return {
+        minPrice,
+        maxPrice: Math.max(minPrice + 1, Math.ceil(reportedMax)),
+        count: reportedCount,
+      };
+    }
+
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    let count = 0;
+    catalog.forEach((product) => {
+      const amount = Number(product.price);
+      if (!Number.isFinite(amount) || amount < 0) return;
+      min = Math.min(min, amount);
+      max = Math.max(max, amount);
+      count += 1;
+    });
+    if (!count) return { minPrice: 0, maxPrice: 1, count: 0 };
+    const minPrice = Math.max(0, Math.floor(min));
+    return {
+      minPrice,
+      maxPrice: Math.max(minPrice + 1, Math.ceil(max)),
+      count,
+    };
+  }, [catalog, remotePriceBounds]);
   const filteredProducts = useMemo(() => filterCatalog(catalog, filters), [catalog, filters]);
   const draftResultCount = useMemo(() => filterCatalog(catalog, draftFilters).length, [catalog, draftFilters]);
 
@@ -326,9 +362,32 @@ const CategoryPage = () => {
     return chips;
   }, [filters, categoryAttributeDefinitions]);
 
-  const renderFilterFields = (current, onFilterChange) => (
+  const renderFilterFields = (current, onFilterChange) => {
+    const rangeMin = priceBounds.minPrice;
+    const rangeMax = Math.max(rangeMin + 1, priceBounds.maxPrice);
+    const span = rangeMax - rangeMin;
+    const sliderStep = Math.max(1, Math.ceil(span / 1200));
+    const minParsed = parseStorePrice(current.minPrice);
+    const maxParsed = parseStorePrice(current.maxPrice);
+    const clampToRange = (value, fallback) =>
+      Number.isFinite(value) ? Math.min(rangeMax, Math.max(rangeMin, value)) : fallback;
+    const minCandidate = clampToRange(minParsed, rangeMin);
+    const maxCandidate = clampToRange(maxParsed, rangeMax);
+    const sliderMinValue = Math.min(minCandidate, maxCandidate);
+    const sliderMaxValue = Math.max(minCandidate, maxCandidate);
+    const sliderMinPercent = ((sliderMinValue - rangeMin) / span) * 100;
+    const sliderMaxPercent = ((sliderMaxValue - rangeMin) / span) * 100;
+    const updateSliderPrice = (field, rawValue) => {
+      const value = Math.min(rangeMax, Math.max(rangeMin, Math.round(Number(rawValue))));
+      const nextMin = field === "minPrice" ? Math.min(value, sliderMaxValue) : sliderMinValue;
+      const nextMax = field === "maxPrice" ? Math.max(value, sliderMinValue) : sliderMaxValue;
+      onFilterChange("minPrice", nextMin <= rangeMin ? "" : String(nextMin));
+      onFilterChange("maxPrice", nextMax >= rangeMax ? "" : String(nextMax));
+    };
+
+    return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      <fieldset className="min-w-0 space-y-2">
+      <fieldset className="min-w-0 space-y-3">
         <legend className="text-sm font-semibold text-[#41443b]">محدوده قیمت ({priceUnitLabel})</legend>
         <div className="grid grid-cols-2 gap-2">
           <label className="block text-xs text-[#77786f]">
@@ -340,7 +399,7 @@ const CategoryPage = () => {
               maxLength={18}
               value={current.minPrice}
               onChange={(event) => onFilterChange("minPrice", event.target.value)}
-              placeholder="۳۰۰۰۰۰"
+              placeholder="بدون محدودیت"
               aria-label={"حداقل قیمت به " + priceUnitLabel}
               className="mt-1 min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm tabular-nums text-[#252722] outline-none transition placeholder:text-[#aaa99f] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
             />
@@ -354,11 +413,51 @@ const CategoryPage = () => {
               maxLength={18}
               value={current.maxPrice}
               onChange={(event) => onFilterChange("maxPrice", event.target.value)}
-              placeholder="۲۰۰۰۰۰۰"
+              placeholder="بدون محدودیت"
               aria-label={"حداکثر قیمت به " + priceUnitLabel}
               className="mt-1 min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm tabular-nums text-[#252722] outline-none transition placeholder:text-[#aaa99f] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
             />
           </label>
+        </div>
+        <div className="rounded-xl border border-[#e4e0d8] bg-[#f7f5f0] px-3 py-3">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[#62645c]">
+            <span>از <strong className="tabular-nums text-[#252722]">{formatStorePrice(sliderMinValue)}</strong></span>
+            <span>تا <strong className="tabular-nums text-[#252722]">{formatStorePrice(sliderMaxValue)}</strong></span>
+          </div>
+          <div className={"relative h-7 " + (priceBounds.count > 0 ? "" : "opacity-50")} dir="ltr">
+            <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#dedbd2]" />
+            <div
+              className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#68745f]"
+              style={{ left: sliderMinPercent + "%", right: 100 - sliderMaxPercent + "%" }}
+            />
+            <input
+              type="range"
+              min={rangeMin}
+              max={rangeMax}
+              step={sliderStep}
+              value={sliderMinValue}
+              disabled={priceBounds.count === 0}
+              aria-label={"حداقل قیمت به " + priceUnitLabel}
+              aria-valuetext={formatStorePrice(sliderMinValue)}
+              onChange={(event) => updateSliderPrice("minPrice", event.target.value)}
+              className="price-range-slider"
+              style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 5 : 4 }}
+            />
+            <input
+              type="range"
+              min={rangeMin}
+              max={rangeMax}
+              step={sliderStep}
+              value={sliderMaxValue}
+              disabled={priceBounds.count === 0}
+              aria-label={"حداکثر قیمت به " + priceUnitLabel}
+              aria-valuetext={formatStorePrice(sliderMaxValue)}
+              onChange={(event) => updateSliderPrice("maxPrice", event.target.value)}
+              className="price-range-slider"
+              style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 4 : 5 }}
+            />
+          </div>
+          <p className="mt-1 text-[11px] leading-5 text-[#85867d]">با جابه‌جایی هر دستگیره، نتایج همان لحظه به‌روز می‌شوند.</p>
         </div>
         {getPriceError(current) && (
           <p role="alert" className="text-xs leading-5 text-[#a13f35]">{getPriceError(current)}</p>
@@ -426,6 +525,22 @@ const CategoryPage = () => {
         </fieldset>
       )}
 
+      {(fitOptions.length > 0 || categoryAttributeDefinitions.length > 0 || brandOptions.length > 0) && (
+        <details
+          className="min-w-0 rounded-2xl border border-[#e4e0d8] bg-white/70 p-3 sm:col-span-2 sm:p-4 xl:col-span-3"
+          open={Boolean(
+            current.fits.length ||
+            current.brands.length ||
+            Object.values(current.attributes || {}).some((value) =>
+              value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)
+            )
+          )}
+        >
+          <summary className="cursor-pointer list-none text-sm font-semibold text-[#41443b] outline-none focus-visible:ring-2 focus-visible:ring-[#68745f]">
+            فیلترهای بیشتر
+            <span className="mr-2 text-xs font-normal text-[#85867d]">تن‌خور، ویژگی‌های تخصصی و برند</span>
+          </summary>
+          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
       {fitOptions.length > 0 && (
         <fieldset className="min-w-0 space-y-2">
           <legend className="text-sm font-semibold text-[#41443b]">نوع تن‌خور</legend>
@@ -489,12 +604,21 @@ const CategoryPage = () => {
           </div>
         </fieldset>
       )}
+          </div>
+        </details>
+      )}
     </div>
-  );
+    );
+  };
 
   const pageTitle = selectedCategory?.name?.fa || categoryLabels[category] || category.replace(/-/g, " ");
   const categoryChildren = selectedCategory
-    ? dynamicCategories.filter((item) => String(item.parentId || "") === String(selectedCategory._id))
+    ? dynamicCategories
+        .filter((item) => String(item.parentId || "") === String(selectedCategory._id) && item.showInNavigation !== false)
+        .sort((a, b) =>
+          Number(a.sortOrder || 0) - Number(b.sortOrder || 0) ||
+          String(a.name?.fa || "").localeCompare(String(b.name?.fa || ""), "fa")
+        )
     : [];
   const categoryAncestors = selectedCategory
     ? (selectedCategory.ancestors || []).map((ancestorId) => dynamicCategories.find((item) => String(item._id) === String(ancestorId))).filter(Boolean)
