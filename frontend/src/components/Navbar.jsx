@@ -143,6 +143,7 @@ const Navbar = () => {
     freeShippingThreshold: 0,
     currency: "IRT",
   });
+  const [globalPriceBounds, setGlobalPriceBounds] = useState({ minPrice: 0, maxPrice: 1, count: 0 });
   const [filters, setFilters] = useState(defaultFilters);
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -187,6 +188,27 @@ const Navbar = () => {
       })
       .catch(() => {
         if (active) setShippingAnnouncement((current) => ({ ...current, loading: false, error: true }));
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    axios.get("/products/price-bounds")
+      .then(({ data }) => {
+        if (!active) return;
+        const bounds = data.priceBounds || {};
+        const minPrice = Number(bounds.minPrice);
+        const maxPrice = Number(bounds.maxPrice);
+        const count = Number(bounds.count);
+        setGlobalPriceBounds({
+          minPrice: Number.isFinite(minPrice) ? Math.max(0, Math.floor(minPrice)) : 0,
+          maxPrice: Number.isFinite(maxPrice) ? Math.max(1, Math.ceil(maxPrice)) : 1,
+          count: Number.isFinite(count) ? Math.max(0, count) : 0,
+        });
+      })
+      .catch(() => {
+        if (active) setGlobalPriceBounds({ minPrice: 0, maxPrice: 1, count: 0 });
       });
     return () => { active = false; };
   }, []);
@@ -516,56 +538,126 @@ const Navbar = () => {
     setFilters((current) => ({ ...current, [key]: value }));
   };
 
-  const renderFilterFields = () => (
-    <div className="space-y-3">
-      <div>
-        <p className="text-xs font-medium text-[#62645c]">محدوده قیمت</p>
-        <div className="mt-1 grid grid-cols-2 gap-3">
-          <label className="text-xs text-[#85867d]">
-            از
-            <input
-              type="number"
-              min="0"
-              step="any"
-              inputMode="decimal"
-              dir="ltr"
-              placeholder="بدون محدودیت"
-              className={fieldClass}
-              value={filters.minPrice}
-              onChange={(event) => updateFilter("minPrice", event.target.value)}
-            />
-          </label>
-          <label className="text-xs text-[#85867d]">
-            تا
-            <input
-              type="number"
-              min="0"
-              step="any"
-              inputMode="decimal"
-              dir="ltr"
-              placeholder="بدون محدودیت"
-              className={fieldClass}
-              value={filters.maxPrice}
-              onChange={(event) => updateFilter("maxPrice", event.target.value)}
-            />
-          </label>
-        </div>
-      </div>
+  const renderFilterFields = () => {
+    const rangeMin = Math.max(0, globalPriceBounds.minPrice);
+    const rangeMax = Math.max(rangeMin + 1, globalPriceBounds.maxPrice);
+    const rangeSpan = rangeMax - rangeMin;
+    const sliderStep = Math.max(1, Math.ceil(rangeSpan / 1200));
+    const parsedMin = filters.minPrice.trim() === "" ? rangeMin : Number(filters.minPrice);
+    const parsedMax = filters.maxPrice.trim() === "" ? rangeMax : Number(filters.maxPrice);
+    const clamp = (value, fallback) =>
+      Number.isFinite(value) ? Math.min(rangeMax, Math.max(rangeMin, value)) : fallback;
+    const minCandidate = clamp(parsedMin, rangeMin);
+    const maxCandidate = clamp(parsedMax, rangeMax);
+    const sliderMinValue = Math.min(minCandidate, maxCandidate);
+    const sliderMaxValue = Math.max(minCandidate, maxCandidate);
+    const sliderMinPercent = ((sliderMinValue - rangeMin) / rangeSpan) * 100;
+    const sliderMaxPercent = ((sliderMaxValue - rangeMin) / rangeSpan) * 100;
 
-      <label className="block text-xs font-medium text-[#62645c]">
-        مرتب‌سازی
-        <select
-          className={fieldClass}
-          value={filters.sort}
-          onChange={(event) => updateFilter("sort", event.target.value)}
-        >
-          {sortOptions.map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
-          ))}
-        </select>
-      </label>
-    </div>
-  );
+    const updateSlider = (field, rawValue) => {
+      const value = clamp(Math.round(Number(rawValue)), field === "minPrice" ? sliderMinValue : sliderMaxValue);
+      setFilters((current) => {
+        const currentMin = current.minPrice.trim() === "" ? rangeMin : clamp(Number(current.minPrice), rangeMin);
+        const currentMax = current.maxPrice.trim() === "" ? rangeMax : clamp(Number(current.maxPrice), rangeMax);
+        if (field === "minPrice") {
+          const nextMin = Math.min(value, currentMax);
+          return { ...current, minPrice: nextMin <= rangeMin ? "" : String(nextMin) };
+        }
+        const nextMax = Math.max(value, currentMin);
+        return { ...current, maxPrice: nextMax >= rangeMax ? "" : String(nextMax) };
+      });
+    };
+
+    return (
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs font-medium text-[#62645c]">محدوده قیمت ({formatPrice(rangeMin)} تا {formatPrice(rangeMax)})</p>
+          <div className="mt-1 grid grid-cols-2 gap-3">
+            <label className="text-xs text-[#85867d]">
+              از
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                dir="ltr"
+                placeholder="بدون محدودیت"
+                className={fieldClass}
+                value={filters.minPrice}
+                onChange={(event) => updateFilter("minPrice", event.target.value)}
+              />
+            </label>
+            <label className="text-xs text-[#85867d]">
+              تا
+              <input
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                dir="ltr"
+                placeholder="بدون محدودیت"
+                className={fieldClass}
+                value={filters.maxPrice}
+                onChange={(event) => updateFilter("maxPrice", event.target.value)}
+              />
+            </label>
+          </div>
+          <div className="mt-2 rounded-xl border border-[#e4e0d8] bg-[#f7f5f0] px-3 py-3">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[#62645c]">
+              <span>از <strong className="tabular-nums text-[#252722]">{formatPrice(sliderMinValue)}</strong></span>
+              <span>تا <strong className="tabular-nums text-[#252722]">{formatPrice(sliderMaxValue)}</strong></span>
+            </div>
+            <div className={"relative h-7 " + (globalPriceBounds.count > 0 ? "" : "opacity-50")} dir="ltr">
+              <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#dedbd2]" />
+              <div
+                className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#68745f]"
+                style={{ left: sliderMinPercent + "%", right: 100 - sliderMaxPercent + "%" }}
+              />
+              <input
+                type="range"
+                min={rangeMin}
+                max={rangeMax}
+                step={sliderStep}
+                value={sliderMinValue}
+                disabled={globalPriceBounds.count === 0}
+                aria-label="حداقل قیمت"
+                aria-valuetext={formatPrice(sliderMinValue)}
+                onChange={(event) => updateSlider("minPrice", event.target.value)}
+                className="price-range-slider"
+                style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 5 : 4 }}
+              />
+              <input
+                type="range"
+                min={rangeMin}
+                max={rangeMax}
+                step={sliderStep}
+                value={sliderMaxValue}
+                disabled={globalPriceBounds.count === 0}
+                aria-label="حداکثر قیمت"
+                aria-valuetext={formatPrice(sliderMaxValue)}
+                onChange={(event) => updateSlider("maxPrice", event.target.value)}
+                className="price-range-slider"
+                style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 4 : 5 }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <label className="block text-xs font-medium text-[#62645c]">
+          مرتب‌سازی
+          <select
+            className={fieldClass}
+            value={filters.sort}
+            onChange={(event) => updateFilter("sort", event.target.value)}
+          >
+            {sortOptions.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    );
+  };
 
   const renderFilterActions = () => (
     <div className="mt-5 flex gap-2 border-t border-[#eeeae2] pt-4">
