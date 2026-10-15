@@ -43,14 +43,17 @@ export const reserveCoupon = async (codeInput, subtotal, now = new Date()) => {
     expiresAt: { $gt: now },
     minOrderAmount: { $lte: subtotal },
   };
-  if (coupon.usageLimit != null) {
-    filter.$expr = {
-      $lt: [
-        { $add: [{ $ifNull: ["$usageCount", 0] }, { $ifNull: ["$reservedCount", 0] }] },
-        "$usageLimit",
-      ],
-    };
-  }
+  filter.$expr = {
+    $or: [
+      { $eq: [{ $ifNull: ["$usageLimit", null] }, null] },
+      {
+        $lt: [
+          { $add: [{ $ifNull: ["$usageCount", 0] }, { $ifNull: ["$reservedCount", 0] }] },
+          "$usageLimit",
+        ],
+      },
+    ],
+  };
 
   coupon = await Coupon.findOneAndUpdate(filter, { $inc: { reservedCount: 1 } }, { new: true });
   if (!coupon) {
