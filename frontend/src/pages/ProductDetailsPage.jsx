@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, Check, LoaderCircle, Ruler, ShoppingCart,
+  ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
   X, Shirt,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { useCartStore } from "../stores/useCartStore";
+import { useWishlistStore } from "../stores/useWishlistStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
 const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
@@ -35,6 +36,8 @@ const ProductDetailsPage = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const { addToCart } = useCartStore();
+  const { isSaved, toggleSaved } = useWishlistStore();
+  const isWishlisted = Boolean(product && isSaved(product._id));
 
   useEffect(() => {
     let active = true;
@@ -105,6 +108,21 @@ const ProductDetailsPage = () => {
     addToCart(product, { size: selectedSize, color: selectedColor });
   };
 
+  const handleToggleWishlist = () => {
+    if (!product) return;
+    toggleSaved({ ...product, image: product.image || galleryImages[0] || "" });
+  };
+
+  const showPreviousImage = () => {
+    if (galleryImages.length < 2) return;
+    setActiveImageIndex((index) => (index - 1 + galleryImages.length) % galleryImages.length);
+  };
+
+  const showNextImage = () => {
+    if (galleryImages.length < 2) return;
+    setActiveImageIndex((index) => (index + 1) % galleryImages.length);
+  };
+
   if (loading) return <main dir="rtl" className="flex min-h-[60vh] items-center justify-center bg-[#f7f5f0] px-4 text-[#252722]"><div className="flex items-center gap-3 text-sm text-[#62645c]" role="status"><LoaderCircle className="animate-spin" size={20} aria-hidden="true" />در حال بارگذاری جزئیات محصول…</div></main>;
   if (error || !product) return <main dir="rtl" className="min-h-[60vh] bg-[#f7f5f0] px-4 py-16 text-[#252722] sm:px-6"><div className="mx-auto max-w-3xl rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-6 py-12 text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">محصول در دسترس نیست</p><h1 className="mt-3 font-serif text-3xl">محصول موردنظر پیدا نشد.</h1><p className="mt-3 text-sm leading-6 text-[#77786f]">{error || "ممکن است این محصول حذف شده باشد."}</p><Link to="/" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#252722] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به مجموعه</Link></div></main>;
 
@@ -120,6 +138,16 @@ const ProductDetailsPage = () => {
                 <img src={galleryImages[Math.min(activeImageIndex, galleryImages.length - 1)]} alt={product.name} fetchPriority="high" className="aspect-[4/5] max-h-[850px] w-full object-cover sm:aspect-[5/4] lg:aspect-[4/5]" />
               ) : (
                 <div className="flex aspect-[4/5] w-full items-center justify-center px-6 text-center text-sm text-[#77786f]">تصویر محصول به‌زودی اضافه می‌شود</div>
+              )}
+              {galleryImages.length > 1 && (
+                <>
+                  <button type="button" onClick={showPreviousImage} aria-label="نمایش تصویر قبلی" className="absolute end-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-[#fffefa]/95 text-[#252722] shadow-sm backdrop-blur-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">
+                    <ArrowRight size={18} aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={showNextImage} aria-label="نمایش تصویر بعدی" className="absolute start-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-[#fffefa]/95 text-[#252722] shadow-sm backdrop-blur-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">
+                    <ArrowLeft size={18} aria-hidden="true" />
+                  </button>
+                </>
               )}
               {galleryImages.length > 1 && (
                 <span className="absolute bottom-3 left-3 rounded-full border border-white/70 bg-[#fffefa]/90 px-3 py-1.5 text-xs font-medium text-[#41443b] backdrop-blur-sm">
@@ -244,11 +272,20 @@ const ProductDetailsPage = () => {
             <h2 className="text-sm font-semibold">درباره این محصول</h2>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#62645c]">{product.description || "انتخابی کاربردی برای تکمیل مجموعه روزمره شما."}</p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:bg-[#d5d0c5] disabled:text-[#77786f]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
-              <Link to="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#d5d0c5] px-6 py-3 text-sm font-semibold text-[#252722] transition hover:border-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">ادامه گشت‌وگذار <ArrowLeft size={16} aria-hidden="true" /></Link>
+            <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
+              <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#252722] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:bg-[#d5d0c5] disabled:text-[#77786f] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
+              <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:flex-1 " + (isWishlisted ? "border-[#68745f] bg-[#e9ede4] text-[#526149]" : "border-[#d5d0c5] bg-white text-[#252722] hover:border-[#68745f] hover:bg-[#f7f8f4]")}>
+                <Heart size={17} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" />
+                {isWishlisted ? "ذخیره‌شده در علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
+              </button>
             </div>
-            <p className="mt-5 flex items-center gap-2 text-xs leading-5 text-[#77786f]"><Check size={15} className="shrink-0 text-[#68745f]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
+            <Link to="/" className="mt-4 inline-flex min-h-9 items-center gap-2 self-start rounded-full px-2 py-2 text-xs font-semibold text-[#62645c] transition hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">ادامه گشت‌وگذار <ArrowLeft size={14} aria-hidden="true" /></Link>
+            <div className="mt-5 grid gap-2 border-t border-[#eeeae2] pt-4 text-xs sm:grid-cols-3">
+              <Link to="/shipping-policy" className="rounded-xl bg-[#f7f5f0] px-3 py-3 text-center text-[#62645c] transition hover:bg-[#e9ede4] hover:text-[#252722]">اطلاعات ارسال</Link>
+              <Link to="/returns-policy" className="rounded-xl bg-[#f7f5f0] px-3 py-3 text-center text-[#62645c] transition hover:bg-[#e9ede4] hover:text-[#252722]">شرایط بازگشت</Link>
+              <Link to="/support" className="rounded-xl bg-[#f7f5f0] px-3 py-3 text-center text-[#62645c] transition hover:bg-[#e9ede4] hover:text-[#252722]">پشتیبانی و راهنمایی</Link>
+            </div>
+            <p className="mt-4 flex items-center gap-2 text-xs leading-5 text-[#77786f]"><Check size={15} className="shrink-0 text-[#68745f]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
           </section>
         </div>
       </div>
