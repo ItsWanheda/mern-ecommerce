@@ -8,6 +8,7 @@ import { useProductStore } from "../stores/useProductStore";
 import FeaturedProducts from "../components/FeaturedProducts";
 import { formatPrice } from "../lib/commerce";
 import { useCategoryStore } from "../stores/useCategoryStore";
+import { getCampaignPath } from "../lib/campaign-url";
 
 const legacyCategoryCards = [
   { href: "/category/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
@@ -159,7 +160,7 @@ const HomePage = () => {
               </p>
               <div className="mt-6 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                 {heroCampaign ? (
-                  <Link to={"/campaign/" + heroCampaign._id} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
+                  <Link to={getCampaignPath(heroCampaign)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:w-auto">
                     مشاهده پیشنهاد<ArrowLeft size={17} aria-hidden="true" />
                   </Link>
                 ) : (
@@ -205,7 +206,7 @@ const HomePage = () => {
             </div>
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
               {secondaryCampaigns.map((campaign) => (
-                <Link to={"/campaign/" + campaign._id} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
+                <Link to={getCampaignPath(campaign)} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc] p-5 transition hover:border-[#c7c3b9] sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
                   {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
                   <div className="absolute inset-0 -z-10 bg-gradient-to-l from-[#252722]/85 via-[#252722]/55 to-transparent" />
                   <div className="my-auto max-w-[80%] text-white">

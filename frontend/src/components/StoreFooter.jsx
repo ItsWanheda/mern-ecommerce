@@ -144,8 +144,8 @@ const StoreFooter = () => {
       </div>
       <div className="border-t border-[#d5d0c5]">
         <div className="mx-auto flex max-w-[1920px] flex-col gap-2 px-4 py-4 text-[11px] leading-5 text-[#77786f] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 2xl:px-12">
-          <p>© {formatIranianYear()} تیک بوتیک. تمامی حقوق مادی و معنوی این وب‌سایت محفوظ است.</p>
-          <p>بازنشر محتوا بدون اجازه کتبی مجاز نیست.</p>
+          <p>© {formatIranianYear()} تیک بوتیک. تمامی حقوق مادی و معنوی وب‌سایت، محتوای آن و نشان تجاری «تیک بوتیک» محفوظ است.</p>
+          <p>هرگونه نسخه‌برداری، بازنشر یا استفاده تجاری از محتوا بدون مجوز کتبی ممنوع است.</p>
         </div>
       </div>
     </footer>

@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 const campaignSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true, maxlength: 100 },
+    // Missing slugs remain valid for legacy campaigns; the API falls back to their ID.
+    slug: { type: String, trim: true, lowercase: true, maxlength: 140 },
     description: { type: String, default: "", trim: true, maxlength: 300 },
     image: { type: String, default: "", trim: true, maxlength: 2048 },
     productIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], default: [] },
@@ -25,4 +27,8 @@ const campaignSchema = new mongoose.Schema(
 );
 
 campaignSchema.index({ isActive: 1, startsAt: 1, endsAt: 1, sortOrder: 1 });
+campaignSchema.index(
+  { slug: 1 },
+  { unique: true, partialFilterExpression: { slug: { $type: "string" } } }
+);
 export default mongoose.model("Campaign", campaignSchema);

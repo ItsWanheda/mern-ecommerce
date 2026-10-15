@@ -74,6 +74,8 @@ const fieldLabels = {
   shipmentEventCount: "تعداد رویدادهای ارسال",
   hasTrackingCode: "کد رهگیری ثبت شده",
   metadata: "اطلاعات تکمیلی",
+  changedFields: "فیلدهای تغییر یافته",
+  changeCount: "تعداد فیلدهای تغییر یافته",
 };
 
 const valueText = (value) => {
@@ -171,7 +173,7 @@ const AuditLogTab = () => {
                     .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]))
                     .map((key) => [key, { before: before[key], after: after[key] }])
                 : [];
-            const remaining = Object.fromEntries(Object.entries(metadata).filter(([key]) => !["before", "after", "changes"].includes(key)));
+            const remaining = Object.fromEntries(Object.entries(metadata).filter(([key]) => !["before", "after", "changes", "changedFields", "changeCount"].includes(key)));
             const actorName = log.actor?.name || log.actorName || "مدیر ثبت‌نشده";
             const targetName = targetLabels[log.targetType] || log.targetType || "هدف نامشخص";
 
@@ -192,7 +194,8 @@ const AuditLogTab = () => {
                   <div className="min-w-0">
                     <p className="text-[11px] text-gray-500">عامل رویداد</p>
                     <p className="mt-1 break-words text-sm font-semibold text-gray-100">{actorName}</p>
-                    {log.actor?.role && <p className="mt-1 text-xs text-gray-400">نقش: {log.actor.role}</p>}
+                    {(log.actorRole || log.actor?.role) && <p className="mt-1 text-xs text-gray-400">نقش: {log.actorRole || log.actor.role}</p>}
+                    {(log.actor?._id || log.actor) && <p dir="ltr" className="mt-1 break-all text-[10px] text-gray-500">شناسه: {String(log.actor?._id || log.actor)}</p>}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] text-gray-500">هدف / شناسه</p>
@@ -207,7 +210,7 @@ const AuditLogTab = () => {
 
                 {changes.length > 0 && (
                   <div className="border-t border-gray-700 p-4 sm:p-5">
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-white"><Activity size={16} className="text-[#d6b779]" aria-hidden="true" />تغییرات ثبت‌شده (قبل ← بعد)</h3>
+                    <h3 className="mb-3 flex flex-wrap items-center gap-2 text-sm font-semibold text-white"><Activity size={16} className="text-[#d6b779]" aria-hidden="true" />تغییرات ثبت‌شده (قبل ← بعد)<span className="rounded-full bg-gray-700 px-2 py-0.5 text-[10px] text-gray-300">{new Intl.NumberFormat("fa-IR").format(changes.length)} فیلد</span></h3>
                     <div className="space-y-2">
                       {changes.map(([key, delta]) => (
                         <div key={key} className="grid gap-2 rounded-lg border border-gray-700 bg-gray-900/40 p-3 sm:grid-cols-[minmax(7rem,0.65fr)_1fr_1fr] sm:items-start">
@@ -257,6 +260,22 @@ const AuditLogTab = () => {
                         <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3 sm:col-span-2">
                           <p className="mb-1 text-[11px] text-gray-500">مرورگر / User-Agent</p>
                           <p dir="ltr" className="break-all text-left text-xs leading-5 text-gray-300">{log.userAgent || "—"}</p>
+                        </div>
+                        <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                          <p className="mb-1 text-[11px] text-gray-500">شناسه درخواست</p>
+                          <p dir="ltr" className="break-all text-left text-xs text-gray-200">{log.requestId || "—"}</p>
+                        </div>
+                        <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                          <p className="mb-1 text-[11px] text-gray-500">میزبان درخواست</p>
+                          <p dir="ltr" className="break-all text-left text-xs text-gray-200">{log.requestHost || "—"}</p>
+                        </div>
+                        <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3">
+                          <p className="mb-1 text-[11px] text-gray-500">مبدأ درخواست</p>
+                          <p dir="ltr" className="break-all text-left text-xs text-gray-200">{log.requestOrigin || "—"}</p>
+                        </div>
+                        <div className="rounded-lg border border-gray-700 bg-gray-900/50 p-3 sm:col-span-2">
+                          <p className="mb-1 text-[11px] text-gray-500">صفحه مرجع (بدون query string)</p>
+                          <p dir="ltr" className="break-all text-left text-xs text-gray-200">{log.refererPath || "—"}</p>
                         </div>
                       </div>
                       <details>

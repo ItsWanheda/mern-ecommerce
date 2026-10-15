@@ -3,6 +3,32 @@ import Campaign from "../models/campaign.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 
+const persianSlugCharacters = {
+  "آ": "a", "أ": "a", "إ": "e", "ا": "a", "ب": "b", "پ": "p", "ت": "t", "ث": "s",
+  "ج": "j", "چ": "ch", "ح": "h", "خ": "kh", "د": "d", "ذ": "z", "ر": "r", "ز": "z",
+  "ژ": "zh", "س": "s", "ش": "sh", "ص": "s", "ض": "z", "ط": "t", "ظ": "z",
+  "ع": "a", "غ": "gh", "ف": "f", "ق": "gh", "ک": "k", "ك": "k", "گ": "g",
+  "ل": "l", "م": "m", "ن": "n", "و": "v", "ه": "h", "ة": "h", "ی": "y",
+  "ي": "y", "ى": "y", "ئ": "y", "ؤ": "v", "ء": "",
+};
+
+const createCampaignSlug = (title, id) => {
+  const slugTitle = String(title || "")
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/[۰-۹٠-٩]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit) >= 0
+      ? "۰۱۲۳۴۵۶۷۸۹".indexOf(digit)
+      : "٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[آأإابپتثجچحخدذرزژسشصضطظعغفقکكلمنوهةیئىؤء]/g, (character) => persianSlugCharacters[character] ?? character)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72)
+    .replace(/-+$/g, "");
+  return (slugTitle || "campaign") + "-" + String(id);
+};
+
 const isValidCampaignInput = (body) => {
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const href = typeof body.href === "string" ? body.href.trim() : "";
@@ -43,14 +69,16 @@ export const getActiveCampaigns = async (req, res) => {
 };
 
 export const getCampaignById = async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ message: "Campaign not found" });
+  const key = String(req.params.id || "").trim();
+  if (!key || key.length > 140) return res.status(404).json({ message: "Campaign not found" });
+  const lookup = mongoose.isValidObjectId(key) ? { _id: key } : { slug: key };
   try {
     const now = new Date();
     const campaign = await Campaign.findOne({
-      _id: req.params.id,
+      ...lookup,
       isActive: true,
       endsAt: { $gt: now },
-    }).select("title description image href startsAt endsAt productIds").populate({
+    }).select("slug title description image href startsAt endsAt productIds").populate({
       path: "productIds",
       match: { isActive: { $ne: false } },
       select: "name description price image images category sizes colors variants fit stock isFeatured isActive createdAt",
@@ -85,7 +113,10 @@ export const createCampaign = async (req, res) => {
     if (validProducts.length !== productIds.length) {
       return res.status(400).json({ message: "One or more selected campaign products are unavailable" });
     }
+    const campaignId = new mongoose.Types.ObjectId();
     const campaign = await Campaign.create({
+      _id: campaignId,
+      slug: createCampaignSlug(req.body.title.trim(), campaignId),
       title: req.body.title.trim(),
       description: typeof req.body.description === "string" ? req.body.description.trim().slice(0, 300) : "",
       image: typeof req.body.image === "string" ? req.body.image.trim().slice(0, 2048) : "",
@@ -104,6 +135,7 @@ export const createCampaign = async (req, res) => {
       summary: "Campaign created: " + campaign.title,
       metadata: {
         after: {
+          slug: campaign.slug,
           title: campaign.title,
           description: campaign.description,
           image: campaign.image,
@@ -129,6 +161,7 @@ export const updateCampaign = async (req, res) => {
     const current = await Campaign.findById(req.params.id);
     if (!current) return res.status(404).json({ message: "Campaign not found" });
     const before = {
+      slug: current.slug || String(current._id),
       title: current.title,
       description: current.description,
       image: current.image,
@@ -168,6 +201,7 @@ export const updateCampaign = async (req, res) => {
       metadata: {
         before,
         after: {
+          slug: current.slug || String(current._id),
           title: current.title,
           description: current.description,
           image: current.image,
@@ -194,6 +228,7 @@ export const deleteCampaign = async (req, res) => {
     const campaign = await Campaign.findById(req.params.id);
     if (!campaign) return res.status(404).json({ message: "Campaign not found" });
     const deletedSnapshot = {
+      slug: campaign.slug || String(campaign._id),
       title: campaign.title,
       description: campaign.description,
       image: campaign.image,

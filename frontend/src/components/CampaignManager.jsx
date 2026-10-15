@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Megaphone, Pause, Play, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Megaphone, Pause, Play, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import IranianDateTimeInput from "./IranianDateTimeInput";
 import { formatIranianDateTimeInput, formatIranianDateTime, parseIranianDateTime } from "../lib/iranian-date";
+import { getCampaignPath } from "../lib/campaign-url";
 
 const initialForm = () => ({
   title: "",
@@ -42,6 +43,16 @@ const CampaignManager = () => {
   };
 
   useEffect(() => { loadCampaigns(); loadProducts(); }, []);
+
+  const copyCampaignLink = async (campaign) => {
+    const url = new URL(getCampaignPath(campaign), window.location.origin).toString();
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("لینک اختصاصی کمپین کپی شد.");
+    } catch {
+      toast.error("کپی لینک ممکن نشد؛ نشانی صفحه: " + url);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -142,9 +153,14 @@ const CampaignManager = () => {
                     <p className="mt-1 truncate text-xs text-gray-400">{campaign.description || campaign.href}</p>
                     <p className="mt-1 text-xs text-gray-500">{formatIranianDateTime(campaign.startsAt)} تا {formatIranianDateTime(campaign.endsAt)}</p>
                     <p className="mt-1 text-xs text-gray-400">{new Intl.NumberFormat("fa-IR").format((campaign.productIds || []).length)} محصول مرتبط</p>
-                    <Link to={"/campaign/" + campaign._id} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9aa58e] hover:text-white">
-                      بازکردن صفحه اختصاصی<ExternalLink size={13} aria-hidden="true" />
-                    </Link>
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <Link to={getCampaignPath(campaign)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#9aa58e] hover:text-white">
+                        بازکردن صفحه اختصاصی<ExternalLink size={13} aria-hidden="true" />
+                      </Link>
+                      <button type="button" onClick={() => copyCampaignLink(campaign)} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-gray-700 px-2.5 text-xs text-gray-300 transition hover:border-[#9aa58e] hover:text-white">
+                        <Copy size={13} aria-hidden="true" />کپی لینک عمومی
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">

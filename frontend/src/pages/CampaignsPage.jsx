@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, LoaderCircle, Megaphone, RefreshCw } from "lucide-react";
 import axios from "../lib/axios";
 import { formatIranianDateTime } from "../lib/iranian-date";
+import { getCampaignPath } from "../lib/campaign-url";
 
 const CampaignsPage = () => {
   const [campaigns, setCampaigns] = useState([]);
@@ -40,7 +41,7 @@ const CampaignsPage = () => {
         ) : campaigns.length ? (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((campaign) => (
-              <Link key={campaign._id} to={"/campaign/" + campaign._id} className="group overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">
+              <Link key={campaign._id} to={getCampaignPath(campaign)} className="group overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">
                 <div className="relative aspect-[16/9] bg-[#e9e5dc]">
                   {campaign.image ? <img src={campaign.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-[#68745f]"><Megaphone size={35} aria-hidden="true" /></div>}
                 </div>
