@@ -139,3 +139,43 @@ export function formatIranianChartDate(value) {
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12));
   return formatIranianDate(date, { month: "short", day: "numeric", timeZone: "UTC" });
 }
+
+
+export function getIranianDateParts(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return {
+    ...numericParts(persianCalendarParts, date),
+    ...((({ hour, minute }) => ({ hour, minute }))(numericParts(tehranGregorianParts, date))),
+  };
+}
+
+export function getIranianMonthLength(year, month) {
+  return jalaliMonthLength(year, month);
+}
+
+export function getIranianWeekdayOffset(year, month) {
+  const gregorian = jalaliToGregorian(year, month, 1);
+  if (!gregorian) return 0;
+  // Iranian weeks begin on Saturday; JavaScript starts the week on Sunday.
+  return (new Date(Date.UTC(gregorian.year, gregorian.month - 1, gregorian.day, 12)).getUTCDay() + 1) % 7;
+}
+
+export function formatIranianMonthTitle(year, month) {
+  const gregorian = jalaliToGregorian(year, month, 1);
+  if (!gregorian) return "";
+  const date = new Date(Date.UTC(gregorian.year, gregorian.month - 1, gregorian.day, 12));
+  return new Intl.DateTimeFormat(PERSIAN_DISPLAY_LOCALE, {
+    timeZone: "UTC",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+export function createIranianDateTimeInputValue(year, month, day, hour, minute) {
+  const pad = (number) => String(number).padStart(2, "0");
+  return toPersianDigits(
+    String(year).padStart(4, "0") + "/" + pad(month) + "/" + pad(day) +
+    " " + pad(hour) + ":" + pad(minute)
+  );
+}
