@@ -7,6 +7,7 @@ import { useCartStore } from "../stores/useCartStore";
 import { useUserStore } from "../stores/useUserStore";
 import axios from "../lib/axios";
 import { formatPrice, STORE_CURRENCY } from "../lib/commerce";
+import GiftCouponCard from "./GiftCouponCard";
 
 const provinces = [
   "آذربایجان شرقی", "آذربایجان غربی", "اردبیل", "اصفهان", "البرز", "ایلام",
@@ -139,6 +140,12 @@ const OrderSummary = () => {
         return;
       }
 
+      if (response.data?.status === "paid" && response.data?.orderId) {
+        toast.success("سفارش بدون نیاز به پرداخت ثبت شد.");
+        navigate(`/purchase-success?provider=zarinpal&order_id=${encodeURIComponent(response.data.orderId)}`);
+        return;
+      }
+
       const redirectUrl = response.data?.redirectUrl;
       if (!redirectUrl || !redirectUrl.startsWith("https://")) {
         throw new Error("نشانی امن درگاه پرداخت دریافت نشد");
@@ -209,6 +216,7 @@ const OrderSummary = () => {
           <label className="block text-sm text-gray-300">توضیحات تحویل (اختیاری)
             <textarea maxLength={500} rows={2} className={addressFieldClass} value={shippingAddress.notes} onChange={(event) => setShippingAddress({ ...shippingAddress, notes: event.target.value })} placeholder="زمان مناسب یا توضیحات تکمیلی برای پیک" />
           </label>
+          <GiftCouponCard />
         </section>
       )}
         <div className="space-y-3">
