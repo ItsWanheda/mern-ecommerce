@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
+import { Link } from "react-router-dom";
 
 const FeaturedProducts = ({ featuredProducts = [] }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -27,7 +28,12 @@ const FeaturedProducts = ({ featuredProducts = [] }) => {
     <section dir="rtl" className="py-8 sm:py-10" aria-labelledby="featured-products-heading">
       <div className="mb-7 flex flex-col gap-3 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">منتخب برای شما</p><h2 id="featured-products-heading" className="font-serif text-3xl font-medium tracking-tight text-[#252722] sm:text-4xl">محصولات منتخب</h2></div>
-        <p className="max-w-sm text-sm leading-6 text-[#62645c] sm:text-right">مجموعه‌ای گزیده از محصولاتی که ارزش دیدن دارند.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="max-w-sm text-sm leading-6 text-[#62645c] sm:text-right">مجموعه‌ای گزیده از محصولاتی که ارزش دیدن دارند.</p>
+          <Link to="/featured-products" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d5d0c5] px-4 py-2 text-xs font-semibold text-[#41443b] transition hover:border-[#252722]">
+            مشاهده همه<ArrowLeft size={14} aria-hidden="true" />
+          </Link>
+        </div>
       </div>
       <div className="relative">
         <div id="featured-products-track" className="overflow-hidden">

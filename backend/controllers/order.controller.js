@@ -86,6 +86,13 @@ export const updateShipment = async (req, res) => {
       return res.status(409).json({ message: "Only paid orders can be prepared for shipment" });
     }
 
+    const before = {
+      shipmentStatus: order.shipmentStatus || "processing",
+      shippingCarrier: order.shippingCarrier || "",
+      trackingCode: order.trackingCode || "",
+      shippedAt: order.shippedAt || null,
+      deliveredAt: order.deliveredAt || null,
+    };
     const currentStatus = order.shipmentStatus || "processing";
     if (nextStatus !== currentStatus) {
       if (nextStatus === "returned") {
@@ -123,8 +130,25 @@ export const updateShipment = async (req, res) => {
       action: changed ? "order.shipment_status_updated" : "order.shipment_tracking_updated",
       targetType: "order",
       targetId: order._id,
-      summary: changed ? `Shipment moved to ${nextStatus}` : "Shipment tracking details updated",
-      metadata: { shipmentStatus: nextStatus, hasTrackingCode: Boolean(order.trackingCode), carrier: order.shippingCarrier },
+      summary: changed ? "Shipment moved from " + before.shipmentStatus + " to " + nextStatus : "Shipment tracking details updated",
+      metadata: {
+        orderId: String(order._id),
+        before,
+        after: {
+          shipmentStatus: order.shipmentStatus,
+          shippingCarrier: order.shippingCarrier || "",
+          trackingCode: order.trackingCode || "",
+          shippedAt: order.shippedAt || null,
+          deliveredAt: order.deliveredAt || null,
+        },
+        changes: {
+          shipmentStatus: { before: before.shipmentStatus, after: order.shipmentStatus },
+          shippingCarrier: { before: before.shippingCarrier, after: order.shippingCarrier || "" },
+          trackingCode: { before: before.trackingCode, after: order.trackingCode || "" },
+        },
+        note: note || "",
+        shipmentEventCount: order.shipmentEvents.length,
+      },
     });
     return res.json({ order });
   } catch (error) {

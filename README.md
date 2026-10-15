@@ -215,6 +215,11 @@ Open [http://localhost:5173](http://localhost:5173). The API health endpoint is 
 | `DEFAULT_SHIPPING_FEE`, `FREE_SHIPPING_THRESHOLD` | Whole-Toman shipping settings. |
 | `CRON_SECRET` | Long random secret authorizing payment reconciliation. |
 | `VITE_API_URL` | Optional public frontend build variable for a separately hosted API. Never use it for secrets. |
+| `VITE_STORE_INSTAGRAM_URL`, `VITE_STORE_TELEGRAM_URL`, `VITE_STORE_X_URL` | Optional public profile links shown as social icons in the footer. Use the store's real HTTPS profile URLs. |
+| `VITE_ENAMAD_SEAL_IMAGE_URL` | Public image/embed URL for the eNAMAD seal issued to this specific store. |
+| `VITE_ENAMAD_SEAL_LINK_URL` | Official eNAMAD verification link issued for this store. Do not substitute a generic eNAMAD homepage URL. |
+
+The footer reads the public variables above at build time. The social icons remain inactive until real profile URLs are configured. Until the shop's own eNAMAD seal image and verification URL are configured, the footer labels the displayed generic mark as unverified; a generic logo is not evidence that this store has an active trust seal. Update the frontend environment and redeploy after changing these values.
 
 ## 🧱 Data and currency rules
 

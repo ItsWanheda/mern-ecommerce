@@ -43,7 +43,7 @@ export const getDailySalesData = async (startDate, endDate) => {
 			},
 			{
 				$group: {
-					_id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+					_id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Tehran" } },
 					sales: { $sum: 1 },
 					revenue: { $sum: "$totalAmount" },
 				},
@@ -78,13 +78,31 @@ export const getDailySalesData = async (startDate, endDate) => {
 };
 
 function getDatesInRange(startDate, endDate) {
+	const calendarDate = (date) => {
+		const parts = new Intl.DateTimeFormat("en-US-u-ca-gregory-nu-latn", {
+			timeZone: "Asia/Tehran",
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+		}).formatToParts(date);
+		const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+		return { year: Number(values.year), month: Number(values.month), day: Number(values.day) };
+	};
+
+	const start = calendarDate(startDate);
+	const end = calendarDate(endDate);
+	let cursor = Date.UTC(start.year, start.month - 1, start.day);
+	const last = Date.UTC(end.year, end.month - 1, end.day);
 	const dates = [];
-	let currentDate = new Date(startDate);
 
-	while (currentDate <= endDate) {
-		dates.push(currentDate.toISOString().split("T")[0]);
-		currentDate.setDate(currentDate.getDate() + 1);
+	while (cursor <= last) {
+		const date = new Date(cursor);
+		dates.push(
+			String(date.getUTCFullYear()).padStart(4, "0") + "-" +
+			String(date.getUTCMonth() + 1).padStart(2, "0") + "-" +
+			String(date.getUTCDate()).padStart(2, "0")
+		);
+		cursor += 24 * 60 * 60 * 1000;
 	}
-
 	return dates;
 }

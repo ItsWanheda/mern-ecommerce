@@ -34,6 +34,7 @@ export const updateShippingSettings = async (req, res) => {
     return res.status(400).json({ message: "Shipping amounts must be whole-number Toman values." });
   }
   try {
+    const previousSettings = await getShippingSettings();
     const settings = await StoreSettings.findOneAndUpdate(
       { key: "default" },
       { $set: { flatRate, freeShippingThreshold, updatedBy: req.user._id } },
@@ -44,7 +45,18 @@ export const updateShippingSettings = async (req, res) => {
       targetType: "store_settings",
       targetId: settings?._id,
       summary: "Shipping fee settings updated",
-      metadata: { flatRate, freeShippingThreshold },
+      metadata: {
+        before: {
+          flatRate: previousSettings.flatRate,
+          freeShippingThreshold: previousSettings.freeShippingThreshold,
+          currency,
+        },
+        after: { flatRate, freeShippingThreshold, currency },
+        changes: {
+          flatRate: { before: previousSettings.flatRate, after: flatRate },
+          freeShippingThreshold: { before: previousSettings.freeShippingThreshold, after: freeShippingThreshold },
+        },
+      },
     });
     return res.json({ ...settings, currency: getCurrency() });
   } catch (error) {

@@ -2,10 +2,7 @@ import { useEffect, useState } from "react";
 import { Mail, RefreshCw, Users } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
-
-const formatDate = (value) => value
-  ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium" }).format(new Date(value))
-  : "—";
+import { formatIranianDate } from "../lib/iranian-date";
 
 const NewsletterManager = () => {
   const [subscribers, setSubscribers] = useState([]);
@@ -60,8 +57,8 @@ const NewsletterManager = () => {
                 {subscribers.map((subscriber) => (
                   <tr key={subscriber._id} className="hover:bg-gray-700/40">
                     <td className="px-4 py-3 text-sm text-white" dir="ltr">{subscriber.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{formatDate(subscriber.createdAt)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{formatDate(subscriber.consentedAt)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{formatIranianDate(subscriber.createdAt)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300">{formatIranianDate(subscriber.consentedAt)}</td>
                     <td className="px-4 py-3"><span className={"inline-flex rounded-full px-2.5 py-1 text-xs font-semibold " + (subscriber.isSubscribed ? "bg-[#dce2d4] text-[#41443b]" : "bg-gray-700 text-gray-300")}>{subscriber.isSubscribed ? "فعال" : "لغوشده"}</span></td>
                   </tr>
                 ))}

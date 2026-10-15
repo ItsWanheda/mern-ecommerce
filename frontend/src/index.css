@@ -158,3 +158,196 @@
     animation: none;
   }
 }
+
+
+/* Dark theme: ink-black surfaces, crisp whites, graphite borders and champagne-gold accents.
+   Every override is scoped to data-theme="dark"; the light palette above remains unchanged. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  background: #090a0c;
+  color: #f5f6f8;
+  --dark-canvas: #090a0c;
+  --dark-surface: #111318;
+  --dark-raised: #171a20;
+  --dark-elevated: #1d2128;
+  --dark-border: #2b303a;
+  --dark-text: #f5f6f8;
+  --dark-muted: #a4aab5;
+  --dark-accent: #d6b779;
+  --dark-accent-hover: #e4c989;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  background-color: var(--dark-canvas) !important;
+  color: var(--dark-text);
+}
+
+html[data-theme="dark"] header,
+html[data-theme="dark"] footer,
+html[data-theme="dark"] [class~="bg-[#f7f5f0]"],
+html[data-theme="dark"] [class~="bg-[#f7f5f0]/95"] {
+  background-color: var(--dark-canvas) !important;
+}
+
+html[data-theme="dark"] [class~="bg-[#fffefa]"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/95"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/70"],
+html[data-theme="dark"] [class~="bg-white"],
+html[data-theme="dark"] [class~="bg-white/70"],
+html[data-theme="dark"] [class~="bg-white/60"] {
+  background-color: var(--dark-surface) !important;
+}
+
+html[data-theme="dark"] [class~="bg-[#f2f0e9]"],
+html[data-theme="dark"] [class~="bg-[#e9ede4]"],
+html[data-theme="dark"] [class~="bg-[#e9e5dc]"],
+html[data-theme="dark"] [class~="bg-[#dce2d4]"],
+html[data-theme="dark"] [class~="bg-[#dfe5d6]"],
+html[data-theme="dark"] [class~="bg-[#ebe8df]"] {
+  background-color: var(--dark-raised) !important;
+}
+
+html[data-theme="dark"] [class~="bg-[#252722]"],
+html[data-theme="dark"] [class~="bg-[#41443b]"] {
+  background-color: var(--dark-elevated) !important;
+}
+
+html[data-theme="dark"] [class~="bg-[#68745f]"] {
+  background-color: var(--dark-accent) !important;
+}
+
+html[data-theme="dark"] [class~="hover:bg-[#41443b]"]:hover,
+html[data-theme="dark"] [class~="hover:bg-[#68745f]"]:hover {
+  background-color: var(--dark-accent-hover) !important;
+}
+
+html[data-theme="dark"] [class~="bg-gray-900"],
+html[data-theme="dark"] [class~="bg-gray-900/70"],
+html[data-theme="dark"] [class~="bg-gray-900/60"],
+html[data-theme="dark"] [class~="bg-gray-900/50"],
+html[data-theme="dark"] [class~="bg-gray-900/40"] {
+  background-color: #08090c !important;
+}
+
+html[data-theme="dark"] [class~="bg-gray-800"],
+html[data-theme="dark"] [class~="bg-gray-800/60"] {
+  background-color: #111318 !important;
+}
+
+html[data-theme="dark"] [class~="bg-gray-700"],
+html[data-theme="dark"] [class~="bg-gray-700/60"],
+html[data-theme="dark"] [class~="bg-gray-700/40"] {
+  background-color: #1d2128 !important;
+}
+
+html[data-theme="dark"] [class~="border-[#e4e0d8]"],
+html[data-theme="dark"] [class~="border-[#eeeae2]"],
+html[data-theme="dark"] [class~="border-[#eeeae1]"],
+html[data-theme="dark"] [class~="border-[#dedbd2]"],
+html[data-theme="dark"] [class~="border-[#d5d0c5]"],
+html[data-theme="dark"] [class~="border-[#e0dcd2]"],
+html[data-theme="dark"] [class~="border-[#dce2d4]"],
+html[data-theme="dark"] [class~="border-white/70"],
+html[data-theme="dark"] [class~="border-gray-700"],
+html[data-theme="dark"] [class~="border-gray-600"] {
+  border-color: var(--dark-border) !important;
+}
+
+html[data-theme="dark"] [class~="text-[#252722]"] {
+  color: var(--dark-text) !important;
+}
+
+html[data-theme="dark"] [class~="text-[#41443b]"],
+html[data-theme="dark"] [class~="text-[#55574f]"],
+html[data-theme="dark"] [class~="text-[#62645c]"] {
+  color: #e1e4e9 !important;
+}
+
+html[data-theme="dark"] [class~="text-[#77786f]"],
+html[data-theme="dark"] [class~="text-[#85867d]"],
+html[data-theme="dark"] [class~="text-[#9a9a90]"],
+html[data-theme="dark"] [class~="text-[#a0a195]"] {
+  color: var(--dark-muted) !important;
+}
+
+html[data-theme="dark"] [class~="text-[#68745f]"],
+html[data-theme="dark"] [class~="text-[#526149]"],
+html[data-theme="dark"] [class~="text-[#9aa58e]"] {
+  color: var(--dark-accent) !important;
+}
+
+html[data-theme="dark"] [class~="text-gray-100"],
+html[data-theme="dark"] [class~="text-gray-200"] {
+  color: #e8eaf0 !important;
+}
+
+html[data-theme="dark"] [class~="text-gray-300"] {
+  color: #c8cdd6 !important;
+}
+
+html[data-theme="dark"] [class~="text-gray-400"],
+html[data-theme="dark"] [class~="text-gray-500"] {
+  color: #a4aab5 !important;
+}
+
+html[data-theme="dark"] [class~="text-white"] {
+  color: #f5f6f8;
+}
+
+html[data-theme="dark"] [class~="bg-[#68745f]"][class~="text-white"],
+html[data-theme="dark"] [class~="bg-[#68745f]"] [class~="text-white"] {
+  color: #090a0c !important;
+}
+
+html[data-theme="dark"] [class~="hover:bg-[#f2f0e9]"]:hover,
+html[data-theme="dark"] [class~="hover:bg-[#e9ede4]"]:hover,
+html[data-theme="dark"] [class~="hover:bg-[#e9e5dc]"]:hover,
+html[data-theme="dark"] [class~="hover:bg-gray-700"]:hover,
+html[data-theme="dark"] [class~="hover:bg-gray-700/40"]:hover {
+  background-color: #292e37 !important;
+}
+
+html[data-theme="dark"] [class~="hover:text-[#252722]"]:hover {
+  color: var(--dark-accent-hover) !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  color-scheme: dark;
+  border-color: var(--dark-border);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #9097a4;
+  opacity: 1;
+}
+
+html[data-theme="dark"] [class~="price-range-slider"]::-webkit-slider-thumb {
+  border-color: var(--dark-surface);
+  background: var(--dark-accent);
+  box-shadow: 0 0 0 1px var(--dark-accent), 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] [class~="price-range-slider"]::-moz-range-thumb {
+  border-color: var(--dark-surface);
+  background: var(--dark-accent);
+  box-shadow: 0 0 0 1px var(--dark-accent), 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] [class~="price-range-slider"]:focus-visible::-webkit-slider-thumb,
+html[data-theme="dark"] [class~="price-range-slider"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(214, 183, 121, 0.25), 0 0 0 1px var(--dark-accent);
+}
+
+html[data-theme="dark"] a,
+html[data-theme="dark"] button {
+  -webkit-tap-highlight-color: rgba(214, 183, 121, 0.12);
+}
+
+html[data-theme="dark"] ::selection {
+  color: #090a0c;
+  background: var(--dark-accent);
+}

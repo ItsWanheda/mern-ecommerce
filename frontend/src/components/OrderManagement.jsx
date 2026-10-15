@@ -3,6 +3,7 @@ import { LoaderCircle, RefreshCw, Save, Truck } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
+import { formatIranianDateTime } from "../lib/iranian-date";
 
 const statuses = [
   ["processing", "در حال آماده‌سازی"],
@@ -13,7 +14,6 @@ const statuses = [
 ];
 const labels = Object.fromEntries(statuses);
 
-const formatDate = (value) => value ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 const nextOptions = (status) => {
   const current = status || "processing";
   if (current === "not_ready") return ["processing"];
@@ -115,7 +115,7 @@ const OrderManagement = () => {
                   <div>
                     <p className="text-xs text-gray-400">شماره سفارش</p>
                     <p dir="ltr" className="mt-1 break-all text-sm font-bold text-white">{order._id}</p>
-                    <p className="mt-1 text-xs text-gray-400">{formatDate(order.createdAt)} · {order.user?.name || order.user?.email || "مشتری"}</p>
+                    <p className="mt-1 text-xs text-gray-400">{formatIranianDateTime(order.createdAt)} · {order.user?.name || order.user?.email || "مشتری"}</p>
                   </div>
                   <div className="text-left">
                     <p dir="ltr" className="text-lg font-bold text-[#9aa58e]">{formatPrice(order.totalAmount)}</p>
@@ -156,8 +156,8 @@ const OrderManagement = () => {
                     <label className="block text-sm text-gray-300">یادداشت برای تاریخچه سفارش (اختیاری)
                       <textarea maxLength={500} rows={2} className={fieldClass} value={draft.note} onChange={(event) => changeDraft(order._id, "note", event.target.value)} placeholder="یادداشت داخلی یا توضیح وضعیت" />
                     </label>
-                    {order.shippedAt && <p className="text-xs text-gray-400">ارسال: {formatDate(order.shippedAt)}</p>}
-                    {order.deliveredAt && <p className="text-xs text-gray-400">تحویل: {formatDate(order.deliveredAt)}</p>}
+                    {order.shippedAt && <p className="text-xs text-gray-400">ارسال: {formatIranianDateTime(order.shippedAt)}</p>}
+                    {order.deliveredAt && <p className="text-xs text-gray-400">تحویل: {formatIranianDateTime(order.deliveredAt)}</p>}
                     <button type="button" onClick={() => saveShipment(order)} disabled={savingId === order._id} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">
                       {savingId === order._id ? <LoaderCircle className="animate-spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}ذخیره رهگیری
                     </button>

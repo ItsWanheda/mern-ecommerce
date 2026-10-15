@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import axios from "../lib/axios";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
+import { formatIranianChartDate } from "../lib/iranian-date";
 import { Users, Package, ShoppingCart, Banknote } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
@@ -72,10 +73,10 @@ const AnalyticsTab = () => {
 				<ResponsiveContainer width='100%' height={400}>
 					<LineChart data={dailySalesData}>
 						<CartesianGrid strokeDasharray='3 3' />
-						<XAxis dataKey='date' stroke='#D1D5DB' tickFormatter={(value) => new Intl.DateTimeFormat("fa-IR", { month: "short", day: "numeric" }).format(new Date(value + "T00:00:00"))} />
+						<XAxis dataKey='date' stroke='#D1D5DB' tickFormatter={formatIranianChartDate} />
 						<YAxis yAxisId='left' stroke='#D1D5DB' />
 						<YAxis yAxisId='right' orientation='right' stroke='#D1D5DB' />
-						<Tooltip formatter={(value, name) => [String(name).startsWith("درآمد") ? formatPrice(value, STORE_CURRENCY) : new Intl.NumberFormat("fa-IR").format(Number(value) || 0), name]} />
+						<Tooltip labelFormatter={(label) => formatIranianChartDate(label)} formatter={(value, name) => [String(name).startsWith("درآمد") ? formatPrice(value, STORE_CURRENCY) : new Intl.NumberFormat("fa-IR").format(Number(value) || 0), name]} />
 						<Legend />
 						<Line
 							yAxisId='left'

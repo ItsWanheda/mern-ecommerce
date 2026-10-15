@@ -5,12 +5,14 @@ import {
   deleteCampaign,
   getActiveCampaigns,
   getAllCampaigns,
+  getCampaignById,
   updateCampaign,
 } from "../controllers/campaign.controller.js";
 
 const router = express.Router();
 router.get("/", getActiveCampaigns);
 router.get("/admin", protectRoute, adminRoute, getAllCampaigns);
+router.get("/:id", getCampaignById);
 router.post("/", protectRoute, adminRoute, createCampaign);
 router.patch("/:id", protectRoute, adminRoute, updateCampaign);
 router.delete("/:id", protectRoute, adminRoute, deleteCampaign);

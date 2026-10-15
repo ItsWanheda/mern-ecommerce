@@ -376,8 +376,28 @@ export const createProduct = async (req, res) => {
       action: "product.created",
       targetType: "product",
       targetId: product._id,
-      summary: "Product created",
-      metadata: { category: product.category, price: product.price, hasInventory: product.stock !== null || product.variants.length > 0 },
+      summary: "Product created: " + product.name,
+      metadata: {
+        after: {
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          category: product.category,
+          categoryId: product.categoryId ? String(product.categoryId) : null,
+          imageCount: (product.images || []).length,
+          primaryImage: product.image,
+          images: product.images || [],
+          sizes: product.sizes,
+          colors: product.colors,
+          variants: (product.variants || []).map(({ size, color, stock }) => ({ size, color, stock })),
+          attributes: product.attributes instanceof Map ? Object.fromEntries(product.attributes) : (product.attributes || {}),
+          fit: product.fit,
+          sizeChart: product.sizeChart,
+          stock: product.stock,
+          isFeatured: product.isFeatured,
+          isActive: product.isActive,
+        },
+      },
     });
     return res.status(201).json(product);
   } catch (error) {
@@ -392,6 +412,8 @@ export const updateProductStock = async (req, res) => {
     return res.status(400).json({ message: "Stock must be a non-negative whole number" });
   }
   try {
+    const beforeProduct = await Product.findById(req.params.id).select("name category stock").lean();
+    if (!beforeProduct) return res.status(404).json({ message: "Product not found" });
     const product = await Product.findByIdAndUpdate(
       req.params.id,
       { $set: { stock } },
@@ -403,8 +425,14 @@ export const updateProductStock = async (req, res) => {
       action: "product.stock_updated",
       targetType: "product",
       targetId: product._id,
-      summary: "Product stock updated",
-      metadata: { stock: product.stock },
+      summary: "Product stock updated: " + beforeProduct.name,
+      metadata: {
+        productName: beforeProduct.name,
+        category: beforeProduct.category,
+        before: { stock: beforeProduct.stock },
+        after: { stock: product.stock },
+        changes: { stock: { before: beforeProduct.stock, after: product.stock } },
+      },
     });
     return res.json({ _id: product._id, stock: product.stock });
   } catch (error) {
@@ -424,6 +452,12 @@ export const updateProductVariantStock = async (req, res) => {
     return res.status(400).json({ message: "Variant stock must be a non-negative whole number" });
   }
   try {
+    const beforeProduct = await Product.findOne({
+      _id: req.params.id,
+      variants: { $elemMatch: { size, color } },
+    }).select("name category variants").lean();
+    if (!beforeProduct) return res.status(404).json({ message: "Product variant not found" });
+    const beforeVariant = (beforeProduct.variants || []).find((variant) => variant.size === size && variant.color === color);
     const product = await Product.findOneAndUpdate(
       { _id: req.params.id, variants: { $elemMatch: { size, color } } },
       { $set: { "variants.$.stock": stock } },
@@ -435,8 +469,16 @@ export const updateProductVariantStock = async (req, res) => {
       action: "product.variant_stock_updated",
       targetType: "product",
       targetId: product._id,
-      summary: "Product variant inventory updated",
-      metadata: { variantCount: product.variants.length },
+      summary: "Variant stock updated: " + beforeProduct.name,
+      metadata: {
+        productName: beforeProduct.name,
+        category: beforeProduct.category,
+        variant: { size, color },
+        before: { stock: beforeVariant?.stock ?? null },
+        after: { stock },
+        changes: { stock: { before: beforeVariant?.stock ?? null, after: stock } },
+        variantCount: product.variants.length,
+      },
     });
     return res.json({ _id: product._id, variants: product.variants });
   } catch (error) {
@@ -464,8 +506,28 @@ export const deleteProduct = async (req, res) => {
       action: "product.deleted",
       targetType: "product",
       targetId: product._id,
-      summary: "Product deleted",
-      metadata: { category: product.category },
+      summary: "Product deleted: " + product.name,
+      metadata: {
+        before: {
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          category: product.category,
+          categoryId: product.categoryId ? String(product.categoryId) : null,
+          imageCount: (product.images || []).length,
+          primaryImage: product.image,
+          images: product.images || [],
+          sizes: product.sizes,
+          colors: product.colors,
+          variants: (product.variants || []).map(({ size, color, stock }) => ({ size, color, stock })),
+          attributes: product.attributes instanceof Map ? Object.fromEntries(product.attributes) : (product.attributes || {}),
+          fit: product.fit,
+          sizeChart: product.sizeChart,
+          stock: product.stock,
+          isFeatured: product.isFeatured,
+          isActive: product.isActive,
+        },
+      },
     });
     return res.json({ message: "Product deleted successfully" });
   } catch (error) {
@@ -548,6 +610,7 @@ export const toggleFeaturedProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
+    const wasFeatured = product.isFeatured;
     product.isFeatured = !product.isFeatured;
     await product.save();
     await updateFeaturedProductsCache();
@@ -555,8 +618,13 @@ export const toggleFeaturedProduct = async (req, res) => {
       action: "product.featured_toggled",
       targetType: "product",
       targetId: product._id,
-      summary: "Product featured setting updated",
-      metadata: { isFeatured: product.isFeatured },
+      summary: "Featured setting updated: " + product.name,
+      metadata: {
+        productName: product.name,
+        before: { isFeatured: wasFeatured },
+        after: { isFeatured: product.isFeatured },
+        changes: { isFeatured: { before: wasFeatured, after: product.isFeatured } },
+      },
     });
     return res.json(product);
   } catch (error) {
