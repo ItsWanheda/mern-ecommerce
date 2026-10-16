@@ -89,10 +89,11 @@ const ProductDetailsPage = () => {
     ? variants.find((variant) => (variant.size || "") === selectedSize && (variant.color || "") === selectedColor)
     : null;
   const selectedStock = selectedVariant ? selectedVariant.stock : product?.stock;
+  const normalizedSelectedStock = Number(selectedStock);
+  const hasStockValue = selectedStock !== null && selectedStock !== undefined && selectedStock !== "" && Number.isFinite(normalizedSelectedStock);
   const outOfStock = hasVariants
-    ? !selectedVariant || selectedVariant.stock <= 0
+    ? !selectedVariant || !hasStockValue || normalizedSelectedStock <= 0
     : isOutOfStock(product);
-  const hasStockValue = typeof selectedStock === "number" && Number.isFinite(selectedStock);
 
   const hasAnyStockForSize = (size) => variants.some((variant) => variant.size === size && variant.stock > 0);
   const hasAnyStockForColor = (color) => variants.some((variant) => variant.color === color && variant.stock > 0);
@@ -285,7 +286,7 @@ const ProductDetailsPage = () => {
                 <span className={"h-2 w-2 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-accent)]")} aria-hidden="true" />
                 {outOfStock ? (hasVariants ? "این ترکیب سایز و رنگ ناموجود است" : "در حال حاضر ناموجود") : "موجود برای سفارش"}
               </p>
-              {hasStockValue && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی دقیق این ترکیب: {new Intl.NumberFormat("fa-IR").format(selectedStock)} عدد</p>}
+              {hasStockValue && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی دقیق این ترکیب: {new Intl.NumberFormat("fa-IR").format(normalizedSelectedStock)} عدد</p>}
               {!hasVariants && !isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
             </div>
 
