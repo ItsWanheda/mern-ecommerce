@@ -57,6 +57,8 @@ const OrderSummary = () => {
     message: "",
   });
   const [shipping, setShipping] = useState({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: true, error: "" });
+  const [shippingRetry, setShippingRetry] = useState(0);
+  const [paymentRetry, setPaymentRetry] = useState(0);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [shippingAddress, setShippingAddress] = useState(emptyShippingAddress);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -96,6 +98,7 @@ const OrderSummary = () => {
 
   useEffect(() => {
     let active = true;
+    setPaymentConfig(current => ({ ...current, loading: true, message: "" }));
     axios.get("/payments/provider")
       .then(({ data }) => {
         if (!active) return;
@@ -117,11 +120,11 @@ const OrderSummary = () => {
         });
       });
     return () => { active = false; };
-  }, []);
+  }, [paymentRetry]);
 
   useEffect(() => {
     let active = true;
-    setShipping((current) => ({ ...current, loading: true }));
+    setShipping((current) => ({ ...current, loading: true, error: "" }));
     axios.get(`/shipping?subtotal=${encodeURIComponent(total)}`)
       .then(({ data }) => {
         if (active) setShipping({ ...data, loading: false, error: "" });
@@ -130,7 +133,7 @@ const OrderSummary = () => {
         if (active) setShipping({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: false, error: "دریافت قوانین ارسال ناموفق بود؛ پرداخت تا زمان مشخص‌شدن هزینه ارسال غیرفعال است." });
       });
     return () => { active = false; };
-  }, [total]);
+  }, [total, shippingRetry]);
 
   const handlePayment = async () => {
     if (!cart.length) return toast.error("سبد خرید شما خالی است");
@@ -310,7 +313,7 @@ const OrderSummary = () => {
             </dd>
           </dl>
 
-          {user && shipping.error && <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-sm leading-6 text-[var(--ui-warning)]">{shipping.error}</p>}
+          {user && shipping.error && <div role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-sm leading-6 text-[var(--ui-warning)]"><p>{shipping.error}</p><button type="button" disabled={shipping.loading} onClick={() => setShippingRetry(value => value + 1)} className="mt-2 inline-flex min-h-9 items-center rounded-lg border border-[var(--ui-warning-border)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[var(--ui-hover)] disabled:cursor-not-allowed disabled:opacity-50">تلاش مجدد برای دریافت هزینه ارسال</button></div>}
 
           {!shipping.loading && !shipping.error && shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
             <p className="text-xs leading-5 text-[var(--ui-muted)]">
@@ -326,9 +329,10 @@ const OrderSummary = () => {
         </div>
 
         {user && !paymentConfig.loading && !paymentConfig.configured && (
-          <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-sm leading-6 text-[var(--ui-warning)]">
-            {paymentConfig.message || "درگاه پرداخت پیکربندی نشده است."}
-          </p>
+          <div role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-sm leading-6 text-[var(--ui-warning)]">
+            <p>{paymentConfig.message || "درگاه پرداخت پیکربندی نشده است."}</p>
+            <button type="button" onClick={() => setPaymentRetry(value => value + 1)} className="mt-2 inline-flex min-h-9 items-center rounded-lg border border-[var(--ui-warning-border)] px-3 py-1.5 text-xs font-semibold transition hover:bg-[var(--ui-hover)]">تلاش مجدد برای بررسی درگاه</button>
+          </div>
         )}
 
         <motion.button
