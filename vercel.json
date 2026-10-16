@@ -7,6 +7,39 @@
       "destination": "https://mern-ecommerce-api-wanhedas-projects.vercel.app/api/:path*"
     },
     {
+      "source": "/product/:productId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Ww]hats[Aa]pp|[Tt]elegram[Bb]ot|[Ss]lackbot|[Dd]iscordbot|[Ll]inked[Ii]n[Bb]ot|[Pp]interest|[Ss]kype[Uu]ri[Pp]review|[Vv]iber).*"
+        }
+      ],
+      "destination": "/api/share-preview?type=product&id=:productId"
+    },
+    {
+      "source": "/category/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Ww]hats[Aa]pp|[Tt]elegram[Bb]ot|[Ss]lackbot|[Dd]iscordbot|[Ll]inked[Ii]n[Bb]ot|[Pp]interest|[Ss]kype[Uu]ri[Pp]review|[Vv]iber).*"
+        }
+      ],
+      "destination": "/api/share-preview?type=category&id=:slug"
+    },
+    {
+      "source": "/campaign/:campaignId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*([Ff]acebookexternalhit|[Ff]acebot|[Tt]witterbot|[Ww]hats[Aa]pp|[Tt]elegram[Bb]ot|[Ss]lackbot|[Dd]iscordbot|[Ll]inked[Ii]n[Bb]ot|[Pp]interest|[Ss]kype[Uu]ri[Pp]review|[Vv]iber).*"
+        }
+      ],
+      "destination": "/api/share-preview?type=campaign&id=:campaignId"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
