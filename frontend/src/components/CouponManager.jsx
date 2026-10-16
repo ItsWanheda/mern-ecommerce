@@ -3,19 +3,15 @@ import { CalendarClock, Check, LoaderCircle, Pause, Pencil, Play, Plus, TicketPe
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
-
-const formatLocalDateTime = (value) => {
-  const date = value instanceof Date ? value : new Date(value);
-  if (!Number.isFinite(date.getTime())) return "";
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-};
+import IranianDateTimeInput from "./IranianDateTimeInput";
+import { formatIranianDateTimeInput, parseIranianDateTime } from "../lib/iranian-date";
 
 const freshForm = () => ({
   code: "",
   description: "",
   discountPercentage: "10",
-  startsAt: formatLocalDateTime(new Date()),
-  expiresAt: formatLocalDateTime(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+  startsAt: formatIranianDateTimeInput(new Date()),
+  expiresAt: formatIranianDateTimeInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
   minOrderAmount: "0",
   maxDiscountAmount: "",
   usageLimit: "",
@@ -26,8 +22,8 @@ const toForm = (coupon) => ({
   code: coupon.code || "",
   description: coupon.description || "",
   discountPercentage: String(coupon.discountPercentage ?? 10),
-  startsAt: formatLocalDateTime(coupon.startsAt),
-  expiresAt: formatLocalDateTime(coupon.expiresAt),
+  startsAt: formatIranianDateTimeInput(new Date(coupon.startsAt)),
+  expiresAt: formatIranianDateTimeInput(new Date(coupon.expiresAt)),
   minOrderAmount: String(coupon.minOrderAmount ?? 0),
   maxDiscountAmount: coupon.maxDiscountAmount == null ? "" : String(coupon.maxDiscountAmount),
   usageLimit: coupon.usageLimit == null ? "" : String(coupon.usageLimit),
@@ -65,13 +61,16 @@ const CouponManager = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (loading) return;
+    const startsAt = parseIranianDateTime(form.startsAt);
+    const expiresAt = parseIranianDateTime(form.expiresAt);
+    if (!startsAt || !expiresAt || expiresAt <= startsAt) { toast.error("زمان پایان باید پس از زمان شروع و با تقویم شمسی وارد شود."); return; }
     setLoading(true);
     try {
       const payload = {
         ...form,
         code: form.code.trim().toUpperCase(),
-        startsAt: new Date(form.startsAt).toISOString(),
-        expiresAt: new Date(form.expiresAt).toISOString(),
+        startsAt: startsAt.toISOString(),
+        expiresAt: expiresAt.toISOString(),
         discountPercentage: Number(form.discountPercentage),
         minOrderAmount: Number(form.minOrderAmount || 0),
         maxDiscountAmount: form.maxDiscountAmount === "" ? null : Number(form.maxDiscountAmount),
@@ -130,7 +129,7 @@ const CouponManager = () => {
     <section dir="rtl" className="mx-auto max-w-6xl space-y-7">
       <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
         <div className="mb-6 flex items-start gap-3">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#68745f]/20 text-[#b9c5af]"><TicketPercent size={22} aria-hidden="true" /></span>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-primary)]/20 text-[#b9c5af]"><TicketPercent size={22} aria-hidden="true" /></span>
           <div>
             <h2 className="text-xl font-semibold text-white">{editingId ? "ویرایش کد تخفیف" : "ساخت کد تخفیف جدید"}</h2>
             <p className="mt-1 text-sm leading-6 text-gray-400">کد عمومی با درصد تخفیف، تاریخ اعتبار، حداقل خرید، سقف تخفیف و محدودیت استفاده بسازید. مبلغ تخفیف در سمت سرور محاسبه می‌شود.</p>
@@ -151,12 +150,8 @@ const CouponManager = () => {
           <label className={labelClass}>توضیح برای مدیریت (اختیاری)
             <input maxLength={200} className={fieldClass} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="مثلاً تخفیف کمپین پاییز" />
           </label>
-          <label className={labelClass}>شروع اعتبار
-            <input required type="datetime-local" className={fieldClass} value={form.startsAt} onChange={(event) => setForm({ ...form, startsAt: event.target.value })} />
-          </label>
-          <label className={labelClass}>پایان اعتبار
-            <input required type="datetime-local" className={fieldClass} value={form.expiresAt} onChange={(event) => setForm({ ...form, expiresAt: event.target.value })} />
-          </label>
+          <IranianDateTimeInput id="coupon-starts-at" label="شروع اعتبار" required value={form.startsAt} onChange={(value) => setForm({ ...form, startsAt: value })} />
+          <IranianDateTimeInput id="coupon-expires-at" label="پایان اعتبار" required value={form.expiresAt} onChange={(value) => setForm({ ...form, expiresAt: value })} />
           <label className={labelClass}>حداقل مبلغ سبد (تومان)
             <input required type="number" min="0" step="1" className={fieldClass} value={form.minOrderAmount} onChange={(event) => setForm({ ...form, minOrderAmount: event.target.value })} />
           </label>
@@ -173,7 +168,7 @@ const CouponManager = () => {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
-          <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--brand-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--brand-hover)] disabled:cursor-not-allowed disabled:opacity-50">
             {loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : editingId ? <Check size={17} aria-hidden="true" /> : <Plus size={17} aria-hidden="true" />}
             {loading ? "در حال ذخیره…" : editingId ? "ذخیره تغییرات" : "ساخت کد تخفیف"}
           </button>
@@ -210,7 +205,7 @@ const CouponManager = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <code dir="ltr" className="rounded-md bg-gray-700 px-2.5 py-1.5 text-sm font-bold tracking-wider text-white">{coupon.code}</code>
-                        <span className="rounded-full bg-[#68745f]/20 px-2.5 py-1 text-xs font-semibold text-[#c4d0bb]">{persianNumber(coupon.discountPercentage)}٪ تخفیف</span>
+                        <span className="rounded-full bg-[var(--brand-primary)]/20 px-2.5 py-1 text-xs font-semibold text-[#c4d0bb]">{persianNumber(coupon.discountPercentage)}٪ تخفیف</span>
                         <span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (effective ? "bg-emerald-900/40 text-emerald-200" : "bg-gray-700 text-gray-300")}>{effective ? "فعال و قابل استفاده" : coupon.isActive ? "فعلاً قابل استفاده نیست" : "غیرفعال"}</span>
                       </div>
                       {coupon.description && <p className="mt-2 text-sm text-gray-300">{coupon.description}</p>}

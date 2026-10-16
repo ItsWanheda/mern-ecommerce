@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Copy, ExternalLink, Megaphone, Pause, Play, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Megaphone, Pause, Pencil, Play, Save, Trash2, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
@@ -22,6 +22,7 @@ const CampaignManager = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState(initialForm);
+  const [editingId, setEditingId] = useState("");
   const [loading, setLoading] = useState(false);
 
   const loadCampaigns = async () => {
@@ -35,7 +36,7 @@ const CampaignManager = () => {
 
   const loadProducts = async () => {
     try {
-      const response = await axios.get("/products");
+      const response = await axios.get("/products", { params: { page: 1, limit: 50, status: "active" } });
       setProducts(Array.isArray(response.data.products) ? response.data.products.filter((product) => product.isActive !== false) : []);
     } catch (error) {
       toast.error(error.response?.data?.message || "بارگذاری محصولات برای کمپین ناموفق بود");
@@ -54,6 +55,19 @@ const CampaignManager = () => {
     }
   };
 
+  const resetForm = () => { setForm(initialForm()); setEditingId(""); };
+  const startEdit = (campaign) => {
+    setEditingId(campaign._id);
+    setForm({
+      title: campaign.title || "", description: campaign.description || "", image: campaign.image || "",
+      href: campaign.href || "/shop",
+      startsAt: formatIranianDateTimeInput(new Date(campaign.startsAt)),
+      endsAt: formatIranianDateTimeInput(new Date(campaign.endsAt)),
+      productIds: (campaign.productIds || []).map((product) => String(product?._id || product)),
+      sortOrder: String(campaign.sortOrder ?? 0),
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const handleSubmit = async (event) => {
     event.preventDefault();
     const startsAt = parseIranianDateTime(form.startsAt);
@@ -68,14 +82,10 @@ const CampaignManager = () => {
     }
     setLoading(true);
     try {
-      await axios.post("/campaigns", {
-        ...form,
-        startsAt: startsAt.toISOString(),
-        endsAt: endsAt.toISOString(),
-        sortOrder: Number(form.sortOrder),
-      });
-      toast.success("کمپین ایجاد شد");
-      setForm(initialForm());
+      const payload = { ...form, startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString(), sortOrder: Number(form.sortOrder) };
+      if (editingId) { await axios.patch("/campaigns/" + editingId, payload); toast.success("کمپین به‌روزرسانی شد"); }
+      else { await axios.post("/campaigns", payload); toast.success("کمپین ایجاد شد"); }
+      resetForm();
       await loadCampaigns();
     } catch (error) {
       toast.error(error.response?.data?.message || "ایجاد کمپین ناموفق بود");
@@ -115,10 +125,10 @@ const CampaignManager = () => {
     <section dir="rtl" className="mx-auto max-w-5xl space-y-8">
       <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
         <div className="mb-6 flex items-center gap-3">
-          <Megaphone className="h-6 w-6 text-[#68745f]" aria-hidden="true" />
+          <Megaphone className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden="true" />
           <div>
-            <h2 className="text-xl font-semibold text-white">ایجاد کمپین فروشگاهی</h2>
-            <p className="mt-1 text-sm text-gray-400">کمپین‌های زمان‌بندی‌شده در صفحه اصلی نمایش داده می‌شوند.</p>
+            <h2 className="text-xl font-semibold text-white">{editingId ? "ویرایش کمپین فروشگاهی" : "ایجاد کمپین فروشگاهی"}</h2>
+            <p className="mt-1 text-sm text-gray-400">زمان‌ها براساس ساعت ایران (Asia/Tehran) ذخیره می‌شوند. مراجعه و کلیک دکمه اصلی در فهرست کمپین‌ها ثبت می‌شود.</p>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -137,7 +147,7 @@ const CampaignManager = () => {
           <IranianDateTimeInput id="campaign-ends-at" label="پایان نمایش" required value={form.endsAt} onChange={(value) => setForm({ ...form, endsAt: value })} />
           <label className="text-sm text-gray-300">ترتیب نمایش<input type="number" min="0" step="1" className={fieldClass} value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></label>
         </div>
-        <button type="submit" disabled={loading} className="mt-5 min-h-11 rounded-full bg-[#68745f] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">{loading ? "در حال ذخیره…" : "ایجاد کمپین"}</button>
+        <div className="mt-5 flex flex-wrap gap-2"><button type="submit" disabled={loading} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--brand-primary)] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-hover)] disabled:opacity-50">{loading ? "در حال ذخیره…" : editingId ? <><Save size={15} aria-hidden="true" />ذخیره تغییرات</> : "ایجاد کمپین"}</button>{editingId && <button type="button" onClick={resetForm} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-gray-600 px-5 py-2 text-sm text-gray-200 hover:bg-gray-700"><X size={15} aria-hidden="true" />لغو ویرایش</button>}</div>
       </form>
 
       <div className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
@@ -147,12 +157,13 @@ const CampaignManager = () => {
             {campaigns.map((campaign) => (
               <article key={campaign._id} className="flex flex-col gap-4 rounded-xl border border-gray-700 bg-gray-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
-                  {campaign.image ? <img src={campaign.image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-700"><Megaphone className="text-[#68745f]" size={20} /></div>}
+                  {campaign.image ? <img src={campaign.image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-700"><Megaphone className="text-[var(--brand-primary)]" size={20} /></div>}
                   <div className="min-w-0">
                     <p className="font-semibold text-white">{campaign.title}</p>
                     <p className="mt-1 truncate text-xs text-gray-400">{campaign.description || campaign.href}</p>
                     <p className="mt-1 text-xs text-gray-500">{formatIranianDateTime(campaign.startsAt)} تا {formatIranianDateTime(campaign.endsAt)}</p>
                     <p className="mt-1 text-xs text-gray-400">{new Intl.NumberFormat("fa-IR").format((campaign.productIds || []).length)} محصول مرتبط</p>
+                    <p className="mt-1 text-xs text-gray-400">مراجعه: {new Intl.NumberFormat("fa-IR").format(campaign.views || 0)} · کلیک دکمه اصلی: {new Intl.NumberFormat("fa-IR").format(campaign.clicks || 0)}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
                       <Link to={getCampaignPath(campaign)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#9aa58e] hover:text-white">
                         بازکردن صفحه اختصاصی<ExternalLink size={13} aria-hidden="true" />
@@ -163,8 +174,9 @@ const CampaignManager = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <button type="button" onClick={() => toggleCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700">{campaign.isActive ? <Pause size={14} /> : <Play size={14} />}{campaign.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</button>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <button type="button" onClick={() => startEdit(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700"><Pencil size={14} aria-hidden="true" />ویرایش</button>
+                  <button type="button" onClick={() => toggleCampaign(campaign) className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700">{campaign.isActive ? <Pause size={14} /> : <Play size={14} />}{campaign.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</button>
                   <button type="button" onClick={() => removeCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-red-900 px-3 text-xs text-red-300 hover:bg-red-950/40"><Trash2 size={14} />حذف</button>
                 </div>
               </article>

@@ -1,5 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
 
+:root {
+  --store-canvas: #f7f5f0;
+  --store-surface: #fffefa;
+  --store-ink: #252722;
+  --store-muted: #77786f;
+  --brand-primary: #68745f;
+  --brand-hover: #41443b;
+  --brand-muted: #9aa58e;
+  --brand-soft: #e9ede4;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,8 +19,8 @@
   html {
     min-height: 100%;
     direction: rtl;
-    background-color: #f7f5f0;
-    color: #252722;
+    background-color: var(--store-canvas);
+    color: var(--store-ink);
     font-family: 'Vazirmatn', Tahoma, sans-serif;
     text-rendering: optimizeLegibility;
   }
@@ -18,15 +29,15 @@
     min-height: 100vh;
     margin: 0;
     direction: rtl;
-    background-color: #f7f5f0;
-    color: #252722;
+    background-color: var(--store-canvas);
+    color: var(--store-ink);
     font-family: 'Vazirmatn', Tahoma, sans-serif;
   }
 
   #root {
     min-height: 100vh;
-    background-color: #f7f5f0;
-    color: #252722;
+    background-color: var(--store-canvas);
+    color: var(--store-ink);
   }
 
   button,
@@ -175,6 +186,10 @@ html[data-theme="dark"] {
   --dark-muted: #a4aab5;
   --dark-accent: #d6b779;
   --dark-accent-hover: #e4c989;
+  --brand-primary: #d6b779;
+  --brand-hover: #e4c989;
+  --brand-muted: #d6b779;
+  --brand-soft: #252a30;
 }
 
 html[data-theme="dark"] body,

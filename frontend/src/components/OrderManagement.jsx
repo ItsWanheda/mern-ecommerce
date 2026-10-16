@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { LoaderCircle, RefreshCw, Save, Truck } from "lucide-react";
+import { LoaderCircle, PackageCheck, RefreshCw, Save, Truck } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
@@ -64,8 +64,8 @@ const OrderManagement = () => {
     }));
   };
 
-  const saveShipment = async (order) => {
-    const draft = draftFor(order);
+  const saveShipment = async (order, overrideDraft) => {
+    const draft = overrideDraft || draftFor(order);
     setSavingId(order._id);
     try {
       await axios.patch(`/orders/${order._id}/shipment`, draft);
@@ -119,7 +119,7 @@ const OrderManagement = () => {
                   </div>
                   <div className="text-left">
                     <p dir="ltr" className="text-lg font-bold text-[#9aa58e]">{formatPrice(order.totalAmount)}</p>
-                    <span className="mt-1 inline-flex rounded-full bg-[#68745f]/20 px-3 py-1 text-xs text-[#d7dfce]">{labels[draft.status] || "در انتظار آماده‌سازی"}</span>
+                    <span className="mt-1 inline-flex rounded-full bg-[var(--brand-primary)]/20 px-3 py-1 text-xs text-[#d7dfce]">{labels[draft.status] || "در انتظار آماده‌سازی"}</span>
                   </div>
                 </div>
                 <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-2">
@@ -158,9 +158,10 @@ const OrderManagement = () => {
                     </label>
                     {order.shippedAt && <p className="text-xs text-gray-400">ارسال: {formatIranianDateTime(order.shippedAt)}</p>}
                     {order.deliveredAt && <p className="text-xs text-gray-400">تحویل: {formatIranianDateTime(order.deliveredAt)}</p>}
-                    <button type="button" onClick={() => saveShipment(order)} disabled={savingId === order._id} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] disabled:opacity-50">
-                      {savingId === order._id ? <LoaderCircle className="animate-spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}ذخیره رهگیری
-                    </button>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {(order.shipmentStatus || "processing") === "processing" && <button type="button" onClick={() => saveShipment(order, { ...draft, status: "packed", note: "بسته‌بندی سریع توسط مدیریت" })} disabled={savingId === order._id} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-700 disabled:opacity-50"><PackageCheck size={17} aria-hidden="true" />بسته‌بندی سریع</button>}
+                      <button type="button" onClick={() => saveShipment(order)} disabled={savingId === order._id} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--brand-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-hover)] disabled:opacity-50">{savingId === order._id ? <LoaderCircle className="animate-spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}ذخیره رهگیری</button>
+                    </div>
                   </section>
                 </div>
               </article>
