@@ -119,65 +119,65 @@ const CampaignManager = () => {
     }
   };
 
-  const fieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-sm text-white outline-none focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/30";
+  const fieldClass = "mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[#68745f]/30";
 
   return (
     <section dir="rtl" className="mx-auto max-w-5xl space-y-8">
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-lg sm:p-7">
         <div className="mb-6 flex items-center gap-3">
           <Megaphone className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden="true" />
           <div>
-            <h2 className="text-xl font-semibold text-white">{editingId ? "ویرایش کمپین فروشگاهی" : "ایجاد کمپین فروشگاهی"}</h2>
-            <p className="mt-1 text-sm text-gray-400">زمان‌ها براساس ساعت ایران (Asia/Tehran) ذخیره می‌شوند. مراجعه و کلیک دکمه اصلی در فهرست کمپین‌ها ثبت می‌شود.</p>
+            <h2 className="text-xl font-semibold text-[var(--ui-text)]">{editingId ? "ویرایش کمپین فروشگاهی" : "ایجاد کمپین فروشگاهی"}</h2>
+            <p className="mt-1 text-sm text-[var(--ui-muted)]">زمان‌ها براساس ساعت ایران (Asia/Tehran) ذخیره می‌شوند. مراجعه و کلیک دکمه اصلی در فهرست کمپین‌ها ثبت می‌شود.</p>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="text-sm text-gray-300">عنوان کمپین<input required maxLength={100} className={fieldClass} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
-          <label className="text-sm text-gray-300">مقصد دکمه داخل صفحه کمپین (مثل /shop)<input required pattern="/(?!/).*" className={fieldClass} value={form.href} onChange={(event) => setForm({ ...form, href: event.target.value })} /></label>
-          <label className="text-sm text-gray-300 sm:col-span-2">توضیح کوتاه<input maxLength={300} className={fieldClass} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
-          <label className="text-sm text-gray-300 sm:col-span-2">محصولات مرتبط با این کمپین (اختیاری)
+          <label className="text-sm text-[var(--ui-muted)]">عنوان کمپین<input required maxLength={100} className={fieldClass} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
+          <label className="text-sm text-[var(--ui-muted)]">مقصد دکمه داخل صفحه کمپین (مثل /shop)<input required pattern="/(?!/).*" className={fieldClass} value={form.href} onChange={(event) => setForm({ ...form, href: event.target.value })} /></label>
+          <label className="text-sm text-[var(--ui-muted)] sm:col-span-2">توضیح کوتاه<input maxLength={300} className={fieldClass} value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} /></label>
+          <label className="text-sm text-[var(--ui-muted)] sm:col-span-2">محصولات مرتبط با این کمپین (اختیاری)
             <select multiple size={Math.min(6, Math.max(3, products.length))} className={fieldClass + " min-h-32"} value={form.productIds}
               onChange={(event) => setForm({ ...form, productIds: [...event.target.selectedOptions].map((option) => option.value) })}>
               {products.map((product) => <option key={product._id} value={product._id}>{product.name} · {new Intl.NumberFormat("fa-IR").format(product.price)} تومان</option>)}
             </select>
-            <span className="mt-1 block text-[11px] leading-5 text-gray-400">برای انتخاب چند کالا، در دسکتاپ کلید Ctrl یا Command را نگه دارید. این محصولات در صفحه اختصاصی کمپین نمایش داده می‌شوند.</span>
+            <span className="mt-1 block text-[11px] leading-5 text-[var(--ui-muted)]">برای انتخاب چند کالا، در دسکتاپ کلید Ctrl یا Command را نگه دارید. این محصولات در صفحه اختصاصی کمپین نمایش داده می‌شوند.</span>
           </label>
-          <label className="text-sm text-gray-300 sm:col-span-2">تصویر کمپین (اختیاری)<input type="url" className={fieldClass} dir="ltr" placeholder="https://…" value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
+          <label className="text-sm text-[var(--ui-muted)] sm:col-span-2">تصویر کمپین (اختیاری)<input type="url" className={fieldClass} dir="ltr" placeholder="https://…" value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
           <IranianDateTimeInput id="campaign-starts-at" label="شروع نمایش" required value={form.startsAt} onChange={(value) => setForm({ ...form, startsAt: value })} />
           <IranianDateTimeInput id="campaign-ends-at" label="پایان نمایش" required value={form.endsAt} onChange={(value) => setForm({ ...form, endsAt: value })} />
-          <label className="text-sm text-gray-300">ترتیب نمایش<input type="number" min="0" step="1" className={fieldClass} value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></label>
+          <label className="text-sm text-[var(--ui-muted)]">ترتیب نمایش<input type="number" min="0" step="1" className={fieldClass} value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></label>
         </div>
-        <div className="mt-5 flex flex-wrap gap-2"><button type="submit" disabled={loading} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--brand-primary)] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[var(--brand-hover)] disabled:opacity-50">{loading ? "در حال ذخیره…" : editingId ? <><Save size={15} aria-hidden="true" />ذخیره تغییرات</> : "ایجاد کمپین"}</button>{editingId && <button type="button" onClick={resetForm} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-gray-600 px-5 py-2 text-sm text-gray-200 hover:bg-gray-700"><X size={15} aria-hidden="true" />لغو ویرایش</button>}</div>
+        <div className="mt-5 flex flex-wrap gap-2"><button type="submit" disabled={loading} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--brand-primary)] px-6 py-2 text-sm font-semibold text-[var(--ui-text)] transition hover:bg-[var(--brand-hover)] disabled:opacity-50">{loading ? "در حال ذخیره…" : editingId ? <><Save size={15} aria-hidden="true" />ذخیره تغییرات</> : "ایجاد کمپین"}</button>{editingId && <button type="button" onClick={resetForm} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--ui-border)] px-5 py-2 text-sm text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><X size={15} aria-hidden="true" />لغو ویرایش</button>}</div>
       </form>
 
-      <div className="rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-7">
-        <h2 className="mb-4 text-xl font-semibold text-white">کمپین‌های ثبت‌شده</h2>
-        {campaigns.length === 0 ? <p className="text-sm text-gray-400">هنوز کمپینی ثبت نشده است.</p> : (
+      <div className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-lg sm:p-7">
+        <h2 className="mb-4 text-xl font-semibold text-[var(--ui-text)]">کمپین‌های ثبت‌شده</h2>
+        {campaigns.length === 0 ? <p className="text-sm text-[var(--ui-muted)]">هنوز کمپینی ثبت نشده است.</p> : (
           <div className="space-y-3">
             {campaigns.map((campaign) => (
-              <article key={campaign._id} className="flex flex-col gap-4 rounded-xl border border-gray-700 bg-gray-900/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <article key={campaign._id} className="flex flex-col gap-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
-                  {campaign.image ? <img src={campaign.image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-700"><Megaphone className="text-[var(--brand-primary)]" size={20} /></div>}
+                  {campaign.image ? <img src={campaign.image} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" /> : <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-surface-raised)]"><Megaphone className="text-[var(--brand-primary)]" size={20} /></div>}
                   <div className="min-w-0">
-                    <p className="font-semibold text-white">{campaign.title}</p>
-                    <p className="mt-1 truncate text-xs text-gray-400">{campaign.description || campaign.href}</p>
-                    <p className="mt-1 text-xs text-gray-500">{formatIranianDateTime(campaign.startsAt)} تا {formatIranianDateTime(campaign.endsAt)}</p>
-                    <p className="mt-1 text-xs text-gray-400">{new Intl.NumberFormat("fa-IR").format((campaign.productIds || []).length)} محصول مرتبط</p>
-                    <p className="mt-1 text-xs text-gray-400">مراجعه: {new Intl.NumberFormat("fa-IR").format(campaign.views || 0)} · کلیک دکمه اصلی: {new Intl.NumberFormat("fa-IR").format(campaign.clicks || 0)}</p>
+                    <p className="font-semibold text-[var(--ui-text)]">{campaign.title}</p>
+                    <p className="mt-1 truncate text-xs text-[var(--ui-muted)]">{campaign.description || campaign.href}</p>
+                    <p className="mt-1 text-xs text-[var(--ui-muted)]">{formatIranianDateTime(campaign.startsAt)} تا {formatIranianDateTime(campaign.endsAt)}</p>
+                    <p className="mt-1 text-xs text-[var(--ui-muted)]">{new Intl.NumberFormat("fa-IR").format((campaign.productIds || []).length)} محصول مرتبط</p>
+                    <p className="mt-1 text-xs text-[var(--ui-muted)]">مراجعه: {new Intl.NumberFormat("fa-IR").format(campaign.views || 0)} · کلیک دکمه اصلی: {new Intl.NumberFormat("fa-IR").format(campaign.clicks || 0)}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <Link to={getCampaignPath(campaign)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#9aa58e] hover:text-white">
+                      <Link to={getCampaignPath(campaign)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#9aa58e] hover:text-[var(--ui-text)]">
                         بازکردن صفحه اختصاصی<ExternalLink size={13} aria-hidden="true" />
                       </Link>
-                      <button type="button" onClick={() => copyCampaignLink(campaign)} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-gray-700 px-2.5 text-xs text-gray-300 transition hover:border-[#9aa58e] hover:text-white">
+                      <button type="button" onClick={() => copyCampaignLink(campaign)} className="inline-flex min-h-8 items-center gap-1 rounded-full border border-[var(--ui-border)] px-2.5 text-xs text-[var(--ui-muted)] transition hover:border-[#9aa58e] hover:text-[var(--ui-text)]">
                         <Copy size={13} aria-hidden="true" />کپی لینک عمومی
                       </button>
                     </div>
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
-                  <button type="button" onClick={() => startEdit(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700"><Pencil size={14} aria-hidden="true" />ویرایش</button>
-                  <button type="button" onClick={() => toggleCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700">{campaign.isActive ? <Pause size={14} /> : <Play size={14} />}{campaign.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</button>
-                  <button type="button" onClick={() => removeCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-red-900 px-3 text-xs text-red-300 hover:bg-red-950/40"><Trash2 size={14} />حذف</button>
+                  <button type="button" onClick={() => startEdit(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--ui-border)] px-3 text-xs text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><Pencil size={14} aria-hidden="true" />ویرایش</button>
+                  <button type="button" onClick={() => toggleCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[var(--ui-border)] px-3 text-xs text-[var(--ui-text)] hover:bg-[var(--ui-hover)]">{campaign.isActive ? <Pause size={14} /> : <Play size={14} />}{campaign.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</button>
+                  <button type="button" onClick={() => removeCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-red-900 px-3 text-xs text-[var(--ui-danger)] hover:bg-red-950/40"><Trash2 size={14} />حذف</button>
                 </div>
               </article>
             ))}
