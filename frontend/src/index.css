@@ -5,7 +5,7 @@
   --ui-canvas: #f7f5f0; --ui-surface: #fffefa; --ui-surface-raised: #f2f0e9; --ui-input-bg: #fffefa;
   --ui-text: #252722; --ui-text-strong: #41443b; --ui-muted: #62645c; --ui-border: #e4e0d8; --ui-border-strong: #c7c3b9;
   --ui-hover: #e9ede4; --ui-accent: #68745f; --ui-accent-hover: #41443b; --ui-accent-soft: rgba(104,116,95,.12); --ui-focus: #68745f;
-  --ui-chart-grid: #dedbd2; --ui-chart-axis: #62645c; --ui-chart-secondary: #536b9c; --ui-overlay: rgba(37,39,34,.58);
+  --ui-chart-grid: #dedbd2; --ui-chart-axis: #62645c; --ui-chart-secondary: #536b9c; --ui-overlay: rgba(37,39,34,.58); --ui-shadow-color: rgba(37,39,34,.22);
   --ui-strong-surface: #252722; --ui-strong-hover: #41443b; --ui-inverse-text: #fffefa; --ui-button-text: #fffefa;
   --ui-disabled-bg: #f2f0e9; --ui-disabled-text: #a0a195;
   --ui-success: #356b4a; --ui-success-bg: #edf5ee; --ui-success-border: #b9d5bf;
@@ -125,10 +125,10 @@
   margin-top: -7px;
   appearance: none;
   -webkit-appearance: none;
-  border: 3px solid #fffefa;
+  border: 3px solid var(--ui-surface);
   border-radius: 9999px;
-  background: #68745f;
-  box-shadow: 0 0 0 1px #68745f, 0 2px 6px rgba(37, 39, 34, 0.22);
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 1px var(--ui-accent), 0 2px 6px var(--ui-shadow-color);
   pointer-events: auto;
   cursor: grab;
 }
@@ -136,10 +136,10 @@
 .price-range-slider::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  border: 3px solid #fffefa;
+  border: 3px solid var(--ui-surface);
   border-radius: 9999px;
-  background: #68745f;
-  box-shadow: 0 0 0 1px #68745f, 0 2px 6px rgba(37, 39, 34, 0.22);
+  background: var(--ui-accent);
+  box-shadow: 0 0 0 1px var(--ui-accent), 0 2px 6px var(--ui-shadow-color);
   pointer-events: auto;
   cursor: grab;
 }
@@ -154,11 +154,11 @@
 }
 
 .price-range-slider:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(104, 116, 95, 0.25), 0 0 0 1px #68745f;
+  box-shadow: 0 0 0 3px var(--ui-accent-soft), 0 0 0 1px var(--ui-accent);
 }
 
 .price-range-slider:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 3px rgba(104, 116, 95, 0.25), 0 0 0 1px #68745f;
+  box-shadow: 0 0 0 3px var(--ui-accent-soft), 0 0 0 1px var(--ui-accent);
 }
 
 .price-range-slider:disabled {
@@ -190,7 +190,7 @@ html[data-theme="dark"] {
   --ui-canvas: #090a0c; --ui-surface: #111318; --ui-surface-raised: #171a20; --ui-input-bg: #111318;
   --ui-text: #f5f6f8; --ui-text-strong: #e1e4e9; --ui-muted: #a4aab5; --ui-border: #2b303a; --ui-border-strong: #4a515e;
   --ui-hover: #292e37; --ui-accent: #d6b779; --ui-accent-hover: #e4c989; --ui-accent-soft: rgba(214,183,121,.12); --ui-focus: #e4c989;
-  --ui-chart-grid: #3a3f49; --ui-chart-axis: #a4aab5; --ui-chart-secondary: #8aa1d5; --ui-overlay: rgba(0,0,0,.68);
+  --ui-chart-grid: #3a3f49; --ui-chart-axis: #a4aab5; --ui-chart-secondary: #8aa1d5; --ui-overlay: rgba(0,0,0,.68); --ui-shadow-color: rgba(0,0,0,.55);
   --ui-strong-surface: #1d2128; --ui-strong-hover: #292e37; --ui-inverse-text: #f5f6f8; --ui-button-text: #090a0c;
   --ui-disabled-bg: #22262e; --ui-disabled-text: #717987;
   --ui-success: #8ec8a0; --ui-success-bg: #10251a; --ui-success-border: #2a5c3c;
@@ -348,23 +348,6 @@ html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder {
   color: #9097a4;
   opacity: 1;
-}
-
-html[data-theme="dark"] [class~="price-range-slider"]::-webkit-slider-thumb {
-  border-color: var(--dark-surface);
-  background: var(--dark-accent);
-  box-shadow: 0 0 0 1px var(--dark-accent), 0 2px 8px rgba(0, 0, 0, 0.55);
-}
-
-html[data-theme="dark"] [class~="price-range-slider"]::-moz-range-thumb {
-  border-color: var(--dark-surface);
-  background: var(--dark-accent);
-  box-shadow: 0 0 0 1px var(--dark-accent), 0 2px 8px rgba(0, 0, 0, 0.55);
-}
-
-html[data-theme="dark"] [class~="price-range-slider"]:focus-visible::-webkit-slider-thumb,
-html[data-theme="dark"] [class~="price-range-slider"]:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 3px rgba(214, 183, 121, 0.25), 0 0 0 1px var(--dark-accent);
 }
 
 html[data-theme="dark"] a,
