@@ -811,49 +811,250 @@ export const getRecommendedProducts = async (_req, res) => {
 export const getProductsByCategory = async (req, res) => {
   try {
     const slug = String(req.params.category || "").trim().slice(0, 96);
+    if (!slug) return res.status(400).json({ message: "دسته‌بندی معتبر نیست." });
+
     const scope = await getCategoryProductScope(slug);
-    const filter = { isActive: { $ne: false } };
+    const baseClauses = [{ isActive: { $ne: false } }];
     if (scope) {
-      filter.$or = [
-        { categoryId: { $in: scope.ids } },
-        { category: { $in: scope.slugs } },
-      ];
+      baseClauses.push({
+        $or: [
+          { categoryId: { $in: scope.ids } },
+          { category: { $in: scope.slugs } },
+        ],
+      });
     } else {
       // Preserve access to legacy category slugs during and after migration.
-      filter.category = slug;
+      baseClauses.push({ category: slug });
     }
 
-    // Keep the product grid bounded, but calculate the slider bounds from the
-    // complete matching catalogue so the price range is not biased by 200 items.
-    const [products, priceStats] = await Promise.all([
-      Product.find(filter)
-        .sort({ createdAt: -1, _id: -1 })
-        .limit(200)
-        .maxTimeMS(1500)
-        .lean(),
-      Product.aggregate([
-        { $match: filter },
+    const clauses = [...baseClauses];
+    const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+    if (rawQuery) {
+      const normalized = normalizePersianText(rawQuery).slice(0, 80);
+      const rawPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
+      const normalizedPattern = normalized ? new RegExp(escapeSearchRegex(normalized), "i") : rawPattern;
+      clauses.push({
+        $or: [
+          { searchTextNormalized: normalizedPattern },
+          { name: rawPattern },
+          { description: rawPattern },
+          { category: rawPattern },
+          { sizes: rawPattern },
+          { "variants.size": rawPattern },
+          { "variants.color": rawPattern },
+          { "colors.name": rawPattern },
+          { "fit.type": rawPattern },
+          { "attributes.brand": rawPattern },
+          { "attributes.brandName": rawPattern },
+        ],
+      });
+    }
+
+    const parsePriceBound = (value) => {
+      if (value === undefined || value === null || String(value).trim() === "") return { valid: true, value: null };
+      const text = String(value)
+        .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+        .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+        .replace(/[,\u060C\u066C\u2009\s]/g, "");
+      if (!/^\d+$/.test(text)) return { valid: false, value: null };
+      const number = Number(text);
+      return { valid: Number.isSafeInteger(number) && number >= 0, value: number };
+    };
+    const minPrice = parsePriceBound(req.query.minPrice);
+    const maxPrice = parsePriceBound(req.query.maxPrice);
+    if (!minPrice.valid || !maxPrice.valid || (minPrice.value !== null && maxPrice.value !== null && minPrice.value > maxPrice.value)) {
+      return res.status(400).json({ message: "بازه قیمت معتبر نیست." });
+    }
+    if (minPrice.value !== null || maxPrice.value !== null) {
+      const price = {};
+      if (minPrice.value !== null) price.$gte = minPrice.value;
+      if (maxPrice.value !== null) price.$lte = maxPrice.value;
+      clauses.push({ price });
+    }
+
+    const readValues = (input, maxItems, maxLength = 80) => {
+      const source = input === undefined ? [] : Array.isArray(input) ? input : [input];
+      return source
+        .filter((value) => typeof value === "string")
+        .map((value) => value.trim().slice(0, maxLength))
+        .filter(Boolean)
+        .slice(0, maxItems);
+    };
+    const sizes = readValues(req.query.size, 24, 24);
+    const colors = readValues(req.query.color, 24, 40);
+    const fits = readValues(req.query.fit, 12, 40);
+    const brands = readValues(req.query.brand, 24, 80);
+    if (sizes.length) clauses.push({ $or: [{ sizes: { $in: sizes } }, { "variants.size": { $in: sizes } }] });
+    if (colors.length) clauses.push({ $or: [{ "colors.name": { $in: colors } }, { "variants.color": { $in: colors } }] });
+    if (fits.length) clauses.push({ "fit.type": { $in: fits } });
+    if (brands.length) {
+      clauses.push({
+        $or: [
+          { brand: { $in: brands } },
+          { brandName: { $in: brands } },
+          { "brand.name": { $in: brands } },
+          { "attributes.brand": { $in: brands } },
+          { "attributes.brandName": { $in: brands } },
+        ],
+      });
+    }
+
+    if (["1", "true"].includes(String(req.query.inStock || "").toLowerCase())) {
+      clauses.push({
+        $or: [
+          { variants: { $elemMatch: { stock: { $gt: 0 } } } },
+          {
+            $and: [
+              { $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] },
+              { $or: [{ stock: { $gt: 0 } }, { stock: null }, { stock: { $exists: false } }] },
+            ],
+          },
+        ],
+      });
+    }
+
+    if (req.query.attributes !== undefined) {
+      if (typeof req.query.attributes !== "string" || req.query.attributes.length > 2400) {
+        return res.status(400).json({ message: "فیلتر ویژگی‌ها معتبر نیست." });
+      }
+      let selectedAttributes;
+      try { selectedAttributes = JSON.parse(req.query.attributes); }
+      catch { return res.status(400).json({ message: "فیلتر ویژگی‌ها معتبر نیست." }); }
+      if (!selectedAttributes || typeof selectedAttributes !== "object" || Array.isArray(selectedAttributes)) {
+        return res.status(400).json({ message: "فیلتر ویژگی‌ها معتبر نیست." });
+      }
+      const entries = Object.entries(selectedAttributes).slice(0, 20);
+      for (const [key, selected] of entries) {
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(key)) {
+          return res.status(400).json({ message: "کلید یکی از ویژگی‌های فیلتر معتبر نیست." });
+        }
+        if (selected === "" || selected === null || selected === undefined ||
+            (Array.isArray(selected) && selected.length === 0)) continue;
+        const field = "attributes." + key;
+        if (Array.isArray(selected)) {
+          const safeValues = selected.filter((value) => typeof value === "string").slice(0, 24);
+          if (safeValues.length) clauses.push({ [field]: { $in: safeValues } });
+        } else if (typeof selected === "string") {
+          clauses.push({ [field]: new RegExp(escapeSearchRegex(selected.slice(0, 120)), "i") });
+        } else if (typeof selected === "boolean" || (typeof selected === "number" && Number.isFinite(selected))) {
+          clauses.push({ [field]: selected });
+        } else {
+          return res.status(400).json({ message: "مقدار یکی از ویژگی‌های فیلتر معتبر نیست." });
+        }
+      }
+    }
+
+    const filter = { $and: clauses };
+    const page = clampInteger(req.query.page, 1, 1, 100000);
+    const limit = clampInteger(req.query.limit, 24, 1, 60);
+    const offset = (page - 1) * limit;
+    const countOnly = ["1", "true"].includes(String(req.query.countOnly || "").toLowerCase());
+    if (countOnly) {
+      const total = await Product.countDocuments(filter).maxTimeMS(1500);
+      return res.json({ pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    }
+
+    const sortKey = typeof req.query.sort === "string" ? req.query.sort : "newest";
+    const sort = sortKey === "priceAsc" ? { price: 1, createdAt: -1, _id: -1 }
+      : sortKey === "priceDesc" ? { price: -1, createdAt: -1, _id: -1 }
+      : sortKey === "nameAsc" ? { name: 1, _id: 1 }
+      : sortKey === "oldest" ? { createdAt: 1, _id: 1 }
+      : { createdAt: -1, _id: -1 };
+
+    const facetCacheKey = "category_filter_facets_v2:" + slug;
+    let filterOptions = await readJsonCache(facetCacheKey);
+    if (!filterOptions || !Array.isArray(filterOptions.sizes) || !Array.isArray(filterOptions.colors)) {
+      const facetResult = await Product.aggregate([
+        { $match: { $and: baseClauses } },
         {
-          $group: {
-            _id: null,
-            minPrice: { $min: "$price" },
-            maxPrice: { $max: "$price" },
-            count: { $sum: 1 },
+          $facet: {
+            sizes: [
+              { $project: { values: { $setUnion: [
+                { $ifNull: ["$sizes", []] },
+                { $map: { input: { $ifNull: ["$variants", []] }, as: "variant", in: "$$variant.size" } },
+              ] } } },
+              { $unwind: "$values" },
+              { $match: { values: { $type: "string", $ne: "" } } },
+              { $group: { _id: "$values" } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
+            colors: [
+              { $unwind: "$colors" },
+              { $match: { "colors.name": { $type: "string", $ne: "" } } },
+              { $group: { _id: "$colors.name", hex: { $first: "$colors.hex" } } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
+            variantColors: [
+              { $unwind: "$variants" },
+              { $match: { "variants.color": { $type: "string", $ne: "" } } },
+              { $group: { _id: "$variants.color" } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
+            fits: [
+              { $match: { "fit.type": { $type: "string", $ne: "" } } },
+              { $group: { _id: "$fit.type" } },
+              { $sort: { _id: 1 } },
+              { $limit: 30 },
+            ],
+            brands: [
+              { $project: { values: { $setUnion: [
+                { $cond: [{ $eq: [{ $type: "$brand" }, "string"] }, ["$brand"], []] },
+                { $cond: [{ $eq: [{ $type: "$brand.name" }, "string"] }, ["$brand.name"], []] },
+                { $cond: [{ $eq: [{ $type: "$brandName" }, "string"] }, ["$brandName"], []] },
+                { $cond: [{ $eq: [{ $type: "$attributes.brand" }, "string"] }, ["$attributes.brand"], []] },
+                { $cond: [{ $eq: [{ $type: "$attributes.brandName" }, "string"] }, ["$attributes.brandName"], []] },
+              ] } } },
+              { $unwind: "$values" },
+              { $match: { values: { $type: "string", $ne: "" } } },
+              { $group: { _id: "$values" } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
           },
         },
+      ]).option({ maxTimeMS: 2500 });
+
+      const rawFacets = facetResult[0] || {};
+      const colorMap = new Map();
+      for (const item of rawFacets.colors || []) {
+        if (typeof item._id === "string" && item._id.trim()) colorMap.set(item._id, { name: item._id, hex: typeof item.hex === "string" ? item.hex : "" });
+      }
+      for (const item of rawFacets.variantColors || []) {
+        if (typeof item._id === "string" && item._id.trim() && !colorMap.has(item._id)) colorMap.set(item._id, { name: item._id, hex: "" });
+      }
+      filterOptions = {
+        sizes: [...new Set((rawFacets.sizes || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()))],
+        colors: [...colorMap.values()].sort((a, b) => a.name.localeCompare(b.name, "fa")),
+        fits: (rawFacets.fits || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()),
+        brands: (rawFacets.brands || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()),
+      };
+      await writeJsonCache(facetCacheKey, filterOptions, 120);
+    }
+
+    const [products, total, priceStats] = await Promise.all([
+      Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean(),
+      Product.countDocuments(filter).maxTimeMS(1500),
+      Product.aggregate([
+        { $match: { $and: baseClauses } },
+        { $group: { _id: null, minPrice: { $min: "$price" }, maxPrice: { $max: "$price" }, count: { $sum: 1 } } },
       ]).option({ maxTimeMS: 1500 }),
     ]);
 
     const stats = priceStats[0];
-    const minPrice = Number(stats?.minPrice);
-    const maxPrice = Number(stats?.maxPrice);
+    const min = Number(stats?.minPrice);
+    const max = Number(stats?.maxPrice);
     return res.json({
       products,
       priceBounds: {
-        minPrice: Number.isFinite(minPrice) ? Math.max(0, Math.floor(minPrice)) : 0,
-        maxPrice: Number.isFinite(maxPrice) ? Math.max(0, Math.ceil(maxPrice)) : 0,
+        minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
+        maxPrice: Number.isFinite(max) ? Math.max(0, Math.ceil(max)) : 0,
         count: Number(stats?.count || 0),
       },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      filterOptions,
     });
   } catch (error) {
     console.error("Error in getProductsByCategory controller", error.message);

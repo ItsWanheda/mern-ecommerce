@@ -1,4 +1,6 @@
 import { create } from "zustand";
+
+let categoryRequestCounter = 0;
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 
@@ -7,6 +9,8 @@ const getErrorMessage = (error, fallback) => error.response?.data?.message || fa
 export const useProductStore = create((set) => ({
   products: [],
   priceBounds: null,
+  categoryPagination: null,
+  categoryFacets: { sizes: [], colors: [], fits: [], brands: [] },
   featuredProducts: [],
   newestProducts: [],
   loading: false,
@@ -70,18 +74,27 @@ export const useProductStore = create((set) => ({
     }
   },
 
-  fetchProductsByCategory: async (category) => {
-    set({ loading: true, products: [], priceBounds: null });
+  fetchProductsByCategory: async (category, queryString = "") => {
+    const requestId = ++categoryRequestCounter;
+    set({ loading: true, products: [], error: "" });
     try {
-      const response = await axios.get(`/products/category/${encodeURIComponent(category)}`);
+      const suffix = queryString ? "?" + queryString : "";
+      const response = await axios.get(`/products/category/${encodeURIComponent(category)}${suffix}`);
+      if (requestId !== categoryRequestCounter) return response.data;
       set({
         products: Array.isArray(response.data.products) ? response.data.products : [],
         priceBounds: response.data.priceBounds || null,
+        categoryPagination: response.data.pagination || null,
+        categoryFacets: response.data.filterOptions || { sizes: [], colors: [], fits: [], brands: [] },
         loading: false,
+        error: "",
       });
+      return response.data;
     } catch (error) {
-      set({ error: "دریافت محصولات ناموفق بود", priceBounds: null, loading: false });
+      if (requestId !== categoryRequestCounter) return null;
+      set({ products: [], priceBounds: null, categoryPagination: null, loading: false, error: getErrorMessage(error, "دریافت محصولات ناموفق بود") });
       toast.error(getErrorMessage(error, "دریافت محصولات ناموفق بود"));
+      return null;
     }
   },
   fetchNewestProducts: async () => {
