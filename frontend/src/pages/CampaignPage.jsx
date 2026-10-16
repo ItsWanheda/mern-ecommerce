@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import PageMeta from "../components/PageMeta";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarClock, LoaderCircle, Megaphone, PackageCheck, RefreshCw } from "lucide-react";
 import axios from "../lib/axios";
@@ -32,10 +33,12 @@ const CampaignPage = () => {
     return () => { document.title = "تیک بوتیک | فروشگاه آنلاین پوشاک و اکسسوری"; };
   }, [loadCampaign]);
 
+  const trackCampaignClick = () => { axios.post("/campaigns/" + encodeURIComponent(campaignId) + "/click").catch(() => {}); };
   const products = (campaign?.productIds || []).filter((product) => product && product.isActive !== false);
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
+      <PageMeta title={campaign?.title || "کمپین فروشگاهی"} description={campaign?.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک."} image={campaign?.image} path={window.location.pathname} type="campaign" product={campaign || undefined} />
       <div className="mx-auto max-w-6xl">
         <nav aria-label="مسیر صفحه" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#77786f]">
           <Link to="/" className="hover:text-[#68745f]">صفحه اصلی</Link>
@@ -78,7 +81,7 @@ const CampaignPage = () => {
                     <p className="flex items-start gap-2"><CalendarClock size={16} className="mt-0.5 shrink-0 text-[#68745f]" aria-hidden="true" /><span>پایان: {formatIranianDateTime(campaign.endsAt)}</span></p>
                   </div>
                   <div className="mt-6 flex flex-wrap gap-2">
-                    <a href="#campaign-products-heading" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b]">
+                    <a href="#campaign-products-heading" onClick={trackCampaignClick} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#252722] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#41443b]">
                       مشاهده محصولات کمپین<ArrowLeft size={16} aria-hidden="true" />
                     </a>
                     <Link to="/campaigns" className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#d5d0c5] px-5 py-3 text-sm font-semibold text-[#41443b]">همه پیشنهادها</Link>
@@ -104,7 +107,7 @@ const CampaignPage = () => {
                   <PackageCheck size={25} className="mx-auto text-[#68745f]" aria-hidden="true" />
                   <p className="mt-3 text-sm font-semibold text-[#41443b]">هنوز محصول مشخصی به این کمپین اختصاص داده نشده است.</p>
                   <p className="mt-1 text-xs leading-6 text-[#77786f]">مدیر فروشگاه می‌تواند محصولات مرتبط را از بخش مدیریت کمپین‌ها انتخاب کند.</p>
-                  <Link to={campaign.href || "/shop"} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#252722] px-4 py-2 text-sm font-semibold text-white">رفتن به مقصد کمپین</Link>
+                  <Link to={campaign.href || "/shop"} onClick={trackCampaignClick} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#252722] px-4 py-2 text-sm font-semibold text-white">رفتن به مقصد کمپین</Link>
                 </div>
               )}
             </section>

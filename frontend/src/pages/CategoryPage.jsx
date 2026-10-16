@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import PageMeta from "../components/PageMeta";
+import toast from "react-hot-toast";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import { normalizeDigits, normalizePersianText as normalizePersian } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
@@ -63,6 +65,42 @@ const makeEmptyFilters = () => ({
   attributes: {},
   sort: "newest",
 });
+
+const CATEGORY_PAGE_SIZE = 24;
+
+const filtersFromParams = (params) => {
+  const filters = makeEmptyFilters();
+  filters.q = params.get("q") || "";
+  filters.minPrice = params.get("minPrice") || "";
+  filters.maxPrice = params.get("maxPrice") || "";
+  filters.sizes = params.getAll("size").slice(0, 24);
+  filters.colors = params.getAll("color").slice(0, 24);
+  filters.fits = params.getAll("fit").slice(0, 12);
+  filters.brands = params.getAll("brand").slice(0, 24);
+  filters.inStock = params.get("inStock") === "1";
+  const sort = params.get("sort");
+  if (["newest", "oldest", "priceAsc", "priceDesc", "nameAsc"].includes(sort)) filters.sort = sort;
+  try {
+    const attributes = JSON.parse(params.get("attributes") || "{}");
+    if (attributes && typeof attributes === "object" && !Array.isArray(attributes)) filters.attributes = attributes;
+  } catch {}
+  return filters;
+};
+
+const paramsFromFilters = (filters) => {
+  const params = new URLSearchParams();
+  if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.minPrice.trim()) params.set("minPrice", filters.minPrice.trim());
+  if (filters.maxPrice.trim()) params.set("maxPrice", filters.maxPrice.trim());
+  filters.sizes.forEach((value) => params.append("size", value));
+  filters.colors.forEach((value) => params.append("color", value));
+  filters.fits.forEach((value) => params.append("fit", value));
+  filters.brands.forEach((value) => params.append("brand", value));
+  if (filters.inStock) params.set("inStock", "1");
+  if (filters.sort !== "newest") params.set("sort", filters.sort);
+  if (Object.keys(filters.attributes || {}).length) params.set("attributes", JSON.stringify(filters.attributes));
+  return params;
+};
 
 const uniqueByNormalizedName = (values) => {
   const seen = new Set();
@@ -193,17 +231,48 @@ const filterCatalog = (catalog, filters) => {
 
 const CategoryPage = () => {
   const { slug: category = "" } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lastAppliedUrlRef = useRef(searchParams.toString());
+  const urlChangedRef = useRef(false);
   const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds } = useProductStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
-  const [filters, setFilters] = useState(makeEmptyFilters);
-  const [draftFilters, setDraftFilters] = useState(makeEmptyFilters);
+  const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
+  const [draftFilters, setDraftFilters] = useState(() => filtersFromParams(searchParams));
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    setFilters(makeEmptyFilters());
-    setDraftFilters(makeEmptyFilters());
+    const serialized = searchParams.toString();
+    if (serialized !== lastAppliedUrlRef.current) {
+      lastAppliedUrlRef.current = serialized;
+      urlChangedRef.current = true;
+      const fromUrl = filtersFromParams(searchParams);
+      setFilters(fromUrl);
+      setDraftFilters(fromUrl);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (urlChangedRef.current) {
+      urlChangedRef.current = false;
+      return;
+    }
+    const serialized = paramsFromFilters(filters).toString();
+    if (serialized !== searchParams.toString()) {
+      lastAppliedUrlRef.current = serialized;
+      setSearchParams(new URLSearchParams(serialized), { replace: true });
+    }
+  }, [filters, searchParams, setSearchParams]);
+
+  useEffect(() => { setPage(1); }, [filters, category]);
+
+  useEffect(() => {
+    const fromUrl = filtersFromParams(new URLSearchParams(window.location.search));
+    setFilters(fromUrl);
+    setDraftFilters(fromUrl);
     setMobileFiltersOpen(false);
+    setPage(1);
     fetchProductsByCategory(category);
   }, [fetchProductsByCategory, category]);
 
@@ -245,6 +314,8 @@ const CategoryPage = () => {
     };
   }, [catalog, remotePriceBounds]);
   const filteredProducts = useMemo(() => filterCatalog(catalog, filters), [catalog, filters]);
+  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / CATEGORY_PAGE_SIZE));
+  const visibleProducts = useMemo(() => filteredProducts.slice((page - 1) * CATEGORY_PAGE_SIZE, page * CATEGORY_PAGE_SIZE), [filteredProducts, page]);
   const draftResultCount = useMemo(() => filterCatalog(catalog, draftFilters).length, [catalog, draftFilters]);
 
   const sizeOptions = useMemo(
@@ -311,9 +382,11 @@ const CategoryPage = () => {
   };
 
   const clearAllFilters = () => {
-    setFilters(makeEmptyFilters());
-    setDraftFilters(makeEmptyFilters());
+    const empty = makeEmptyFilters();
+    setFilters(empty);
+    setDraftFilters(empty);
     setMobileFiltersOpen(false);
+    setPage(1);
   };
 
   const removeFilter = (field, value) => {
@@ -612,6 +685,15 @@ const CategoryPage = () => {
   };
 
   const pageTitle = selectedCategory?.name?.fa || categoryLabels[category] || category.replace(/-/g, " ");
+  const copyFilterLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("لینک فیلترها کپی شد.");
+    } catch {
+      window.prompt("لینک قابل‌اشتراک دسته‌بندی:", url);
+    }
+  };
   const categoryChildren = selectedCategory
     ? dynamicCategories
         .filter((item) => String(item.parentId || "") === String(selectedCategory._id) && item.showInNavigation !== false)
@@ -627,6 +709,7 @@ const CategoryPage = () => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} />
       <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
@@ -677,6 +760,7 @@ const CategoryPage = () => {
                 </span>
               )}
             </button>
+            <button type="button" onClick={copyFilterLink} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#41443b] transition hover:border-[#68745f]" aria-label="کپی لینک این دسته‌بندی با فیلترهای فعلی">کپی لینک فیلترها</button>
           </div>
         </header>
 
@@ -796,7 +880,7 @@ const CategoryPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            {filteredProducts.map((product) => <ProductCard key={product._id} product={product} />)}
+            {visibleProducts.map((product) => <ProductCard key={product._id} product={product} />)}
           </motion.div>
         ) : (
           <section className="flex min-h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-[#d8d4c9] bg-[#fffefa] px-5 py-12 text-center">
@@ -819,6 +903,13 @@ const CategoryPage = () => {
               </button>
             )}
           </section>
+        )}
+        {!loading && filteredProducts.length > CATEGORY_PAGE_SIZE && (
+          <nav aria-label="صفحه‌بندی محصولات دسته‌بندی" className="mt-8 flex flex-wrap items-center justify-center gap-3 border-t border-[#e4e0d8] pt-6">
+            <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="min-h-10 rounded-full border border-[#d5d0c5] bg-white px-4 py-2 text-sm disabled:opacity-40">قبلی</button>
+            <span className="text-sm text-[#62645c]">صفحه {new Intl.NumberFormat("fa-IR").format(page)} از {new Intl.NumberFormat("fa-IR").format(pageCount)} · {new Intl.NumberFormat("fa-IR").format(filteredProducts.length)} محصول</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="min-h-10 rounded-full border border-[#d5d0c5] bg-white px-4 py-2 text-sm disabled:opacity-40">بعدی</button>
+          </nav>
         )}
       </div>
 

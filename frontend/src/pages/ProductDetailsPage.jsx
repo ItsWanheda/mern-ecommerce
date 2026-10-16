@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import PageMeta from "../components/PageMeta";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
@@ -128,6 +129,7 @@ const ProductDetailsPage = () => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f7f5f0] px-3 py-6 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
+      <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={window.location.pathname} type="product" product={product || undefined} />
       <div className="mx-auto max-w-[1600px]">
         <Link to={product.category ? "/category/" + encodeURIComponent(product.category) : "/"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {categoryLabels[product.category] || product.category || "مجموعه"}</Link>
 
