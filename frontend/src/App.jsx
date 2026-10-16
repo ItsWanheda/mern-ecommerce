@@ -12,6 +12,8 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const ShopPage = lazy(() => import("./pages/ShopPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProductDetailsPage = lazy(() => import("./pages/ProductDetailsPage"));
@@ -40,7 +42,7 @@ const RouteLoadingFallback = () => (
 
 function App() {
   const location = useLocation();
-  const isAccountPage = location.pathname === "/login" || location.pathname === "/signup";
+  const isAccountPage = ["/login", "/signup", "/forgot-password", "/reset-password"].includes(location.pathname);
   const { user, checkAuth, checkingAuth } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
 
@@ -72,6 +74,8 @@ function App() {
             <Route path="/campaign/:campaignId" element={<CampaignPage />} />
             <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
             <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
