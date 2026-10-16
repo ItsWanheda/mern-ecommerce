@@ -184,7 +184,7 @@ const ProductDetailsPage = () => {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{categoryLabels[product.category] || product.category || "مجموعه تیک بوتیک"}</p>
             <h1 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <p className="mt-5 text-2xl font-semibold tabular-nums">{formatPrice(product.price)}</p>
-            <div className="my-6 h-px bg-[#e4e0d8]" />
+            <div className="my-6 h-px bg-[var(--ui-border)]" />
 
             {sizes.length > 0 && (
               <section aria-labelledby="size-options-heading" className="mb-6">
@@ -266,7 +266,7 @@ const ProductDetailsPage = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[440px] text-right text-xs">
                     <thead className="bg-[var(--ui-canvas)] text-[var(--ui-muted)]"><tr><th scope="col" className="px-3 py-3 font-semibold">سایز</th>{measurementLabels.map(([key, label]) => <th scope="col" key={key} className="px-3 py-3 font-semibold">{label}</th>)}</tr></thead>
-                    <tbody className="divide-y divide-[#eeeae2]">
+                    <tbody className="divide-y divide-[var(--ui-border)]">
                       {product.sizeChart.map((row) => (
                         <tr key={row.size} className={row.size === selectedSize ? "bg-[var(--ui-hover)]/70 font-semibold" : ""}>
                           <th scope="row" className="px-3 py-3">{row.size}</th>
@@ -280,12 +280,12 @@ const ProductDetailsPage = () => {
               </section>
             )}
 
-            <div className="mb-6 rounded-xl border border-[var(--ui-border)] px-4 py-3">
+            <div role="status" aria-live="polite" aria-atomic="true" className="mb-6 rounded-xl border border-[var(--ui-border)] px-4 py-3">
               <p className={"flex items-center gap-2 text-sm font-semibold " + (outOfStock ? "text-[var(--ui-danger)]" : "text-[var(--ui-accent)]")}>
-                <span className={"h-2 w-2 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[#68745f]")} aria-hidden="true" />
+                <span className={"h-2 w-2 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-accent)]")} aria-hidden="true" />
                 {outOfStock ? (hasVariants ? "این ترکیب سایز و رنگ ناموجود است" : "در حال حاضر ناموجود") : "موجود برای سفارش"}
               </p>
-              {hasStockValue && !outOfStock && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این گزینه: {new Intl.NumberFormat("fa-IR").format(selectedStock)} عدد</p>}
+              {hasStockValue && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی دقیق این ترکیب: {new Intl.NumberFormat("fa-IR").format(selectedStock)} عدد</p>}
               {!hasVariants && !isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
             </div>
 
@@ -294,7 +294,7 @@ const ProductDetailsPage = () => {
 
             <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
               <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-4 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
-              <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:flex-1 " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-hover)] text-[#526149]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-accent)] hover:bg-[#f7f8f4]")}>
+              <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:flex-1 " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-hover)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)]")}>
                 <Heart size={17} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" />
                 {isWishlisted ? "ذخیره‌شده در علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
               </button>
