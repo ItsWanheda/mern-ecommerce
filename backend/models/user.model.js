@@ -1,6 +1,17 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+const defaultShippingAddressSchema = new mongoose.Schema({
+ recipientName: { type: String, trim: true, minlength: 2, maxlength: 100, required: true },
+ phone: { type: String, trim: true, match: /^09\d{9}$/, required: true },
+ province: { type: String, trim: true, maxlength: 80, required: true },
+ city: { type: String, trim: true, minlength: 2, maxlength: 80, required: true },
+ district: { type: String, trim: true, maxlength: 80, default: "" },
+ addressLine: { type: String, trim: true, minlength: 10, maxlength: 500, required: true },
+ postalCode: { type: String, trim: true, match: /^\d{10}$/, required: true },
+ notes: { type: String, trim: true, maxlength: 500, default: "" },
+}, { _id: false });
+
 const userSchema = new mongoose.Schema(
 	{
 		name: {
@@ -21,6 +32,7 @@ const userSchema = new mongoose.Schema(
 		},
 		passwordResetTokenHash: { type: String, select: false },
 		passwordResetExpiresAt: { type: Date, select: false },
+    defaultShippingAddress: { type: defaultShippingAddressSchema, default: undefined },
 		cartItems: [
 			{
 				quantity: {

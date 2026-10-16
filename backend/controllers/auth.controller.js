@@ -56,6 +56,7 @@ export const signup = async (req, res) => {
 			name: user.name,
 			email: user.email,
 			role: user.role,
+      defaultShippingAddress: user.defaultShippingAddress,
 		});
 	} catch (error) {
 		console.log("Error in signup controller", error.message);
@@ -89,6 +90,51 @@ export const login = async (req, res) => {
 };
 
 const genericRecoveryMessage = "اگر این ایمیل در فروشگاه ثبت شده باشد، راهنمای بازیابی رمز عبور ارسال می‌شود.";
+
+const normalizeAddressDigits = value => String(value ?? "")
+ .replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+ .replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+const normalizeAddressPhone = value => {
+ let phone = normalizeAddressDigits(value).replace(/\D/g, "");
+ if (phone.startsWith("0098") && phone.length === 14) phone = "0" + phone.slice(4);
+ else if (phone.startsWith("98") && phone.length === 12) phone = "0" + phone.slice(2);
+ else if (phone.length === 10 && phone.startsWith("9")) phone = "0" + phone;
+ return phone;
+};
+export const saveDefaultAddress = async (req, res) => {
+ const input = req.body?.shippingAddress;
+ if (!input || typeof input !== "object" || Array.isArray(input)) return res.status(400).json({ message: "اطلاعات نشانی معتبر نیست." });
+ const address = {
+  recipientName: typeof input.recipientName === "string" ? input.recipientName.trim() : "",
+  phone: normalizeAddressPhone(input.phone),
+  province: typeof input.province === "string" ? input.province.trim() : "",
+  city: typeof input.city === "string" ? input.city.trim() : "",
+  district: typeof input.district === "string" ? input.district.trim() : "",
+  addressLine: typeof input.addressLine === "string" ? input.addressLine.trim() : "",
+  postalCode: normalizeAddressDigits(input.postalCode).replace(/\D/g, ""),
+  notes: typeof input.notes === "string" ? input.notes.trim() : "",
+ };
+ const fieldErrors = {};
+ if (address.recipientName.length < 2 || address.recipientName.length > 100) fieldErrors.recipientName = "نام گیرنده باید بین ۲ تا ۱۰۰ نویسه باشد.";
+ if (!/^09\d{9}$/.test(address.phone)) fieldErrors.phone = "شماره موبایل باید با 09 شروع شود و ۱۱ رقم داشته باشد.";
+ if (!address.province || address.province.length > 80) fieldErrors.province = "استان را انتخاب کنید.";
+ if (address.city.length < 2 || address.city.length > 80) fieldErrors.city = "نام شهر را کامل وارد کنید.";
+ if (address.district.length > 80) fieldErrors.district = "نام محله بیش از حد طولانی است.";
+ if (address.addressLine.length < 10 || address.addressLine.length > 500) fieldErrors.addressLine = "نشانی باید بین ۱۰ تا ۵۰۰ نویسه باشد.";
+ if (!/^\d{10}$/.test(address.postalCode)) fieldErrors.postalCode = "کد پستی باید ۱۰ رقم داشته باشد.";
+ if (address.notes.length > 500) fieldErrors.notes = "توضیحات بیش از حد طولانی است.";
+ if (Object.keys(fieldErrors).length) return res.status(400).json({ message: "اطلاعات نشانی را بررسی کنید.", fieldErrors });
+ try {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ message: "حساب کاربری پیدا نشد." });
+  user.defaultShippingAddress = address;
+  await user.save();
+  return res.json({ defaultShippingAddress: user.defaultShippingAddress });
+ } catch (error) {
+  console.error("Saving default delivery address failed", error.message);
+  return res.status(500).json({ message: "ذخیره نشانی پیش‌فرض ناموفق بود." });
+ }
+};
 
 export const forgotPassword = async (req, res) => {
   const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
