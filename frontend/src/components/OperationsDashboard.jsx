@@ -33,7 +33,7 @@ const OperationsDashboard = () => {
     <article className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-[var(--ui-muted)]">{title}</p>
-        <Icon size={20} className="text-[#9aa58e]" aria-hidden="true" />
+        <Icon size={20} className="text-[var(--ui-accent)]" aria-hidden="true" />
       </div>
       <p className="mt-3 text-3xl font-bold text-[var(--ui-text)]">{fmt(value)}</p>
       {detail && <p className="mt-1 text-xs text-[var(--ui-muted)]">{detail}</p>}
@@ -51,11 +51,11 @@ const OperationsDashboard = () => {
         </div>
         <button type="button" onClick={refresh} disabled={loading} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm text-[var(--ui-text)] disabled:opacity-50"><RefreshCw size={16} aria-hidden="true" />به‌روزرسانی</button>
       </div>
-      {error && <p role="alert" className="rounded-xl border border-[var(--ui-danger-border)]/40 bg-red-950/20 p-4 text-sm text-[var(--ui-danger)]">{error}</p>}
+      {error && <p role="alert" className="rounded-xl border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] p-4 text-sm text-[var(--ui-danger)]">{error}</p>}
       {data && (
         <>
-          <div className={`flex flex-wrap items-center gap-3 rounded-xl border p-4 ${data.health?.status === "healthy" ? "border-emerald-700/40 bg-emerald-950/20" : "border-[var(--ui-warning-border)] bg-amber-950/20"}`}>
-            {data.health?.status === "healthy" ? <CheckCircle2 className="text-emerald-400" size={22} aria-hidden="true" /> : <AlertTriangle className="text-[var(--ui-warning)]" size={22} aria-hidden="true" />}
+          <div className={`flex flex-wrap items-center gap-3 rounded-xl border p-4 ${data.health?.status === "healthy" ? "border-[var(--ui-success-border)] bg-[var(--ui-success-bg)]" : "border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)]"}`}>
+            {data.health?.status === "healthy" ? <CheckCircle2 className="text-[var(--ui-success)]" size={22} aria-hidden="true" /> : <AlertTriangle className="text-[var(--ui-warning)]" size={22} aria-hidden="true" />}
             <div>
               <p className="font-semibold text-[var(--ui-text)]">{data.health?.status === "healthy" ? "سرویس‌های پایه در دسترس هستند" : "وضعیت نیاز به بررسی دارد"}</p>
               <p className="mt-1 text-xs text-[var(--ui-muted)]">دیتابیس: {labels.database[data.health?.database] || data.health?.database} · Redis: {labels.redis[data.health?.redis] || data.health?.redis}</p>
