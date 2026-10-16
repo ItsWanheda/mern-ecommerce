@@ -141,8 +141,8 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
   }, [sizes, colors]);
 
   const updateField = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  const fieldClass = "mt-1 block w-full rounded-xl border border-gray-600 bg-gray-900/70 px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#d6b779] focus:ring-2 focus:ring-[#d6b779]/20";
-  const labelClass = "block text-sm font-medium text-gray-300";
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[#d6b779]/20";
+  const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
 
   const handleImageChange = async (event) => {
     const files = Array.from(event.target.files || []);
@@ -230,19 +230,19 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
 
   return (
     <div className="fixed inset-0 z-[120] overflow-y-auto bg-black/60 p-3 backdrop-blur-sm sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <section role="dialog" aria-modal="true" aria-labelledby="product-edit-title" dir="rtl" onKeyDown={(event) => { if (event.key === "Escape") onClose(); }} className="mx-auto my-4 max-w-5xl rounded-2xl border border-gray-700 bg-gray-800 p-4 text-white shadow-2xl sm:my-8 sm:p-7">
-        <div className="mb-5 flex items-start justify-between gap-3 border-b border-gray-700 pb-4">
+      <section role="dialog" aria-modal="true" aria-labelledby="product-edit-title" dir="rtl" onKeyDown={(event) => { if (event.key === "Escape") onClose(); }} className="mx-auto my-4 max-w-5xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 text-[var(--ui-text)] shadow-2xl sm:my-8 sm:p-7">
+        <div className="mb-5 flex items-start justify-between gap-3 border-b border-[var(--ui-border)] pb-4">
           <div>
-            <h2 id="product-edit-title" className="text-xl font-bold text-[#d6b779] sm:text-2xl">ویرایش محصول</h2>
-            <p className="mt-1 text-sm leading-6 text-gray-400">تغییرات پس از ذخیره در صفحه عمومی محصول نمایش داده می‌شود. محصول می‌تواند جداگانه بایگانی یا بازیابی شود.</p>
+            <h2 id="product-edit-title" className="text-xl font-bold text-[var(--ui-accent)] sm:text-2xl">ویرایش محصول</h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">تغییرات پس از ذخیره در صفحه عمومی محصول نمایش داده می‌شود. محصول می‌تواند جداگانه بایگانی یا بازیابی شود.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="بستن پنجره ویرایش" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-600 text-gray-300 hover:bg-gray-700"><X size={18} aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} aria-label="بستن پنجره ویرایش" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]"><X size={18} aria-hidden="true" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
             <div className="min-w-0 space-y-6">
               <section className="space-y-4">
-                <h3 className="border-b border-gray-700 pb-2 text-sm font-bold">اطلاعات پایه</h3>
+                <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold">اطلاعات پایه</h3>
                 <label className={labelClass}>نام محصول
                   <input value={form.name} onChange={(event) => updateField("name", event.target.value)} required maxLength={160} className={fieldClass} />
                 </label>
@@ -257,7 +257,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
                     <label className={labelClass}>موجودی انبار
                       <input type="number" min="0" step="1" value={form.stock} onChange={(event) => updateField("stock", event.target.value)} className={fieldClass} />
                     </label>
-                  ) : <p className="self-end rounded-xl border border-gray-700 bg-gray-900/50 p-3 text-xs leading-5 text-gray-400">موجودی هر ترکیب در بخش سایز و رنگ تنظیم می‌شود.</p>}
+                  ) : <p className="self-end rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3 text-xs leading-5 text-[var(--ui-muted)]">موجودی هر ترکیب در بخش سایز و رنگ تنظیم می‌شود.</p>}
                 </div>
                 <label className={labelClass}>دسته‌بندی
                   <select value={selectedCategory ? (selectedCategory.isLegacyFallback ? "legacy:" + selectedCategory.slug : String(selectedCategory._id)) : form.categoryId} onChange={(event) => {
@@ -272,8 +272,8 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
               </section>
 
               {attributeDefinitions.length > 0 && (
-                <section className="space-y-4 rounded-xl border border-gray-700 bg-gray-900/30 p-4">
-                  <h3 className="border-b border-gray-700 pb-2 text-sm font-bold">ویژگی‌های دسته‌بندی</h3>
+                <section className="space-y-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4">
+                  <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold">ویژگی‌های دسته‌بندی</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {attributeDefinitions.map((attribute) => (
                       <label key={attribute.key} className={labelClass}>
@@ -288,7 +288,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
                             {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
                           </select>
                         ) : attribute.type === "boolean" ? (
-                          <span className="mt-2 flex min-h-10 items-center gap-2 rounded-xl border border-gray-600 bg-gray-900 px-3">
+                          <span className="mt-2 flex min-h-10 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3">
                             <input type="checkbox" checked={Boolean(attributes[attribute.key])} onChange={(event) => setAttributes((current) => ({ ...current, [attribute.key]: event.target.checked }))} />
                             بله
                           </span>
@@ -302,27 +302,27 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
               )}
 
               <section className="space-y-3">
-                <h3 className="border-b border-gray-700 pb-2 text-sm font-bold">گالری تصاویر</h3>
-                <p className="text-xs leading-5 text-gray-400">تصویر اول تصویر اصلی محصول خواهد بود. تا ۸ تصویر مجاز است؛ تصاویر تازه هنگام ذخیره بارگذاری می‌شوند.</p>
-                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-gray-600 bg-gray-700 px-4 py-2.5 text-sm hover:bg-gray-600">
+                <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold">گالری تصاویر</h3>
+                <p className="text-xs leading-5 text-[var(--ui-muted)]">تصویر اول تصویر اصلی محصول خواهد بود. تا ۸ تصویر مجاز است؛ تصاویر تازه هنگام ذخیره بارگذاری می‌شوند.</p>
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2.5 text-sm hover:bg-[var(--ui-hover)]">
                   <ImagePlus size={17} aria-hidden="true" /> افزودن تصاویر
                   <input type="file" accept="image/*" multiple className="sr-only" onChange={handleImageChange} disabled={imageBusy || form.images.length >= 8} />
                 </label>
-                {imageBusy && <p role="status" className="text-xs text-gray-400">در حال آماده‌سازی تصاویر…</p>}
+                {imageBusy && <p role="status" className="text-xs text-[var(--ui-muted)]">در حال آماده‌سازی تصاویر…</p>}
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
                   {form.images.map((image, index) => (
-                    <div key={image} className="relative overflow-hidden rounded-xl border border-gray-700">
+                    <div key={image} className="relative overflow-hidden rounded-xl border border-[var(--ui-border)]">
                       <img src={image} alt={"پیش‌نمایش تصویر " + (index + 1)} className="aspect-[4/5] w-full object-cover" />
                       {index === 0 && <span className="absolute bottom-2 right-2 rounded-full bg-black/75 px-2 py-1 text-[10px]">تصویر اصلی</span>}
-                      <button type="button" onClick={() => updateField("images", form.images.filter((_, imageIndex) => index !== imageIndex))} aria-label={"حذف تصویر " + (index + 1)} className="absolute left-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/75 text-white"><X size={14} aria-hidden="true" /></button>
+                      <button type="button" onClick={() => updateField("images", form.images.filter((_, imageIndex) => index !== imageIndex))} aria-label={"حذف تصویر " + (index + 1)} className="absolute left-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/75 text-[var(--ui-text)]"><X size={14} aria-hidden="true" /></button>
                     </div>
                   ))}
-                  {!form.images.length && <p className="col-span-full text-xs text-gray-500">هنوز تصویری ثبت نشده است.</p>}
+                  {!form.images.length && <p className="col-span-full text-xs text-[var(--ui-muted)]">هنوز تصویری ثبت نشده است.</p>}
                 </div>
               </section>
 
               <section className="space-y-4">
-                <h3 className="border-b border-gray-700 pb-2 text-sm font-bold">سایز، رنگ و موجودی ترکیب‌ها</h3>
+                <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold">سایز، رنگ و موجودی ترکیب‌ها</h3>
                 <label className={labelClass}>سایزها
                   <input value={form.sizesText} onChange={(event) => updateField("sizesText", event.target.value)} placeholder="XS, S, M, L, XL" className={fieldClass} />
                 </label>
@@ -330,21 +330,21 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
                   <input value={form.colorsText} onChange={(event) => updateField("colorsText", event.target.value)} placeholder="مشکی: #222222, سفید: #f7f7f4" className={fieldClass} />
                 </label>
                 {combinations.length > 0 && (
-                  <div className="overflow-hidden rounded-xl border border-gray-700">
-                    <div className="bg-gray-700/60 px-3 py-3 text-sm font-semibold">موجودی ترکیب‌ها · {combinations.length} گزینه</div>
+                  <div className="overflow-hidden rounded-xl border border-[var(--ui-border)]">
+                    <div className="bg-[var(--ui-surface-raised)]/60 px-3 py-3 text-sm font-semibold">موجودی ترکیب‌ها · {combinations.length} گزینه</div>
                     {combinations.map((variant) => (
-                      <label key={variant.key} className="flex items-center justify-between gap-3 border-t border-gray-700 px-3 py-3 text-sm text-gray-200">
+                      <label key={variant.key} className="flex items-center justify-between gap-3 border-t border-[var(--ui-border)] px-3 py-3 text-sm text-[var(--ui-text)]">
                         <span className="flex min-w-0 items-center gap-2">{variant.color && <span className="h-4 w-4 shrink-0 rounded-full border border-white/20" style={{ backgroundColor: variant.hex }} />} {[variant.size && "سایز " + variant.size, variant.color].filter(Boolean).join(" / ") || "پیش‌فرض"}</span>
-                        <input type="number" min="0" step="1" required value={variantStocks[variant.key] ?? "0"} onChange={(event) => setVariantStocks((current) => ({ ...current, [variant.key]: event.target.value }))} className="w-24 rounded-lg border border-gray-600 bg-gray-900 px-2 py-2 text-sm text-white" aria-label={"موجودی " + [variant.size, variant.color].filter(Boolean).join(" / ")} />
+                        <input type="number" min="0" step="1" required value={variantStocks[variant.key] ?? "0"} onChange={(event) => setVariantStocks((current) => ({ ...current, [variant.key]: event.target.value }))} className="w-24 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-2 py-2 text-sm text-[var(--ui-text)]" aria-label={"موجودی " + [variant.size, variant.color].filter(Boolean).join(" / ")} />
                       </label>
                     ))}
-                    <p className="bg-gray-900/50 px-3 py-3 text-xs text-gray-400">هر ترکیب سایز و رنگ باید موجودی مستقل داشته باشد.</p>
+                    <p className="bg-[var(--ui-surface-raised)] px-3 py-3 text-xs text-[var(--ui-muted)]">هر ترکیب سایز و رنگ باید موجودی مستقل داشته باشد.</p>
                   </div>
                 )}
               </section>
 
               <section className="space-y-4">
-                <h3 className="border-b border-gray-700 pb-2 text-sm font-bold">راهنمای تن‌خور و اندازه‌گیری</h3>
+                <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold">راهنمای تن‌خور و اندازه‌گیری</h3>
                 <label className={labelClass}>نوع تن‌خور
                   <select value={form.fitType} onChange={(event) => updateField("fitType", event.target.value)} className={fieldClass}>
                     {fitOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -361,27 +361,27 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
                   <textarea value={form.sizeChartText} onChange={(event) => updateField("sizeChartText", event.target.value)} rows={4} placeholder={"S, 92, 76, 96, 65\nM, 98, 82, 102, 68"} className={fieldClass} />
                 </label>
               </section>
-              {formError && <p role="alert" className="rounded-xl border border-red-700/50 bg-red-950/30 p-3 text-sm leading-6 text-red-200">{formError}</p>}
-              <div className="flex flex-wrap gap-2 border-t border-gray-700 pt-4">
+              {formError && <p role="alert" className="rounded-xl border border-[var(--ui-danger-border)]/50 bg-[var(--ui-danger-bg)] p-3 text-sm leading-6 text-[var(--ui-danger)]">{formError}</p>}
+              <div className="flex flex-wrap gap-2 border-t border-[var(--ui-border)] pt-4">
                 <button type="submit" disabled={saving || imageBusy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#d6b779] px-5 py-2.5 text-sm font-bold text-[#171a20] hover:bg-[#e4c989] disabled:opacity-50">
                   {saving ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
                   {saving ? "در حال ذخیره…" : "ذخیره تغییرات"}
                 </button>
-                <button type="button" onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-600 px-5 py-2.5 text-sm text-gray-200 hover:bg-gray-700">انصراف</button>
+                <button type="button" onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ui-border)] px-5 py-2.5 text-sm text-[var(--ui-text)] hover:bg-[var(--ui-hover)]">انصراف</button>
               </div>
             </div>
 
-            <aside className="h-fit rounded-xl border border-gray-700 bg-gray-900/50 p-4">
-              <h3 className="text-sm font-bold text-gray-100">پیش‌نمایش محصول</h3>
-              <div className="mt-3 overflow-hidden rounded-xl bg-gray-800">
-                {form.images[0] ? <img src={form.images[0]} alt="تصویر اصلی پیش‌نمایش" className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center text-sm text-gray-500">بدون تصویر</div>}
+            <aside className="h-fit rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4">
+              <h3 className="text-sm font-bold text-[var(--ui-text)]">پیش‌نمایش محصول</h3>
+              <div className="mt-3 overflow-hidden rounded-xl bg-[var(--ui-surface)]">
+                {form.images[0] ? <img src={form.images[0]} alt="تصویر اصلی پیش‌نمایش" className="aspect-[4/5] w-full object-cover" /> : <div className="flex aspect-[4/5] items-center justify-center text-sm text-[var(--ui-muted)]">بدون تصویر</div>}
                 <div className="space-y-2 p-3">
-                  <p className="font-semibold text-white">{form.name || "نام محصول"}</p>
-                  <p className="line-clamp-4 text-xs leading-5 text-gray-400">{form.description || "توضیحات محصول در این بخش نمایش داده می‌شود."}</p>
-                  <p className="text-lg font-bold text-[#d6b779]">{formatPrice(Number(form.price) || 0, STORE_CURRENCY)}</p>
-                  <p className="text-xs text-gray-400">{selectedCategory?.name?.fa || form.category || "بدون دسته‌بندی"}</p>
-                  {combinations.length > 0 && <p className="text-xs text-gray-400">{combinations.length} ترکیب سایز و رنگ</p>}
-                  <a href={"/product/" + product._id} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-[#d6b779] underline underline-offset-4">
+                  <p className="font-semibold text-[var(--ui-text)]">{form.name || "نام محصول"}</p>
+                  <p className="line-clamp-4 text-xs leading-5 text-[var(--ui-muted)]">{form.description || "توضیحات محصول در این بخش نمایش داده می‌شود."}</p>
+                  <p className="text-lg font-bold text-[var(--ui-accent)]">{formatPrice(Number(form.price) || 0, STORE_CURRENCY)}</p>
+                  <p className="text-xs text-[var(--ui-muted)]">{selectedCategory?.name?.fa || form.category || "بدون دسته‌بندی"}</p>
+                  {combinations.length > 0 && <p className="text-xs text-[var(--ui-muted)]">{combinations.length} ترکیب سایز و رنگ</p>}
+                  <a href={"/product/" + product._id} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center gap-1 text-xs font-semibold text-[var(--ui-accent)] underline underline-offset-4">
                     بازکردن صفحه عمومی <ExternalLink size={13} aria-hidden="true" />
                   </a>
                 </div>
