@@ -176,7 +176,7 @@ const CampaignManager = () => {
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   <button type="button" onClick={() => startEdit(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700"><Pencil size={14} aria-hidden="true" />ویرایش</button>
-                  <button type="button" onClick={() => toggleCampaign(campaign) className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700">{campaign.isActive ? <Pause size={14} /> : <Play size={14} />}{campaign.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</button>
+                  <button type="button" onClick={() => toggleCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-600 px-3 text-xs text-gray-200 hover:bg-gray-700">{campaign.isActive ? <Pause size={14} /> : <Play size={14} />}{campaign.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}</button>
                   <button type="button" onClick={() => removeCampaign(campaign)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-red-900 px-3 text-xs text-red-300 hover:bg-red-950/40"><Trash2 size={14} />حذف</button>
                 </div>
               </article>
