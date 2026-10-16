@@ -1,6 +1,8 @@
 import { redis } from "../lib/redis.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
+import { isPasswordResetEmailConfigured, sendPasswordResetEmail } from "../lib/password-reset-email.js";
 
 const generateTokens = (userId) => {
 	const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -84,6 +86,67 @@ export const login = async (req, res) => {
 		console.log("Error in login controller", error.message);
 		res.status(500).json({ message: error.message });
 	}
+};
+
+const genericRecoveryMessage = "اگر این ایمیل در فروشگاه ثبت شده باشد، راهنمای بازیابی رمز عبور ارسال می‌شود.";
+
+export const forgotPassword = async (req, res) => {
+  const email = typeof req.body?.email === "string" ? req.body.email.trim().toLowerCase() : "";
+  if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: "ایمیل معتبر وارد کنید." });
+  }
+  if (!isPasswordResetEmailConfigured()) {
+    return res.status(503).json({ message: "بازیابی رمز عبور هنوز در این محیط پیکربندی نشده است." });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      const token = crypto.randomBytes(32).toString("hex");
+      user.passwordResetTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      user.passwordResetExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      await user.save();
+      try {
+        await sendPasswordResetEmail(email, token);
+      } catch (mailError) {
+        // Never let a provider failure reveal whether an account exists. Remove the
+        // unused token and log provider failure for the operator to investigate.
+        user.passwordResetTokenHash = undefined;
+        user.passwordResetExpiresAt = undefined;
+        await user.save();
+        console.error("Unable to send password recovery email", mailError.message);
+      }
+    }
+    return res.json({ message: genericRecoveryMessage });
+  } catch (error) {
+    console.error("Password recovery request failed", error.message);
+    return res.status(500).json({ message: "درخواست بازیابی رمز عبور انجام نشد." });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
+  if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ message: "لینک بازیابی نامعتبر یا منقضی شده است." });
+  if (password.length < 8 || password.length > 128) return res.status(400).json({ message: "رمز عبور باید دست‌کم ۸ نویسه داشته باشد." });
+  try {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+    const user = await User.findOne({
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: { $gt: new Date() },
+    }).select("+passwordResetTokenHash +passwordResetExpiresAt");
+    if (!user) return res.status(400).json({ message: "لینک بازیابی نامعتبر یا منقضی شده است." });
+    user.password = password;
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpiresAt = undefined;
+    await user.save();
+    await redis.del("refresh_token:" + user._id);
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    return res.json({ message: "رمز عبور تغییر کرد؛ اکنون وارد حساب شوید." });
+  } catch (error) {
+    console.error("Password reset failed", error.message);
+    return res.status(500).json({ message: "تغییر رمز عبور ناموفق بود." });
+  }
 };
 
 export const logout = async (req, res) => {
