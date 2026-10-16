@@ -25,6 +25,7 @@ const MyOrdersPage = lazy(() => import("./pages/MyOrdersPage"));
 const CampaignPage = lazy(() => import("./pages/CampaignPage"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 const RouteLoadingFallback = () => (
   <div
@@ -86,6 +87,7 @@ function App() {
             <Route path="/newsletter-unsubscribe" element={<NewsletterUnsubscribePage />} />
             <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
             <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </div>

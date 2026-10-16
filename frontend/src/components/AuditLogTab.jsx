@@ -6,6 +6,9 @@ import { formatIranianDateTime } from "../lib/iranian-date";
 const actionLabels = {
   "product.created": "ایجاد محصول",
   "product.deleted": "حذف محصول",
+  "product.updated": "ویرایش محصول",
+  "product.archived": "بایگانی محصول",
+  "product.restored": "بازیابی محصول",
   "product.stock_updated": "تغییر موجودی محصول",
   "product.variant_stock_updated": "تغییر موجودی تنوع محصول",
   "product.featured_toggled": "تغییر وضعیت محصول منتخب",

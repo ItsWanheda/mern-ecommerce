@@ -14,7 +14,6 @@ const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
 const CategoryManager = lazy(() => import("../components/CategoryManager"));
 const CouponManager = lazy(() => import("../components/CouponManager"));
 const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
-import { useProductStore } from "../stores/useProductStore";
 
 const tabs = [
   { id: "create", label: "ایجاد محصول", icon: PlusCircle },
@@ -35,13 +34,11 @@ const AdminPage = () => {
   const requestedTab = searchParams.get("tab");
   const initialTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : "create";
   const [activeTab, setActiveTab] = useState(initialTab);
-  const { fetchAllProducts } = useProductStore();
 
   useEffect(() => {
     if (tabs.some((tab) => tab.id === requestedTab)) setActiveTab(requestedTab);
   }, [requestedTab]);
 
-  useEffect(() => { if (activeTab === "products") fetchAllProducts(); }, [activeTab, fetchAllProducts]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
