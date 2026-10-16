@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, LoaderCircle, Truck } from "lucide-react";
@@ -29,6 +29,21 @@ const normalizeIranPhone = (value) => {
   return digits;
 };
 
+const emptyShippingAddress = { recipientName: "", phone: "", province: "", city: "", district: "", addressLine: "", postalCode: "", notes: "" };
+const validateShippingAddress = delivery => {
+  const errors = {};
+  if (delivery.recipientName.length < 2) errors.recipientName = "نام گیرنده را کامل وارد کنید.";
+  if (!/^09\d{9}$/.test(delivery.phone)) errors.phone = "شماره موبایل باید ۱۱ رقم و با 09 شروع شود.";
+  if (!delivery.province) errors.province = "استان را انتخاب کنید.";
+  if (delivery.city.length < 2) errors.city = "نام شهر را کامل وارد کنید.";
+  if (!/^\d{10}$/.test(delivery.postalCode)) errors.postalCode = "کد پستی باید دقیقاً ۱۰ رقم باشد.";
+  if (delivery.addressLine.length < 10) errors.addressLine = "نشانی کامل باید دست‌کم ۱۰ نویسه داشته باشد.";
+  return errors;
+};
+const FieldError = ({ id, message }) => message
+  ? <span id={id} role="alert" className="mt-1.5 block text-xs leading-5 text-[var(--ui-danger)]">{message}</span>
+  : null;
+
 const OrderSummary = () => {
   const { total, subtotal, coupon, isCouponApplied, cart, isMergingGuestCart } = useCartStore();
   const { user } = useUserStore();
@@ -43,20 +58,41 @@ const OrderSummary = () => {
   });
   const [shipping, setShipping] = useState({ shippingFee: 0, flatRate: 0, freeShippingThreshold: 0, loading: true, error: "" });
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [shippingAddress, setShippingAddress] = useState({
-    recipientName: "",
-    phone: "",
-    province: "",
-    city: "",
-    district: "",
-    addressLine: "",
-    postalCode: "",
-    notes: "",
-  });
-  const addressFieldClass = "mt-1 w-full rounded-lg border border-gray-600 bg-gray-900/70 px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-500 focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
+  const [shippingAddress, setShippingAddress] = useState(emptyShippingAddress);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [formError, setFormError] = useState("");
+  const [hasDefaultAddress, setHasDefaultAddress] = useState(false);
+  const [saveAddressForNextTime, setSaveAddressForNextTime] = useState(false);
+  const [addressSaveMessage, setAddressSaveMessage] = useState("");
+  const fieldRefs = useRef({});
+  const addressFieldClass = field => "mt-1 w-full rounded-lg border bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition placeholder:text-[var(--ui-muted)] focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25 " + (fieldErrors[field] ? "border-[var(--ui-danger)] focus:border-[var(--ui-danger)] focus:ring-[var(--ui-danger)]/25" : "border-[var(--ui-border)]");
 
   const savings = Math.max(0, subtotal - total);
   const estimatedTotal = total + Number(shipping.shippingFee || 0);
+
+  useEffect(() => {
+    if (!user?._id) { setHasDefaultAddress(false); return undefined; }
+    let active = true;
+    axios.get("/auth/profile").then(({ data }) => {
+      if (!active) return;
+      const saved = data?.defaultShippingAddress;
+      if (!saved?.addressLine) return;
+      setHasDefaultAddress(true);
+      setShippingAddress(current => Object.values(current).some(value => String(value || "").trim())
+        ? current : { ...emptyShippingAddress, ...saved });
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [user?._id]);
+
+  const updateAddressField = (field, value) => {
+    setShippingAddress(current => ({ ...current, [field]: value }));
+    setFieldErrors(current => {
+      if (!current[field]) return current;
+      const next = { ...current }; delete next[field]; return next;
+    });
+    setFormError("");
+    setAddressSaveMessage("");
+  };
 
   useEffect(() => {
     let active = true;
@@ -119,14 +155,28 @@ const OrderSummary = () => {
       postalCode: normalizeDigits(shippingAddress.postalCode).replace(/\D/g, ""),
       notes: shippingAddress.notes.trim(),
     };
-    if (delivery.recipientName.length < 2 || !/^09\d{9}$/.test(delivery.phone) ||
-        !delivery.province || !delivery.city || delivery.addressLine.length < 10 ||
-        !/^\d{10}$/.test(delivery.postalCode)) {
-      return toast.error("اطلاعات گیرنده و نشانی را بررسی کنید؛ موبایل باید ایرانی و کد پستی ۱۰ رقمی باشد.");
+    const nextFieldErrors = validateShippingAddress(delivery);
+    setFieldErrors(nextFieldErrors);
+    setFormError("");
+    if (Object.keys(nextFieldErrors).length) {
+      const firstInvalid = Object.keys(nextFieldErrors)[0];
+      const element = fieldRefs.current[firstInvalid];
+      element?.focus();
+      element?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      return;
     }
 
     setCheckoutLoading(true);
     try {
+      if (saveAddressForNextTime) {
+        try {
+          await axios.patch("/auth/profile/default-address", { shippingAddress: delivery });
+          setHasDefaultAddress(true);
+          setAddressSaveMessage("نشانی برای سفارش‌های بعدی ذخیره شد.");
+        } catch {
+          setAddressSaveMessage("نشانی ذخیره نشد؛ پرداخت بدون تغییر اطلاعات همین سفارش ادامه می‌یابد.");
+        }
+      }
       const response = await axios.post("/payments/create-checkout", {
         couponCode: coupon && isCouponApplied ? coupon.code : null,
         shippingAddress: delivery,
@@ -153,7 +203,16 @@ const OrderSummary = () => {
       window.location.assign(redirectUrl);
       return;
     } catch (error) {
-      toast.error(error.response?.data?.message || error.message || "شروع پرداخت ناموفق بود");
+      const message = error.response?.data?.message || error.message || "شروع پرداخت ناموفق بود";
+      const serverFields = error.response?.data?.fieldErrors;
+      if (serverFields && typeof serverFields === "object") {
+        setFieldErrors(current => ({ ...current, ...serverFields }));
+        const firstInvalid = Object.keys(serverFields)[0];
+        fieldRefs.current[firstInvalid]?.focus();
+        fieldRefs.current[firstInvalid]?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      }
+      setFormError(message);
+      toast.error(message);
       setCheckoutLoading(false);
     }
   };
@@ -161,101 +220,113 @@ const OrderSummary = () => {
   return (
     <motion.div
       dir="rtl"
-      className="space-y-4 rounded-lg border border-gray-700 bg-gray-800 p-4 shadow-sm sm:p-6"
+      className="space-y-4 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-sm sm:p-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <p className="text-xl font-semibold text-[#9aa58e]">خلاصه سفارش</p>
-      {isMergingGuestCart && <p role="status" className="rounded-xl border border-gray-600 bg-gray-900/40 p-3 text-xs text-gray-300">در حال ادغام سبد خرید با حساب شما…</p>}
+      <p className="text-xl font-semibold text-[var(--ui-accent)]">خلاصه سفارش</p>
+      {isMergingGuestCart && <p role="status" className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3 text-xs text-[var(--ui-muted)]">در حال ادغام سبد خرید با حساب شما…</p>}
       {!user && (
-        <div className="rounded-xl border border-gray-600 bg-gray-900/40 p-3">
-          <p className="text-sm font-semibold text-white">سبد خرید شما محفوظ می‌ماند</p>
-          <p className="mt-1 text-xs leading-5 text-gray-400">برای ثبت سفارش و پرداخت، در مرحله بعد وارد حساب شوید یا حساب بسازید.</p>
+        <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3">
+          <p className="text-sm font-semibold text-[var(--ui-text)]">سبد خرید شما محفوظ می‌ماند</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">برای ثبت سفارش و پرداخت، در مرحله بعد وارد حساب شوید یا حساب بسازید.</p>
         </div>
       )}
       {hasUnmergedItems && (
-        <p role="alert" className="rounded-xl border border-amber-700/50 bg-amber-950/30 p-3 text-xs leading-6 text-amber-200">
+        <p role="alert" className="rounded-xl border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-xs leading-6 text-[var(--ui-warning)]">
           بعضی گزینه‌های سبد پس از ورود به حساب به‌طور کامل ادغام نشده‌اند. گزینه‌های نشان‌دار را بررسی کنید و اگر موجود نیستند حذف کنید تا پرداخت ادامه پیدا کند.
         </p>
       )}
 
       <div className="space-y-4">
       {user && (
-        <section className="space-y-4 rounded-xl border border-gray-600 bg-gray-900/35 p-4 sm:p-5" aria-labelledby="delivery-address-title">
+        <section className="space-y-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:p-5" aria-labelledby="delivery-address-title">
           <div>
-            <h3 id="delivery-address-title" className="text-base font-bold text-white">نشانی تحویل سفارش</h3>
-            <p className="mt-1 text-xs leading-5 text-gray-400">آدرس فقط برای همین سفارش ذخیره می‌شود. شماره موبایل و کد پستی را می‌توانید با ارقام فارسی یا انگلیسی وارد کنید.</p>
+            <h3 id="delivery-address-title" className="text-base font-bold text-[var(--ui-text)]">نشانی تحویل سفارش</h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">{hasDefaultAddress ? "نشانی پیش‌فرض ذخیره‌شده وارد شد. برای ذخیره تغییرات، گزینه ذخیره برای سفارش‌های بعدی را فعال کنید." : "شماره موبایل و کد پستی را می‌توانید با ارقام فارسی یا انگلیسی وارد کنید."}</p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="block text-sm text-gray-300">نام و نام خانوادگی گیرنده
-              <input autoComplete="name" required maxLength={100} className={addressFieldClass} value={shippingAddress.recipientName} onChange={(event) => setShippingAddress({ ...shippingAddress, recipientName: event.target.value })} placeholder="نام گیرنده" />
+            <label className="block text-sm text-[var(--ui-muted)]">نام و نام خانوادگی گیرنده
+              <input autoComplete="name" required maxLength={100} ref={(element) => { fieldRefs.current.recipientName = element; }} aria-invalid={Boolean(fieldErrors.recipientName)} aria-describedby={fieldErrors.recipientName ? "checkout-error-recipientName" : undefined} className={addressFieldClass("recipientName")} value={shippingAddress.recipientName} onChange={(event) => updateAddressField("recipientName", event.target.value)} placeholder="نام گیرنده" />
+              <FieldError id="checkout-error-recipientName" message={fieldErrors.recipientName} />
             </label>
-            <label className="block text-sm text-gray-300">شماره موبایل
-              <input type="tel" inputMode="tel" autoComplete="tel" required maxLength={18} className={addressFieldClass} value={shippingAddress.phone} onChange={(event) => setShippingAddress({ ...shippingAddress, phone: event.target.value })} placeholder="09123456789" />
+            <label className="block text-sm text-[var(--ui-muted)]">شماره موبایل
+              <input type="tel" inputMode="tel" autoComplete="tel" required maxLength={18} ref={(element) => { fieldRefs.current.phone = element; }} aria-invalid={Boolean(fieldErrors.phone)} aria-describedby={fieldErrors.phone ? "checkout-error-phone" : undefined} className={addressFieldClass("phone")} value={shippingAddress.phone} onChange={(event) => updateAddressField("phone", event.target.value)} placeholder="09123456789" />
+              <FieldError id="checkout-error-phone" message={fieldErrors.phone} />
             </label>
-            <label className="block text-sm text-gray-300">استان
-              <select autoComplete="address-level1" required className={addressFieldClass} value={shippingAddress.province} onChange={(event) => setShippingAddress({ ...shippingAddress, province: event.target.value })}>
+            <label className="block text-sm text-[var(--ui-muted)]">استان
+              <select autoComplete="address-level1" required ref={(element) => { fieldRefs.current.province = element; }} aria-invalid={Boolean(fieldErrors.province)} aria-describedby={fieldErrors.province ? "checkout-error-province" : undefined} className={addressFieldClass("province")} value={shippingAddress.province} onChange={(event) => updateAddressField("province", event.target.value)}>
                 <option value="">انتخاب استان</option>
-                {provinces.map((province) => <option key={province} value={province} className="bg-gray-800">{province}</option>)}
+                {provinces.map((province) => <option key={province} value={province}>{province}</option>)}
               </select>
+              <FieldError id="checkout-error-province" message={fieldErrors.province} />
             </label>
-            <label className="block text-sm text-gray-300">شهر
-              <input autoComplete="address-level2" required maxLength={80} className={addressFieldClass} value={shippingAddress.city} onChange={(event) => setShippingAddress({ ...shippingAddress, city: event.target.value })} placeholder="نام شهر" />
+            <label className="block text-sm text-[var(--ui-muted)]">شهر
+              <input autoComplete="address-level2" required maxLength={80} ref={(element) => { fieldRefs.current.city = element; }} aria-invalid={Boolean(fieldErrors.city)} aria-describedby={fieldErrors.city ? "checkout-error-city" : undefined} className={addressFieldClass("city")} value={shippingAddress.city} onChange={(event) => updateAddressField("city", event.target.value)} placeholder="نام شهر" />
+              <FieldError id="checkout-error-city" message={fieldErrors.city} />
             </label>
-            <label className="block text-sm text-gray-300">محله (اختیاری)
-              <input maxLength={80} className={addressFieldClass} value={shippingAddress.district} onChange={(event) => setShippingAddress({ ...shippingAddress, district: event.target.value })} placeholder="محله یا منطقه" />
+            <label className="block text-sm text-[var(--ui-muted)]">محله (اختیاری)
+              <input maxLength={80} className={addressFieldClass("district")} value={shippingAddress.district} onChange={(event) => updateAddressField("district", event.target.value)} placeholder="محله یا منطقه" />
             </label>
-            <label className="block text-sm text-gray-300">کد پستی ۱۰ رقمی
-              <input inputMode="numeric" autoComplete="postal-code" required maxLength={10} className={addressFieldClass} value={shippingAddress.postalCode} onChange={(event) => setShippingAddress({ ...shippingAddress, postalCode: event.target.value })} placeholder="1234567890" />
+            <label className="block text-sm text-[var(--ui-muted)]">کد پستی ۱۰ رقمی
+              <input inputMode="numeric" autoComplete="postal-code" required maxLength={10} ref={(element) => { fieldRefs.current.postalCode = element; }} aria-invalid={Boolean(fieldErrors.postalCode)} aria-describedby={fieldErrors.postalCode ? "checkout-error-postalCode" : undefined} className={addressFieldClass("postalCode")} value={shippingAddress.postalCode} onChange={(event) => updateAddressField("postalCode", event.target.value)} placeholder="1234567890" />
+              <FieldError id="checkout-error-postalCode" message={fieldErrors.postalCode} />
             </label>
           </div>
-          <label className="block text-sm text-gray-300">نشانی کامل و پلاک
-            <textarea autoComplete="street-address" required minLength={10} maxLength={500} rows={3} className={addressFieldClass} value={shippingAddress.addressLine} onChange={(event) => setShippingAddress({ ...shippingAddress, addressLine: event.target.value })} placeholder="خیابان، کوچه، پلاک، واحد و نشانه‌های لازم برای تحویل" />
+          <label className="block text-sm text-[var(--ui-muted)]">نشانی کامل و پلاک
+            <textarea autoComplete="street-address" required minLength={10} maxLength={500} rows={3} ref={(element) => { fieldRefs.current.addressLine = element; }} aria-invalid={Boolean(fieldErrors.addressLine)} aria-describedby={fieldErrors.addressLine ? "checkout-error-addressLine" : undefined} className={addressFieldClass("addressLine")} value={shippingAddress.addressLine} onChange={(event) => updateAddressField("addressLine", event.target.value)} placeholder="خیابان، کوچه، پلاک، واحد و نشانه‌های لازم برای تحویل" />
+            <FieldError id="checkout-error-addressLine" message={fieldErrors.addressLine} />
           </label>
-          <label className="block text-sm text-gray-300">توضیحات تحویل (اختیاری)
-            <textarea maxLength={500} rows={2} className={addressFieldClass} value={shippingAddress.notes} onChange={(event) => setShippingAddress({ ...shippingAddress, notes: event.target.value })} placeholder="زمان مناسب یا توضیحات تکمیلی برای پیک" />
+          <label className="block text-sm text-[var(--ui-muted)]">توضیحات تحویل (اختیاری)
+            <textarea maxLength={500} rows={2} className={addressFieldClass("notes")} value={shippingAddress.notes} onChange={(event) => updateAddressField("notes", event.target.value)} placeholder="زمان مناسب یا توضیحات تکمیلی برای پیک" />
           </label>
+          <label className="flex items-start gap-2.5 text-sm text-[var(--ui-text)]">
+            <input type="checkbox" className="mt-1 h-4 w-4 accent-[var(--ui-accent)]" checked={saveAddressForNextTime} onChange={(event) => { setSaveAddressForNextTime(event.target.checked); setAddressSaveMessage(""); }} />
+            <span>این نشانی را برای سفارش‌های بعدی ذخیره کن</span>
+          </label>
+          {addressSaveMessage && <p role="status" className={`rounded-lg border p-3 text-xs leading-5 ${addressSaveMessage.includes("ذخیره شد") ? "border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success)]" : "border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning)]"}`}>{addressSaveMessage}</p>}
+          {formError && <p role="alert" className="rounded-lg border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] p-3 text-sm leading-6 text-[var(--ui-danger)]">{formError}</p>}
           <GiftCouponCard />
         </section>
       )}
         <div className="space-y-3">
           <dl className="flex items-center justify-between gap-4">
-            <dt className="text-sm font-normal text-gray-300">قیمت محصولات</dt>
-            <dd dir="ltr" className="text-sm font-medium text-white">{formatPrice(subtotal, paymentConfig.currency)}</dd>
+            <dt className="text-sm font-normal text-[var(--ui-muted)]">قیمت محصولات</dt>
+            <dd dir="ltr" className="text-sm font-medium text-[var(--ui-text)]">{formatPrice(subtotal, paymentConfig.currency)}</dd>
           </dl>
 
           {savings > 0 && (
             <dl className="flex items-center justify-between gap-4">
-              <dt className="text-sm font-normal text-gray-300">تخفیف {coupon && isCouponApplied ? `(${coupon.code})` : ""}</dt>
-              <dd dir="ltr" className="text-sm font-medium text-[#68745f]">−{formatPrice(savings, paymentConfig.currency)}</dd>
+              <dt className="text-sm font-normal text-[var(--ui-muted)]">تخفیف {coupon && isCouponApplied ? `(${coupon.code})` : ""}</dt>
+              <dd dir="ltr" className="text-sm font-medium text-[var(--ui-accent)]">−{formatPrice(savings, paymentConfig.currency)}</dd>
             </dl>
           )}
 
           <dl className="flex items-center justify-between gap-4">
-            <dt className="flex items-center gap-2 text-sm font-normal text-gray-300"><Truck size={15} aria-hidden="true" />هزینه ارسال</dt>
-            <dd dir="ltr" className="text-sm font-medium text-white">
-              {shipping.loading ? "…" : shipping.shippingFee === 0 ? "رایگان" : formatPrice(shipping.shippingFee, paymentConfig.currency)}
+            <dt className="flex items-center gap-2 text-sm font-normal text-[var(--ui-muted)]"><Truck size={15} aria-hidden="true" />هزینه ارسال</dt>
+            <dd dir="ltr" className="text-sm font-medium text-[var(--ui-text)]">
+              {shipping.loading ? "در حال محاسبه…" : shipping.error ? "نامشخص" : shipping.shippingFee === 0 ? "رایگان" : formatPrice(shipping.shippingFee, paymentConfig.currency)}
             </dd>
           </dl>
 
-          {user && shipping.error && <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">{shipping.error}</p>}
+          {user && shipping.error && <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-sm leading-6 text-[var(--ui-warning)]">{shipping.error}</p>}
 
-          {shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
-            <p className="text-xs leading-5 text-gray-400">
+          {!shipping.loading && !shipping.error && shipping.freeShippingThreshold > 0 && total < shipping.freeShippingThreshold && (
+            <p className="text-xs leading-5 text-[var(--ui-muted)]">
               برای ارسال رایگان، مبلغ سفارش باید به {formatPrice(shipping.freeShippingThreshold, paymentConfig.currency)} برسد.
             </p>
           )}
 
-          <dl className="flex items-center justify-between gap-4 border-t border-gray-600 pt-3">
-            <dt className="text-base font-bold text-white">مبلغ نهایی تقریبی</dt>
-            <dd dir="ltr" className="text-base font-bold text-[#68745f]">{formatPrice(estimatedTotal, paymentConfig.currency)}</dd>
+          <dl className="flex items-center justify-between gap-4 border-t border-[var(--ui-border)] pt-3">
+            <dt className="text-base font-bold text-[var(--ui-text)]">مبلغ نهایی قابل پرداخت</dt>
+            <dd dir="ltr" className="text-base font-bold text-[var(--ui-accent)]">{shipping.loading ? "در حال محاسبه…" : shipping.error ? "قابل محاسبه نیست" : formatPrice(estimatedTotal, paymentConfig.currency)}</dd>
           </dl>
-          <p className="text-xs leading-5 text-gray-400">مبلغ نهایی و موجودی کالا در سمت سرور دوباره بررسی می‌شود.</p>
+          <p className="text-xs leading-5 text-[var(--ui-muted)]">{shipping.error ? "تا زمان دریافت هزینه ارسال، مبلغ نهایی قابل نمایش نیست و پرداخت غیرفعال می‌ماند." : "محاسبه: قیمت محصولات منهای تخفیف، به‌علاوه هزینه ارسال. مبلغ و موجودی پیش از پرداخت در سرور دوباره بررسی می‌شوند."}</p>
         </div>
 
         {user && !paymentConfig.loading && !paymentConfig.configured && (
-          <p role="alert" className="rounded-lg border border-amber-700/50 bg-amber-950/30 p-3 text-sm leading-6 text-amber-200">
+          <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-sm leading-6 text-[var(--ui-warning)]">
             {paymentConfig.message || "درگاه پرداخت پیکربندی نشده است."}
           </p>
         )}
@@ -263,7 +334,7 @@ const OrderSummary = () => {
         <motion.button
           type="button"
           disabled={checkoutLoading || isMergingGuestCart || !cart.length || hasUnmergedItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
-          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus:outline-none focus:ring-4 focus:ring-[#68745f]/40 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--ui-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus:outline-none focus:ring-4 focus:ring-[var(--ui-focus)]/30 disabled:cursor-not-allowed disabled:opacity-50"
           whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
           whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}
           onClick={handlePayment}
@@ -275,12 +346,12 @@ const OrderSummary = () => {
         <div className="flex flex-wrap items-center justify-center gap-2 text-center">
           {!user && (
             <>
-              <span className="text-sm text-gray-400">حساب ندارید؟</span>
-              <Link to="/signup" state={{ from: { pathname: "/cart" } }} className="text-sm font-semibold text-[#9aa58e] underline underline-offset-4">ثبت‌نام</Link>
-              <span className="mx-1 text-gray-600">·</span>
+              <span className="text-sm text-[var(--ui-muted)]">حساب ندارید؟</span>
+              <Link to="/signup" state={{ from: { pathname: "/cart" } }} className="text-sm font-semibold text-[var(--ui-accent)] underline underline-offset-4">ثبت‌نام</Link>
+              <span className="mx-1 text-[var(--ui-muted)]">·</span>
             </>
           )}
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[#9aa58e] underline hover:no-underline">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--ui-accent)] underline hover:no-underline">
             <ArrowLeft size={16} aria-hidden="true" />ادامه خرید
           </Link>
         </div>
