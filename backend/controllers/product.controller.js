@@ -96,13 +96,72 @@ const writeJsonCache = async (key, value, ttlSeconds) => {
   }
 };
 
-export const getAllProducts = async (_req, res) => {
+export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ createdAt: -1 }).lean();
-    return res.json({ products });
+    const page = clampInteger(req.query.page, 1, 1, 100000);
+    const limit = clampInteger(req.query.limit, 12, 1, 50);
+    const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+    const category = typeof req.query.category === "string" ? req.query.category.trim().slice(0, 96) : "";
+    const stock = typeof req.query.stock === "string" ? req.query.stock : "";
+    const requestedStatus = typeof req.query.status === "string" ? req.query.status : "active";
+    const status = ["active", "archived", "all"].includes(requestedStatus) ? requestedStatus : "active";
+    const clauses = [];
+    const filter = {};
+
+    if (status === "active") filter.isActive = { $ne: false };
+    else if (status === "archived") filter.isActive = false;
+
+    if (rawQuery) {
+      const normalized = normalizePersianText(rawQuery).slice(0, 80);
+      const rawPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
+      const normalizedPattern = new RegExp(escapeSearchRegex(normalized), "i");
+      clauses.push({ $or: [
+        { searchTextNormalized: normalizedPattern },
+        { name: rawPattern },
+        { description: rawPattern },
+        { category: rawPattern },
+      ] });
+    }
+    if (category) {
+      const categoryRecord = await Category.findOne({ slug: category }).select("_id").lean();
+      const categoryMatches = [{ category }];
+      if (categoryRecord) categoryMatches.push({ categoryId: categoryRecord._id });
+      clauses.push({ $or: categoryMatches });
+    }
+    if (stock === "in_stock") {
+      clauses.push({ $or: [
+        { variants: { $elemMatch: { stock: { $gt: 0 } } } },
+        { $and: [{ stock: { $gt: 0 } }, { $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] }] },
+      ] });
+    } else if (stock === "out_of_stock") {
+      clauses.push({ $or: [
+        { stock: 0, $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] },
+        { $expr: { $and: [
+          { $gt: [{ $size: { $ifNull: ["$variants", []] } }, 0] },
+          { $eq: [
+            { $size: { $filter: { input: { $ifNull: ["$variants", []] }, as: "variant", cond: { $gt: ["$$variant.stock", 0] } } } },
+            0,
+          ] },
+        ] } },
+      ] });
+    } else if (stock === "untracked") {
+      clauses.push({ stock: null, $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] });
+    }
+    if (clauses.length) filter.$and = clauses;
+
+    const sort = req.query.sort === "priceAsc"
+      ? { price: 1, _id: 1 }
+      : req.query.sort === "nameAsc"
+        ? { name: 1, _id: 1 }
+        : { createdAt: -1, _id: -1 };
+    const [total, products] = await Promise.all([
+      Product.countDocuments(filter).maxTimeMS(1500),
+      Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean(),
+    ]);
+    return res.json({ products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
     console.error("Error in getAllProducts controller", error.message);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "دریافت محصولات ناموفق بود." });
   }
 };
 
@@ -406,6 +465,201 @@ export const createProduct = async (req, res) => {
   }
 };
 
+export const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const body = req.body || {};
+    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const description = typeof body.description === "string" ? body.description.trim() : "";
+    const numericPrice = body.price === "" || body.price === undefined || body.price === null ? Number.NaN : Number(body.price);
+    const numericStock = body.stock === "" || body.stock === undefined || body.stock === null ? null : Number(body.stock);
+
+    let categoryRecord = null;
+    if (body.categoryId !== undefined && body.categoryId !== null && body.categoryId !== "") {
+      if (typeof body.categoryId !== "string" || !/^[a-f\d]{24}$/i.test(body.categoryId)) {
+        return res.status(400).json({ message: "دسته‌بندی انتخاب‌شده معتبر نیست." });
+      }
+      categoryRecord = await Category.findOne({ _id: body.categoryId, isActive: true });
+      if (!categoryRecord) return res.status(400).json({ message: "دسته‌بندی فعال پیدا نشد؛ یک دسته‌بندی فعال انتخاب کنید." });
+    }
+    const productCategory = categoryRecord ? categoryRecord.slug : (typeof body.category === "string" ? body.category.trim() : "");
+    const rawAttributes = body.attributes && typeof body.attributes === "object" && !Array.isArray(body.attributes) ? body.attributes : {};
+    const normalizedAttributes = categoryRecord
+      ? await validateProductAttributes(categoryRecord, rawAttributes)
+      : { values: rawAttributes };
+    if (normalizedAttributes.error) return res.status(400).json({ message: normalizedAttributes.error });
+
+    const normalizedSizes = Array.isArray(body.sizes)
+      ? [...new Set(body.sizes.filter((value) => typeof value === "string").map((value) => value.trim()).filter(Boolean))].slice(0, 24)
+      : [];
+    const normalizedColors = Array.isArray(body.colors)
+      ? body.colors.filter((value) => value && typeof value.name === "string")
+          .map((value) => ({ name: value.name.trim().slice(0, 40), hex: typeof value.hex === "string" && /^#[0-9a-fA-F]{6}$/.test(value.hex) ? value.hex : "#d5d0c5" }))
+          .filter((value) => value.name)
+          .filter((value, index, list) => list.findIndex((entry) => entry.name.toLowerCase() === value.name.toLowerCase()) === index)
+          .slice(0, 16)
+      : [];
+    const normalizedVariants = Array.isArray(body.variants)
+      ? body.variants.map((variant) => ({
+          size: typeof variant?.size === "string" ? variant.size.trim() : "",
+          color: typeof variant?.color === "string" ? variant.color.trim() : "",
+          stock: Number(variant?.stock),
+        }))
+      : [];
+    const normalizedFit = body.fit && typeof body.fit === "object" ? {
+      type: ["true-to-size", "slim", "regular", "relaxed", "oversized", "athletic"].includes(body.fit.type) ? body.fit.type : "regular",
+      description: typeof body.fit.description === "string" ? body.fit.description.trim().slice(0, 500) : "",
+      modelHeight: typeof body.fit.modelHeight === "string" ? body.fit.modelHeight.trim().slice(0, 40) : "",
+      modelSize: typeof body.fit.modelSize === "string" ? body.fit.modelSize.trim().slice(0, 24) : "",
+    } : { type: "regular", description: "", modelHeight: "", modelSize: "" };
+    const normalizedSizeChart = Array.isArray(body.sizeChart)
+      ? body.sizeChart.filter((row) => row && typeof row.size === "string" && row.size.trim()).slice(0, 24).map((row) => {
+          const measurement = (value) => value === "" || value === null || value === undefined ? null : Number(value);
+          return {
+            size: row.size.trim().slice(0, 24),
+            chestCm: measurement(row.chestCm),
+            waistCm: measurement(row.waistCm),
+            hipsCm: measurement(row.hipsCm),
+            lengthCm: measurement(row.lengthCm),
+          };
+        })
+      : [];
+
+    if (name.length > 160 || !name || description.length > 5000 || !description || !productCategory ||
+        !Number.isSafeInteger(numericPrice) || numericPrice < 0 ||
+        (numericStock !== null && (!Number.isInteger(numericStock) || numericStock < 0))) {
+      return res.status(400).json({ message: "نام، توضیحات، دسته‌بندی، قیمت صحیح و موجودی معتبر را وارد کنید." });
+    }
+    if (!Array.isArray(body.variants) && product.variants?.length && numericStock === null) {
+      return res.status(400).json({ message: "برای حذف گزینه‌های دارای موجودی، ابتدا موجودی کل جدید را ثبت کنید." });
+    }
+    if (Array.isArray(body.variants) && normalizedVariants.length === 0 && product.variants?.length && numericStock === null) {
+      return res.status(400).json({ message: "برای حذف گزینه‌های دارای موجودی، ابتدا موجودی کل جدید را ثبت کنید." });
+    }
+    if (!normalizedVariants.length && numericStock === null && product.stock !== null && product.stock !== undefined) {
+      return res.status(400).json({ message: "برای کالای دارای موجودی، مقدار جدیدی وارد کنید یا گزینه‌های موجودی را تعریف کنید." });
+    }
+    if (normalizedVariants.some((variant) => !Number.isInteger(variant.stock) || variant.stock < 0 ||
+        (variant.size && !normalizedSizes.includes(variant.size)) ||
+        (variant.color && !normalizedColors.some((color) => color.name === variant.color)))) {
+      return res.status(400).json({ message: "موجودی یا ترکیب سایز و رنگ معتبر نیست." });
+    }
+    if ((normalizedSizes.length > 0 || normalizedColors.length > 0) && normalizedVariants.length === 0) {
+      return res.status(400).json({ message: "برای هر ترکیب سایز و رنگ موجودی ثبت کنید." });
+    }
+    if (normalizedSizes.length > 0 || normalizedColors.length > 0) {
+      const expectedCount = (normalizedSizes.length || 1) * (normalizedColors.length || 1);
+      const keys = new Set(normalizedVariants.map((variant) => variant.size + "::" + variant.color));
+      if (normalizedVariants.length !== expectedCount || keys.size !== expectedCount) {
+        return res.status(400).json({ message: "هر ترکیب یکتای سایز و رنگ باید دقیقاً یک مقدار موجودی داشته باشد." });
+      }
+    }
+    if (normalizedSizeChart.some((row) => ["chestCm", "waistCm", "hipsCm", "lengthCm"].some((key) =>
+      row[key] !== null && (!Number.isFinite(row[key]) || row[key] < 0)
+    ))) {
+      return res.status(400).json({ message: "اندازه‌های جدول سایز باید عددی نامنفی باشند." });
+    }
+
+    const imageInputs = (Array.isArray(body.images) ? body.images : (body.image ? [body.image] : []))
+      .filter((value) => typeof value === "string" && value.trim()).slice(0, 8);
+    if ((Array.isArray(body.images) && body.images.length > 8) ||
+        imageInputs.some((value) => !/^https:\/\//i.test(value) && !/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value))) {
+      return res.status(400).json({ message: "فرمت تصاویر محصول معتبر نیست." });
+    }
+    const uploadedImages = [];
+    for (const imageInput of imageInputs) {
+      if (/^https:\/\//i.test(imageInput)) {
+        uploadedImages.push(imageInput);
+      } else {
+        const response = await cloudinary.uploader.upload(imageInput, { folder: "products" });
+        if (response.secure_url) uploadedImages.push(response.secure_url);
+      }
+    }
+
+    const snapshot = (item) => ({
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: item.category,
+      categoryId: item.categoryId ? String(item.categoryId) : null,
+      images: item.images || [],
+      sizes: item.sizes || [],
+      colors: item.colors || [],
+      variants: (item.variants || []).map(({ size, color, stock }) => ({ size, color, stock })),
+      attributes: item.attributes instanceof Map ? Object.fromEntries(item.attributes) : (item.attributes || {}),
+      fit: item.fit,
+      sizeChart: item.sizeChart || [],
+      stock: item.stock,
+      isFeatured: item.isFeatured,
+      isActive: item.isActive,
+    });
+    const before = snapshot(product);
+
+    product.name = name;
+    product.description = description;
+    product.price = numericPrice;
+    product.image = uploadedImages[0] || "";
+    product.images = uploadedImages;
+    product.category = productCategory;
+    product.categoryId = categoryRecord?._id || null;
+    product.attributes = normalizedAttributes.values || {};
+    product.sizes = normalizedSizes;
+    product.colors = normalizedColors;
+    product.variants = normalizedVariants;
+    product.fit = normalizedFit;
+    product.sizeChart = normalizedSizeChart;
+    product.stock = normalizedVariants.length ? null : numericStock;
+    await product.save();
+
+    await updateFeaturedProductsCache();
+    await recordAuditEvent(req, {
+      action: "product.updated",
+      targetType: "product",
+      targetId: product._id,
+      summary: "Product updated: " + product.name,
+      metadata: { productName: product.name, before, after: snapshot(product) },
+    });
+    return res.json(product);
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
+    console.error("Error updating product", error.message);
+    return res.status(500).json({ message: "به‌روزرسانی محصول ناموفق بود." });
+  }
+};
+
+export const setProductActive = async (req, res) => {
+  if (typeof req.body?.isActive !== "boolean") return res.status(400).json({ message: "وضعیت انتشار معتبر نیست." });
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    const previous = product.isActive !== false;
+    const next = req.body.isActive;
+    if (previous === next) return res.json(product);
+    product.isActive = next;
+    await product.save();
+    await updateFeaturedProductsCache();
+    await recordAuditEvent(req, {
+      action: next ? "product.restored" : "product.archived",
+      targetType: "product",
+      targetId: product._id,
+      summary: (next ? "Product restored: " : "Product archived: ") + product.name,
+      metadata: {
+        productName: product.name,
+        before: { isActive: previous },
+        after: { isActive: next },
+        changes: { isActive: { before: previous, after: next } },
+      },
+    });
+    return res.json(product);
+  } catch (error) {
+    if (error.name === "CastError") return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
+    console.error("Error changing product publication state", error.message);
+    return res.status(500).json({ message: "تغییر وضعیت انتشار ناموفق بود." });
+  }
+};
+
 export const updateProductStock = async (req, res) => {
   const stock = Number(req.body.stock);
   if (!Number.isInteger(stock) || stock < 0) {
@@ -492,6 +746,7 @@ export const deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
+    if (product.isActive !== false) return res.status(409).json({ message: "ابتدا محصول را بایگانی کنید و سپس حذف دائمی را انجام دهید." });
     if (product.image) {
       try {
         const publicId = product.image.split("/").pop().split(".")[0];
@@ -556,49 +811,250 @@ export const getRecommendedProducts = async (_req, res) => {
 export const getProductsByCategory = async (req, res) => {
   try {
     const slug = String(req.params.category || "").trim().slice(0, 96);
+    if (!slug) return res.status(400).json({ message: "دسته‌بندی معتبر نیست." });
+
     const scope = await getCategoryProductScope(slug);
-    const filter = { isActive: { $ne: false } };
+    const baseClauses = [{ isActive: { $ne: false } }];
     if (scope) {
-      filter.$or = [
-        { categoryId: { $in: scope.ids } },
-        { category: { $in: scope.slugs } },
-      ];
+      baseClauses.push({
+        $or: [
+          { categoryId: { $in: scope.ids } },
+          { category: { $in: scope.slugs } },
+        ],
+      });
     } else {
       // Preserve access to legacy category slugs during and after migration.
-      filter.category = slug;
+      baseClauses.push({ category: slug });
     }
 
-    // Keep the product grid bounded, but calculate the slider bounds from the
-    // complete matching catalogue so the price range is not biased by 200 items.
-    const [products, priceStats] = await Promise.all([
-      Product.find(filter)
-        .sort({ createdAt: -1, _id: -1 })
-        .limit(200)
-        .maxTimeMS(1500)
-        .lean(),
-      Product.aggregate([
-        { $match: filter },
+    const clauses = [...baseClauses];
+    const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
+    if (rawQuery) {
+      const normalized = normalizePersianText(rawQuery).slice(0, 80);
+      const rawPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
+      const normalizedPattern = normalized ? new RegExp(escapeSearchRegex(normalized), "i") : rawPattern;
+      clauses.push({
+        $or: [
+          { searchTextNormalized: normalizedPattern },
+          { name: rawPattern },
+          { description: rawPattern },
+          { category: rawPattern },
+          { sizes: rawPattern },
+          { "variants.size": rawPattern },
+          { "variants.color": rawPattern },
+          { "colors.name": rawPattern },
+          { "fit.type": rawPattern },
+          { "attributes.brand": rawPattern },
+          { "attributes.brandName": rawPattern },
+        ],
+      });
+    }
+
+    const parsePriceBound = (value) => {
+      if (value === undefined || value === null || String(value).trim() === "") return { valid: true, value: null };
+      const text = String(value)
+        .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+        .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+        .replace(/[,\u060C\u066C\u2009\s]/g, "");
+      if (!/^\d+$/.test(text)) return { valid: false, value: null };
+      const number = Number(text);
+      return { valid: Number.isSafeInteger(number) && number >= 0, value: number };
+    };
+    const minPrice = parsePriceBound(req.query.minPrice);
+    const maxPrice = parsePriceBound(req.query.maxPrice);
+    if (!minPrice.valid || !maxPrice.valid || (minPrice.value !== null && maxPrice.value !== null && minPrice.value > maxPrice.value)) {
+      return res.status(400).json({ message: "بازه قیمت معتبر نیست." });
+    }
+    if (minPrice.value !== null || maxPrice.value !== null) {
+      const price = {};
+      if (minPrice.value !== null) price.$gte = minPrice.value;
+      if (maxPrice.value !== null) price.$lte = maxPrice.value;
+      clauses.push({ price });
+    }
+
+    const readValues = (input, maxItems, maxLength = 80) => {
+      const source = input === undefined ? [] : Array.isArray(input) ? input : [input];
+      return source
+        .filter((value) => typeof value === "string")
+        .map((value) => value.trim().slice(0, maxLength))
+        .filter(Boolean)
+        .slice(0, maxItems);
+    };
+    const sizes = readValues(req.query.size, 24, 24);
+    const colors = readValues(req.query.color, 24, 40);
+    const fits = readValues(req.query.fit, 12, 40);
+    const brands = readValues(req.query.brand, 24, 80);
+    if (sizes.length) clauses.push({ $or: [{ sizes: { $in: sizes } }, { "variants.size": { $in: sizes } }] });
+    if (colors.length) clauses.push({ $or: [{ "colors.name": { $in: colors } }, { "variants.color": { $in: colors } }] });
+    if (fits.length) clauses.push({ "fit.type": { $in: fits } });
+    if (brands.length) {
+      clauses.push({
+        $or: [
+          { brand: { $in: brands } },
+          { brandName: { $in: brands } },
+          { "brand.name": { $in: brands } },
+          { "attributes.brand": { $in: brands } },
+          { "attributes.brandName": { $in: brands } },
+        ],
+      });
+    }
+
+    if (["1", "true"].includes(String(req.query.inStock || "").toLowerCase())) {
+      clauses.push({
+        $or: [
+          { variants: { $elemMatch: { stock: { $gt: 0 } } } },
+          {
+            $and: [
+              { $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] },
+              { $or: [{ stock: { $gt: 0 } }, { stock: null }, { stock: { $exists: false } }] },
+            ],
+          },
+        ],
+      });
+    }
+
+    if (req.query.attributes !== undefined) {
+      if (typeof req.query.attributes !== "string" || req.query.attributes.length > 2400) {
+        return res.status(400).json({ message: "فیلتر ویژگی‌ها معتبر نیست." });
+      }
+      let selectedAttributes;
+      try { selectedAttributes = JSON.parse(req.query.attributes); }
+      catch { return res.status(400).json({ message: "فیلتر ویژگی‌ها معتبر نیست." }); }
+      if (!selectedAttributes || typeof selectedAttributes !== "object" || Array.isArray(selectedAttributes)) {
+        return res.status(400).json({ message: "فیلتر ویژگی‌ها معتبر نیست." });
+      }
+      const entries = Object.entries(selectedAttributes).slice(0, 20);
+      for (const [key, selected] of entries) {
+        if (!/^[a-zA-Z0-9_-]{1,64}$/.test(key)) {
+          return res.status(400).json({ message: "کلید یکی از ویژگی‌های فیلتر معتبر نیست." });
+        }
+        if (selected === "" || selected === null || selected === undefined ||
+            (Array.isArray(selected) && selected.length === 0)) continue;
+        const field = "attributes." + key;
+        if (Array.isArray(selected)) {
+          const safeValues = selected.filter((value) => typeof value === "string").slice(0, 24);
+          if (safeValues.length) clauses.push({ [field]: { $in: safeValues } });
+        } else if (typeof selected === "string") {
+          clauses.push({ [field]: new RegExp(escapeSearchRegex(selected.slice(0, 120)), "i") });
+        } else if (typeof selected === "boolean" || (typeof selected === "number" && Number.isFinite(selected))) {
+          clauses.push({ [field]: selected });
+        } else {
+          return res.status(400).json({ message: "مقدار یکی از ویژگی‌های فیلتر معتبر نیست." });
+        }
+      }
+    }
+
+    const filter = { $and: clauses };
+    const page = clampInteger(req.query.page, 1, 1, 100000);
+    const limit = clampInteger(req.query.limit, 24, 1, 60);
+    const offset = (page - 1) * limit;
+    const countOnly = ["1", "true"].includes(String(req.query.countOnly || "").toLowerCase());
+    if (countOnly) {
+      const total = await Product.countDocuments(filter).maxTimeMS(1500);
+      return res.json({ pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    }
+
+    const sortKey = typeof req.query.sort === "string" ? req.query.sort : "newest";
+    const sort = sortKey === "priceAsc" ? { price: 1, createdAt: -1, _id: -1 }
+      : sortKey === "priceDesc" ? { price: -1, createdAt: -1, _id: -1 }
+      : sortKey === "nameAsc" ? { name: 1, _id: 1 }
+      : sortKey === "oldest" ? { createdAt: 1, _id: 1 }
+      : { createdAt: -1, _id: -1 };
+
+    const facetCacheKey = "category_filter_facets_v2:" + slug;
+    let filterOptions = await readJsonCache(facetCacheKey);
+    if (!filterOptions || !Array.isArray(filterOptions.sizes) || !Array.isArray(filterOptions.colors)) {
+      const facetResult = await Product.aggregate([
+        { $match: { $and: baseClauses } },
         {
-          $group: {
-            _id: null,
-            minPrice: { $min: "$price" },
-            maxPrice: { $max: "$price" },
-            count: { $sum: 1 },
+          $facet: {
+            sizes: [
+              { $project: { values: { $setUnion: [
+                { $ifNull: ["$sizes", []] },
+                { $map: { input: { $ifNull: ["$variants", []] }, as: "variant", in: "$$variant.size" } },
+              ] } } },
+              { $unwind: "$values" },
+              { $match: { values: { $type: "string", $ne: "" } } },
+              { $group: { _id: "$values" } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
+            colors: [
+              { $unwind: "$colors" },
+              { $match: { "colors.name": { $type: "string", $ne: "" } } },
+              { $group: { _id: "$colors.name", hex: { $first: "$colors.hex" } } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
+            variantColors: [
+              { $unwind: "$variants" },
+              { $match: { "variants.color": { $type: "string", $ne: "" } } },
+              { $group: { _id: "$variants.color" } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
+            fits: [
+              { $match: { "fit.type": { $type: "string", $ne: "" } } },
+              { $group: { _id: "$fit.type" } },
+              { $sort: { _id: 1 } },
+              { $limit: 30 },
+            ],
+            brands: [
+              { $project: { values: { $setUnion: [
+                { $cond: [{ $eq: [{ $type: "$brand" }, "string"] }, ["$brand"], []] },
+                { $cond: [{ $eq: [{ $type: "$brand.name" }, "string"] }, ["$brand.name"], []] },
+                { $cond: [{ $eq: [{ $type: "$brandName" }, "string"] }, ["$brandName"], []] },
+                { $cond: [{ $eq: [{ $type: "$attributes.brand" }, "string"] }, ["$attributes.brand"], []] },
+                { $cond: [{ $eq: [{ $type: "$attributes.brandName" }, "string"] }, ["$attributes.brandName"], []] },
+              ] } } },
+              { $unwind: "$values" },
+              { $match: { values: { $type: "string", $ne: "" } } },
+              { $group: { _id: "$values" } },
+              { $sort: { _id: 1 } },
+              { $limit: 100 },
+            ],
           },
         },
+      ]).option({ maxTimeMS: 2500 });
+
+      const rawFacets = facetResult[0] || {};
+      const colorMap = new Map();
+      for (const item of rawFacets.colors || []) {
+        if (typeof item._id === "string" && item._id.trim()) colorMap.set(item._id, { name: item._id, hex: typeof item.hex === "string" ? item.hex : "" });
+      }
+      for (const item of rawFacets.variantColors || []) {
+        if (typeof item._id === "string" && item._id.trim() && !colorMap.has(item._id)) colorMap.set(item._id, { name: item._id, hex: "" });
+      }
+      filterOptions = {
+        sizes: [...new Set((rawFacets.sizes || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()))],
+        colors: [...colorMap.values()].sort((a, b) => a.name.localeCompare(b.name, "fa")),
+        fits: (rawFacets.fits || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()),
+        brands: (rawFacets.brands || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()),
+      };
+      await writeJsonCache(facetCacheKey, filterOptions, 120);
+    }
+
+    const [products, total, priceStats] = await Promise.all([
+      Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean(),
+      Product.countDocuments(filter).maxTimeMS(1500),
+      Product.aggregate([
+        { $match: { $and: baseClauses } },
+        { $group: { _id: null, minPrice: { $min: "$price" }, maxPrice: { $max: "$price" }, count: { $sum: 1 } } },
       ]).option({ maxTimeMS: 1500 }),
     ]);
 
     const stats = priceStats[0];
-    const minPrice = Number(stats?.minPrice);
-    const maxPrice = Number(stats?.maxPrice);
+    const min = Number(stats?.minPrice);
+    const max = Number(stats?.maxPrice);
     return res.json({
       products,
       priceBounds: {
-        minPrice: Number.isFinite(minPrice) ? Math.max(0, Math.floor(minPrice)) : 0,
-        maxPrice: Number.isFinite(maxPrice) ? Math.max(0, Math.ceil(maxPrice)) : 0,
+        minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
+        maxPrice: Number.isFinite(max) ? Math.max(0, Math.ceil(max)) : 0,
         count: Number(stats?.count || 0),
       },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      filterOptions,
     });
   } catch (error) {
     console.error("Error in getProductsByCategory controller", error.message);

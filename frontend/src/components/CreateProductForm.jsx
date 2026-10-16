@@ -167,16 +167,16 @@ const CreateProductForm = () => {
     event.target.value = "";
   };
 
-  const fieldClass = "mt-1 block w-full rounded-xl border border-gray-600 bg-gray-700 px-3 py-2.5 text-sm text-white shadow-sm focus:border-[#9aa58e] focus:outline-none focus:ring-2 focus:ring-[#68745f]";
-  const labelClass = "block text-sm font-medium text-gray-300";
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2.5 text-sm text-[var(--ui-text)] shadow-sm focus:border-[#9aa58e] focus:outline-none focus:ring-2 focus:ring-[#68745f]";
+  const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
 
   return (
-    <motion.div dir="rtl" className="mx-auto mb-8 max-w-3xl rounded-2xl border border-gray-700 bg-gray-800 p-5 shadow-lg sm:p-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <motion.div dir="rtl" className="mx-auto mb-8 max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-lg sm:p-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <h2 className="mb-2 text-2xl font-semibold text-[#9aa58e]">ایجاد محصول جدید</h2>
-      <p className="mb-6 text-sm leading-6 text-gray-400">اطلاعات پایه، گزینه‌های پوشاک و موجودی هر ترکیب را وارد کنید. محصولات قدیمی بدون گزینه سایز و رنگ هم پشتیبانی می‌شوند.</p>
+      <p className="mb-6 text-sm leading-6 text-[var(--ui-muted)]">اطلاعات پایه، گزینه‌های پوشاک و موجودی هر ترکیب را وارد کنید. محصولات قدیمی بدون گزینه سایز و رنگ هم پشتیبانی می‌شوند.</p>
       <form onSubmit={handleSubmit} className="space-y-5">
         <section className="space-y-4">
-          <h3 className="border-b border-gray-700 pb-2 text-sm font-bold text-white">اطلاعات اصلی</h3>
+          <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold text-[var(--ui-text)]">اطلاعات اصلی</h3>
           <label className={labelClass}>نام محصول
             <input type="text" value={newProduct.name} onChange={(event) => updateField("name", event.target.value)} className={fieldClass} maxLength={160} required />
           </label>
@@ -192,7 +192,7 @@ const CreateProductForm = () => {
                 <input type="number" min="0" step="1" value={newProduct.stock} onChange={(event) => updateField("stock", event.target.value)} className={fieldClass} required />
               </label>
             ) : (
-              <p className="self-end rounded-xl border border-gray-700 bg-gray-900/40 px-3 py-3 text-xs leading-5 text-gray-400">موجودی محصول برای هر ترکیب سایز و رنگ، در بخش گزینه‌ها جداگانه تنظیم می‌شود.</p>
+              <p className="self-end rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-3 text-xs leading-5 text-[var(--ui-muted)]">موجودی محصول برای هر ترکیب سایز و رنگ، در بخش گزینه‌ها جداگانه تنظیم می‌شود.</p>
             )}
           </div>
           <label className={labelClass}>دسته‌بندی
@@ -211,13 +211,13 @@ const CreateProductForm = () => {
                 <option key={category._id} value={category._id}>{categoryPath(category, availableCategories)}</option>
               ))}
             </select>
-            {availableCategories.length === 0 && <span className="mt-1 block text-xs text-amber-300">فهرست سازگار با نسخه قبلی فعال است؛ برای مدیریت پویا و ویژگی‌های دسته‌ها، migration را اجرا کنید.</span>}
+            {availableCategories.length === 0 && <span className="mt-1 block text-xs text-[var(--ui-warning)]">فهرست سازگار با نسخه قبلی فعال است؛ برای مدیریت پویا و ویژگی‌های دسته‌ها، migration را اجرا کنید.</span>}
           </label>
         </section>
 
         {selectedCategoryAttributes.length > 0 && (
-          <section className="space-y-4 rounded-xl border border-gray-700 bg-gray-900/30 p-4">
-            <h3 className="border-b border-gray-700 pb-2 text-sm font-bold text-white">ویژگی‌های دسته‌بندی</h3>
+          <section className="space-y-4 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4">
+            <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold text-[var(--ui-text)]">ویژگی‌های دسته‌بندی</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               {selectedCategoryAttributes.map((attribute) => (
                 <label key={attribute.key} className={labelClass}>
@@ -232,7 +232,7 @@ const CreateProductForm = () => {
                       {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
                     </select>
                   ) : attribute.type === "boolean" ? (
-                    <span className="mt-2 flex min-h-10 items-center gap-2 rounded-xl border border-gray-600 bg-gray-700 px-3">
+                    <span className="mt-2 flex min-h-10 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3">
                       <input type="checkbox" checked={Boolean(attributeValues[attribute.key])} onChange={(event) => setAttributeValues((current) => ({ ...current, [attribute.key]: event.target.checked }))} />
                       بله
                     </span>
@@ -246,20 +246,20 @@ const CreateProductForm = () => {
         )}
 
         <section className="space-y-3">
-          <h3 className="border-b border-gray-700 pb-2 text-sm font-bold text-white">گالری تصاویر محصول</h3>
-          <p className="text-xs leading-5 text-gray-400">تا ۸ تصویر اضافه کنید؛ تصویر اول تصویر اصلی محصول خواهد بود. حجم کل تصاویر باید حداکثر ۶ مگابایت باشد. عکس مدل و نمای نزدیک جزئیات، به تصمیم خرید کمک می‌کند.</p>
+          <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold text-[var(--ui-text)]">گالری تصاویر محصول</h3>
+          <p className="text-xs leading-5 text-[var(--ui-muted)]">تا ۸ تصویر اضافه کنید؛ تصویر اول تصویر اصلی محصول خواهد بود. حجم کل تصاویر باید حداکثر ۶ مگابایت باشد. عکس مدل و نمای نزدیک جزئیات، به تصمیم خرید کمک می‌کند.</p>
           <div className="flex flex-wrap items-center gap-3">
             <input type="file" id="product-images" className="sr-only" accept="image/*" multiple onChange={handleImageChange} />
-            <label htmlFor="product-images" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-gray-600 bg-gray-700 px-4 py-2.5 text-sm font-medium text-gray-200 transition hover:bg-gray-600"><Upload size={18} aria-hidden="true" />انتخاب تصاویر</label>
-            <span className="text-xs text-gray-400">{newProduct.images.length ? newProduct.images.length + " تصویر انتخاب شده" : "هنوز تصویری انتخاب نشده"}</span>
+            <label htmlFor="product-images" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2.5 text-sm font-medium text-[var(--ui-text)] transition hover:bg-[var(--ui-hover)]"><Upload size={18} aria-hidden="true" />انتخاب تصاویر</label>
+            <span className="text-xs text-[var(--ui-muted)]">{newProduct.images.length ? newProduct.images.length + " تصویر انتخاب شده" : "هنوز تصویری انتخاب نشده"}</span>
           </div>
           {newProduct.images.length > 0 && (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {newProduct.images.map((image, index) => (
-                <div key={image} className="relative overflow-hidden rounded-xl border border-gray-600">
+                <div key={image} className="relative overflow-hidden rounded-xl border border-[var(--ui-border)]">
                   <img src={image} alt={"پیش‌نمایش تصویر " + (index + 1)} className="aspect-[4/5] w-full object-cover" />
-                  {index === 0 && <span className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-semibold text-white">تصویر اصلی</span>}
-                  <button type="button" aria-label={"حذف تصویر " + (index + 1)} onClick={() => updateField("images", newProduct.images.filter((_, imageIndex) => imageIndex !== index))} className="absolute left-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><X size={14} aria-hidden="true" /></button>
+                  {index === 0 && <span className="absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-1 text-[10px] font-semibold text-[var(--ui-text)]">تصویر اصلی</span>}
+                  <button type="button" aria-label={"حذف تصویر " + (index + 1)} onClick={() => updateField("images", newProduct.images.filter((_, imageIndex) => imageIndex !== index))} className="absolute left-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-[var(--ui-text)] hover:bg-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><X size={14} aria-hidden="true" /></button>
                 </div>
               ))}
             </div>
@@ -267,7 +267,7 @@ const CreateProductForm = () => {
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-gray-700 pb-2"><Shirt size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-white">سایز، رنگ و موجودی هر گزینه</h3></div>
+          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Shirt size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">سایز، رنگ و موجودی هر گزینه</h3></div>
           <label className={labelClass}>سایزها (با ویرگول جدا کنید)
             <input type="text" value={newProduct.sizesText} onChange={(event) => updateField("sizesText", event.target.value)} className={fieldClass} placeholder="مثلاً XS, S, M, L, XL یا 38, 40, 42" />
           </label>
@@ -275,31 +275,31 @@ const CreateProductForm = () => {
             <input type="text" value={newProduct.colorsText} onChange={(event) => updateField("colorsText", event.target.value)} className={fieldClass} placeholder="مشکی: #222222, سفید: #f7f7f4, زیتونی: #68745f" />
           </label>
           {combinations.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-gray-700">
-              <div className="flex items-center justify-between gap-3 bg-gray-700/60 px-3 py-3">
-                <p className="text-sm font-semibold text-gray-100">موجودی ترکیب‌ها</p>
-                <span className="text-xs text-gray-400">{combinations.length} گزینه</span>
+            <div className="overflow-hidden rounded-xl border border-[var(--ui-border)]">
+              <div className="flex items-center justify-between gap-3 bg-[var(--ui-surface-raised)]/60 px-3 py-3">
+                <p className="text-sm font-semibold text-[var(--ui-text)]">موجودی ترکیب‌ها</p>
+                <span className="text-xs text-[var(--ui-muted)]">{combinations.length} گزینه</span>
               </div>
-              <div className="divide-y divide-gray-700">
+              <div className="divide-y divide-[var(--ui-border)]">
                 {combinations.map((variant) => (
                   <div key={variant.key} className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-200">
+                    <div className="flex items-center gap-2 text-sm text-[var(--ui-text)]">
                       {variant.color && <span className="h-4 w-4 rounded-full border border-white/20" style={{ backgroundColor: variant.hex }} />}
                       <span>{[variant.size && "سایز " + variant.size, variant.color].filter(Boolean).join(" / ")}</span>
                     </div>
-                    <label className="flex items-center gap-2 text-xs text-gray-400">موجودی
-                      <input type="number" min="0" step="1" value={variantStocks[variant.key] ?? "0"} onChange={(event) => setVariantStocks((current) => ({ ...current, [variant.key]: event.target.value }))} className="w-24 rounded-lg border border-gray-600 bg-gray-900 px-2 py-2 text-sm text-white focus:border-[#9aa58e] focus:outline-none focus:ring-2 focus:ring-[#68745f]" required />
+                    <label className="flex items-center gap-2 text-xs text-[var(--ui-muted)]">موجودی
+                      <input type="number" min="0" step="1" value={variantStocks[variant.key] ?? "0"} onChange={(event) => setVariantStocks((current) => ({ ...current, [variant.key]: event.target.value }))} className="w-24 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-2 py-2 text-sm text-[var(--ui-text)] focus:border-[#9aa58e] focus:outline-none focus:ring-2 focus:ring-[#68745f]" required />
                     </label>
                   </div>
                 ))}
               </div>
-              <p className="bg-gray-900/50 px-3 py-3 text-xs leading-5 text-gray-400">ترکیب‌های با موجودی صفر در فروشگاه به‌عنوان ناموجود نمایش داده می‌شوند.</p>
+              <p className="bg-[var(--ui-surface-raised)] px-3 py-3 text-xs leading-5 text-[var(--ui-muted)]">ترکیب‌های با موجودی صفر در فروشگاه به‌عنوان ناموجود نمایش داده می‌شوند.</p>
             </div>
           )}
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-gray-700 pb-2"><Shirt size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-white">راهنمای تن‌خور</h3></div>
+          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Shirt size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">راهنمای تن‌خور</h3></div>
           <label className={labelClass}>نوع تن‌خور
             <select value={newProduct.fitType} onChange={(event) => updateField("fitType", event.target.value)} className={fieldClass}>
               {fitOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -319,14 +319,14 @@ const CreateProductForm = () => {
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center gap-2 border-b border-gray-700 pb-2"><Ruler size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-white">جدول اندازه‌گیری (اختیاری)</h3></div>
-          <p className="text-xs leading-5 text-gray-400">هر خط برای یک سایز و مقادیر به‌ترتیب: سایز، دور سینه، دور کمر، دور باسن، قد لباس. همه اندازه‌ها بر حسب سانتی‌متر هستند؛ مقدار خالی مجاز است.</p>
+          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Ruler size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">جدول اندازه‌گیری (اختیاری)</h3></div>
+          <p className="text-xs leading-5 text-[var(--ui-muted)]">هر خط برای یک سایز و مقادیر به‌ترتیب: سایز، دور سینه، دور کمر، دور باسن، قد لباس. همه اندازه‌ها بر حسب سانتی‌متر هستند؛ مقدار خالی مجاز است.</p>
           <textarea value={newProduct.sizeChartText} onChange={(event) => updateField("sizeChartText", event.target.value)} rows={4} className={fieldClass} placeholder={"S, 92, 76, 96, 65\nM, 98, 82, 102, 68\nL, 104, 88, 108, 71"} />
-          <p className="text-[11px] text-gray-500">برای کالاهای بدون جدول اندازه، این بخش را خالی بگذارید.</p>
+          <p className="text-[11px] text-[var(--ui-muted)]">برای کالاهای بدون جدول اندازه، این بخش را خالی بگذارید.</p>
         </section>
 
-        {imageError && <p role="alert" className="rounded-xl border border-red-800 bg-red-950/40 p-3 text-sm leading-6 text-red-200">{imageError}</p>}
-        <button type="submit" disabled={loading} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#68745f] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#41443b] disabled:cursor-not-allowed disabled:opacity-50">
+        {imageError && <p role="alert" className="rounded-xl border border-[var(--ui-danger-border)] bg-red-950/40 p-3 text-sm leading-6 text-[var(--ui-danger)]">{imageError}</p>}
+        <button type="submit" disabled={loading} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-3 text-sm font-semibold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50">
           {loading ? <><Loader className="h-5 w-5 animate-spin" aria-hidden="true" />در حال ذخیره…</> : <><PlusCircle className="h-5 w-5" aria-hidden="true" />ایجاد محصول</>}
         </button>
       </form>

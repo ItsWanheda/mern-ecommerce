@@ -1,9 +1,11 @@
 import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
+import axios from "../lib/axios";
 
 const AnalyticsTab = lazy(() => import("../components/AnalyticsTab"));
+const DashboardOverview = lazy(() => import("../components/DashboardOverview"));
 const CreateProductForm = lazy(() => import("../components/CreateProductForm"));
 const ProductsList = lazy(() => import("../components/ProductsList"));
 const CampaignManager = lazy(() => import("../components/CampaignManager"));
@@ -14,61 +16,72 @@ const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
 const CategoryManager = lazy(() => import("../components/CategoryManager"));
 const CouponManager = lazy(() => import("../components/CouponManager"));
 const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
-import { useProductStore } from "../stores/useProductStore";
 
-const tabs = [
-  { id: "create", label: "ایجاد محصول", icon: PlusCircle },
-  { id: "products", label: "محصولات و موجودی", icon: ShoppingBasket },
-  { id: "categories", label: "مدیریت دسته‌بندی‌ها", icon: FolderTree },
-  { id: "coupons", label: "کدهای تخفیف", icon: TicketPercent },
-  { id: "campaigns", label: "کمپین‌ها", icon: Megaphone },
-  { id: "shipping", label: "ارسال", icon: Truck },
-  { id: "newsletter", label: "خبرنامه", icon: Mail },
-  { id: "analytics", label: "آمار و تحلیل", icon: BarChart },
-  { id: "orders", label: "سفارش‌ها و رهگیری", icon: Truck },
-  { id: "audit", label: "تاریخچه اقدامات", icon: ScrollText },
-  { id: "operations", label: "وضعیت سامانه", icon: Activity },
+const groups = [
+ { id:"catalogue", label:"کاتالوگ", items:[{id:"create",label:"ایجاد محصول",icon:PlusCircle},{id:"products",label:"محصولات و موجودی",icon:ShoppingBasket},{id:"categories",label:"مدیریت دسته‌بندی‌ها",icon:FolderTree}] },
+ { id:"orders-group", label:"سفارش‌ها", items:[{id:"orders",label:"صف سفارش‌ها",icon:Truck},{id:"shipping",label:"تنظیمات ارسال",icon:Truck}] },
+ { id:"marketing", label:"بازاریابی", items:[{id:"campaigns",label:"کمپین‌ها",icon:Megaphone},{id:"coupons",label:"کدهای تخفیف",icon:TicketPercent},{id:"newsletter",label:"خبرنامه",icon:Mail}] },
+ { id:"reports-system", label:"گزارش‌ها و سامانه", items:[{id:"dashboard",label:"نمای کلی",icon:Activity},{id:"analytics",label:"آمار و تحلیل",icon:BarChart},{id:"audit",label:"تاریخچه اقدامات",icon:ScrollText},{id:"operations",label:"وضعیت سامانه",icon:Activity}] },
 ];
-
+const tabs = groups.flatMap(group => group.items);
 const AdminPage = () => {
-  const [searchParams] = useSearchParams();
-  const requestedTab = searchParams.get("tab");
-  const initialTab = tabs.some((tab) => tab.id === requestedTab) ? requestedTab : "create";
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const { fetchAllProducts } = useProductStore();
-
-  useEffect(() => {
-    if (tabs.some((tab) => tab.id === requestedTab)) setActiveTab(requestedTab);
-  }, [requestedTab]);
-
-  useEffect(() => { if (activeTab === "products") fetchAllProducts(); }, [activeTab, fetchAllProducts]);
-
-  return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="relative z-10 container mx-auto px-4 py-16">
-        <motion.h1 className="mb-8 text-center text-4xl font-bold text-[#68745f]" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>داشبورد مدیریت</motion.h1>
-        <div dir="rtl" className="mb-8 flex flex-wrap justify-center gap-2">
-          {tabs.map((tab) => (
-            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-sm transition-colors ${activeTab === tab.id ? "bg-[#68745f] text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
-              <tab.icon className="h-5 w-5" aria-hidden="true" />{tab.label}
-            </button>
-          ))}
-        </div>
-        <Suspense fallback={<div role="status" className="rounded-xl border border-gray-700 bg-gray-800 p-8 text-center text-sm text-gray-400">در حال بارگذاری بخش مدیریت…</div>}>
-          {activeTab === "create" && <CreateProductForm />}
-          {activeTab === "products" && <ProductsList />}
-          {activeTab === "categories" && <CategoryManager />}
-          {activeTab === "coupons" && <CouponManager />}
-          {activeTab === "campaigns" && <CampaignManager />}
-          {activeTab === "shipping" && <ShippingSettings />}
-          {activeTab === "newsletter" && <NewsletterManager />}
-          {activeTab === "analytics" && <AnalyticsTab />}
-          {activeTab === "orders" && <OrderManagement />}
-          {activeTab === "audit" && <AuditLogTab />}
-          {activeTab === "operations" && <OperationsDashboard />}
-        </Suspense>
-      </div>
-    </div>
-  );
+ const [searchParams,setSearchParams]=useSearchParams();
+ const requestedTab=searchParams.get("tab");
+ const initialTab=tabs.some(tab=>tab.id===requestedTab)?requestedTab:"dashboard";
+ const [activeTab,setActiveTab]=useState(initialTab);
+ const [packingCount,setPackingCount]=useState(null);
+ const refreshPackingCount=useCallback(async()=>{
+  try {
+   const response=await axios.get("/orders/admin",{params:{page:1,limit:1,shipmentStatus:"processing"}});
+   const total=Number(response.data?.pagination?.total);
+   setPackingCount(Number.isFinite(total)&&total>=0?total:null);
+  } catch { setPackingCount(null); }
+ },[]);
+ useEffect(()=>{setActiveTab(tabs.some(tab=>tab.id===requestedTab)?requestedTab:"dashboard");},[requestedTab]);
+ useEffect(()=>{void refreshPackingCount();},[refreshPackingCount]);
+ const selectTab=(id)=>{
+  setActiveTab(id);
+  setSearchParams(current=>{const next=new URLSearchParams(current);next.set("tab",id);return next;});
+  if(id==="orders")void refreshPackingCount();
+ };
+ const handleKeyDown=(event,currentId)=>{
+  if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Home","End"].includes(event.key))return;
+  event.preventDefault();
+  const index=tabs.findIndex(tab=>tab.id===currentId);
+  const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(["ArrowLeft","ArrowDown"].includes(event.key)?1:-1)+tabs.length)%tabs.length;
+  selectTab(tabs[next].id);document.getElementById("admin-tab-"+tabs[next].id)?.focus();
+ };
+ const renderTab=tab=>{
+  const Icon=tab.icon,selected=activeTab===tab.id;
+  return <button id={"admin-tab-"+tab.id} key={tab.id} type="button" role="tab" aria-selected={selected} aria-controls="admin-tab-panel" tabIndex={selected?0:-1} onKeyDown={event=>handleKeyDown(event,tab.id)} onClick={()=>selectTab(tab.id)}
+   className={"flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-right text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] "+(selected?"bg-[var(--ui-accent-soft)] text-[var(--ui-accent)] ring-1 ring-inset ring-[var(--ui-accent)]":"text-[var(--ui-text)] hover:bg-[var(--ui-hover)]")}>
+   <Icon size={18} className="shrink-0" aria-hidden="true"/><span className="min-w-0 flex-1">{tab.label}</span>
+   {tab.id==="orders"&&packingCount!==null&&<span aria-label={packingCount+" سفارش در انتظار بسته‌بندی"} className={"inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums "+(packingCount>0?"bg-[var(--ui-warning-bg)] text-[var(--ui-warning)]":"bg-[var(--ui-surface-raised)] text-[var(--ui-muted)]")}>{new Intl.NumberFormat("fa-IR").format(packingCount)}</span>}
+  </button>;
+ };
+ return <div className="min-h-[65vh] bg-[var(--ui-canvas)] text-[var(--ui-text)]">
+  <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:py-8">
+   <motion.header className="mb-6" initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} transition={{duration:.25}}>
+    <h1 className="text-2xl font-bold sm:text-3xl">داشبورد مدیریت</h1><p className="mt-2 text-sm leading-6 text-[var(--ui-muted)]">کاتالوگ، سفارش‌ها، بازاریابی و گزارش‌های فروشگاه را از یک فضای کاری مدیریت کنید.</p>
+   </motion.header>
+   <div className="mb-5 md:hidden"><label htmlFor="admin-mobile-nav" className="mb-2 block text-xs font-semibold text-[var(--ui-muted)]">رفتن به بخش</label>
+    <select id="admin-mobile-nav" value={activeTab} onChange={event=>selectTab(event.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25">
+     {groups.map(group=><optgroup key={group.id} label={group.label}>{group.items.map(tab=><option key={tab.id} value={tab.id}>{tab.label}{tab.id==="orders"&&packingCount>0?" ("+new Intl.NumberFormat("fa-IR").format(packingCount)+")":""}</option>)}</optgroup>)}
+    </select>
+   </div>
+   <div dir="rtl" className="grid items-start gap-5 md:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-7">
+    <aside className="hidden md:sticky md:top-5 md:block md:max-h-[calc(100vh-2.5rem)] md:overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 xl:p-4">
+     <p className="mb-3 px-3 pt-1 text-xs font-semibold text-[var(--ui-muted)]">ناوبری مدیریت</p><nav role="tablist" aria-label="بخش‌های مدیریت" aria-orientation="vertical" className="space-y-5">
+      {groups.map(group=><section key={group.id} aria-label={group.label}><h2 className="mb-2 px-3 text-[11px] font-bold tracking-wide text-[var(--ui-muted)]">{group.label}</h2><div className="space-y-1">{group.items.map(renderTab)}</div></section>)}
+     </nav>
+    </aside>
+    <section className="min-w-0" id="admin-tab-panel" role="tabpanel" aria-labelledby={"admin-tab-"+activeTab}>
+     <Suspense fallback={<div role="status" className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-8 text-center text-sm text-[var(--ui-muted)]">در حال بارگذاری بخش مدیریت…</div>}>
+      {activeTab==="dashboard"&&<DashboardOverview/>}{activeTab==="create"&&<CreateProductForm/>}{activeTab==="products"&&<ProductsList/>}{activeTab==="categories"&&<CategoryManager/>}{activeTab==="coupons"&&<CouponManager/>}{activeTab==="campaigns"&&<CampaignManager/>}{activeTab==="shipping"&&<ShippingSettings/>}{activeTab==="newsletter"&&<NewsletterManager/>}{activeTab==="analytics"&&<AnalyticsTab/>}{activeTab==="orders"&&<OrderManagement/>}{activeTab==="audit"&&<AuditLogTab/>}{activeTab==="operations"&&<OperationsDashboard/>}
+     </Suspense>
+    </section>
+   </div>
+  </div>
+ </div>;
 };
 export default AdminPage;

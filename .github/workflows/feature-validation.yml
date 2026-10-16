@@ -6,6 +6,7 @@ on:
       - feat/persian-commerce-expansion
       - main
       - master
+      - feat/admin-ux-404-analytics
   workflow_dispatch:
 
 permissions:

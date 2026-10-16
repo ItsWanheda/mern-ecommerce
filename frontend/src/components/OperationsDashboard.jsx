@@ -30,36 +30,36 @@ const OperationsDashboard = () => {
   useEffect(() => { refresh(); }, [refresh]);
 
   const Stat = ({ icon: Icon, title, value, detail }) => (
-    <article className="rounded-xl border border-gray-700 bg-gray-800 p-4 sm:p-5">
+    <article className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 sm:p-5">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-300">{title}</p>
-        <Icon size={20} className="text-[#9aa58e]" aria-hidden="true" />
+        <p className="text-sm text-[var(--ui-muted)]">{title}</p>
+        <Icon size={20} className="text-[var(--ui-accent)]" aria-hidden="true" />
       </div>
-      <p className="mt-3 text-3xl font-bold text-white">{fmt(value)}</p>
-      {detail && <p className="mt-1 text-xs text-gray-400">{detail}</p>}
+      <p className="mt-3 text-3xl font-bold text-[var(--ui-text)]">{fmt(value)}</p>
+      {detail && <p className="mt-1 text-xs text-[var(--ui-muted)]">{detail}</p>}
     </article>
   );
 
-  if (loading && !data) return <div role="status" className="flex min-h-40 items-center justify-center gap-3 text-sm text-gray-400"><LoaderCircle size={20} className="animate-spin" aria-hidden="true" />در حال بررسی وضعیت سامانه…</div>;
+  if (loading && !data) return <div role="status" className="flex min-h-40 items-center justify-center gap-3 text-sm text-[var(--ui-muted)]"><LoaderCircle size={20} className="animate-spin" aria-hidden="true" />در حال بررسی وضعیت سامانه…</div>;
 
   return (
     <section dir="rtl" className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-white"><Activity size={22} aria-hidden="true" />وضعیت سامانه و عملیات</h2>
-          <p className="mt-1 text-sm leading-6 text-gray-400">شاخص‌های عملیاتی از دیتابیس و سفارش‌ها محاسبه می‌شوند؛ این صفحه جایگزین مانیتورینگ زیرساخت و اعلان هشدار نیست.</p>
+          <h2 className="flex items-center gap-2 text-xl font-bold text-[var(--ui-text)]"><Activity size={22} aria-hidden="true" />وضعیت سامانه و عملیات</h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">شاخص‌های عملیاتی از دیتابیس و سفارش‌ها محاسبه می‌شوند؛ این صفحه جایگزین مانیتورینگ زیرساخت و اعلان هشدار نیست.</p>
         </div>
-        <button type="button" onClick={refresh} disabled={loading} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-gray-600 px-4 py-2 text-sm text-gray-200 disabled:opacity-50"><RefreshCw size={16} aria-hidden="true" />به‌روزرسانی</button>
+        <button type="button" onClick={refresh} disabled={loading} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm text-[var(--ui-text)] disabled:opacity-50"><RefreshCw size={16} aria-hidden="true" />به‌روزرسانی</button>
       </div>
-      {error && <p role="alert" className="rounded-xl border border-red-700/40 bg-red-950/20 p-4 text-sm text-red-200">{error}</p>}
+      {error && <p role="alert" className="rounded-xl border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] p-4 text-sm text-[var(--ui-danger)]">{error}</p>}
       {data && (
         <>
-          <div className={`flex flex-wrap items-center gap-3 rounded-xl border p-4 ${data.health?.status === "healthy" ? "border-emerald-700/40 bg-emerald-950/20" : "border-amber-700/40 bg-amber-950/20"}`}>
-            {data.health?.status === "healthy" ? <CheckCircle2 className="text-emerald-400" size={22} aria-hidden="true" /> : <AlertTriangle className="text-amber-300" size={22} aria-hidden="true" />}
+          <div className={`flex flex-wrap items-center gap-3 rounded-xl border p-4 ${data.health?.status === "healthy" ? "border-[var(--ui-success-border)] bg-[var(--ui-success-bg)]" : "border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)]"}`}>
+            {data.health?.status === "healthy" ? <CheckCircle2 className="text-[var(--ui-success)]" size={22} aria-hidden="true" /> : <AlertTriangle className="text-[var(--ui-warning)]" size={22} aria-hidden="true" />}
             <div>
-              <p className="font-semibold text-white">{data.health?.status === "healthy" ? "سرویس‌های پایه در دسترس هستند" : "وضعیت نیاز به بررسی دارد"}</p>
-              <p className="mt-1 text-xs text-gray-300">دیتابیس: {labels.database[data.health?.database] || data.health?.database} · Redis: {labels.redis[data.health?.redis] || data.health?.redis}</p>
-              <p className="mt-1 text-xs text-gray-400">آخرین بررسی: {data.generatedAt ? formatIranianDateTime(data.generatedAt) : "—"}</p>
+              <p className="font-semibold text-[var(--ui-text)]">{data.health?.status === "healthy" ? "سرویس‌های پایه در دسترس هستند" : "وضعیت نیاز به بررسی دارد"}</p>
+              <p className="mt-1 text-xs text-[var(--ui-muted)]">دیتابیس: {labels.database[data.health?.database] || data.health?.database} · Redis: {labels.redis[data.health?.redis] || data.health?.redis}</p>
+              <p className="mt-1 text-xs text-[var(--ui-muted)]">آخرین بررسی: {data.generatedAt ? formatIranianDateTime(data.generatedAt) : "—"}</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -72,7 +72,7 @@ const OperationsDashboard = () => {
           </div>
         </>
       )}
-      <div className="flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-900/40 p-4 text-xs leading-6 text-gray-400">
+      <div className="flex items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 text-xs leading-6 text-[var(--ui-muted)]">
         <Server size={18} className="shrink-0 text-[#9aa58e]" aria-hidden="true" />
         برای پایش کامل تولید، نمودار تأخیر و خطا، هشدار خودکار، فضای دیسک، مصرف CPU/RAM و وضعیت دامنه/SSL را نیز از طریق میزبان یا سرویس مانیتورینگ جداگانه تنظیم کنید.
       </div>

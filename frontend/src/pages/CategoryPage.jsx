@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import PageMeta from "../components/PageMeta";
+import toast from "react-hot-toast";
+import axios from "../lib/axios";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import { normalizeDigits, normalizePersianText as normalizePersian } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
@@ -64,6 +67,42 @@ const makeEmptyFilters = () => ({
   sort: "newest",
 });
 
+const CATEGORY_PAGE_SIZE = 24;
+
+const filtersFromParams = (params) => {
+  const filters = makeEmptyFilters();
+  filters.q = params.get("q") || "";
+  filters.minPrice = params.get("minPrice") || "";
+  filters.maxPrice = params.get("maxPrice") || "";
+  filters.sizes = params.getAll("size").slice(0, 24);
+  filters.colors = params.getAll("color").slice(0, 24);
+  filters.fits = params.getAll("fit").slice(0, 12);
+  filters.brands = params.getAll("brand").slice(0, 24);
+  filters.inStock = params.get("inStock") === "1";
+  const sort = params.get("sort");
+  if (["newest", "oldest", "priceAsc", "priceDesc", "nameAsc"].includes(sort)) filters.sort = sort;
+  try {
+    const attributes = JSON.parse(params.get("attributes") || "{}");
+    if (attributes && typeof attributes === "object" && !Array.isArray(attributes)) filters.attributes = attributes;
+  } catch {}
+  return filters;
+};
+
+const paramsFromFilters = (filters) => {
+  const params = new URLSearchParams();
+  if (filters.q.trim()) params.set("q", filters.q.trim());
+  if (filters.minPrice.trim()) params.set("minPrice", filters.minPrice.trim());
+  if (filters.maxPrice.trim()) params.set("maxPrice", filters.maxPrice.trim());
+  filters.sizes.forEach((value) => params.append("size", value));
+  filters.colors.forEach((value) => params.append("color", value));
+  filters.fits.forEach((value) => params.append("fit", value));
+  filters.brands.forEach((value) => params.append("brand", value));
+  if (filters.inStock) params.set("inStock", "1");
+  if (filters.sort !== "newest") params.set("sort", filters.sort);
+  if (Object.keys(filters.attributes || {}).length) params.set("attributes", JSON.stringify(filters.attributes));
+  return params;
+};
+
 const uniqueByNormalizedName = (values) => {
   const seen = new Set();
   return values
@@ -78,34 +117,6 @@ const uniqueByNormalizedName = (values) => {
     .sort((a, b) => a.localeCompare(b, "fa", { numeric: true }));
 };
 
-const getProductSizes = (product) => [
-  ...(Array.isArray(product.sizes) ? product.sizes : []),
-  ...(Array.isArray(product.variants) ? product.variants.map((variant) => variant.size) : []),
-].filter((size) => typeof size === "string" && size.trim());
-
-const getProductColors = (product) => [
-  ...(Array.isArray(product.colors) ? product.colors.map((color) => color?.name) : []),
-  ...(Array.isArray(product.variants) ? product.variants.map((variant) => variant.color) : []),
-].filter((color) => typeof color === "string" && color.trim());
-
-const getProductBrand = (product) => {
-  if (typeof product.brand === "string") return product.brand.trim();
-  if (typeof product.brandName === "string") return product.brandName.trim();
-  if (typeof product.brand?.name === "string") return product.brand.name.trim();
-  return "";
-};
-
-const isProductAvailable = (product) => {
-  if (Array.isArray(product.variants) && product.variants.length > 0) {
-    return product.variants.some((variant) => Number(variant.stock) > 0);
-  }
-  if (typeof product.stock === "number" && Number.isFinite(product.stock)) {
-    return product.stock > 0;
-  }
-  // Older products without tracked stock remain purchasable in the existing shop flow.
-  return true;
-};
-
 const getPriceError = (filters) => {
   const min = parseStorePrice(filters.minPrice);
   const max = parseStorePrice(filters.maxPrice);
@@ -116,96 +127,60 @@ const getPriceError = (filters) => {
   return "";
 };
 
-const filterCatalog = (catalog, filters) => {
-  const minPrice = parseStorePrice(filters.minPrice);
-  const maxPrice = parseStorePrice(filters.maxPrice);
-  if (getPriceError(filters)) return [];
-
-  const query = normalizePersian(filters.q);
-  const filtered = catalog.filter((product) => {
-    if (query) {
-      const searchableText = [
-        product.name,
-        product.description,
-        product.category,
-        categoryLabels[product.category] || "",
-        ...getProductSizes(product),
-        ...getProductColors(product),
-        fitLabels[product.fit?.type] || product.fit?.type || "",
-        getProductBrand(product),
-        ...Object.values(product.attributes || {}).flatMap((value) => Array.isArray(value) ? value : [value]),
-      ].join(" ");
-      if (!normalizePersian(searchableText).includes(query)) return false;
-    }
-
-    const productPrice = Number(product.price);
-    if (minPrice !== null && (!Number.isFinite(productPrice) || productPrice < minPrice)) return false;
-    if (maxPrice !== null && (!Number.isFinite(productPrice) || productPrice > maxPrice)) return false;
-
-    if (filters.sizes.length) {
-      const productSizes = getProductSizes(product).map(normalizePersian);
-      if (!filters.sizes.some((size) => productSizes.includes(normalizePersian(size)))) return false;
-    }
-
-    if (filters.colors.length) {
-      const productColors = getProductColors(product).map(normalizePersian);
-      if (!filters.colors.some((color) => productColors.includes(normalizePersian(color)))) return false;
-    }
-
-    if (filters.fits.length) {
-      const fit = normalizePersian(product.fit?.type || "");
-      if (!filters.fits.some((value) => normalizePersian(value) === fit)) return false;
-    }
-
-    if (filters.brands.length) {
-      const brand = normalizePersian(getProductBrand(product));
-      if (!filters.brands.some((value) => normalizePersian(value) === brand)) return false;
-    }
-
-    for (const [key, selected] of Object.entries(filters.attributes || {})) {
-      if (selected === undefined || selected === null || selected === "" || (Array.isArray(selected) && selected.length === 0)) continue;
-      const actual = product.attributes?.[key];
-      if (actual === undefined || actual === null) return false;
-      if (Array.isArray(selected)) {
-        const actualValues = Array.isArray(actual) ? actual : [actual];
-        if (!selected.some((value) => actualValues.some((entry) => String(entry) === String(value)))) return false;
-      } else if (typeof selected === "boolean") {
-        if (actual !== selected) return false;
-      } else if (typeof selected === "number") {
-        if (Number(actual) !== selected) return false;
-      } else if (!normalizePersian(String(actual)).includes(normalizePersian(String(selected)))) {
-        return false;
-      }
-    }
-
-    if (filters.inStock && !isProductAvailable(product)) return false;
-    return true;
-  });
-
-  return filtered.sort((a, b) => {
-    if (filters.sort === "priceAsc") return Number(a.price) - Number(b.price);
-    if (filters.sort === "priceDesc") return Number(b.price) - Number(a.price);
-    if (filters.sort === "nameAsc") return normalizePersian(a.name).localeCompare(normalizePersian(b.name), "fa");
-    if (filters.sort === "oldest") return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
-    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-  });
-};
-
 const CategoryPage = () => {
   const { slug: category = "" } = useParams();
-  const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds } = useProductStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const lastAppliedUrlRef = useRef(searchParams.toString());
+  const urlChangedRef = useRef(false);
+  const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination, categoryFacets } = useProductStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
-  const [filters, setFilters] = useState(makeEmptyFilters);
-  const [draftFilters, setDraftFilters] = useState(makeEmptyFilters);
+  const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
+  const [draftFilters, setDraftFilters] = useState(() => filtersFromParams(searchParams));
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [draftResultCount, setDraftResultCount] = useState(0);
 
   useEffect(() => {
-    setFilters(makeEmptyFilters());
-    setDraftFilters(makeEmptyFilters());
+    const serialized = searchParams.toString();
+    if (serialized !== lastAppliedUrlRef.current) {
+      lastAppliedUrlRef.current = serialized;
+      urlChangedRef.current = true;
+      const fromUrl = filtersFromParams(searchParams);
+      setFilters(fromUrl);
+      setDraftFilters(fromUrl);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (urlChangedRef.current) {
+      urlChangedRef.current = false;
+      return;
+    }
+    const serialized = paramsFromFilters(filters).toString();
+    if (serialized !== searchParams.toString()) {
+      lastAppliedUrlRef.current = serialized;
+      setSearchParams(new URLSearchParams(serialized), { replace: true });
+    }
+  }, [filters, searchParams, setSearchParams]);
+
+  useEffect(() => { setPage(1); }, [filters, category]);
+
+  useEffect(() => {
+    const fromUrl = filtersFromParams(new URLSearchParams(window.location.search));
+    setFilters(fromUrl);
+    setDraftFilters(fromUrl);
     setMobileFiltersOpen(false);
-    fetchProductsByCategory(category);
-  }, [fetchProductsByCategory, category]);
+    setPage(1);
+  }, [category]);
+
+  useEffect(() => {
+    if (getPriceError(filters)) return;
+    const query = paramsFromFilters(filters);
+    query.set("page", String(page));
+    query.set("limit", String(CATEGORY_PAGE_SIZE));
+    fetchProductsByCategory(category, query.toString());
+  }, [fetchProductsByCategory, category, filters, page]);
 
   const catalog = Array.isArray(products) ? products : [];
   const priceBounds = useMemo(() => {
@@ -244,40 +219,62 @@ const CategoryPage = () => {
       count,
     };
   }, [catalog, remotePriceBounds]);
-  const filteredProducts = useMemo(() => filterCatalog(catalog, filters), [catalog, filters]);
-  const draftResultCount = useMemo(() => filterCatalog(catalog, draftFilters).length, [catalog, draftFilters]);
+  const currentFilterError = getPriceError(filters);
+  const filteredProducts = currentFilterError ? [] : catalog;
+  const resultCount = currentFilterError ? 0 : Number(categoryPagination?.total ?? catalog.length);
+  const pageCount = Math.max(1, Number(categoryPagination?.pages) || Math.ceil(resultCount / CATEGORY_PAGE_SIZE));
+  const visibleProducts = filteredProducts;
+
+  const appliedFiltersKey = useMemo(() => paramsFromFilters(filters).toString(), [filters]);
+  const draftFiltersKey = useMemo(() => paramsFromFilters(draftFilters).toString(), [draftFilters]);
+
+  useEffect(() => {
+    if (getPriceError(draftFilters)) {
+      setDraftResultCount(0);
+      return;
+    }
+    if (appliedFiltersKey === draftFiltersKey) {
+      setDraftResultCount(resultCount);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const query = new URLSearchParams(draftFiltersKey);
+      query.set("page", "1");
+      query.set("limit", "1");
+      query.set("countOnly", "1");
+      try {
+        const response = await axios.get(`/products/category/${encodeURIComponent(category)}?${query.toString()}`);
+        if (!cancelled) setDraftResultCount(Number(response.data.pagination?.total || 0));
+      } catch {
+        if (!cancelled) setDraftResultCount(0);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [category, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters]);
 
   const sizeOptions = useMemo(
-    () => uniqueByNormalizedName(catalog.flatMap(getProductSizes)),
-    [catalog],
+    () => uniqueByNormalizedName(categoryFacets?.sizes || []),
+    [categoryFacets],
   );
 
-  const colorOptions = useMemo(() => {
-    const colors = [];
-    const seen = new Set();
-    catalog.forEach((product) => {
-      const hexByName = new Map(
-        (Array.isArray(product.colors) ? product.colors : [])
-          .filter((color) => color?.name)
-          .map((color) => [normalizePersian(color.name), color.hex]),
-      );
-      getProductColors(product).forEach((name) => {
-        const key = normalizePersian(name);
-        if (!key || seen.has(key)) return;
-        seen.add(key);
-        colors.push({ name, hex: hexByName.get(key) || "" });
-      });
-    });
-    return colors.sort((a, b) => a.name.localeCompare(b.name, "fa"));
-  }, [catalog]);
+  const colorOptions = useMemo(
+    () => Array.isArray(categoryFacets?.colors)
+      ? categoryFacets.colors.filter((color) => color?.name).sort((a, b) => a.name.localeCompare(b.name, "fa"))
+      : [],
+    [categoryFacets],
+  );
 
   const fitOptions = useMemo(
-    () => uniqueByNormalizedName(catalog.map((product) => product.fit?.type).filter(Boolean)),
-    [catalog],
+    () => uniqueByNormalizedName(categoryFacets?.fits || []),
+    [categoryFacets],
   );
   const brandOptions = useMemo(
-    () => uniqueByNormalizedName(catalog.map(getProductBrand).filter(Boolean)),
-    [catalog],
+    () => uniqueByNormalizedName(categoryFacets?.brands || []),
+    [categoryFacets],
   );
 
   const selectedCategory = dynamicCategories.find((item) => item.slug === category);
@@ -311,9 +308,11 @@ const CategoryPage = () => {
   };
 
   const clearAllFilters = () => {
-    setFilters(makeEmptyFilters());
-    setDraftFilters(makeEmptyFilters());
+    const empty = makeEmptyFilters();
+    setFilters(empty);
+    setDraftFilters(empty);
     setMobileFiltersOpen(false);
+    setPage(1);
   };
 
   const removeFilter = (field, value) => {
@@ -612,6 +611,15 @@ const CategoryPage = () => {
   };
 
   const pageTitle = selectedCategory?.name?.fa || categoryLabels[category] || category.replace(/-/g, " ");
+  const copyFilterLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("لینک فیلترها کپی شد.");
+    } catch {
+      window.prompt("لینک قابل‌اشتراک دسته‌بندی:", url);
+    }
+  };
   const categoryChildren = selectedCategory
     ? dynamicCategories
         .filter((item) => String(item.parentId || "") === String(selectedCategory._id) && item.showInNavigation !== false)
@@ -627,6 +635,7 @@ const CategoryPage = () => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} />
       <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
@@ -645,6 +654,7 @@ const CategoryPage = () => {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#77786f]">
               با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به {priceUnitLabel}، انتخابتان را دقیق‌تر کنید.
             </p>
+            {currentFilterError && <p role="alert" className="mt-2 text-sm font-medium text-red-700">{currentFilterError}</p>}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -657,7 +667,7 @@ const CategoryPage = () => {
               ) : (
                 <>
                   <ShoppingBag size={16} className="text-[#68745f]" aria-hidden="true" />
-                  {new Intl.NumberFormat("fa-IR").format(filteredProducts.length)} محصول
+                  {new Intl.NumberFormat("fa-IR").format(resultCount)} محصول
                 </>
               )}
             </div>
@@ -677,6 +687,7 @@ const CategoryPage = () => {
                 </span>
               )}
             </button>
+            <button type="button" onClick={copyFilterLink} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#41443b] transition hover:border-[#68745f]" aria-label="کپی لینک این دسته‌بندی با فیلترهای فعلی">کپی لینک فیلترها</button>
           </div>
         </header>
 
@@ -796,7 +807,7 @@ const CategoryPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            {filteredProducts.map((product) => <ProductCard key={product._id} product={product} />)}
+            {visibleProducts.map((product) => <ProductCard key={product._id} product={product} />)}
           </motion.div>
         ) : (
           <section className="flex min-h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-[#d8d4c9] bg-[#fffefa] px-5 py-12 text-center">
@@ -819,6 +830,13 @@ const CategoryPage = () => {
               </button>
             )}
           </section>
+        )}
+        {!loading && resultCount > CATEGORY_PAGE_SIZE && (
+          <nav aria-label="صفحه‌بندی محصولات دسته‌بندی" className="mt-8 flex flex-wrap items-center justify-center gap-3 border-t border-[#e4e0d8] pt-6">
+            <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="min-h-10 rounded-full border border-[#d5d0c5] bg-white px-4 py-2 text-sm disabled:opacity-40">قبلی</button>
+            <span className="text-sm text-[#62645c]">صفحه {new Intl.NumberFormat("fa-IR").format(page)} از {new Intl.NumberFormat("fa-IR").format(pageCount)} · {new Intl.NumberFormat("fa-IR").format(resultCount)} محصول</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="min-h-10 rounded-full border border-[#d5d0c5] bg-white px-4 py-2 text-sm disabled:opacity-40">بعدی</button>
+          </nav>
         )}
       </div>
 

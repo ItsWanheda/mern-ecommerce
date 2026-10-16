@@ -67,6 +67,7 @@ const LoginPage = () => {
 								{!loading && <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />}
 							</button>
 						</form>
+                        <p className="mt-3 text-left text-sm"><Link to="/forgot-password" className="font-semibold text-[#68745f] underline underline-offset-4">رمز عبور را فراموش کرده‌اید؟</Link></p>
 
 						<div className="mt-7 flex items-center gap-2 text-xs leading-5 text-[#85867d]">
 							<ShieldCheck size={16} className="shrink-0 text-[#68745f]" aria-hidden="true" />

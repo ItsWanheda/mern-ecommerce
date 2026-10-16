@@ -207,59 +207,59 @@ const CategoryManager = () => {
     const children = visibleCategories.filter((item) => idOf(item.parentId) === idOf(category._id));
     const isExpanded = filtered || expanded[idOf(category._id)] !== false;
     return (
-      <div key={idOf(category._id)} className="border-b border-gray-700/80 last:border-b-0">
-        <div className="flex flex-wrap items-center gap-2 px-3 py-3 hover:bg-gray-700/40" style={{ paddingRight: (12 + depth * 20) + "px" }}>
+      <div key={idOf(category._id)} className="border-b border-[var(--ui-border)]/80 last:border-b-0">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-3 hover:bg-[var(--ui-hover)]" style={{ paddingRight: (12 + depth * 20) + "px" }}>
           <button
             type="button"
             onClick={() => setExpanded((current) => ({ ...current, [idOf(category._id)]: !isExpanded }))}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-300 hover:bg-gray-700"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]"
             aria-label={isExpanded ? "بستن زیر‌دسته‌ها" : "نمایش زیر‌دسته‌ها"}
           >
             <span className="text-lg leading-none">{children.length ? (isExpanded ? "−" : "+") : "·"}</span>
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-white">{labelOf(category)}</span>
-              <span className="text-xs text-gray-400" dir="ltr">{category.slug}</span>
-              {!category.isActive && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-300">بایگانی / غیرفعال</span>}
+              <span className="font-medium text-[var(--ui-text)]">{labelOf(category)}</span>
+              <span className="text-xs text-[var(--ui-muted)]" dir="ltr">{category.slug}</span>
+              {!category.isActive && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-[var(--ui-warning)]">بایگانی / غیرفعال</span>}
             </div>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-[var(--ui-muted)]">
               {category.name?.en || ""} · {Number(category.productCount || 0)} محصول · {Number(category.childCount || 0)} زیر‌دسته
             </p>
           </div>
-          <button type="button" onClick={() => startCreate(category._id)} title="افزودن زیر‌دسته" className="rounded-lg p-2 text-emerald-300 hover:bg-gray-700"><FolderPlus size={16} aria-hidden="true" /></button>
-          <button type="button" onClick={() => startEdit(category)} title="ویرایش" className="rounded-lg p-2 text-sky-300 hover:bg-gray-700"><Pencil size={16} aria-hidden="true" /></button>
-          <button type="button" onClick={() => toggleActive(category)} title={category.isActive ? "بایگانی" : "فعال‌سازی"} className="rounded-lg p-2 text-amber-300 hover:bg-gray-700"><Archive size={16} aria-hidden="true" /></button>
-          <button type="button" onClick={() => handleDelete(category)} title="حذف دائمی" className="rounded-lg p-2 text-red-300 hover:bg-gray-700"><Trash2 size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => startCreate(category._id)} title="افزودن زیر‌دسته" className="rounded-lg p-2 text-[var(--ui-success)] hover:bg-[var(--ui-hover)]"><FolderPlus size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => startEdit(category)} title="ویرایش" className="rounded-lg p-2 text-sky-300 hover:bg-[var(--ui-hover)]"><Pencil size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => toggleActive(category)} title={category.isActive ? "بایگانی" : "فعال‌سازی"} className="rounded-lg p-2 text-[var(--ui-warning)] hover:bg-[var(--ui-hover)]"><Archive size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => handleDelete(category)} title="حذف دائمی" className="rounded-lg p-2 text-[var(--ui-danger)] hover:bg-[var(--ui-hover)]"><Trash2 size={16} aria-hidden="true" /></button>
         </div>
         {isExpanded && children.length > 0 && <div>{children.map((child) => renderCategory(child, depth + 1))}</div>}
       </div>
     );
   };
 
-  const fieldClass = "mt-1 block w-full rounded-xl border border-gray-600 bg-gray-900 px-3 py-2.5 text-sm text-white outline-none transition focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
-  const labelClass = "block text-sm font-medium text-gray-300";
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
+  const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
 
   return (
-    <section dir="rtl" className="mx-auto max-w-6xl space-y-5 text-white">
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-700 bg-gray-800 p-5">
+    <section dir="rtl" className="mx-auto max-w-6xl space-y-5 text-[var(--ui-text)]">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
         <div>
           <h2 className="text-2xl font-semibold text-[#9aa58e]">مدیریت دسته‌بندی‌ها</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-400">درخت دسته‌ها، نام‌های فارسی و انگلیسی، ویژگی‌های محصول و نمایش هر دسته در منوی همبرگری موبایل و دسکتاپ را از این بخش مدیریت کنید.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-muted)]">درخت دسته‌ها، نام‌های فارسی و انگلیسی، ویژگی‌های محصول و نمایش هر دسته در منوی همبرگری موبایل و دسکتاپ را از این بخش مدیریت کنید.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => fetchAdminCategories()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-gray-600 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700"><RefreshCw size={15} aria-hidden="true" /> تازه‌سازی</button>
-          <button type="button" onClick={() => startCreate()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#68745f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#78866d]"><Plus size={16} aria-hidden="true" /> دسته اصلی جدید</button>
+          <button type="button" onClick={() => fetchAdminCategories()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--ui-border)] px-3 py-2 text-sm text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><RefreshCw size={15} aria-hidden="true" /> تازه‌سازی</button>
+          <button type="button" onClick={() => startCreate()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-sm font-semibold text-[var(--ui-button-text)] hover:bg-[#78866d]"><Plus size={16} aria-hidden="true" /> دسته اصلی جدید</button>
         </div>
       </header>
 
-      {(notice || error) && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{notice || error}</div>}
+      {(notice || error) && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-[var(--ui-danger)]">{notice || error}</div>}
 
       {formOpen && (
-        <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-gray-700 bg-gray-800 p-5 sm:p-7">
+        <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-xl font-semibold text-[#9aa58e]">{editingId ? "ویرایش دسته‌بندی" : "ایجاد دسته‌بندی"}</h3>
-            <button type="button" onClick={resetForm} aria-label="بستن فرم" className="rounded-lg p-2 text-gray-300 hover:bg-gray-700"><X size={18} aria-hidden="true" /></button>
+            <button type="button" onClick={resetForm} aria-label="بستن فرم" className="rounded-lg p-2 text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]"><X size={18} aria-hidden="true" /></button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>نام فارسی
@@ -270,7 +270,7 @@ const CategoryManager = () => {
             </label>
             <label className={labelClass}>Slug ثابت
               <input className={fieldClass} required maxLength={96} pattern="[a-z0-9]+(-[a-z0-9]+)*" dir="ltr" disabled={Boolean(editingId)} value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase() }))} />
-              <span className="mt-1 block text-xs text-gray-500">برای حفظ لینک‌های قدیمی، slug بعد از ایجاد قابل تغییر نیست.</span>
+              <span className="mt-1 block text-xs text-[var(--ui-muted)]">برای حفظ لینک‌های قدیمی، slug بعد از ایجاد قابل تغییر نیست.</span>
             </label>
             <label className={labelClass}>دسته والد
               <select className={fieldClass} value={form.parentId} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value }))}>
@@ -293,25 +293,25 @@ const CategoryManager = () => {
               <textarea className={fieldClass} rows={3} maxLength={1000} dir="ltr" value={form.description.en} onChange={(event) => updateLocalized("description", "en", event.target.value)} />
             </label>
           </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-gray-900/60 p-3 text-sm">
+          <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-[var(--ui-input-bg)] p-3 text-sm">
             <label className="flex items-center gap-2"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} /> فعال در فروشگاه</label>
             <label className="flex items-center gap-2"><input type="checkbox" checked={form.showInNavigation} onChange={(event) => setForm((current) => ({ ...current, showInNavigation: event.target.checked }))} /> نمایش در منوی همبرگری فروشگاه</label>
           </div>
 
-          <section className="space-y-3 rounded-xl border border-gray-700 p-4">
+          <section className="space-y-3 rounded-xl border border-[var(--ui-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h4 className="font-semibold text-white">ویژگی‌های این دسته</h4>
-                <p className="mt-1 text-xs leading-5 text-gray-400">برای گزینه‌ها هر خط را به شکل value|نام فارسی|English label وارد کنید. ویژگی ارث‌پذیر به زیر‌دسته‌ها منتقل می‌شود.</p>
+                <h4 className="font-semibold text-[var(--ui-text)]">ویژگی‌های این دسته</h4>
+                <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">برای گزینه‌ها هر خط را به شکل value|نام فارسی|English label وارد کنید. ویژگی ارث‌پذیر به زیر‌دسته‌ها منتقل می‌شود.</p>
               </div>
-              <button type="button" onClick={() => setForm((current) => ({ ...current, attributes: [...current.attributes, normalizeAttribute({ key: "", type: "select", options: [], inherited: true }, current.attributes.length)] }))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-gray-600 px-3 py-2 text-xs text-gray-200 hover:bg-gray-700"><Plus size={14} aria-hidden="true" /> ویژگی جدید</button>
+              <button type="button" onClick={() => setForm((current) => ({ ...current, attributes: [...current.attributes, normalizeAttribute({ key: "", type: "select", options: [], inherited: true }, current.attributes.length)] }))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><Plus size={14} aria-hidden="true" /> ویژگی جدید</button>
             </div>
-            {form.attributes.length === 0 && <p className="rounded-lg bg-gray-900/50 p-4 text-sm text-gray-500">ویژگی اختصاصی تعریف نشده است. ویژگی‌های والد در صورت ارث‌پذیری در فرم محصول نمایش داده می‌شوند.</p>}
+            {form.attributes.length === 0 && <p className="rounded-lg bg-[var(--ui-surface-raised)] p-4 text-sm text-[var(--ui-muted)]">ویژگی اختصاصی تعریف نشده است. ویژگی‌های والد در صورت ارث‌پذیری در فرم محصول نمایش داده می‌شوند.</p>}
             {form.attributes.map((attribute, index) => (
-              <div key={index} className="space-y-3 rounded-xl border border-gray-700 bg-gray-900/50 p-3">
+              <div key={index} className="space-y-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold text-[#c8d0bd]">ویژگی {index + 1}</span>
-                  <button type="button" onClick={() => setForm((current) => ({ ...current, attributes: current.attributes.filter((_, i) => i !== index) }))} aria-label="حذف ویژگی از فرم" className="rounded-lg p-2 text-red-300 hover:bg-gray-700"><Trash2 size={15} aria-hidden="true" /></button>
+                  <button type="button" onClick={() => setForm((current) => ({ ...current, attributes: current.attributes.filter((_, i) => i !== index) }))} aria-label="حذف ویژگی از فرم" className="rounded-lg p-2 text-[var(--ui-danger)] hover:bg-[var(--ui-hover)]"><Trash2 size={15} aria-hidden="true" /></button>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <label className={labelClass}>کلید داخلی
@@ -334,7 +334,7 @@ const CategoryManager = () => {
                     <textarea className={fieldClass} rows={3} dir="ltr" placeholder={"baggy|بگ|Baggy\nstraight|راسته|Straight"} value={attribute.optionsText} onChange={(event) => updateAttribute(index, "optionsText", event.target.value)} required />
                   </label>
                 )}
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-gray-300">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--ui-muted)]">
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.required} onChange={(event) => updateAttribute(index, "required", event.target.checked)} /> اجباری</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.filterable} onChange={(event) => updateAttribute(index, "filterable", event.target.checked)} /> قابل فیلتر</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.searchable} onChange={(event) => updateAttribute(index, "searchable", event.target.checked)} /> قابل جست‌وجو</label>
@@ -345,29 +345,29 @@ const CategoryManager = () => {
           </section>
 
           <div className="flex flex-wrap gap-2">
-            <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#68745f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#78866d] disabled:cursor-not-allowed disabled:opacity-60"><Save size={16} aria-hidden="true" /> {loading ? "در حال ذخیره…" : "ذخیره دسته‌بندی"}</button>
-            <button type="button" onClick={resetForm} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-600 px-5 py-2.5 text-sm text-gray-300 hover:bg-gray-700">انصراف</button>
+            <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--ui-button-text)] hover:bg-[#78866d] disabled:cursor-not-allowed disabled:opacity-60"><Save size={16} aria-hidden="true" /> {loading ? "در حال ذخیره…" : "ذخیره دسته‌بندی"}</button>
+            <button type="button" onClick={resetForm} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ui-border)] px-5 py-2.5 text-sm text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]">انصراف</button>
           </div>
         </form>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800 shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700 px-4 py-4 sm:px-5">
-          <div><h3 className="font-semibold">درخت دسته‌بندی‌ها</h3><p className="mt-1 text-xs text-gray-400">{categories.length} دسته ثبت‌شده</p></div>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-[#9aa58e]" placeholder="جست‌وجوی نام یا slug…" />
+      <div className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-lg">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
+          <div><h3 className="font-semibold">درخت دسته‌بندی‌ها</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">{categories.length} دسته ثبت‌شده</p></div>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[#9aa58e]" placeholder="جست‌وجوی نام یا slug…" />
         </div>
         {loading && categories.length === 0 ? (
-          <div role="status" className="p-8 text-center text-sm text-gray-400">در حال دریافت دسته‌بندی‌ها…</div>
+          <div role="status" className="p-8 text-center text-sm text-[var(--ui-muted)]">در حال دریافت دسته‌بندی‌ها…</div>
         ) : roots.length ? (
           <div>{roots.map((category) => renderCategory(category))}</div>
         ) : (
           <div className="space-y-3 p-8 text-center">
-            <p className="text-sm text-gray-400">{filtered ? "دسته‌ای با این جست‌وجو پیدا نشد." : "هنوز دسته‌ای ثبت نشده است."}</p>
-            {!filtered && <button type="button" onClick={() => startCreate()} className="inline-flex items-center gap-2 rounded-xl bg-[#68745f] px-4 py-2 text-sm font-semibold"><Plus size={15} aria-hidden="true" /> اولین دسته را بسازید</button>}
+            <p className="text-sm text-[var(--ui-muted)]">{filtered ? "دسته‌ای با این جست‌وجو پیدا نشد." : "هنوز دسته‌ای ثبت نشده است."}</p>
+            {!filtered && <button type="button" onClick={() => startCreate()} className="inline-flex items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-sm font-semibold"><Plus size={15} aria-hidden="true" /> اولین دسته را بسازید</button>}
           </div>
         )}
       </div>
-      <p className="text-xs leading-5 text-gray-500">حذف دائمی فقط زمانی مجاز است که دسته هیچ محصول یا زیر‌دسته‌ای نداشته باشد. برای نگه‌داشتن تاریخچه و لینک‌ها، در بیشتر مواقع غیرفعال‌سازی یا بایگانی امن‌تر است.</p>
+      <p className="text-xs leading-5 text-[var(--ui-muted)]">حذف دائمی فقط زمانی مجاز است که دسته هیچ محصول یا زیر‌دسته‌ای نداشته باشد. برای نگه‌داشتن تاریخچه و لینک‌ها، در بیشتر مواقع غیرفعال‌سازی یا بایگانی امن‌تر است.</p>
     </section>
   );
 };

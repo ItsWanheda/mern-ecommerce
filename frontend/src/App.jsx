@@ -12,6 +12,8 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const ShopPage = lazy(() => import("./pages/ShopPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProductDetailsPage = lazy(() => import("./pages/ProductDetailsPage"));
@@ -25,21 +27,22 @@ const MyOrdersPage = lazy(() => import("./pages/MyOrdersPage"));
 const CampaignPage = lazy(() => import("./pages/CampaignPage"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 const RouteLoadingFallback = () => (
   <div
     role="status"
     aria-live="polite"
-    className="flex min-h-[45vh] items-center justify-center px-4 py-16 text-sm text-[#77786f]"
+    className="flex min-h-[45vh] items-center justify-center px-4 py-16 text-sm text-[var(--ui-muted)]"
   >
-    <span className="ml-3 h-5 w-5 animate-spin rounded-full border-2 border-[#d9dccf] border-t-[#68745f] motion-reduce:animate-none" aria-hidden="true" />
+    <span className="ml-3 h-5 w-5 animate-spin rounded-full border-2 border-[var(--ui-border)] border-t-[var(--ui-accent)] motion-reduce:animate-none" aria-hidden="true" />
     در حال بارگذاری صفحه…
   </div>
 );
 
 function App() {
   const location = useLocation();
-  const isAccountPage = location.pathname === "/login" || location.pathname === "/signup";
+  const isAccountPage = ["/login", "/signup", "/forgot-password", "/reset-password"].includes(location.pathname);
   const { user, checkAuth, checkingAuth } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
 
@@ -56,7 +59,7 @@ function App() {
   if (checkingAuth) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7f5f0] text-[#252722]">
+    <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
       <div className={`relative z-50 ${isAccountPage ? "pt-0" : "pt-32 md:pt-44 min-[1680px]:pt-32"}`}>
         {!isAccountPage && <Navbar />}
         <Suspense fallback={<RouteLoadingFallback />}>
@@ -71,6 +74,8 @@ function App() {
             <Route path="/campaign/:campaignId" element={<CampaignPage />} />
             <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
             <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
@@ -86,6 +91,7 @@ function App() {
             <Route path="/newsletter-unsubscribe" element={<NewsletterUnsubscribePage />} />
             <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
             <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </div>

@@ -1,4 +1,6 @@
 import { create } from "zustand";
+
+let categoryRequestCounter = 0;
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 
@@ -7,6 +9,8 @@ const getErrorMessage = (error, fallback) => error.response?.data?.message || fa
 export const useProductStore = create((set) => ({
   products: [],
   priceBounds: null,
+  categoryPagination: null,
+  categoryFacets: { sizes: [], colors: [], fits: [], brands: [] },
   featuredProducts: [],
   newestProducts: [],
   loading: false,
@@ -26,29 +30,71 @@ export const useProductStore = create((set) => ({
     }
   },
 
-  fetchAllProducts: async () => {
-    set({ loading: true });
+  fetchAllProducts: async (params = {}) => {
+    set({ loading: true, error: "" });
     try {
-      const response = await axios.get("/products");
-      set({ products: response.data.products, priceBounds: null, loading: false });
+      const response = await axios.get("/products", { params });
+      set({ products: Array.isArray(response.data.products) ? response.data.products : [], priceBounds: null, loading: false, error: "" });
+      return response.data;
     } catch (error) {
-      set({ error: "دریافت محصولات ناموفق بود", loading: false });
-      toast.error(getErrorMessage(error, "دریافت محصولات ناموفق بود"));
+      const message = getErrorMessage(error, "دریافت محصولات ناموفق بود");
+      set({ products: [], error: message, loading: false });
+      toast.error(message);
+      return null;
     }
   },
 
-  fetchProductsByCategory: async (category) => {
-    set({ loading: true, products: [], priceBounds: null });
+  updateProduct: async (productId, payload) => {
+    set({ loading: true, error: "" });
     try {
-      const response = await axios.get(`/products/category/${encodeURIComponent(category)}`);
+      const response = await axios.put("/products/" + productId, payload);
+      set((state) => ({
+        products: state.products.map((product) => product._id === productId ? response.data : product),
+        loading: false,
+        error: "",
+      }));
+      toast.success("محصول به‌روزرسانی شد");
+      return response.data;
+    } catch (error) {
+      set({ loading: false });
+      toast.error(getErrorMessage(error, "به‌روزرسانی محصول ناموفق بود"));
+      throw error;
+    }
+  },
+
+  setProductActive: async (productId, isActive) => {
+    try {
+      const response = await axios.patch("/products/" + productId + "/active", { isActive });
+      set((state) => ({ products: state.products.map((product) => product._id === productId ? response.data : product) }));
+      toast.success(isActive ? "محصول بازیابی شد" : "محصول بایگانی شد");
+      return true;
+    } catch (error) {
+      toast.error(getErrorMessage(error, "تغییر وضعیت محصول ناموفق بود"));
+      return false;
+    }
+  },
+
+  fetchProductsByCategory: async (category, queryString = "") => {
+    const requestId = ++categoryRequestCounter;
+    set({ loading: true, products: [], error: "" });
+    try {
+      const suffix = queryString ? "?" + queryString : "";
+      const response = await axios.get(`/products/category/${encodeURIComponent(category)}${suffix}`);
+      if (requestId !== categoryRequestCounter) return response.data;
       set({
         products: Array.isArray(response.data.products) ? response.data.products : [],
         priceBounds: response.data.priceBounds || null,
+        categoryPagination: response.data.pagination || null,
+        categoryFacets: response.data.filterOptions || { sizes: [], colors: [], fits: [], brands: [] },
         loading: false,
+        error: "",
       });
+      return response.data;
     } catch (error) {
-      set({ error: "دریافت محصولات ناموفق بود", priceBounds: null, loading: false });
+      if (requestId !== categoryRequestCounter) return null;
+      set({ products: [], priceBounds: null, categoryPagination: null, loading: false, error: getErrorMessage(error, "دریافت محصولات ناموفق بود") });
       toast.error(getErrorMessage(error, "دریافت محصولات ناموفق بود"));
+      return null;
     }
   },
   fetchNewestProducts: async () => {
@@ -61,16 +107,14 @@ export const useProductStore = create((set) => ({
   },
 
   deleteProduct: async (productId) => {
-    set({ loading: true });
     try {
-      await axios.delete(`/products/${productId}`);
-      set((state) => ({
-        products: state.products.filter((product) => product._id !== productId),
-        loading: false,
-      }));
+      await axios.delete("/products/" + productId);
+      set((state) => ({ products: state.products.filter((product) => product._id !== productId) }));
+      toast.success("محصول برای همیشه حذف شد");
+      return true;
     } catch (error) {
-      set({ loading: false });
       toast.error(getErrorMessage(error, "حذف محصول ناموفق بود"));
+      return false;
     }
   },
 

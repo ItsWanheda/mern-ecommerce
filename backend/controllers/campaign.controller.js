@@ -74,11 +74,12 @@ export const getCampaignById = async (req, res) => {
   const lookup = mongoose.isValidObjectId(key) ? { _id: key } : { slug: key };
   try {
     const now = new Date();
-    const campaign = await Campaign.findOne({
+    const campaign = await Campaign.findOneAndUpdate({
       ...lookup,
       isActive: true,
+      startsAt: { $lte: now },
       endsAt: { $gt: now },
-    }).select("slug title description image href startsAt endsAt productIds").populate({
+    }, { $inc: { views: 1 } }, { new: true }).select("slug title description image href startsAt endsAt productIds views clicks").populate({
       path: "productIds",
       match: { isActive: { $ne: false } },
       select: "name description price image images category sizes colors variants fit stock isFeatured isActive createdAt",
@@ -88,6 +89,23 @@ export const getCampaignById = async (req, res) => {
   } catch (error) {
     console.error("Error loading campaign detail", error.message);
     return res.status(500).json({ message: "Unable to load campaign" });
+  }
+};
+
+export const trackCampaignClick = async (req, res) => {
+  const key = String(req.params.id || "").trim();
+  if (!key || key.length > 140) return res.status(404).json({ message: "Campaign not found" });
+  const lookup = mongoose.isValidObjectId(key) ? { _id: key } : { slug: key };
+  try {
+    const now = new Date();
+    const campaign = await Campaign.findOneAndUpdate({
+      ...lookup, isActive: true, startsAt: { $lte: now }, endsAt: { $gt: now },
+    }, { $inc: { clicks: 1 } }, { new: false }).select("_id").lean();
+    if (!campaign) return res.status(404).json({ message: "Campaign not found or no longer active" });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Unable to record campaign click", error.message);
+    return res.status(500).json({ message: "Unable to record campaign click" });
   }
 };
 
