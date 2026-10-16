@@ -21,6 +21,8 @@ const campaignSchema = new mongoose.Schema(
     endsAt: { type: Date, required: true },
     isActive: { type: Boolean, default: true },
     sortOrder: { type: Number, min: 0, default: 0 },
+    views: { type: Number, min: 0, default: 0 },
+    clicks: { type: Number, min: 0, default: 0 },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
