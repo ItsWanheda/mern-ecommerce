@@ -72,7 +72,7 @@ const categoryPath = (category, categories) => {
 };
 
 const fieldClass =
-  "mt-1 min-h-11 w-full rounded-xl border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-sm text-[#252722] outline-none transition focus:border-[#68745f] focus:ring-2 focus:ring-[#68745f]/20";
+  "mt-1 min-h-11 w-full rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]/20";
 
 const readSavedTheme = () => {
   try {
@@ -385,7 +385,7 @@ const Navbar = () => {
   };
 
   const linkClass = ({ isActive }) =>
-    `inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] ${isActive ? "bg-[#e9e5dc] text-[#252722]" : "text-[#62645c] hover:bg-[#e9e5dc] hover:text-[#252722]"}`;
+    `inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] ${isActive ? "bg-[var(--ui-surface-raised)] text-[var(--ui-text)]" : "text-[var(--ui-muted)] hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)]"}`;
 
   const navigateToShop = (params) => {
     const query = params.toString();
@@ -444,11 +444,11 @@ const Navbar = () => {
         id={`${surface}-search-suggestions`}
         role="listbox"
         aria-label="پیشنهادهای جست‌وجو"
-        className={`${surface === "desktop" ? "absolute left-0 right-0 top-[calc(100%+0.65rem)] z-[60]" : "relative mt-2"} max-h-80 overflow-y-auto rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_20px_55px_-24px_rgba(37,39,34,0.35)]`}
+        className={`${surface === "desktop" ? "absolute left-0 right-0 top-[calc(100%+0.65rem)] z-[60]" : "relative mt-2"} max-h-80 overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 shadow-[0_20px_55px_-24px_rgba(37,39,34,0.35)]`}
       >
         {categorySuggestions.length > 0 && (
           <div className="pb-2">
-            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold text-[#85867d]">دسته‌بندی‌های پیشنهادی</p>
+            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold text-[var(--ui-muted)]">دسته‌بندی‌های پیشنهادی</p>
             {categorySuggestions.map(([value, label], index) => (
               <button
                 key={value}
@@ -457,10 +457,10 @@ const Navbar = () => {
                 aria-selected={activeSuggestionIndex === index}
                 onMouseEnter={() => setActiveSuggestionIndex(index)}
                 onClick={() => selectCategorySuggestion(value)}
-                className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right text-sm transition ${activeSuggestionIndex === index ? "bg-[#e9ede4] text-[#252722]" : "text-[#62645c] hover:bg-[#f2f0e9] hover:text-[#252722]"}`}
+                className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right text-sm transition ${activeSuggestionIndex === index ? "bg-[var(--ui-hover)] text-[var(--ui-text)]" : "text-[var(--ui-muted)] hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)]"}`}
               >
                 <span>{label}</span>
-                <span className="text-xs text-[#85867d]">مشاهده دسته‌بندی</span>
+                <span className="text-xs text-[var(--ui-muted)]">مشاهده دسته‌بندی</span>
               </button>
             ))}
           </div>
@@ -468,7 +468,7 @@ const Navbar = () => {
 
         {searchSuggestions.products.length > 0 && (
           <div className={categorySuggestions.length ? "border-t border-[#eeeae2] pt-2" : ""}>
-            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold text-[#85867d]">محصولات</p>
+            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold text-[var(--ui-muted)]">محصولات</p>
             {searchSuggestions.products.map((product, index) => {
               const optionIndex = categorySuggestions.length + index;
               return (
@@ -479,18 +479,18 @@ const Navbar = () => {
                   aria-selected={activeSuggestionIndex === optionIndex}
                   onMouseEnter={() => setActiveSuggestionIndex(optionIndex)}
                   onClick={() => selectProductSuggestion(product)}
-                  className={`flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-2.5 py-2 text-right transition ${activeSuggestionIndex === optionIndex ? "bg-[#e9ede4]" : "hover:bg-[#f7f5f0]"}`}
+                  className={`flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-2.5 py-2 text-right transition ${activeSuggestionIndex === optionIndex ? "bg-[var(--ui-hover)]" : "hover:bg-[var(--ui-canvas)]"}`}
                 >
                   {product.image ? (
-                    <img src={product.image} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg bg-[#f0eee8] object-cover" />
+                    <img src={product.image} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg bg-[var(--ui-surface-raised)] object-cover" />
                   ) : (
-                    <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#f0eee8] text-[#85867d]"><Search size={17} /></span>
+                    <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[var(--ui-surface-raised)] text-[var(--ui-muted)]"><Search size={17} /></span>
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-[#252722]">{product.name}</span>
-                    <span className="mt-1 block truncate text-xs text-[#85867d]">{categoryLabel(product.category, dynamicCategories)}</span>
+                    <span className="block truncate text-sm font-medium text-[var(--ui-text)]">{product.name}</span>
+                    <span className="mt-1 block truncate text-xs text-[var(--ui-muted)]">{categoryLabel(product.category, dynamicCategories)}</span>
                   </span>
-                  <span className="shrink-0 text-xs font-semibold tabular-nums text-[#41443b]">{formatPrice(product.price)}</span>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums text-[var(--ui-text-strong)]">{formatPrice(product.price)}</span>
                 </button>
               );
             })}
@@ -498,13 +498,13 @@ const Navbar = () => {
         )}
 
         {searchSuggestions.loading && (
-          <p role="status" className="px-3 py-3 text-sm text-[#77786f]">در حال جست‌وجوی محصولات…</p>
+          <p role="status" className="px-3 py-3 text-sm text-[var(--ui-muted)]">در حال جست‌وجوی محصولات…</p>
         )}
         {searchSuggestions.error && !searchSuggestions.loading && (
-          <p role="status" className="px-3 py-3 text-sm text-[#77786f]">پیشنهادها موقتاً در دسترس نیستند؛ جست‌وجو را ادامه دهید.</p>
+          <p role="status" className="px-3 py-3 text-sm text-[var(--ui-muted)]">پیشنهادها موقتاً در دسترس نیستند؛ جست‌وجو را ادامه دهید.</p>
         )}
         {!searchSuggestions.loading && !searchSuggestions.error && !hasSuggestions && (
-          <p className="px-3 py-3 text-sm text-[#77786f]">پیشنهادی پیدا نشد؛ عبارت دیگری را امتحان کنید.</p>
+          <p className="px-3 py-3 text-sm text-[var(--ui-muted)]">پیشنهادی پیدا نشد؛ عبارت دیگری را امتحان کنید.</p>
         )}
       </div>
     );
@@ -522,14 +522,14 @@ const Navbar = () => {
       aria-pressed={theme === "dark"}
       title={theme === "dark" ? "پوسته روشن" : "پوسته تاریک"}
       className={insideMenu
-        ? "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
-        : "hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:inline-flex"}
+        ? "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
+        : "hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:inline-flex"}
     >
       <span className="inline-flex min-w-0 items-center gap-3">
         {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
         {insideMenu && <span>{theme === "dark" ? "فعال‌کردن پوسته روشن" : "فعال‌کردن پوسته تاریک"}</span>}
       </span>
-      {insideMenu && <span className="text-xs font-normal text-[#85867d]">{theme === "dark" ? "روشن" : "تیره"}</span>}
+      {insideMenu && <span className="text-xs font-normal text-[var(--ui-muted)]">{theme === "dark" ? "روشن" : "تیره"}</span>}
     </button>
   );
 
@@ -545,28 +545,28 @@ const Navbar = () => {
       <div
         key={id}
         className={isRoot
-          ? "overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] shadow-sm"
+          ? "overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-sm"
           : "relative min-w-0"}
       >
         <div className={"relative flex min-w-0 items-center gap-2 transition " +
-          (isRoot ? "px-2 py-1" : "rounded-xl px-2 py-0.5 hover:bg-[#e9ede4]") +
-          (isActive ? " bg-[#e9ede4]" : "")}
+          (isRoot ? "px-2 py-1" : "rounded-xl px-2 py-0.5 hover:bg-[var(--ui-hover)]") +
+          (isActive ? " bg-[var(--ui-hover)]" : "")}
         >
           {!isRoot && <span aria-hidden="true" className="absolute right-0 top-1/2 h-px w-3 bg-[#c7c3b9]" />}
           <Link
             to={"/category/" + encodeURIComponent(category.slug)}
             onClick={() => setMobileMenuOpen(false)}
             aria-current={isActive ? "page" : undefined}
-            className={"flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] " +
-              (isActive ? "font-bold text-[#68745f]" : isRoot ? "font-semibold text-[#41443b]" : "font-medium text-[#62645c]")}
+            className={"flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " +
+              (isActive ? "font-bold text-[var(--ui-accent)]" : isRoot ? "font-semibold text-[var(--ui-text-strong)]" : "font-medium text-[var(--ui-muted)]")}
           >
             <span className={"inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg " +
-              (isRoot ? "bg-[#f2f0e9] text-[#68745f]" : "text-[#85867d]")}>
+              (isRoot ? "bg-[var(--ui-surface-raised)] text-[var(--ui-accent)]" : "text-[var(--ui-muted)]")}>
               {isRoot ? <FolderTree size={16} aria-hidden="true" /> : <span className="h-1.5 w-1.5 rounded-full bg-[#a0a195]" />}
             </span>
             <span className="min-w-0 flex-1 truncate">{label}</span>
             {isRoot && children.length > 0 && (
-              <span className="shrink-0 rounded-full bg-[#f2f0e9] px-2 py-0.5 text-[10px] font-medium text-[#77786f]">
+              <span className="shrink-0 rounded-full bg-[var(--ui-surface-raised)] px-2 py-0.5 text-[10px] font-medium text-[var(--ui-muted)]">
                 {new Intl.NumberFormat("fa-IR").format(children.length)} زیر‌دسته
               </span>
             )}
@@ -578,7 +578,7 @@ const Navbar = () => {
               aria-expanded={expanded}
               aria-controls={"category-children-" + id}
               onClick={() => setExpandedCategories((current) => ({ ...current, [id]: !current[id] }))}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#68745f] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--ui-accent)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
             >
               <ChevronDown size={17} className={"transition-transform duration-200 " + (expanded ? "rotate-180" : "")} aria-hidden="true" />
             </button>
@@ -588,8 +588,8 @@ const Navbar = () => {
           <div
             id={"category-children-" + id}
             className={isRoot
-              ? "mx-3 mb-3 mt-1 space-y-1 rounded-xl bg-[#f7f5f0] p-2"
-              : "relative mr-4 space-y-1 border-r border-dashed border-[#c7c3b9] py-1 pr-3"}
+              ? "mx-3 mb-3 mt-1 space-y-1 rounded-xl bg-[var(--ui-canvas)] p-2"
+              : "relative mr-4 space-y-1 border-r border-dashed border-[var(--ui-border-strong)] py-1 pr-3"}
           >
             {children.map((child) => renderNavigationCategory(child, depth + 1))}
           </div>
@@ -666,9 +666,9 @@ const Navbar = () => {
     return (
       <div className="space-y-3">
         <div>
-          <p className="text-xs font-medium text-[#62645c]">محدوده قیمت ({formatPrice(rangeMin)} تا {formatPrice(rangeMax)})</p>
+          <p className="text-xs font-medium text-[var(--ui-muted)]">محدوده قیمت ({formatPrice(rangeMin)} تا {formatPrice(rangeMax)})</p>
           <div className="mt-1 grid grid-cols-2 gap-3">
-            <label className="text-xs text-[#85867d]">
+            <label className="text-xs text-[var(--ui-muted)]">
               از
               <input
                 type="number"
@@ -682,7 +682,7 @@ const Navbar = () => {
                 onChange={(event) => updateFilter("minPrice", event.target.value)}
               />
             </label>
-            <label className="text-xs text-[#85867d]">
+            <label className="text-xs text-[var(--ui-muted)]">
               تا
               <input
                 type="number"
@@ -697,15 +697,15 @@ const Navbar = () => {
               />
             </label>
           </div>
-          <div className="mt-2 rounded-xl border border-[#e4e0d8] bg-[#f7f5f0] px-3 py-3">
-            <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[#62645c]">
-              <span>از <strong className="tabular-nums text-[#252722]">{formatPrice(sliderMinValue)}</strong></span>
-              <span>تا <strong className="tabular-nums text-[#252722]">{formatPrice(sliderMaxValue)}</strong></span>
+          <div className="mt-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] px-3 py-3">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[var(--ui-muted)]">
+              <span>از <strong className="tabular-nums text-[var(--ui-text)]">{formatPrice(sliderMinValue)}</strong></span>
+              <span>تا <strong className="tabular-nums text-[var(--ui-text)]">{formatPrice(sliderMaxValue)}</strong></span>
             </div>
             <div className={"relative h-7 " + (globalPriceBounds.count > 0 ? "" : "opacity-50")} dir="ltr">
-              <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#dedbd2]" />
+              <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-chart-grid)]" />
               <div
-                className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#68745f]"
+                className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--ui-accent)]"
                 style={{ left: sliderMinPercent + "%", right: 100 - sliderMaxPercent + "%" }}
               />
               <input
@@ -738,7 +738,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        <label className="block text-xs font-medium text-[#62645c]">
+        <label className="block text-xs font-medium text-[var(--ui-muted)]">
           مرتب‌سازی
           <select
             className={fieldClass}
@@ -758,7 +758,7 @@ const Navbar = () => {
     <div className="mt-5 flex gap-2 border-t border-[#eeeae2] pt-4">
       <button
         type="submit"
-        className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#252722] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+        className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--ui-strong-surface)] px-4 py-2 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
       >
         نمایش محصولات
         <Search size={16} aria-hidden="true" />
@@ -766,7 +766,7 @@ const Navbar = () => {
       <button
         type="button"
         onClick={clearFilters}
-        className="min-h-11 rounded-xl border border-[#d5d0c5] px-4 py-2 text-sm font-semibold text-[#41443b] transition hover:border-[#a8a597] hover:bg-[#f7f5f0] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+        className="min-h-11 rounded-xl border border-[var(--ui-border-strong)] px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-canvas)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
       >
         پاک‌کردن فیلترها
       </button>
@@ -777,12 +777,12 @@ const Navbar = () => {
     <>
       <header
         dir="rtl"
-        className="fixed inset-x-0 top-0 z-40 w-full border-b border-[#e4e0d8] bg-[#f7f5f0]/95 text-[#252722] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
+        className="fixed inset-x-0 top-0 z-40 w-full border-b border-[var(--ui-border)] bg-[#f7f5f0]/95 text-[var(--ui-text)] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
       >
-        <div className="bg-[#252722] text-[#fffefa]">
+        <div className="bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)]">
           <div className="mx-auto flex min-h-9 max-w-[1920px] items-center justify-center gap-2 px-3 py-2 text-center sm:justify-between sm:px-6 lg:px-8 min-[1680px]:px-12">
             <p className="flex min-w-0 items-center justify-center gap-2 text-[11px] font-medium leading-5 sm:justify-start sm:text-xs">
-              <Truck size={15} className="shrink-0 text-[#d3dbc9]" aria-hidden="true" />
+              <Truck size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
               <span>
                 {shippingAnnouncement.loading || shippingAnnouncement.error
                   ? "هزینه نهایی و شرایط ارسال در سبد خرید مشخص می‌شود"
@@ -795,7 +795,7 @@ const Navbar = () => {
             </p>
             <Link
               to="/shop"
-              className="hidden shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold text-[#d3dbc9] transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+              className="hidden shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold text-[var(--ui-accent)] transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
             >
               مشاهده محصولات
               <ChevronLeft size={14} aria-hidden="true" />
@@ -814,7 +814,7 @@ const Navbar = () => {
                 aria-expanded={mobileMenuOpen}
                 aria-controls="store-menu-panel"
                 onClick={() => setMobileMenuOpen((open) => !open)}
-                className="order-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:hidden"
+                className="order-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:hidden"
               >
                 {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
               </button>
@@ -827,7 +827,7 @@ const Navbar = () => {
                 aria-expanded={accountMenuOpen}
                 aria-controls="account-menu"
                 onClick={() => setAccountMenuOpen((open) => !open)}
-                className="order-2 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] lg:inline-flex"
+                className="order-2 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:inline-flex"
               >
                 {accountMenuOpen ? <X size={19} aria-hidden="true" /> : <UserRound size={19} aria-hidden="true" />}
               </button>
@@ -835,12 +835,12 @@ const Navbar = () => {
               <Link
                 to="/cart"
                 aria-label={cart.length > 0 ? `سبد خرید، ${new Intl.NumberFormat("fa-IR").format(cart.length)} کالا` : "سبد خرید"}
-                className="order-2 relative inline-flex h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] sm:px-3 lg:order-1"
+                className="order-2 relative inline-flex h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:px-3 lg:order-1"
               >
                 <ShoppingCart size={18} aria-hidden="true" />
                 <span className="hidden lg:inline">سبد خرید</span>
                 {cart.length > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-xs font-semibold text-white">
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ui-accent)] px-1.5 py-0.5 text-xs font-semibold text-[var(--ui-button-text)]">
                     {new Intl.NumberFormat("fa-IR").format(cart.length)}
                   </span>
                 )}
@@ -850,12 +850,12 @@ const Navbar = () => {
                 <div
                   id="account-menu"
                   dir="rtl"
-                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] hidden w-64 overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:block lg:left-0 lg:right-auto"
+                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] hidden w-64 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:block lg:left-0 lg:right-auto"
                 >
                   <div className="border-b border-[#eeeae2] px-3 py-3">
-                    <p className="text-sm font-bold text-[#252722]">حساب کاربری</p>
+                    <p className="text-sm font-bold text-[var(--ui-text)]">حساب کاربری</p>
                     {user && (
-                      <p className="mt-1 break-words text-xs text-[#85867d]">{user.name || user.email || "کاربر فروشگاه"}</p>
+                      <p className="mt-1 break-words text-xs text-[var(--ui-muted)]">{user.name || user.email || "کاربر فروشگاه"}</p>
                     )}
                   </div>
 
@@ -865,7 +865,7 @@ const Navbar = () => {
                         <Link
                           to="/login"
                           onClick={() => setAccountMenuOpen(false)}
-                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                         >
                           <LogIn size={17} aria-hidden="true" />
                           ورود به حساب
@@ -873,7 +873,7 @@ const Navbar = () => {
                         <Link
                           to="/signup"
                           onClick={() => setAccountMenuOpen(false)}
-                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                         >
                           <UserRound size={17} aria-hidden="true" />
                           ایجاد حساب کاربری
@@ -884,7 +884,7 @@ const Navbar = () => {
                         <Link
                           to="/orders"
                           onClick={() => setAccountMenuOpen(false)}
-                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                         >
                           <Truck size={17} aria-hidden="true" />
                           سفارش‌های من و رهگیری
@@ -893,7 +893,7 @@ const Navbar = () => {
                           <Link
                             to="/secret-dashboard"
                             onClick={() => setAccountMenuOpen(false)}
-                            className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                            className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                           >
                             <Lock size={17} aria-hidden="true" />
                             داشبورد مدیریت
@@ -902,7 +902,7 @@ const Navbar = () => {
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-right text-sm font-medium text-[#8b3d34] transition hover:bg-[#f8eeeb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                          className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-right text-sm font-medium text-[var(--ui-danger)] transition hover:bg-[var(--ui-danger-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                         >
                           <LogOut size={17} aria-hidden="true" />
                           خروج از حساب
@@ -917,7 +917,7 @@ const Navbar = () => {
             <Link
               to="/"
               aria-label="صفحه اصلی تیک بوتیک"
-              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[#252722] transition hover:text-[#68745f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
+              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
             >
               تیک بوتیک
             </Link>
@@ -933,13 +933,13 @@ const Navbar = () => {
                   aria-expanded={mobileMenuOpen}
                   aria-controls="store-menu-panel"
                   onClick={() => setMobileMenuOpen((open) => !open)}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d5d0c5] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#a8a597] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
                 >
                   {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
                 </button>
                 <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
                 <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
-                <NavLink to="/wishlist" className={linkClass}><Heart size={15} aria-hidden="true" />علاقه‌مندی‌ها{savedProducts.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[10px] font-bold text-white">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}</NavLink>
+                <NavLink to="/wishlist" className={linkClass}><Heart size={15} aria-hidden="true" />علاقه‌مندی‌ها{savedProducts.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ui-accent)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-button-text)]">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}</NavLink>
               </nav>
 
               <div
@@ -950,9 +950,9 @@ const Navbar = () => {
                   onSubmit={handleDesktopSearch}
                   role="search"
                   aria-label="جست‌وجوی محصولات"
-                  className="flex min-h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[#e0dcd2] bg-[#fffefa] p-1 shadow-sm transition focus-within:border-[#a0a994] focus-within:ring-4 focus-within:ring-[#68745f]/10"
+                  className="flex min-h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-1 shadow-sm transition focus-within:border-[var(--ui-focus)] focus-within:ring-4 focus-within:ring-[#68745f]/10"
                 >
-                  <Search size={18} className="mr-2 shrink-0 text-[#85867d]" aria-hidden="true" />
+                  <Search size={18} className="mr-2 shrink-0 text-[var(--ui-muted)]" aria-hidden="true" />
                   <input
                     type="search"
                     value={filters.q}
@@ -965,12 +965,12 @@ const Navbar = () => {
                     aria-expanded={activeSearchSurface === "desktop" && suggestionQuery.length >= 2}
                     autoComplete="off"
                     placeholder="جست‌وجوی محصولات..."
-                    className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
+                    className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-muted)]"
                   />
                   <button
                     type="submit"
                     aria-label="جست‌وجو"
-                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#252722] px-3 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-strong-surface)] px-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
                   >
                     <Search size={16} aria-hidden="true" />
                     <span className="hidden 2xl:inline">جست‌وجو</span>
@@ -986,14 +986,14 @@ const Navbar = () => {
                       setActiveSearchSurface(null);
                       setDesktopFiltersOpen((open) => !open);
                     }}
-                    className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] ${desktopFiltersOpen ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#e4e0d8] bg-white text-[#62645c] hover:bg-[#f2f0e9]"}`}
+                    className={`inline-flex h-10 shrink-0 items-center justify-center gap-1 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] ${desktopFiltersOpen ? "border-[var(--ui-accent)] bg-[var(--ui-hover)] text-[var(--ui-text-strong)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] hover:bg-[var(--ui-surface-raised)]"}`}
                   >
                     <SlidersHorizontal size={16} aria-hidden="true" />
                     <span>فیلترها</span>
                     {activeFilterCount > 0 && (
                       <span
                         aria-label={`${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`}
-                        className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-[11px] font-bold leading-none text-white"
+                        className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ui-accent)] px-1.5 py-0.5 text-[11px] font-bold leading-none text-[var(--ui-button-text)]"
                       >
                         {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
                       </span>
@@ -1008,11 +1008,11 @@ const Navbar = () => {
                   <form
                     id="desktop-product-filters"
                     onSubmit={applyFilters}
-                    className="absolute left-0 right-auto top-[calc(100%+0.75rem)] z-50 max-h-[min(70vh,34rem)] w-[27rem] overflow-y-auto rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-5 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)]"
+                    className="absolute left-0 right-auto top-[calc(100%+0.75rem)] z-50 max-h-[min(70vh,34rem)] w-[27rem] overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)]"
                   >
                     <div className="mb-4">
-                      <p className="text-sm font-bold text-[#252722]">فیلتر محصولات</p>
-                      <p className="mt-1 text-xs text-[#85867d]">نتیجه‌ها را دقیق‌تر و سریع‌تر پیدا کنید.</p>
+                      <p className="text-sm font-bold text-[var(--ui-text)]">فیلتر محصولات</p>
+                      <p className="mt-1 text-xs text-[var(--ui-muted)]">نتیجه‌ها را دقیق‌تر و سریع‌تر پیدا کنید.</p>
                     </div>
                     {renderFilterFields()}
                     {renderFilterActions()}
@@ -1026,11 +1026,11 @@ const Navbar = () => {
                 aria-label={activeFilterCount > 0
                   ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
                   : "باز کردن جست‌وجو و فیلتر محصولات"}
-                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e0dcd2] bg-[#fffefa] text-[#41443b] shadow-sm transition hover:border-[#c7c3b9] hover:bg-[#e9e5dc] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] md:hidden"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
               >
                 <Search size={18} aria-hidden="true" />
                 {activeFilterCount > 0 && (
-                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[#f7f5f0] bg-[#68745f] px-1 py-0.5 text-[10px] font-bold leading-none text-white">
+                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[var(--ui-canvas)] bg-[var(--ui-accent)] px-1 py-0.5 text-[10px] font-bold leading-none text-[var(--ui-button-text)]">
                     {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
                   </span>
                 )}
@@ -1052,57 +1052,57 @@ const Navbar = () => {
             role="dialog"
             aria-modal="true"
             aria-labelledby="store-nav-heading"
-            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(92vw,28rem)] flex-col border-l border-[#e4e0d8] bg-[#f7f5f0] shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)] animate-[searchPanelIn_180ms_ease-out]"
+            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(92vw,28rem)] flex-col border-l border-[var(--ui-border)] bg-[var(--ui-canvas)] shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)] animate-[searchPanelIn_180ms_ease-out]"
           >
-            <div className="flex items-center justify-between gap-4 border-b border-[#e4e0d8] px-5 py-4">
+            <div className="flex items-center justify-between gap-4 border-b border-[var(--ui-border)] px-5 py-4">
               <div>
                 <Link
                   to="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="font-serif text-2xl font-semibold tracking-tight text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68745f]"
+                  className="font-serif text-2xl font-semibold tracking-tight text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)]"
                 >
                   تیک بوتیک
                 </Link>
-                <p id="store-nav-heading" className="mt-1 text-xs text-[#85867d]">منوی فروشگاه</p>
+                <p id="store-nav-heading" className="mt-1 text-xs text-[var(--ui-muted)]">منوی فروشگاه</p>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="بستن منوی فروشگاه"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dedbd2] bg-[#fffefa] text-[#62645c] transition hover:bg-[#e9e5dc] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
               >
                 <X size={18} aria-hidden="true" />
               </button>
             </div>
 
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-4">
-              <section aria-label="تنظیمات نمایش" className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2">
+              <section aria-label="تنظیمات نمایش" className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2">
                 {renderThemeToggle(true)}
               </section>
 
               {user ? (
-                <section className="rounded-2xl border border-[#dce2d4] bg-[#e9ede4] p-4">
+                <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-hover)] p-4">
                   <div className="flex items-start gap-3">
-                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#fffefa] text-[#68745f]">
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--ui-surface)] text-[var(--ui-accent)]">
                       <UserRound size={20} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-[#68745f]">حساب کاربری شما</p>
-                      <p className="mt-1 break-words text-sm font-bold text-[#252722]">{user.name || user.email || "کاربر تیک بوتیک"}</p>
-                      {isAdmin && <span className="mt-2 inline-flex rounded-full bg-[#252722] px-2.5 py-1 text-[11px] font-semibold text-white">مدیر فروشگاه</span>}
+                      <p className="text-xs font-medium text-[var(--ui-accent)]">حساب کاربری شما</p>
+                      <p className="mt-1 break-words text-sm font-bold text-[var(--ui-text)]">{user.name || user.email || "کاربر تیک بوتیک"}</p>
+                      {isAdmin && <span className="mt-2 inline-flex rounded-full bg-[var(--ui-strong-surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ui-inverse-text)]">مدیر فروشگاه</span>}
                     </div>
                   </div>
                 </section>
               ) : (
-                <section className="rounded-2xl bg-[#252722] p-4 text-white">
-                  <p className="text-xs font-semibold tracking-wide text-[#d3dbc9]">به تیک بوتیک خوش آمدید</p>
+                <section className="rounded-2xl bg-[var(--ui-strong-surface)] p-4 text-[var(--ui-inverse-text)]">
+                  <p className="text-xs font-semibold tracking-wide text-[var(--ui-accent)]">به تیک بوتیک خوش آمدید</p>
                   <h2 className="mt-2 font-serif text-xl font-medium">استایل دلخواهتان را پیدا کنید.</h2>
                   <p className="mt-2 text-xs leading-5 text-white/70">وارد حساب شوید یا برای تجربه خرید شخصی‌تر ثبت‌نام کنید.</p>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
                       to="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#fffefa] px-3 py-2 text-sm font-semibold text-[#252722] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--ui-surface)] px-3 py-2 text-sm font-semibold text-[var(--ui-text)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       <LogIn size={16} aria-hidden="true" />
                       ورود
@@ -1121,41 +1121,41 @@ const Navbar = () => {
 
               <section aria-labelledby="mobile-quick-links-heading">
                 <div className="mb-3 flex items-center justify-between px-1">
-                  <h3 id="mobile-quick-links-heading" className="text-sm font-bold text-[#252722]">دسترسی سریع</h3>
-                  <span className="text-[11px] text-[#85867d]">همه‌چیز یک‌جا</span>
+                  <h3 id="mobile-quick-links-heading" className="text-sm font-bold text-[var(--ui-text)]">دسترسی سریع</h3>
+                  <span className="text-[11px] text-[var(--ui-muted)]">همه‌چیز یک‌جا</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     to="/"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><Home size={18} aria-hidden="true" /></span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--ui-surface-raised)] text-[var(--ui-accent)]"><Home size={18} aria-hidden="true" /></span>
                     صفحه اصلی
                   </Link>
                   <Link
                     to="/shop"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><ShoppingBag size={18} aria-hidden="true" /></span>
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--ui-surface-raised)] text-[var(--ui-accent)]"><ShoppingBag size={18} aria-hidden="true" /></span>
                     همه محصولات
                   </Link>
                   <Link
                     to="/wishlist"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                   >
-                    <span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><Heart size={18} aria-hidden="true" /></span>علاقه‌مندی‌ها</span>
-                    {savedProducts.length > 0 && <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#68745f] px-2 py-1 text-xs font-bold text-white">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}
+                    <span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--ui-surface-raised)] text-[var(--ui-accent)]"><Heart size={18} aria-hidden="true" /></span>علاقه‌مندی‌ها</span>
+                    {savedProducts.length > 0 && <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--ui-accent)] px-2 py-1 text-xs font-bold text-[var(--ui-button-text)]">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}
                   </Link>
                   <Link
                     to="/cart"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:border-[#c7c3b9] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    className="col-span-2 flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                   >
-                    <span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f2f0e9] text-[#68745f]"><ShoppingCart size={18} aria-hidden="true" /></span>سبد خرید</span>
-                    {cart.length > 0 && <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#68745f] px-2 py-1 text-xs font-bold text-white">{new Intl.NumberFormat("fa-IR").format(cart.length)}</span>}
+                    <span className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--ui-surface-raised)] text-[var(--ui-accent)]"><ShoppingCart size={18} aria-hidden="true" /></span>سبد خرید</span>
+                    {cart.length > 0 && <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[var(--ui-accent)] px-2 py-1 text-xs font-bold text-[var(--ui-button-text)]">{new Intl.NumberFormat("fa-IR").format(cart.length)}</span>}
                   </Link>
                 </div>
               </section>
@@ -1163,65 +1163,65 @@ const Navbar = () => {
               <section aria-labelledby="store-categories-heading">
                 <div className="mb-3 flex items-center justify-between gap-3 px-1">
                   <div className="flex items-center gap-2">
-                    <Grid2X2 size={17} className="text-[#68745f]" aria-hidden="true" />
-                    <h3 id="store-categories-heading" className="text-sm font-bold text-[#252722]">دسته‌بندی‌ها</h3>
+                    <Grid2X2 size={17} className="text-[var(--ui-accent)]" aria-hidden="true" />
+                    <h3 id="store-categories-heading" className="text-sm font-bold text-[var(--ui-text)]">دسته‌بندی‌ها</h3>
                   </div>
                   <Link
                     to="/shop"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-xs font-semibold text-[#68745f] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                    className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-xs font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                   >
                     مشاهده همه
                     <ChevronLeft size={14} aria-hidden="true" />
                   </Link>
                 </div>
-                <div className="space-y-1 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-2">
+                <div className="space-y-1 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2">
                   {navigationTree.roots.length > 0 ? navigationTree.roots.map((category) => renderNavigationCategory(category)) : (
-                    <p className="px-3 py-4 text-sm text-[#77786f]">دسته‌بندی قابل نمایشی وجود ندارد.</p>
+                    <p className="px-3 py-4 text-sm text-[var(--ui-muted)]">دسته‌بندی قابل نمایشی وجود ندارد.</p>
                   )}
                 </div>
               </section>
 
               {(isAdmin || user) && (
-                <section aria-label="حساب و مدیریت" className="space-y-2 border-t border-[#e4e0d8] pt-4">
+                <section aria-label="حساب و مدیریت" className="space-y-2 border-t border-[var(--ui-border)] pt-4">
                   {user && (
                     <Link
                       to="/orders"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                     >
                       <Truck size={17} aria-hidden="true" />
                       سفارش‌های من و رهگیری
-                      <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
+                      <ChevronLeft size={15} className="mr-auto text-[var(--ui-accent)]" aria-hidden="true" />
                     </Link>
                   )}
                   {isAdmin && (
                     <Link
                       to="/secret-dashboard?tab=categories"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex min-h-12 items-center gap-3 rounded-xl border border-[#d5d0c5] bg-[#fffefa] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                      className="flex min-h-12 items-center gap-3 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                     >
                       <FolderTree size={17} aria-hidden="true" />
                       مدیریت دسته‌بندی‌ها
-                      <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
+                      <ChevronLeft size={15} className="mr-auto text-[var(--ui-accent)]" aria-hidden="true" />
                     </Link>
                   )}
                   {isAdmin && (
                     <Link
                       to="/secret-dashboard"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex min-h-12 items-center gap-3 rounded-xl bg-[#e9ede4] px-3 py-3 text-sm font-semibold text-[#41443b] transition hover:bg-[#dfe5d6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                      className="flex min-h-12 items-center gap-3 rounded-xl bg-[var(--ui-hover)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                     >
                       <Lock size={17} aria-hidden="true" />
                       داشبورد مدیریت
-                      <ChevronLeft size={15} className="mr-auto text-[#68745f]" aria-hidden="true" />
+                      <ChevronLeft size={15} className="mr-auto text-[var(--ui-accent)]" aria-hidden="true" />
                     </Link>
                   )}
                   {user && (
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-right text-sm font-semibold text-[#8b3d34] transition hover:bg-[#f8eeeb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                      className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 py-3 text-right text-sm font-semibold text-[var(--ui-danger)] transition hover:bg-[var(--ui-danger-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                     >
                       <LogOut size={17} aria-hidden="true" />
                       خروج از حساب کاربری
@@ -1230,7 +1230,7 @@ const Navbar = () => {
                 </section>
               )}
             </div>
-            <div className="border-t border-[#e4e0d8] bg-[#fffefa]/70 px-5 py-3 text-center text-[11px] text-[#85867d]">
+            <div className="border-t border-[var(--ui-border)] bg-[#fffefa]/70 px-5 py-3 text-center text-[11px] text-[var(--ui-muted)]">
               خرید آسان، استایل ماندگار
             </div>
           </aside>
@@ -1257,15 +1257,15 @@ const Navbar = () => {
           >
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="mb-1 text-xs font-semibold tracking-[0.16em] text-[#68745f]">جست‌وجوی هوشمند</p>
-                <h2 id="mobile-search-heading" className="font-serif text-2xl font-medium text-[#252722]">دنبال چه چیزی هستید؟</h2>
-                <p className="mt-1 text-sm leading-6 text-[#77786f]">محصولات را جست‌وجو و نتیجه‌ها را فیلتر کنید.</p>
+                <p className="mb-1 text-xs font-semibold tracking-[0.16em] text-[var(--ui-accent)]">جست‌وجوی هوشمند</p>
+                <h2 id="mobile-search-heading" className="font-serif text-2xl font-medium text-[var(--ui-text)]">دنبال چه چیزی هستید؟</h2>
+                <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">محصولات را جست‌وجو و نتیجه‌ها را فیلتر کنید.</p>
               </div>
               <button
                 type="button"
                 onClick={() => { setMobileSearchOpen(false); setActiveSearchSurface(null); }}
                 aria-label="بستن پنجره جست‌وجو"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e4e0d8] bg-white text-[#62645c] transition hover:bg-[#f2f0e9] hover:text-[#252722] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -1273,8 +1273,8 @@ const Navbar = () => {
 
             <form onSubmit={applyFilters}>
               <label htmlFor="mobile-product-search" className="sr-only">نام یا توضیحات محصول</label>
-              <div className="mb-5 flex min-h-12 items-center gap-2 rounded-2xl border border-[#d5d0c5] bg-white p-1.5 transition focus-within:border-[#68745f] focus-within:ring-4 focus-within:ring-[#68745f]/10">
-                <Search size={19} className="mr-2 shrink-0 text-[#68745f]" aria-hidden="true" />
+              <div className="mb-5 flex min-h-12 items-center gap-2 rounded-2xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] p-1.5 transition focus-within:border-[var(--ui-accent)] focus-within:ring-4 focus-within:ring-[#68745f]/10">
+                <Search size={19} className="mr-2 shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
                 <input
                   ref={mobileSearchInputRef}
                   id="mobile-product-search"
@@ -1288,16 +1288,16 @@ const Navbar = () => {
                   aria-expanded={activeSearchSurface === "mobile" && suggestionQuery.length >= 2}
                   autoComplete="off"
                   placeholder="مثلاً کت، کیف، شلوار جین..."
-                  className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
+                  className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-muted)]"
                 />
               </div>
 
               {renderSearchSuggestions("mobile")}
 
-              <div className="mb-4 flex items-center gap-2 border-b border-[#e4e0d8] pb-3">
-                <SlidersHorizontal size={17} className="text-[#68745f]" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-[#252722]">فیلترها</h3>
-                <span className="text-xs text-[#85867d]">قیمت و مرتب‌سازی</span>
+              <div className="mb-4 flex items-center gap-2 border-b border-[var(--ui-border)] pb-3">
+                <SlidersHorizontal size={17} className="text-[var(--ui-accent)]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[var(--ui-text)]">فیلترها</h3>
+                <span className="text-xs text-[var(--ui-muted)]">قیمت و مرتب‌سازی</span>
               </div>
 
               {renderFilterFields()}
