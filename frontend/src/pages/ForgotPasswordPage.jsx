@@ -20,7 +20,7 @@ const ForgotPasswordPage = () => {
   };
   const field = "mt-2 w-full rounded-xl border border-[#dedbd2] bg-white px-4 py-3 text-sm text-[#252722] outline-none focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10";
   return <main className="flex min-h-screen items-center justify-center bg-[#f7f5f0] px-4 py-10 text-[#252722]">
-    <PageMeta title="بازیابی رمز عبور" description="دریافت لینک امن برای تغییر رمز عبور حساب تیک بوتیک." path="/forgot-password" />
+    <PageMeta title="بازیابی رمز عبور" description="دریافت لینک امن برای تغییر رمز عبور حساب تیک بوتیک." path="/forgot-password" robots="noindex, nofollow" />
     <section dir="rtl" className="w-full max-w-md rounded-3xl border border-[#e5e0d6] bg-[#fffefa] p-6 shadow-xl sm:p-9">
       <Link to="/" className="font-serif text-2xl font-semibold">تیک بوتیک</Link>
       <h1 className="mt-8 text-2xl font-bold">بازیابی رمز عبور</h1>

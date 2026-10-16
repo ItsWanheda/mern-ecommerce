@@ -10,7 +10,7 @@ const setMeta = (selector, attribute, key, value) => {
   if (!node) { node = document.createElement("meta"); node.setAttribute(attribute, key); document.head.appendChild(node); }
   if (value) node.setAttribute("content", String(value)); else node.removeAttribute("content");
 };
-export default function PageMeta({ title, description, image, path, type = "website", product }) {
+export default function PageMeta({ title, description, image, path, type = "website", product, robots = "index, follow" }) {
   useEffect(() => {
     const safeTitle = String(title || DEFAULT_TITLE).slice(0, 180);
     const safeDescription = String(description || DEFAULT_DESCRIPTION).replace(/\s+/g, " ").trim().slice(0, 300);
@@ -18,6 +18,7 @@ export default function PageMeta({ title, description, image, path, type = "webs
     const imageUrl = absoluteUrl(image);
     document.title = safeTitle.includes("تیک بوتیک") ? safeTitle : safeTitle + " | تیک بوتیک";
     setMeta('meta[name="description"]', "name", "description", safeDescription);
+    setMeta('meta[name="robots"]', "name", "robots", robots);
     setMeta('meta[property="og:title"]', "property", "og:title", safeTitle);
     setMeta('meta[property="og:description"]', "property", "og:description", safeDescription);
     setMeta('meta[property="og:type"]', "property", "og:type", type === "product" ? "product" : "website");
@@ -38,13 +39,13 @@ export default function PageMeta({ title, description, image, path, type = "webs
         description: String(product.description || safeDescription).slice(0, 1000),
         image: (Array.isArray(product.images) ? product.images : [product.image]).filter(Boolean).map(absoluteUrl),
         sku: product._id ? String(product._id) : undefined,
-        offers: { "@type": "Offer", priceCurrency: "IRT", price: Number(product.price), availability: product.isActive === false ? "https://schema.org/Discontinued" : "https://schema.org/InStock", url: canonicalUrl },
+        offers: { "@type": "Offer", priceCurrency: "IRR", price: Number(product.price) * 10, availability: product.isActive === false ? "https://schema.org/Discontinued" : ((Number(product.stock) > 0 || product.variants?.some((variant) => Number(variant.stock) > 0)) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"), url: canonicalUrl },
       };
       const script = document.createElement("script"); script.id = "page-jsonld"; script.type = "application/ld+json"; script.textContent = JSON.stringify(schema); document.head.appendChild(script);
     } else if (type === "campaign" && title) {
       const script = document.createElement("script"); script.id = "page-jsonld"; script.type = "application/ld+json";
       script.textContent = JSON.stringify({ "@context": "https://schema.org", "@type": "PromotionEvent", name: title, description: safeDescription, image: imageUrl || undefined, startDate: product?.startsAt, endDate: product?.endsAt, url: canonicalUrl }); document.head.appendChild(script);
     }
-  }, [title, description, image, path, type, product]);
+  }, [title, description, image, path, type, product, robots]);
   return null;
 }

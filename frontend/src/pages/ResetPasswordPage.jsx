@@ -30,10 +30,11 @@ const ResetPasswordPage = () => {
   };
   const field = "mt-2 w-full rounded-xl border border-[#dedbd2] bg-white px-4 py-3 text-sm text-[#252722] outline-none focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10";
   return <main className="flex min-h-screen items-center justify-center bg-[#f7f5f0] px-4 py-10 text-[#252722]">
-    <PageMeta title="تنظیم رمز عبور جدید" description="یک رمز عبور جدید و امن برای حساب تیک بوتیک تعیین کنید." path="/reset-password" />
+    <PageMeta title="تنظیم رمز عبور جدید" description="یک رمز عبور جدید و امن برای حساب تیک بوتیک تعیین کنید." path="/reset-password" robots="noindex, nofollow" />
     <section dir="rtl" className="w-full max-w-md rounded-3xl border border-[#e5e0d6] bg-[#fffefa] p-6 shadow-xl sm:p-9">
       <Link to="/" className="font-serif text-2xl font-semibold">تیک بوتیک</Link>
       <h1 className="mt-8 text-2xl font-bold">تنظیم رمز عبور جدید</h1>
+      {!token && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">این لینک بازیابی توکن معتبر ندارد؛ درخواست لینک تازه‌ای کنید.</p>}
       {!message && <form onSubmit={submit} className="mt-6 space-y-4">
         <label htmlFor="reset-password" className="block text-sm font-medium">رمز عبور جدید
           <span className="relative mt-2 block"><input id="reset-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={8} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)} className={field + " pl-12"} dir="ltr" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور"} aria-pressed={showPassword} className="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#77786f] hover:bg-[#e9ede4]">{showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}</button></span>
@@ -45,7 +46,6 @@ const ResetPasswordPage = () => {
         <button type="submit" disabled={loading || !token} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#252722] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <LockKeyhole size={17} aria-hidden="true" />}ذخیره رمز عبور جدید</button>
       </form>}
       {message && <div role="status" className="mt-6 space-y-3 rounded-xl bg-[#e9ede4] p-4 text-sm leading-6 text-[#41443b]"><CheckCircle2 size={19} aria-hidden="true" />{message}<Link to="/login" className="block font-semibold underline underline-offset-4">رفتن به صفحه ورود</Link></div>}
-      {error && !message && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
     </section>
   </main>;
 };
