@@ -33,9 +33,9 @@ const RouteLoadingFallback = () => (
   <div
     role="status"
     aria-live="polite"
-    className="flex min-h-[45vh] items-center justify-center px-4 py-16 text-sm text-[#77786f]"
+    className="flex min-h-[45vh] items-center justify-center px-4 py-16 text-sm text-[var(--ui-muted)]"
   >
-    <span className="ml-3 h-5 w-5 animate-spin rounded-full border-2 border-[#d9dccf] border-t-[#68745f] motion-reduce:animate-none" aria-hidden="true" />
+    <span className="ml-3 h-5 w-5 animate-spin rounded-full border-2 border-[var(--ui-border)] border-t-[var(--ui-accent)] motion-reduce:animate-none" aria-hidden="true" />
     در حال بارگذاری صفحه…
   </div>
 );
@@ -59,7 +59,7 @@ function App() {
   if (checkingAuth) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f7f5f0] text-[#252722]">
+    <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
       <div className={`relative z-50 ${isAccountPage ? "pt-0" : "pt-32 md:pt-44 min-[1680px]:pt-32"}`}>
         {!isAccountPage && <Navbar />}
         <Suspense fallback={<RouteLoadingFallback />}>
