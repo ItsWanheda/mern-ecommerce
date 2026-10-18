@@ -53,7 +53,7 @@ const categorySchema = new mongoose.Schema(
       fa: { type: String, trim: true, maxlength: 1000, default: "" },
       en: { type: String, trim: true, maxlength: 1000, default: "" },
     },
-    image: { type: String, trim: true, maxlength: 2048, default: "" },
+    image: { type: String, trim: true, maxlength: 3000000, default: "" },
     sortOrder: { type: Number, min: 0, max: 100000, default: 0 },
     isActive: { type: Boolean, default: true, index: true },
     showInNavigation: { type: Boolean, default: true },

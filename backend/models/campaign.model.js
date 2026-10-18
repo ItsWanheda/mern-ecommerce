@@ -6,7 +6,7 @@ const campaignSchema = new mongoose.Schema(
     // Missing slugs remain valid for legacy campaigns; the API falls back to their ID.
     slug: { type: String, trim: true, lowercase: true, maxlength: 140 },
     description: { type: String, default: "", trim: true, maxlength: 300 },
-    image: { type: String, default: "", trim: true, maxlength: 2048 },
+    image: { type: String, default: "", trim: true, maxlength: 7000000 },
     productIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], default: [] },
     href: {
       type: String,

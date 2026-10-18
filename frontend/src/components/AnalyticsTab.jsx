@@ -125,11 +125,11 @@ const AnalyticsTab = () => {
 export default AnalyticsTab;
 
 const AnalyticsCard = ({ title, value, icon: Icon }) => (
-  <motion.article className="relative overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-lg sm:p-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-    <div className="relative z-10">
-      <p className="text-sm font-semibold text-[var(--ui-accent)]">{title}</p>
-      <p className="mt-2 break-words text-2xl font-bold tabular-nums text-[var(--ui-text)] sm:text-3xl">{value}</p>
+  <motion.article className="relative isolate min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-lg sm:p-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+    <div className="relative z-10 flex min-w-0 flex-col gap-2 pr-1 sm:pr-0">
+      <p className="max-w-full break-words text-sm font-semibold leading-6 text-[var(--ui-accent)]">{title}</p>
+      <p className="max-w-full break-words text-xl font-bold leading-tight tabular-nums text-[var(--ui-text)] [overflow-wrap:anywhere] sm:text-3xl">{value}</p>
     </div>
-    <Icon className="absolute -bottom-4 left-3 h-20 w-20 text-[var(--ui-text)]/5" aria-hidden="true" />
+    <Icon className="pointer-events-none absolute bottom-3 left-3 h-8 w-8 text-[var(--ui-text)]/10 sm:bottom-4 sm:left-4 sm:h-10 sm:w-10" aria-hidden="true" />
   </motion.article>
 );
