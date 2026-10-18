@@ -14,12 +14,17 @@ const emptyForm = () => ({
   attributes: [],
 });
 
-const slugify = (value) => String(value || "")
-  .normalize("NFKD")
-  .toLowerCase()
-  .trim()
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-+|-+$/g, "");
+const slugify = (value) => {
+  const transliteration = {
+    "ا":"a","آ":"a","ب":"b","پ":"p","ت":"t","ث":"s","ج":"j","چ":"ch","ح":"h","خ":"kh",
+    "د":"d","ذ":"z","ر":"r","ز":"z","ژ":"zh","س":"s","ش":"sh","ص":"s","ض":"z","ط":"t","ظ":"z",
+    "ع":"a","غ":"gh","ف":"f","ق":"gh","ک":"k","گ":"g","ل":"l","م":"m","ن":"n","و":"v","ه":"h",
+    "ی":"y","ئ":"y","ء":""
+  };
+  return String(value || "").toLowerCase().trim()
+    .replace(/[آا‌بپتثجچحخدذرزژسشصضطظعغفقکگلمنوهیئء]/g, (letter) => transliteration[letter] ?? letter)
+    .normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+};
 
 const idOf = (value) => value == null ? "" : String(value);
 const labelOf = (category) => category?.name?.fa || category?.name?.en || category?.slug || "بدون نام";
@@ -125,9 +130,32 @@ const CategoryManager = () => {
       ...current,
       [group]: { ...current[group], [key]: value },
     }));
-    if (group === "name" && key === "en" && !editingId) {
+    if (group === "name" && key === "fa" && !editingId) {
       setForm((current) => ({ ...current, slug: slugify(value) }));
     }
+  };
+
+  const handleCategoryImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setNotice("لطفاً یک فایل تصویری انتخاب کنید.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setNotice("حجم تصویر دسته‌بندی باید حداکثر ۲ مگابایت باشد.");
+      event.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((current) => ({ ...current, image: String(reader.result || "") }));
+      setNotice("");
+    };
+    reader.onerror = () => setNotice("خواندن تصویر ناموفق بود؛ دوباره تلاش کنید.");
+    reader.readAsDataURL(file);
+    event.target.value = "";
   };
 
   const updateAttribute = (index, key, value) => {
@@ -165,7 +193,7 @@ const CategoryManager = () => {
       name: { fa: form.name.fa.trim(), en: form.name.en.trim() },
       slug: form.slug.trim(),
       parentId: form.parentId || null,
-      description: { fa: form.description.fa.trim(), en: form.description.en.trim() },
+      description: { fa: form.description.fa.trim(), en: "" },
       image: form.image.trim(),
       sortOrder: Number(form.sortOrder),
       isActive: Boolean(form.isActive),
@@ -268,9 +296,9 @@ const CategoryManager = () => {
             <label className={labelClass}>English name
               <input className={fieldClass} required maxLength={120} dir="ltr" value={form.name.en} onChange={(event) => updateLocalized("name", "en", event.target.value)} />
             </label>
-            <label className={labelClass}>Slug ثابت
+            <label className={labelClass}>شناسه لاتین برگرفته از نام فارسی
               <input className={fieldClass} required maxLength={96} pattern="[a-z0-9]+(-[a-z0-9]+)*" dir="ltr" disabled={Boolean(editingId)} value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase() }))} />
-              <span className="mt-1 block text-xs text-[var(--ui-muted)]">برای حفظ لینک‌های قدیمی، slug بعد از ایجاد قابل تغییر نیست.</span>
+              <span className="mt-1 block text-xs text-[var(--ui-muted)]">هنگام ایجاد، از نام فارسی به شکل لاتین ساخته می‌شود؛ شناسه دسته‌های موجود برای حفظ لینک‌ها تغییر نمی‌کند.</span>
             </label>
             <label className={labelClass}>دسته والد
               <select className={fieldClass} value={form.parentId} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value }))}>
@@ -281,16 +309,19 @@ const CategoryManager = () => {
             <label className={labelClass}>ترتیب نمایش
               <input className={fieldClass} type="number" min="0" max="100000" step="1" required value={form.sortOrder} onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))} />
             </label>
-            <label className={labelClass}>مسیر یا URL تصویر (اختیاری)
-              <input className={fieldClass} dir="ltr" maxLength={2048} placeholder="/jeans.jpg یا https://..." value={form.image} onChange={(event) => setForm((current) => ({ ...current, image: event.target.value }))} />
-            </label>
+            <div className={labelClass}>
+              تصویر دسته‌بندی (حداکثر ۲ مگابایت)
+              <input className={fieldClass} type="file" accept="image/*" onChange={handleCategoryImageChange} />
+              <span className="mt-1 block text-xs text-[var(--ui-muted)]">فرمت‌های تصویری؛ حداکثر ۲ مگابایت.</span>
+              {form.image && <div className="mt-3 flex items-center gap-3">
+                <img src={form.image} alt="پیش‌نمایش تصویر دسته‌بندی" className="h-20 w-20 rounded-xl border border-[var(--ui-border)] object-cover" />
+                <button type="button" onClick={() => setForm((current) => ({ ...current, image: "" }))} className="rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs hover:bg-[var(--ui-hover)]">حذف تصویر</button>
+              </div>}
+            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div>
             <label className={labelClass}>توضیحات فارسی
               <textarea className={fieldClass} rows={3} maxLength={1000} value={form.description.fa} onChange={(event) => updateLocalized("description", "fa", event.target.value)} />
-            </label>
-            <label className={labelClass}>English description
-              <textarea className={fieldClass} rows={3} maxLength={1000} dir="ltr" value={form.description.en} onChange={(event) => updateLocalized("description", "en", event.target.value)} />
             </label>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-[var(--ui-input-bg)] p-3 text-sm">
