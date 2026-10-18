@@ -45,6 +45,26 @@ const CampaignManager = () => {
 
   useEffect(() => { loadCampaigns(); loadProducts(); }, []);
 
+  const handleCampaignImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("لطفاً یک فایل تصویری انتخاب کنید.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("حجم تصویر کمپین باید حداکثر ۵ مگابایت باشد.");
+      event.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setForm((current) => ({ ...current, image: String(reader.result || "") }));
+    reader.onerror = () => toast.error("خواندن تصویر ناموفق بود؛ دوباره تلاش کنید.");
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
   const copyCampaignLink = async (campaign) => {
     const url = new URL(getCampaignPath(campaign), window.location.origin).toString();
     try {
@@ -142,7 +162,16 @@ const CampaignManager = () => {
             </select>
             <span className="mt-1 block text-[11px] leading-5 text-[var(--ui-muted)]">برای انتخاب چند کالا، در دسکتاپ کلید Ctrl یا Command را نگه دارید. این محصولات در صفحه اختصاصی کمپین نمایش داده می‌شوند.</span>
           </label>
-          <label className="text-sm text-[var(--ui-muted)] sm:col-span-2">تصویر کمپین (اختیاری)<input type="url" className={fieldClass} dir="ltr" placeholder="https://…" value={form.image} onChange={(event) => setForm({ ...form, image: event.target.value })} /></label>
+          <div className="text-sm text-[var(--ui-muted)] sm:col-span-2">
+            <label>بارگذاری تصویر کمپین (اختیاری، حداکثر ۵ مگابایت)
+              <input type="file" accept="image/*" className={fieldClass} onChange={handleCampaignImageChange} />
+            </label>
+            <p className="mt-1 text-xs leading-5">یک تصویر برای بنر کمپین انتخاب کنید. فرمت‌های تصویری پذیرفته می‌شوند و محدودیت حجم ۵ مگابایت است.</p>
+            {form.image && <div className="mt-3 flex flex-wrap items-center gap-3">
+              <img src={form.image} alt="پیش‌نمایش تصویر کمپین" className="h-24 max-w-full rounded-xl border border-[var(--ui-border)] object-cover" />
+              <button type="button" onClick={() => setForm((current) => ({ ...current, image: "" }))} className="rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs hover:bg-[var(--ui-hover)]">حذف تصویر</button>
+            </div>}
+          </div>
           <IranianDateTimeInput id="campaign-starts-at" label="شروع نمایش" required value={form.startsAt} onChange={(value) => setForm({ ...form, startsAt: value })} />
           <IranianDateTimeInput id="campaign-ends-at" label="پایان نمایش" required value={form.endsAt} onChange={(value) => setForm({ ...form, endsAt: value })} />
           <label className="text-sm text-[var(--ui-muted)]">ترتیب نمایش<input type="number" min="0" step="1" className={fieldClass} value={form.sortOrder} onChange={(event) => setForm({ ...form, sortOrder: event.target.value })} /></label>
