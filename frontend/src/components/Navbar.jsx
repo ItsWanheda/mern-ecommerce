@@ -882,6 +882,14 @@ const Navbar = () => {
                     ) : (
                       <>
                         <Link
+                          to="/profile"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
+                        >
+                          <UserRound size={17} aria-hidden="true" />
+                          پروفایل و نشانی‌ها
+                        </Link>
+                        <Link
                           to="/orders"
                           onClick={() => setAccountMenuOpen(false)}
                           className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"

@@ -66,6 +66,13 @@ export const useUserStore = create((set, get) => ({
 		}
 	},
 
+	updateProfile: async (name) => {
+		const response = await axios.patch("/auth/profile", { name });
+		const updatedUser = response.data?.user;
+		if (updatedUser) set((state) => ({ user: state.user ? { ...state.user, ...updatedUser } : updatedUser }));
+		return updatedUser;
+	},
+
 	refreshToken: async () => {
 		if (get().checkingAuth) return;
 

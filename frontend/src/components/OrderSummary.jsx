@@ -64,6 +64,8 @@ const OrderSummary = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState("");
   const [hasDefaultAddress, setHasDefaultAddress] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
   const [saveAddressForNextTime, setSaveAddressForNextTime] = useState(false);
   const [addressSaveMessage, setAddressSaveMessage] = useState("");
   const fieldRefs = useRef({});
@@ -73,18 +75,41 @@ const OrderSummary = () => {
   const estimatedTotal = total + Number(shipping.shippingFee || 0);
 
   useEffect(() => {
-    if (!user?._id) { setHasDefaultAddress(false); return undefined; }
+    if (!user?._id) {
+      setHasDefaultAddress(false);
+      setSavedAddresses([]);
+      setSelectedAddressId("");
+      setShippingAddress(emptyShippingAddress);
+      return undefined;
+    }
     let active = true;
     axios.get("/auth/profile").then(({ data }) => {
       if (!active) return;
-      const saved = data?.defaultShippingAddress;
-      if (!saved?.addressLine) return;
-      setHasDefaultAddress(true);
+      const legacy = data?.defaultShippingAddress;
+      const addresses = Array.isArray(data?.savedShippingAddresses) && data.savedShippingAddresses.length
+        ? data.savedShippingAddresses
+        : legacy?.addressLine ? [{ ...legacy, _id: "legacy-default", label: "نشانی پیش‌فرض", isDefault: true }] : [];
+      setSavedAddresses(addresses);
+      const preferred = addresses.find(address => address.isDefault) || addresses[0];
+      if (!preferred) return;
+      setHasDefaultAddress(Boolean(preferred.isDefault));
+      setSelectedAddressId(String(preferred._id));
       setShippingAddress(current => Object.values(current).some(value => String(value || "").trim())
-        ? current : { ...emptyShippingAddress, ...saved });
+        ? current : { ...emptyShippingAddress, ...preferred });
     }).catch(() => {});
     return () => { active = false; };
   }, [user?._id]);
+
+  const selectSavedAddress = (addressId) => {
+    setSelectedAddressId(addressId);
+    const selected = savedAddresses.find(address => String(address._id) === addressId);
+    setHasDefaultAddress(Boolean(selected?.isDefault));
+    setShippingAddress(selected ? { ...emptyShippingAddress, ...selected } : { ...emptyShippingAddress });
+    setFieldErrors({});
+    setFormError("");
+    setAddressSaveMessage("");
+    setSaveAddressForNextTime(false);
+  };
 
   const updateAddressField = (field, value) => {
     setShippingAddress(current => ({ ...current, [field]: value }));
@@ -173,8 +198,13 @@ const OrderSummary = () => {
     try {
       if (saveAddressForNextTime) {
         try {
-          await axios.patch("/auth/profile/default-address", { shippingAddress: delivery });
+          const { data: updatedAddressBook } = await axios.patch("/auth/profile/default-address", { shippingAddress: delivery });
           setHasDefaultAddress(true);
+          if (Array.isArray(updatedAddressBook?.savedShippingAddresses)) {
+            setSavedAddresses(updatedAddressBook.savedShippingAddresses);
+            const preferred = updatedAddressBook.savedShippingAddresses.find(address => address.isDefault);
+            if (preferred) setSelectedAddressId(String(preferred._id));
+          }
           setAddressSaveMessage("نشانی برای سفارش‌های بعدی ذخیره شد.");
         } catch {
           setAddressSaveMessage("نشانی ذخیره نشد؛ پرداخت بدون تغییر اطلاعات همین سفارش ادامه می‌یابد.");
@@ -249,6 +279,19 @@ const OrderSummary = () => {
             <h3 id="delivery-address-title" className="text-base font-bold text-[var(--ui-text)]">نشانی تحویل سفارش</h3>
             <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">{hasDefaultAddress ? "نشانی پیش‌فرض ذخیره‌شده وارد شد. برای ذخیره تغییرات، گزینه ذخیره برای سفارش‌های بعدی را فعال کنید." : "شماره موبایل و کد پستی را می‌توانید با ارقام فارسی یا انگلیسی وارد کنید."}</p>
           </div>
+          {savedAddresses.length > 0 && (
+            <label className="block text-sm text-[var(--ui-muted)]">
+              انتخاب از نشانی‌های ذخیره‌شده
+              <select className={addressFieldClass("savedAddress")} value={selectedAddressId} onChange={(event) => selectSavedAddress(event.target.value)}>
+                <option value="">واردکردن نشانی جدید</option>
+                {savedAddresses.map((address) => (
+                  <option key={address._id} value={String(address._id)}>
+                    {(address.label || "نشانی من") + (address.isDefault ? " · پیش‌فرض" : "") + " — " + address.city + "، " + address.province}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block text-sm text-[var(--ui-muted)]">نام و نام خانوادگی گیرنده
               <input autoComplete="name" required maxLength={100} ref={(element) => { fieldRefs.current.recipientName = element; }} aria-invalid={Boolean(fieldErrors.recipientName)} aria-describedby={fieldErrors.recipientName ? "checkout-error-recipientName" : undefined} className={addressFieldClass("recipientName")} value={shippingAddress.recipientName} onChange={(event) => updateAddressField("recipientName", event.target.value)} placeholder="نام گیرنده" />
@@ -286,7 +329,7 @@ const OrderSummary = () => {
           </label>
           <label className="flex items-start gap-2.5 text-sm text-[var(--ui-text)]">
             <input type="checkbox" className="mt-1 h-4 w-4 accent-[var(--ui-accent)]" checked={saveAddressForNextTime} onChange={(event) => { setSaveAddressForNextTime(event.target.checked); setAddressSaveMessage(""); }} />
-            <span>این نشانی را برای سفارش‌های بعدی ذخیره کن</span>
+            <span>این نشانی را برای سفارش‌های بعدی ذخیره کن و نشانی پیش‌فرض قرار بده</span>
           </label>
           {addressSaveMessage && <p role="status" className={`rounded-lg border p-3 text-xs leading-5 ${addressSaveMessage.includes("ذخیره شد") ? "border-[var(--ui-success-border)] bg-[var(--ui-success-bg)] text-[var(--ui-success)]" : "border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] text-[var(--ui-warning)]"}`}>{addressSaveMessage}</p>}
           {formError && <p role="alert" className="rounded-lg border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] p-3 text-sm leading-6 text-[var(--ui-danger)]">{formError}</p>}
