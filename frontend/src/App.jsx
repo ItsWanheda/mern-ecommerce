@@ -24,6 +24,7 @@ const NewsletterUnsubscribePage = lazy(() => import("./pages/NewsletterUnsubscri
 const PurchaseSuccessPage = lazy(() => import("./pages/PurchaseSuccessPage"));
 const PurchaseCancelPage = lazy(() => import("./pages/PurchaseCancelPage"));
 const MyOrdersPage = lazy(() => import("./pages/MyOrdersPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const CampaignPage = lazy(() => import("./pages/CampaignPage"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
@@ -80,6 +81,7 @@ function App() {
             <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" state={{ from: { pathname: "/profile" } }} />} />
             <Route path="/orders" element={user ? <MyOrdersPage /> : <Navigate to="/login" state={{ from: { pathname: "/orders" } }} />} />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/shipping-policy" element={<StoreInfoPage />} />
