@@ -63,3 +63,49 @@ function getDatesInRange(startDate, endDate) {
   }
   return dates;
 }
+
+
+const csvCell = (value) => {
+  let text = value == null ? "" : value instanceof Date ? value.toISOString() : String(value);
+  // Prevent spreadsheet formula execution when an exported field begins with a formula marker.
+  if (/^\s*[=+@-]/.test(text)) text = "'" + text;
+  return '"' + text.replace(/"/g, '""') + '"';
+};
+
+export const exportSalesCsv = async (req, res) => {
+  const requestedDays = Number(req.query.days);
+  const days = [7, 30, 90, 365].includes(requestedDays) ? requestedDays : 30;
+  try {
+    const endDate = new Date();
+    const startDate = new Date(endDate.getTime() - days * 24 * 60 * 60 * 1000);
+    const filter = { ...paidOrderMatch(startDate, endDate) };
+    const count = await Order.countDocuments(filter).maxTimeMS(2000);
+    if (count > 10000) {
+      return res.status(400).json({ message: "The selected period contains too many orders to export. Choose a shorter period." });
+    }
+    const orders = await Order.find(filter)
+      .populate("user", "name email")
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(10000)
+      .maxTimeMS(5000)
+      .lean();
+    const columns = [
+      "order_id", "created_at", "customer_name", "customer_email", "currency",
+      "payment_status", "shipment_status", "subtotal", "shipping_fee",
+      "coupon_code", "coupon_discount", "total_amount", "zarinpal_ref_id",
+    ];
+    const rows = orders.map((order) => [
+      order._id, order.createdAt, order.user?.name, order.user?.email, order.currency,
+      order.paymentStatus, order.shipmentStatus, order.subtotalAmount, order.shippingFee,
+      order.couponCode, order.couponDiscountAmount, order.totalAmount, order.zarinpalRefId,
+    ]);
+    const csv = "\uFEFF" + [columns, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="tik-boutique-sales-${days}d-${endDate.toISOString().slice(0, 10)}.csv"`);
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).send(csv);
+  } catch (error) {
+    console.error("Sales CSV export failed", { name: error?.name, message: error?.message });
+    return res.status(500).json({ message: "Sales report export failed. Please try again." });
+  }
+};

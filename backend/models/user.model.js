@@ -60,6 +60,12 @@ const userSchema = new mongoose.Schema(
 			enum: ["customer", "admin"],
 			default: "customer",
 		},
+    // Undefined preserves legacy administrator access until permissions are configured.
+    permissions: {
+      type: [{ type: String, enum: ["catalogue.manage", "orders.manage", "customers.manage", "support.manage", "reports.view", "settings.manage", "inventory.manage", "audit.view", "system.view", "roles.manage", "marketing.manage", "*"] }],
+      default: undefined,
+    },
+    isActive: { type: Boolean, default: true },
 	},
 	{
 		timestamps: true,

@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
+import { getReadinessStatus } from "./lib/readiness.js";
 
 import authRoutes from "./routes/auth.route.js";
 import productRoutes from "./routes/product.route.js";
@@ -14,6 +15,7 @@ import shippingRoutes from "./routes/shipping.route.js";
 import newsletterRoutes from "./routes/newsletter.route.js";
 import orderRoutes from "./routes/order.route.js";
 import adminRoutes from "./routes/admin.route.js";
+import serviceCaseRoutes from "./routes/service-case.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
 import { browserOriginAndCors, securityHeaders } from "./middleware/security.middleware.js";
 
@@ -25,16 +27,25 @@ app.use(securityHeaders);
 app.use(browserOriginAndCors);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
-app.get("/api/ready", (_req, res) => {
-  if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ status: "not_ready", database: "disconnected" });
-  }
-  return res.status(200).json({ status: "ready", database: "connected" });
+app.get("/api/ready", async (_req, res) => {
+  const readiness = await getReadinessStatus();
+  return res.status(readiness.status === "ready" ? 200 : 503).json(readiness);
 });
 
 // Run the broad limit before parsing request bodies. Health probes remain lightweight.
 app.use("/api", apiRateLimit);
-app.use(express.json({ limit: "10mb" }));
+
+// Keep ordinary JSON payloads small. Only content-management endpoints that may
+// carry image data URLs receive the larger, still bounded 10 MB parser.
+const largeJsonRequest = (req) => {
+  const path = req.path;
+  if (req.method === "POST" && ["/products", "/categories", "/campaigns"].includes(path)) return true;
+  if (["PUT", "PATCH"].includes(req.method) &&
+      [/^\/products\/[a-f\d]{24}$/i, /^\/categories\/[a-f\d]{24}$/i, /^\/campaigns\/[a-f\d]{24}$/i].some((pattern) => pattern.test(path))) return true;
+  return false;
+};
+app.use("/api", express.json({ limit: "10mb", type: largeJsonRequest }));
+app.use("/api", express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
@@ -49,6 +60,7 @@ app.use("/api/shipping", shippingRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/service-cases", serviceCaseRoutes);
 
 app.use("/api", (_req, res) => res.status(404).json({ message: "API route not found" }));
 app.use((error, _req, res, next) => {

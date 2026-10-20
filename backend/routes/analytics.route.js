@@ -1,9 +1,11 @@
 import express from "express";
 import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
-import { getAnalyticsData, getDailySalesData } from "../controllers/analytics.controller.js";
+import { getAnalyticsData, getDailySalesData, exportSalesCsv } from "../controllers/analytics.controller.js";
 
 const router = express.Router();
 const allowedRanges = new Set([7, 30, 90, 365]);
+
+router.get("/export", protectRoute, adminRoute, exportSalesCsv);
 
 router.get("/", protectRoute, adminRoute, async (req, res) => {
   try {
