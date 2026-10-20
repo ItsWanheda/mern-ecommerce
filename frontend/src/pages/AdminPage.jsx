@@ -1,5 +1,5 @@
 import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent, Users, LifeBuoy, Boxes } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
@@ -26,11 +26,18 @@ const groups = [
  { id:"marketing", label:"بازاریابی", items:[{id:"campaigns",label:"کمپین‌ها",icon:Megaphone},{id:"coupons",label:"کدهای تخفیف",icon:TicketPercent},{id:"newsletter",label:"خبرنامه",icon:Mail}] },
  { id:"reports-system", label:"گزارش‌ها و سامانه", items:[{id:"dashboard",label:"نمای کلی",icon:Activity},{id:"analytics",label:"آمار و تحلیل",icon:BarChart},{id:"audit",label:"تاریخچه اقدامات",icon:ScrollText},{id:"operations",label:"وضعیت سامانه",icon:Activity}] },
 ];
-const tabs = groups.flatMap(group => group.items);
 const AdminPage = () => {
  const [searchParams,setSearchParams]=useSearchParams();
  const requestedTab=searchParams.get("tab");
- const initialTab=tabs.some(tab=>tab.id===requestedTab)?requestedTab:"dashboard";
+ const [adminPermissions,setAdminPermissions]=useState(null);
+ useEffect(()=>{axios.get("/auth/profile").then(({data})=>setAdminPermissions(Array.isArray(data.permissions)?data.permissions:null)).catch(()=>setAdminPermissions(null));},[]);
+ const visibleGroups=useMemo(()=>{
+  if(!Array.isArray(adminPermissions)||adminPermissions.includes("*"))return groups;
+  const permissionByTab={dashboard:"reports.view",create:"catalogue.manage",products:"catalogue.manage",categories:"catalogue.manage",orders:"orders.manage","service-cases":"support.manage",customers:"customers.manage",inventory:"inventory.manage",shipping:"settings.manage",campaigns:"marketing.manage",coupons:"marketing.manage",newsletter:"marketing.manage",analytics:"reports.view",audit:"audit.view",operations:"system.view"};
+  return groups.map(group=>({...group,items:group.items.filter(tab=>adminPermissions.includes(permissionByTab[tab.id])||(tab.id==="customers"&&adminPermissions.includes("roles.manage")))})).filter(group=>group.items.length>0);
+ },[adminPermissions]);
+ const tabs=useMemo(()=>visibleGroups.flatMap(group=>group.items),[visibleGroups]);
+ const initialTab=tabs.some(tab=>tab.id===requestedTab)?requestedTab:(tabs.some(tab=>tab.id==="dashboard")?"dashboard":tabs[0]?.id||"dashboard");
  const [activeTab,setActiveTab]=useState(initialTab);
  const [packingCount,setPackingCount]=useState(null);
  const refreshPackingCount=useCallback(async()=>{
@@ -40,7 +47,7 @@ const AdminPage = () => {
    setPackingCount(Number.isFinite(total)&&total>=0?total:null);
   } catch { setPackingCount(null); }
  },[]);
- useEffect(()=>{setActiveTab(tabs.some(tab=>tab.id===requestedTab)?requestedTab:"dashboard");},[requestedTab]);
+ useEffect(()=>{setActiveTab(tabs.some(tab=>tab.id===requestedTab)?requestedTab:(tabs.some(tab=>tab.id==="dashboard")?"dashboard":tabs[0]?.id||"dashboard"));},[requestedTab,tabs]);
  useEffect(()=>{void refreshPackingCount();},[refreshPackingCount]);
  const selectTab=(id)=>{
   setActiveTab(id);
@@ -75,7 +82,7 @@ const AdminPage = () => {
    <div dir="rtl" className="grid items-start gap-5 md:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-7">
     <aside className="hidden md:sticky md:top-5 md:block md:max-h-[calc(100vh-2.5rem)] md:overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 xl:p-4">
      <p className="mb-3 px-3 pt-1 text-xs font-semibold text-[var(--ui-muted)]">ناوبری مدیریت</p><nav role="tablist" aria-label="بخش‌های مدیریت" aria-orientation="vertical" className="space-y-5">
-      {groups.map(group=><section key={group.id} aria-label={group.label}><h2 className="mb-2 px-3 text-[11px] font-bold tracking-wide text-[var(--ui-muted)]">{group.label}</h2><div className="space-y-1">{group.items.map(renderTab)}</div></section>)}
+      {visibleGroups.map(group=><section key={group.id} aria-label={group.label}><h2 className="mb-2 px-3 text-[11px] font-bold tracking-wide text-[var(--ui-muted)]">{group.label}</h2><div className="space-y-1">{group.items.map(renderTab)}</div></section>)}
      </nav>
     </aside>
     <section className="min-w-0" id="admin-tab-panel" role="tabpanel" aria-labelledby={"admin-tab-"+activeTab}>

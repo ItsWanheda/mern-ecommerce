@@ -41,7 +41,11 @@ const permissionForRequest = (req) => {
   if (["/api/campaigns", "/api/coupons", "/api/newsletter"].includes(base)) return "marketing.manage";
   if (base === "/api/shipping" || base === "/api/store-settings") return "settings.manage";
   if (base === "/api/admin") {
-    if (path.startsWith("/customers")) return req.method === "PATCH" && path.endsWith("/access") ? "roles.manage" : "customers.manage";
+    if (path.startsWith("/customers")) {
+      if (req.method === "PATCH" && path.endsWith("/access")) return "roles.manage";
+      if (req.user?.permissions?.includes("roles.manage")) return "roles.manage";
+      return "customers.manage";
+    }
     if (path.startsWith("/permissions")) return "roles.manage";
     if (path.startsWith("/service-cases")) return "support.manage";
     if (path.startsWith("/inventory")) return "inventory.manage";
