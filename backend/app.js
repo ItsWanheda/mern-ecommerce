@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import { getReadinessStatus } from "./lib/readiness.js";
+import { redis } from "./lib/redis.js";
 
 import authRoutes from "./routes/auth.route.js";
 import productRoutes from "./routes/product.route.js";
@@ -28,7 +29,7 @@ app.use(browserOriginAndCors);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/api/ready", async (_req, res) => {
-  const readiness = await getReadinessStatus();
+  const readiness = await getReadinessStatus({ redisClient: redis });
   return res.status(readiness.status === "ready" ? 200 : 503).json(readiness);
 });
 

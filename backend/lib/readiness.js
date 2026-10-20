@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import { redis } from "./redis.js";
-
 const databaseLabel = (readyState) => readyState === 1 ? "connected"
   : readyState === 2 ? "connecting"
   : readyState === 3 ? "disconnecting"
@@ -8,7 +6,7 @@ const databaseLabel = (readyState) => readyState === 1 ? "connected"
 
 export const getReadinessStatus = async ({
   databaseReady = mongoose.connection.readyState === 1,
-  redisClient = redis,
+  redisClient,
 } = {}) => {
   let redisStatus = "unavailable";
   try {

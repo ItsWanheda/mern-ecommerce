@@ -440,6 +440,7 @@ export const refreshToken = async (req, res) => {
   try {
     const { accessToken, refreshToken: nextRefreshToken } = generateTokens(decoded.userId);
     const rotated = await rotateStoredRefreshToken({
+      redisClient: redis,
       userId: decoded.userId,
       presentedToken,
       nextRefreshToken,
