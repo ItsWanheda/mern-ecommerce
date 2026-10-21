@@ -40,7 +40,8 @@ const waitForRedisReady = async (redisClient, timeoutMs = 6000) => {
 };
 
 export const getReadinessStatus = async ({
-  databaseReady = mongoose.connection.readyState === 1,
+  // A callback lets callers read connection state after all asynchronous probes finish.
+  databaseReady = () => mongoose.connection.readyState === 1,
   redisClient,
   logger = console,
 } = {}) => {
@@ -60,7 +61,11 @@ export const getReadinessStatus = async ({
     redisStatus = "unavailable";
   }
 
-  const database = databaseReady ? "connected" : databaseLabel(mongoose.connection.readyState);
-  const ready = Boolean(databaseReady) && redisStatus === "connected";
+  // Resolve the database state only after the Redis probe above has settled.
+  const isDatabaseReady = typeof databaseReady === "function"
+    ? Boolean(databaseReady())
+    : Boolean(databaseReady);
+  const database = isDatabaseReady ? "connected" : databaseLabel(mongoose.connection.readyState);
+  const ready = isDatabaseReady && redisStatus === "connected";
   return { status: ready ? "ready" : "not_ready", database, redis: redisStatus };
 };

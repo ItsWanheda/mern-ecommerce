@@ -43,16 +43,20 @@ app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 // Readiness must actively establish/re-establish MongoDB connectivity instead
 // of trusting the state left by a previous serverless invocation.
 app.get("/api/ready", async (_req, res) => {
-  let databaseReady = false;
   try {
     await connectDB();
-    databaseReady = mongoose.connection.readyState === 1;
   } catch (error) {
     // Deliberately omit error.message and connection details from logs.
     console.error("Database readiness check failed", safeErrorMetadata(error));
   }
 
-  const readiness = await getReadinessStatus({ databaseReady, redisClient: redis });
+  // Read the live MongoDB state after the asynchronous Redis probe. A connection
+  // that recovers during that probe must not produce "not_ready" with both
+  // dependencies reported as connected.
+  const readiness = await getReadinessStatus({
+    databaseReady: () => mongoose.connection.readyState === 1,
+    redisClient: redis,
+  });
   return res.status(readiness.status === "ready" ? 200 : 503).json(readiness);
 });
 
