@@ -23,6 +23,16 @@ import { browserOriginAndCors, securityHeaders } from "./middleware/security.mid
 
 const app = express();
 
+// Keep connection diagnostics useful without ever logging connection strings.
+const safeErrorMetadata = (error) => ({
+  name: error?.name || "Error",
+  code: typeof error?.code === "number" || typeof error?.code === "string" ? error.code : undefined,
+  codeName: typeof error?.codeName === "string" ? error.codeName : undefined,
+  labels: Array.isArray(error?.errorLabels)
+    ? error.errorLabels.filter((label) => typeof label === "string").slice(0, 5)
+    : undefined,
+});
+
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(securityHeaders);
@@ -39,10 +49,7 @@ app.get("/api/ready", async (_req, res) => {
     databaseReady = mongoose.connection.readyState === 1;
   } catch (error) {
     // Deliberately omit error.message and connection details from logs.
-    console.error("Database readiness check failed", {
-      name: error?.name || "Error",
-      code: typeof error?.code === "string" ? error.code : undefined,
-    });
+    console.error("Database readiness check failed", safeErrorMetadata(error));
   }
 
   const readiness = await getReadinessStatus({ databaseReady, redisClient: redis });
@@ -58,10 +65,7 @@ app.use("/api", async (req, res, next) => {
     await connectDB();
     return next();
   } catch (error) {
-    console.error("Database connection unavailable for API request", {
-      name: error?.name || "Error",
-      code: typeof error?.code === "string" ? error.code : undefined,
-    });
+    console.error("Database connection unavailable for API request", safeErrorMetadata(error));
     return res.status(503).json({ message: "Service temporarily unavailable" });
   }
 });
