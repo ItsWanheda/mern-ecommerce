@@ -5,6 +5,40 @@ const databaseLabel = (readyState) => readyState === 1 ? "connected"
   : readyState === 3 ? "disconnecting"
   : "disconnected";
 
+// A fresh serverless instance may still be negotiating its Redis connection.
+// With enableOfflineQueue=false, pinging immediately can fail before the client
+// reaches "ready", even if its reconnect succeeds moments later.
+const waitForRedisReady = async (redisClient, timeoutMs = 6000) => {
+  if (!redisClient) throw new Error("Redis client is not configured");
+  if (redisClient.status === "ready" || typeof redisClient.once !== "function") return;
+  if (redisClient.status === "end") throw new Error("Redis client connection has ended");
+
+  await new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      clearTimeout(timer);
+      redisClient.removeListener?.("ready", onReady);
+      redisClient.removeListener?.("end", onEnd);
+    };
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (error) reject(error);
+      else resolve();
+    };
+    const onReady = () => finish();
+    const onEnd = () => finish(new Error("Redis client connection ended before ready"));
+    const timer = setTimeout(() => finish(new Error("Redis client did not become ready before timeout")), timeoutMs);
+
+    redisClient.once("ready", onReady);
+    redisClient.once("end", onEnd);
+    // Cover the race where the client becomes ready immediately before listeners
+    // are attached.
+    if (redisClient.status === "ready") onReady();
+  });
+};
+
 export const getReadinessStatus = async ({
   databaseReady = mongoose.connection.readyState === 1,
   redisClient,
@@ -12,6 +46,7 @@ export const getReadinessStatus = async ({
 } = {}) => {
   let redisStatus = "unavailable";
   try {
+    await waitForRedisReady(redisClient);
     const response = await redisClient.ping();
     redisStatus = response === "PONG" ? "connected" : "unexpected_response";
   } catch (error) {

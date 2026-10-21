@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { EventEmitter } from "node:events";
 import { getReadinessStatus } from "../lib/readiness.js";
 
 test("readiness fails when Redis is unavailable and recovers after reconnect", async () => {
@@ -16,6 +17,27 @@ test("readiness fails when Redis is unavailable and recovers after reconnect", a
   const recovered = await getReadinessStatus({ databaseReady: true, redisClient, logger });
   assert.equal(recovered.status, "ready");
   assert.equal(recovered.redis, "connected");
+});
+
+test("readiness waits for a connecting Redis client before pinging", async () => {
+  const redisClient = new EventEmitter();
+  redisClient.status = "connecting";
+  redisClient.ping = async () => {
+    assert.equal(redisClient.status, "ready");
+    return "PONG";
+  };
+  const timer = setTimeout(() => {
+    redisClient.status = "ready";
+    redisClient.emit("ready");
+  }, 10);
+
+  const result = await getReadinessStatus({
+    databaseReady: true,
+    redisClient,
+    logger: { warn() {} },
+  });
+  clearTimeout(timer);
+  assert.deepEqual(result, { status: "ready", database: "connected", redis: "connected" });
 });
 
 test("readiness fails when MongoDB is unavailable even if Redis responds", async () => {
