@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import { getReadinessStatus } from "./lib/readiness.js";
 import { redis } from "./lib/redis.js";
+import { connectDB } from "./lib/db.js";
 
 import authRoutes from "./routes/auth.route.js";
 import productRoutes from "./routes/product.route.js";
@@ -28,9 +29,41 @@ app.use(securityHeaders);
 app.use(browserOriginAndCors);
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
+
+// Readiness must actively establish/re-establish MongoDB connectivity instead
+// of trusting the state left by a previous serverless invocation.
 app.get("/api/ready", async (_req, res) => {
-  const readiness = await getReadinessStatus({ redisClient: redis });
+  let databaseReady = false;
+  try {
+    await connectDB();
+    databaseReady = mongoose.connection.readyState === 1;
+  } catch (error) {
+    // Deliberately omit error.message and connection details from logs.
+    console.error("Database readiness check failed", {
+      name: error?.name || "Error",
+      code: typeof error?.code === "string" ? error.code : undefined,
+    });
+  }
+
+  const readiness = await getReadinessStatus({ databaseReady, redisClient: redis });
   return res.status(readiness.status === "ready" ? 200 : 503).json(readiness);
+});
+
+// Some Vercel execution paths invoke the Express app directly rather than
+// through the API wrapper. Protect database-backed routes in either case.
+app.use("/api", async (req, res, next) => {
+  if (req.path === "/health" || req.path === "/ready") return next();
+
+  try {
+    await connectDB();
+    return next();
+  } catch (error) {
+    console.error("Database connection unavailable for API request", {
+      name: error?.name || "Error",
+      code: typeof error?.code === "string" ? error.code : undefined,
+    });
+    return res.status(503).json({ message: "Service temporarily unavailable" });
+  }
 });
 
 // Run the broad limit before parsing request bodies. Health probes remain lightweight.
@@ -41,7 +74,7 @@ app.use("/api", apiRateLimit);
 const largeJsonRequest = (req) => {
   const path = req.path;
   if (req.method === "POST" && ["/products", "/categories", "/campaigns"].includes(path)) return true;
-  if (["PUT", "PATCH"].includes(req.method) &&
+  if ([ "PUT", "PATCH" ].includes(req.method) &&
       [/^\/products\/[a-f\d]{24}$/i, /^\/categories\/[a-f\d]{24}$/i, /^\/campaigns\/[a-f\d]{24}$/i].some((pattern) => pattern.test(path))) return true;
   return false;
 };
