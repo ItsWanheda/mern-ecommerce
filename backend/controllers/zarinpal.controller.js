@@ -13,6 +13,7 @@ import {
   reserveCoupon,
 } from "../lib/coupons.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
+import { hasConfiguredInventory, hasKnownFiniteStock } from "../lib/inventory-stock.js";
 
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
@@ -22,7 +23,7 @@ const apiBase = () => isSandbox()
 const startPayBase = () => isSandbox()
   ? "https://sandbox.zarinpal.com/pg/StartPay"
   : "https://www.zarinpal.com/pg/StartPay";
-const isTracked = (product) => typeof product.stock === "number" && Number.isFinite(product.stock);
+const isTracked = hasKnownFiniteStock;
 const cartProductId = (item) => item.product?.toString() || item._id?.toString();
 const optionValue = (value) => typeof value === "string" ? value.trim() : "";
 const findVariant = (product, size, color) => (product.variants || []).find((variant) =>
@@ -184,7 +185,7 @@ const finalizePaidOrder = async (paidOrder) => {
   );
 };
 
-export const reserveInventory = async (items, productsById) => {
+export const reserveInventory = async (items, productsById, { session } = {}) => {
   const reserved = [];
   const orderItems = [];
   try {
@@ -197,10 +198,13 @@ export const reserveInventory = async (items, productsById) => {
       if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 || product.isActive === false) {
         throw new Error("INVALID_CART");
       }
+      if (!hasConfiguredInventory(product)) throw new Error("UNTRACKED_INVENTORY");
+
       const hasVariant = (product.variants || []).length > 0;
       const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
-      if (hasVariant && !selectedVariant) throw new Error("INVALID_CART");
-
+      if (hasVariant && (!selectedVariant || !Number.isSafeInteger(selectedVariant.stock) || selectedVariant.stock < 0)) {
+        throw new Error("UNTRACKED_INVENTORY");
+      }
       if (hasVariant) {
         const updated = await Product.findOneAndUpdate(
           {
@@ -209,7 +213,7 @@ export const reserveInventory = async (items, productsById) => {
             variants: { $elemMatch: { size, color, stock: { $gte: quantity } } },
           },
           { $inc: { "variants.$.stock": -quantity } },
-          { new: true }
+          session ? { new: true, session } : { new: true }
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         reserved.push({ product: product._id, quantity, size, color, hasVariant: true, stockReserved: true });
@@ -218,18 +222,21 @@ export const reserveInventory = async (items, productsById) => {
         const updated = await Product.findOneAndUpdate(
           { _id: product._id, isActive: { $ne: false }, stock: { $gte: quantity } },
           { $inc: { stock: -quantity } },
-          { new: true }
+          session ? { new: true, session } : { new: true }
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         reserved.push({ product: product._id, quantity, hasVariant: false, stockReserved: true });
         orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: true });
       } else {
-        orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: false });
+        // Defense in depth: unknown inventory is not an unlimited-stock policy.
+        throw new Error("UNTRACKED_INVENTORY");
       }
     }
     return { orderItems, reserved };
   } catch (error) {
-    await releaseReservedInventory(reserved);
+    // A transaction caller owns rollback; compensating writes inside its session
+    // could otherwise duplicate the rollback.
+    if (!session) await releaseReservedInventory(reserved);
     throw error;
   }
 };
@@ -266,7 +273,8 @@ export const createZarinpalCheckout = async (req, res) => {
       const size = optionValue(item.size);
       const color = optionValue(item.color);
       if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 ||
-          !Number.isFinite(product.price) || product.price < 0 || !Number.isInteger(product.price)) return null;
+          !Number.isSafeInteger(product.price) || product.price < 0) return null;
+      if (!hasConfiguredInventory(product)) return null;
       const hasVariant = (product.variants || []).length > 0;
       const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
       if (hasVariant && (!selectedVariant || selectedVariant.stock < quantity)) return null;
