@@ -4,7 +4,11 @@ import { Link, useSearchParams } from "react-router-dom";
 
 const PurchaseCancelPage = () => {
   const [searchParams] = useSearchParams();
-  const verificationPending = searchParams.get("reason") === "verification-pending";
+  const reason = searchParams.get("reason") || "";
+  // Only show a confirmed cancellation when the backend has an authoritative
+  // terminal-unpaid result. Unknown reasons and callback errors are uncertain.
+  const confirmedFailure = reason === "payment-not-confirmed";
+  const verificationPending = !confirmedFailure;
   const orderId = searchParams.get("order_id");
   const StatusIcon = verificationPending ? Clock3 : XCircle;
 
@@ -23,12 +27,12 @@ const PurchaseCancelPage = () => {
             />
           </div>
           <h1 className={`text-2xl sm:text-3xl font-bold text-center mb-2 ${verificationPending ? "text-amber-400" : "text-red-500"}`}>
-            {verificationPending ? "وضعیت پرداخت در حال بررسی است" : "خرید لغو شد"}
+            {verificationPending ? "وضعیت پرداخت در حال بررسی است" : "پرداخت تأیید نشد"}
           </h1>
           <p className='text-gray-300 text-center mb-6'>
             {verificationPending
-              ? "درگاه پرداخت هنوز نتیجه نهایی را تأیید نکرده است. ممکن است تراکنش شما تکمیل شده باشد؛ فعلاً دوباره پرداخت نکنید."
-              : "سفارش شما لغو شده است و مبلغی از حساب شما کسر نشده است."}
+              ? "وضعیت نهایی تراکنش هنوز مشخص نیست و ممکن است پرداخت انجام شده باشد. فعلاً دوباره پرداخت نکنید؛ وضعیت سفارش را پیگیری کنید."
+              : "درگاه پرداخت نتیجه‌ای را تأیید نکرده است که بتوان بر اساس آن سفارش را پرداخت‌شده دانست."}
           </p>
           {verificationPending && orderId && (
             <div className='bg-gray-700 rounded-lg p-4 mb-6'>
