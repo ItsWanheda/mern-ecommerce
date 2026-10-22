@@ -123,6 +123,7 @@ test("signup password policy matches the backend policy for valid and invalid ex
     "Password123!",
     "Abcdefgh123!",
     "RepeatedAAAAA12!",
+    "superultrasensitivepassphrase123!",
     "QuartzMeadow8!",
     "عبارت-امن-شده-با-عدد-123!",
     "آ".repeat(30),
