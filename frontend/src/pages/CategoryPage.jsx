@@ -644,7 +644,7 @@ const CategoryPage = () => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: pageTitle, path: "/category/" + category }]} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: pageTitle, path: "/category/" + category }]} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
       <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
