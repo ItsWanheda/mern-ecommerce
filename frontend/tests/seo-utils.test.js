@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   absoluteUrlFor,
   buildProductStructuredData,
+  buildSiteStructuredData,
   canonicalUrlFor,
   canonicalUrlForQuery,
   escapeHtml,
@@ -39,6 +40,22 @@ test("pagination gets a page-specific canonical while filters stay excluded", ()
   assert.equal(hasIndexExcludedQuery({ page: "2", q: "shirt" }), true);
   assert.equal(hasIndexExcludedQuery({ sort: "newest" }), false);
   assert.equal(hasIndexExcludedQuery({ sort: "priceAsc" }), true);
+});
+
+test("organization markup uses OnlineStore and only a configured valid support contact", () => {
+  const withoutContact = buildSiteStructuredData("https://shop.example");
+  assert.equal(withoutContact[0]["@type"], "OnlineStore");
+  assert.equal(withoutContact[0].url, "https://shop.example/");
+  assert.equal(withoutContact[0].contactPoint, undefined);
+
+  const withContact = buildSiteStructuredData("https://shop.example", { supportEmail: "support@example.com" });
+  assert.deepEqual(withContact[0].contactPoint, {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: "support@example.com",
+  });
+  const invalidContact = buildSiteStructuredData("https://shop.example", { supportEmail: "not-an-email" });
+  assert.equal(invalidContact[0].contactPoint, undefined);
 });
 
 test("relative images become absolute, safe HTTP(S) URLs", () => {
