@@ -208,10 +208,13 @@ export const updateCampaign = async (req, res) => {
     if (validProducts.length !== productIds.length) {
       return res.status(400).json({ message: "One or more selected campaign products are unavailable" });
     }
-    const image = await resolveImageReference(next.image ?? "", {
-      folder: "campaigns",
-      maxBytes: 5 * 1024 * 1024,
-    });
+    const imageWasProvided = Object.prototype.hasOwnProperty.call(req.body || {}, "image");
+    const image = imageWasProvided
+      ? await resolveImageReference(next.image ?? "", {
+          folder: "campaigns",
+          maxBytes: 5 * 1024 * 1024,
+        })
+      : (current.image || "");
     current.title = next.title.trim();
     current.description = typeof next.description === "string" ? next.description.trim().slice(0, 300) : "";
     current.image = image;
