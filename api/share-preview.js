@@ -386,7 +386,6 @@ export default async function handler(req, res) {
       robots,
       type,
       productPrice: product && Number.isFinite(Number(product.price)) ? Math.round(Number(product.price) * 10) : undefined,
-      productPrice,
       structuredData,
       rootContent,
       siteOrigin,
