@@ -106,7 +106,7 @@ export const PRIVATE_ROUTE_META = {
 
 const FILTER_QUERY_KEYS = new Set([
   "q", "category", "minPrice", "maxPrice", "size", "color", "fit",
-  "brand", "inStock", "attributes", "sort", "page",
+  "brand", "inStock", "attributes", "sort",
 ]);
 
 export function normalizeSeoText(value, fallback = "", maxLength = 300) {
