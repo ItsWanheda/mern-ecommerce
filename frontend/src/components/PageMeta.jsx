@@ -75,6 +75,7 @@ export default function PageMeta({
 }) {
   const breadcrumbsKey = JSON.stringify(Array.isArray(breadcrumbs) ? breadcrumbs : []);
   const itemListKey = JSON.stringify(Array.isArray(itemList) ? itemList : []);
+  const locationSearch = typeof window !== "undefined" ? window.location.search : "";
 
   useEffect(() => {
     const runtimeSiteUrl = document.head.querySelector('meta[name="public-site-url"]')?.getAttribute("content") || "";
@@ -84,7 +85,7 @@ export default function PageMeta({
     const effectiveRobots = isSeoPreview ? "noindex, nofollow" : robots;
     const safeTitle = normalizeSeoText(title, DEFAULT_SEO_TITLE, 180);
     const safeDescription = normalizeSeoText(description, DEFAULT_SEO_DESCRIPTION, 300);
-    const currentQuery = Object.fromEntries(new URLSearchParams(window.location.search).entries());
+    const currentQuery = Object.fromEntries(new URLSearchParams(locationSearch).entries());
     const canonicalUrl = canonical
       ? canonicalUrlForQuery(path || window.location.pathname, currentQuery, siteOrigin, siteOrigin)
       : "";
@@ -157,7 +158,7 @@ export default function PageMeta({
       setMeta('meta[name="twitter:description"]', "name", "twitter:description", DEFAULT_SEO_DESCRIPTION);
       setMeta('meta[name="twitter:image"]', "name", "twitter:image", "");
     };
-  }, [title, description, image, path, type, product, robots, canonical, breadcrumbsKey, itemListKey]);
+  }, [title, description, image, path, type, product, robots, canonical, breadcrumbsKey, itemListKey, locationSearch]);
 
   return null;
 }
