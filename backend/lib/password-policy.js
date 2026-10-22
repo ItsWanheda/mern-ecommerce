@@ -7,11 +7,15 @@ const hasTraditionalComplexity = (password) =>
   /\p{N}/u.test(password) &&
   /[^A-Za-z0-9\s]/u.test(password);
 
-const hasLongPassphraseComplexity = (password) =>
-  Array.from(password).length >= 16 &&
-  /\p{L}/u.test(password) &&
-  /\p{N}/u.test(password) &&
-  /[\p{P}\p{S}]/u.test(password);
+const hasLongPassphraseComplexity = (password) => {
+  const letterWords = password.match(/\p{L}[\p{L}\p{M}]*/gu) || [];
+  const hasWordDiversity = /[A-Z]/.test(password) || letterWords.filter((word) => Array.from(word).length >= 2).length >= 3;
+  return Array.from(password).length >= 16 &&
+    /\p{L}/u.test(password) &&
+    /\p{N}/u.test(password) &&
+    /[\p{P}\p{S}]/u.test(password) &&
+    hasWordDiversity;
+};
 
 const containsCommonPasswordPattern = (password) => {
   const normalized = password.toLowerCase().normalize("NFKC").replace(/[^a-z0-9]/g, "");
