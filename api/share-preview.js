@@ -470,7 +470,7 @@ export default async function handler(req, res) {
     }
 
     shell = await shellPromise;
-    const filtered = (type === "category" || (type === "collection" && id === "shop")) && hasIndexExcludedQuery(req.query);
+    const filtered = (type === "category" || type === "collection") && hasIndexExcludedQuery(req.query);
     const missingCanonicalOrigin = !siteOrigin;
     const robots = filtered || missingCanonicalOrigin ? "noindex, follow" : "index, follow, max-image-preview:large";
     const html = renderHtmlShell(shell, {
