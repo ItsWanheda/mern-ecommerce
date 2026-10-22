@@ -56,11 +56,11 @@
     },
     {
       "source": "/shop",
-      "destination": "/api/page-shell?path=/shop"
+      "destination": "/api/share-preview?type=collection&id=shop"
     },
     {
       "source": "/campaigns",
-      "destination": "/api/page-shell?path=/campaigns"
+      "destination": "/api/share-preview?type=collection&id=campaigns"
     },
     {
       "source": "/login",
@@ -135,7 +135,7 @@
       "destination": "/api/page-shell?path=/purchase-cancel"
     },
     {
-      "source": "/:path*",
+      "source": "/((?!api/|assets/|.*\\.(?:svg|png|jpg|jpeg|webp|avif|gif|css|js|json|ico|woff2?|ttf|map|html|xml|txt|webmanifest)$).*)",
       "destination": "/api/page-shell?path=/:path*"
     }
   ]
