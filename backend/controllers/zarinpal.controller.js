@@ -324,13 +324,33 @@ export const createZarinpalCheckout = async (req, res) => {
     try {
       await session.withTransaction(async () => {
         transactionResult = null;
-        let transactionCoupon = coupon;
-        let transactionDiscount = couponDiscountAmount;
-        let transactionShippingFee = shippingFee;
-        let transactionTotal = totalToman;
+        const uniqueProductIds = [...new Set(transactionItems.map((item) => String(item.product)))];
+        const currentProducts = await Product.find({
+          _id: { $in: uniqueProductIds },
+          isActive: { $ne: false },
+        }).session(session).lean();
+        const transactionProductsById = new Map(currentProducts.map((product) => [String(product._id), product]));
+        if (transactionProductsById.size !== uniqueProductIds.length) {
+          throw new Error("INVALID_CART");
+        }
 
+        const transactionSubtotal = transactionItems.reduce((sum, item) => {
+          const currentProduct = transactionProductsById.get(String(item.product));
+          if (!currentProduct || !Number.isSafeInteger(currentProduct.price) || currentProduct.price < 0) {
+            throw new Error("INVALID_CART");
+          }
+          return sum + currentProduct.price * item.quantity;
+        }, 0);
+        if (!Number.isSafeInteger(transactionSubtotal) || transactionSubtotal < 0) {
+          const amountError = new Error("Invalid checkout amount");
+          amountError.code = "INVALID_CHECKOUT_AMOUNT";
+          throw amountError;
+        }
+
+        let transactionCoupon = null;
+        let transactionDiscount = 0;
         if (couponCode) {
-          const reservation = await reserveCoupon(couponCode, subtotal, new Date(), { session });
+          const reservation = await reserveCoupon(couponCode, transactionSubtotal, new Date(), { session });
           if (reservation.error) {
             const couponError = new Error(reservation.error);
             couponError.code = "COUPON_REJECTED";
@@ -338,17 +358,18 @@ export const createZarinpalCheckout = async (req, res) => {
           }
           transactionCoupon = reservation.coupon;
           transactionDiscount = reservation.discountAmount;
-          const transactionDiscountedSubtotal = subtotal - transactionDiscount;
-          transactionShippingFee = calculateShippingFee(transactionDiscountedSubtotal, shippingSettings);
-          transactionTotal = transactionDiscountedSubtotal + transactionShippingFee;
-          if (!Number.isSafeInteger(transactionTotal) || transactionTotal < 0) {
-            const amountError = new Error("Invalid checkout amount");
-            amountError.code = "INVALID_CHECKOUT_AMOUNT";
-            throw amountError;
-          }
         }
 
-        const reservations = await reserveInventory(transactionItems, productsById, { session });
+        const transactionDiscountedSubtotal = transactionSubtotal - transactionDiscount;
+        const transactionShippingFee = calculateShippingFee(transactionDiscountedSubtotal, shippingSettings);
+        const transactionTotal = transactionDiscountedSubtotal + transactionShippingFee;
+        if (!Number.isSafeInteger(transactionTotal) || transactionTotal < 0) {
+          const amountError = new Error("Invalid checkout amount");
+          amountError.code = "INVALID_CHECKOUT_AMOUNT";
+          throw amountError;
+        }
+
+        const reservations = await reserveInventory(transactionItems, transactionProductsById, { session });
         const [createdOrder] = await Order.create([{
           _id: checkoutOrderId,
           user: req.user._id,
@@ -356,7 +377,7 @@ export const createZarinpalCheckout = async (req, res) => {
           shippingAddress,
           shipmentStatus: "not_ready",
           totalAmount: transactionTotal,
-          subtotalAmount: subtotal,
+          subtotalAmount: transactionSubtotal,
           shippingFee: transactionShippingFee,
           currency: "IRT",
           paymentProvider: "zarinpal",
