@@ -776,7 +776,10 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
       paymentProvider: "zarinpal",
       currency: "IRT",
       paymentStatus: { $in: ["failed", "expired"] },
-      products: { $elemMatch: { stockReserved: true } },
+      $or: [
+        { products: { $elemMatch: { stockReserved: true } } },
+        { couponReservationStatus: "reserved" },
+      ],
       ...due,
     }).sort({ reconciliationNextAttemptAt: 1, createdAt: 1 }).limit(PAYMENT_RECONCILIATION_BATCH_SIZE).lean();
 
