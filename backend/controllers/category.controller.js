@@ -167,10 +167,6 @@ export const createCategory = async (req, res) => {
       : requestBody;
     const validated = validateCategoryInput(validationBody);
     if (validated.error) return res.status(400).json({ message: validated.error });
-    validated.value.image = await resolveImageReference(imageInput, {
-      folder: "categories",
-      maxBytes: 2 * 1024 * 1024,
-    });
     const parentId = requestBody.parentId || null;
     let parent = null;
     if (parentId) {
@@ -179,6 +175,10 @@ export const createCategory = async (req, res) => {
       if (!parent) return res.status(400).json({ message: "دسته‌بندی والد پیدا نشد." });
       if (!parent.isActive) return res.status(400).json({ message: "دسته‌بندی غیرفعال نمی‌تواند والد دسته جدید باشد." });
     }
+    validated.value.image = await resolveImageReference(imageInput, {
+      folder: "categories",
+      maxBytes: 2 * 1024 * 1024,
+    });
     const category = await Category.create({
       ...validated.value,
       parentId: parent?._id || null,
@@ -227,12 +227,6 @@ export const updateCategory = async (req, res) => {
       : requestBody;
     const validated = validateCategoryInput({ ...validationBody, slug: category.slug }, category.toObject());
     if (validated.error) return res.status(400).json({ message: validated.error });
-    if (imageInput !== undefined) {
-      validated.value.image = await resolveImageReference(imageInput, {
-        folder: "categories",
-        maxBytes: 2 * 1024 * 1024,
-      });
-    }
     const parentWasSent = Object.prototype.hasOwnProperty.call(requestBody, "parentId");
     let parent = category.parentId ? await Category.findById(category.parentId) : null;
     if (parentWasSent) {
@@ -245,6 +239,12 @@ export const updateCategory = async (req, res) => {
       if (parent && (idString(parent._id) === categoryId || parent.ancestors.some((ancestor) => idString(ancestor) === categoryId))) {
         return res.status(400).json({ message: "انتقال دسته باعث ایجاد چرخه در درخت می‌شود." });
       }
+    }
+    if (imageInput !== undefined) {
+      validated.value.image = await resolveImageReference(imageInput, {
+        folder: "categories",
+        maxBytes: 2 * 1024 * 1024,
+      });
     }
     const before = {
       name: category.name,
