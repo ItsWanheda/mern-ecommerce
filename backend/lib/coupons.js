@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 
@@ -74,45 +75,73 @@ export const reserveCoupon = async (codeInput, subtotal, now = new Date(), { ses
 };
 
 export const releaseCouponReservationForOrder = async (orderId) => {
-  const order = await Order.findOneAndUpdate(
-    { _id: orderId, couponReservationStatus: "reserved" },
-    { $set: { couponReservationStatus: "released" } },
-    { new: true }
-  ).select("couponCode").lean();
-  if (!order?.couponCode) return false;
+  const session = await mongoose.startSession();
+  let released = false;
+  try {
+    await session.withTransaction(async () => {
+      released = false;
+      const order = await Order.findOne({
+        _id: orderId,
+        couponReservationStatus: "reserved",
+      }).session(session).lean();
+      if (!order) return;
+      if (!order.couponCode) throw new Error("COUPON_RESERVATION_CODE_MISSING");
 
-  const result = await Coupon.updateOne(
-    { code: order.couponCode, reservedCount: { $gt: 0 } },
-    { $inc: { reservedCount: -1 } }
-  );
-  if (!result.modifiedCount) {
-    throw new Error("Coupon reservation counter could not be released");
+      const couponResult = await Coupon.updateOne(
+        { code: order.couponCode, reservedCount: { $gt: 0 } },
+        { $inc: { reservedCount: -1 } },
+        { session }
+      );
+      if (!couponResult.modifiedCount) throw new Error("COUPON_RESERVATION_COUNTER_NOT_RELEASABLE");
+
+      const orderResult = await Order.updateOne(
+        { _id: orderId, couponReservationStatus: "reserved" },
+        { $set: { couponReservationStatus: "released" } },
+        { session }
+      );
+      if (!orderResult.modifiedCount) throw new Error("COUPON_RESERVATION_STATE_CHANGED");
+      released = true;
+    });
+    return released;
+  } finally {
+    await session.endSession();
   }
-  return true;
 };
 
 export const redeemCouponReservationForOrder = async (orderId) => {
-  const order = await Order.findOneAndUpdate(
-    { _id: orderId, paymentStatus: "paid", couponReservationStatus: "reserved" },
-    { $set: { couponReservationStatus: "redeemed" } },
-    { new: true }
-  ).select("couponCode").lean();
-  if (!order?.couponCode) return false;
+  const session = await mongoose.startSession();
+  let redeemed = false;
+  try {
+    await session.withTransaction(async () => {
+      redeemed = false;
+      const order = await Order.findOne({
+        _id: orderId,
+        paymentStatus: "paid",
+        couponReservationStatus: "reserved",
+      }).session(session).lean();
+      if (!order) return;
+      if (!order.couponCode) throw new Error("COUPON_RESERVATION_CODE_MISSING");
 
-  const result = await Coupon.updateOne(
-    { code: order.couponCode, reservedCount: { $gt: 0 } },
-    { $inc: { reservedCount: -1, usageCount: 1 } }
-  );
-  if (!result.modifiedCount) {
-    await Order.updateOne(
-      { _id: orderId, couponReservationStatus: "redeemed" },
-      { $set: { couponReservationStatus: "reserved" } }
-    );
-    throw new Error("Coupon redemption counter could not be updated");
+      const couponResult = await Coupon.updateOne(
+        { code: order.couponCode, reservedCount: { $gt: 0 } },
+        { $inc: { reservedCount: -1, usageCount: 1 } },
+        { session }
+      );
+      if (!couponResult.modifiedCount) throw new Error("COUPON_RESERVATION_COUNTER_NOT_REDEEMABLE");
+
+      const orderResult = await Order.updateOne(
+        { _id: orderId, paymentStatus: "paid", couponReservationStatus: "reserved" },
+        { $set: { couponReservationStatus: "redeemed" } },
+        { session }
+      );
+      if (!orderResult.modifiedCount) throw new Error("COUPON_RESERVATION_STATE_CHANGED");
+      redeemed = true;
+    });
+    return redeemed;
+  } finally {
+    await session.endSession();
   }
-  return true;
 };
-
 export const releaseCouponReservationByCode = async (codeInput) => {
   const code = normalizeCouponCode(codeInput);
   if (!code) return false;
