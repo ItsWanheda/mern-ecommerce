@@ -4,7 +4,11 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import mongoose from "mongoose";
 import { isPasswordResetEmailConfigured, sendPasswordResetEmail } from "../lib/password-reset-email.js";
-import { rotateRefreshToken as rotateStoredRefreshToken } from "../lib/refresh-token.js";
+import {
+  rotateRefreshToken as rotateStoredRefreshToken,
+  verifyPresentedRefreshToken,
+  isRefreshAccountActive,
+} from "../lib/refresh-token.js";
 
 const generateTokens = (userId) => {
 	const accessToken = jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -72,6 +76,10 @@ export const login = async (req, res) => {
 		const user = await User.findOne({ email });
 
 		if (user && (await user.comparePassword(password))) {
+      if (!isRefreshAccountActive(user)) {
+        return res.status(403).json({ message: "This account is inactive. Contact support." });
+      }
+
 			const { accessToken, refreshToken } = generateTokens(user._id);
 			await storeRefreshToken(user._id, refreshToken);
 			setCookies(res, accessToken, refreshToken);
@@ -422,22 +430,42 @@ export const logout = async (req, res) => {
 // can replace it, so parallel/replayed refresh requests cannot both succeed.
 export const refreshToken = async (req, res) => {
   const presentedToken = req.cookies?.refreshToken;
-  if (!presentedToken) return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
+  if (!presentedToken) {
+    return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
+  }
 
   let decoded;
   try {
-    decoded = jwt.verify(presentedToken, process.env.REFRESH_TOKEN_SECRET);
+    decoded = verifyPresentedRefreshToken(presentedToken, process.env.REFRESH_TOKEN_SECRET);
   } catch (error) {
-    if (["TokenExpiredError", "JsonWebTokenError", "NotBeforeError"].includes(error?.name)) {
+    console.error("Refresh token verification failed", { name: error?.name, code: error?.code });
+    return res.status(500).json({ message: "Unable to refresh session" });
+  }
+  if (!decoded) {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
+  }
+
+  try {
+    const user = await User.findById(decoded.userId).select("_id isActive");
+    if (!isRefreshAccountActive(user)) {
+      try {
+        await redis.del(`refresh_token:${decoded.userId}`);
+      } catch (error) {
+        console.warn("Unable to revoke refresh token for inactive account", {
+          name: error?.name || "Error",
+          code: typeof error?.code === "string" ? error.code : undefined,
+        });
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
+        return res.status(503).json({ message: "Session service is temporarily unavailable. Please try again." });
+      }
       res.clearCookie("accessToken");
       res.clearCookie("refreshToken");
       return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
     }
-    console.error("Refresh token verification failed", { name: error?.name, message: error?.message });
-    return res.status(500).json({ message: "Unable to refresh session" });
-  }
 
-  try {
     const { accessToken, refreshToken: nextRefreshToken } = generateTokens(decoded.userId);
     const rotated = await rotateStoredRefreshToken({
       redisClient: redis,
@@ -453,7 +481,7 @@ export const refreshToken = async (req, res) => {
     setCookies(res, accessToken, nextRefreshToken);
     return res.json({ message: "Session refreshed successfully" });
   } catch (error) {
-    console.error("Refresh token rotation failed", { name: error?.name, message: error?.message });
+    console.error("Refresh token rotation failed", { name: error?.name, code: error?.code });
     return res.status(503).json({ message: "Session service is temporarily unavailable. Please try again." });
   }
 };

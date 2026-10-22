@@ -76,7 +76,7 @@ const AdminPage = () => {
    </motion.header>
    <div className="mb-5 md:hidden"><label htmlFor="admin-mobile-nav" className="mb-2 block text-xs font-semibold text-[var(--ui-muted)]">رفتن به بخش</label>
     <select id="admin-mobile-nav" value={activeTab} onChange={event=>selectTab(event.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25">
-     {groups.map(group=><optgroup key={group.id} label={group.label}>{group.items.map(tab=><option key={tab.id} value={tab.id}>{tab.label}{tab.id==="orders"&&packingCount>0?" ("+new Intl.NumberFormat("fa-IR").format(packingCount)+")":""}</option>)}</optgroup>)}
+     {visibleGroups.map(group=><optgroup key={group.id} label={group.label}>{group.items.map(tab=><option key={tab.id} value={tab.id}>{tab.label}{tab.id==="orders"&&packingCount>0?" ("+new Intl.NumberFormat("fa-IR").format(packingCount)+")":""}</option>)}</optgroup>)}
     </select>
    </div>
    <div dir="rtl" className="grid items-start gap-5 md:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-7">

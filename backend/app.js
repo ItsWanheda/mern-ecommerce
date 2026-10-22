@@ -38,6 +38,12 @@ app.set("trust proxy", 1);
 app.use(securityHeaders);
 app.use(browserOriginAndCors);
 
+// Rate-limit before readiness/database middleware can trigger connection attempts.
+app.use("/api", (req, res, next) => {
+  if (req.path === "/health") return next();
+  return apiRateLimit(req, res, next);
+});
+
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 
 // Readiness must actively establish/re-establish MongoDB connectivity instead
@@ -74,9 +80,7 @@ app.use("/api", async (req, res, next) => {
   }
 });
 
-// Run the broad limit before parsing request bodies. Health probes remain lightweight.
-app.use("/api", apiRateLimit);
-
+// Request bodies are parsed only after rate limiting and database availability checks.
 // Keep ordinary JSON payloads small. Only content-management endpoints that may
 // carry image data URLs receive the larger, still bounded 10 MB parser.
 const largeJsonRequest = (req) => {

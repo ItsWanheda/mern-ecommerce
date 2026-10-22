@@ -6,6 +6,8 @@ import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 import ServiceCase from "../models/service-case.model.js";
 import { redis } from "../lib/redis.js";
+import { getKnownProductStock } from "../lib/inventory-stock.js";
+import { hasAdministratorManagementAccess, canPreserveAdministratorManagement } from "../lib/admin-permissions.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -124,21 +126,44 @@ export const updateCustomerAccess = async (req, res) => {
     const nextRole = role ?? target.role;
     const nextActive = isActive ?? target.isActive !== false;
     const nextPermissions = permissions ?? target.permissions;
-    if (nextRole === "admin" && (!Array.isArray(nextPermissions) || (!nextPermissions.includes("*") && !nextPermissions.includes("roles.manage")))) {
-      return res.status(400).json({ message: "Administrators must retain permission to manage administrator access" });
-    }
     if (String(target._id) === String(req.user._id) && (nextRole !== "admin" || !nextActive || (Array.isArray(nextPermissions) && !nextPermissions.includes("*") && !nextPermissions.includes("roles.manage")))) {
       return res.status(409).json({ message: "You cannot remove your own administrator access" });
     }
+
+    const targetKeepsManagementAccess = hasAdministratorManagementAccess(nextRole, nextActive, nextPermissions);
+    if (!targetKeepsManagementAccess) {
+      const otherActiveAdmins = await User.find({
+        _id: { $ne: target._id }, role: "admin", isActive: { $ne: false },
+      }).select("permissions").lean();
+      if (!canPreserveAdministratorManagement({ nextRole, nextActive, nextPermissions, otherActiveAdmins })) {
+        return res.status(409).json({ message: "At least one active administrator must retain permission to manage administrator access" });
+      }
+    }
+
     if (target.role === "admin" && (nextRole !== "admin" || !nextActive)) {
       const activeAdmins = await User.countDocuments({ role: "admin", isActive: { $ne: false } });
       if (activeAdmins <= 1) return res.status(409).json({ message: "At least one active administrator must remain" });
+    }
+
+    const isDisablingAccount = nextActive === false;
+    if (isDisablingAccount && target.isActive !== false) {
+      await redis.del(`refresh_token:${target._id}`);
     }
     target.role = nextRole;
     target.isActive = nextActive;
     if (nextRole === "customer") target.permissions = undefined;
     else if (permissions !== undefined) target.permissions = permissions;
     await target.save();
+    if (isDisablingAccount) {
+      try {
+        await redis.del(`refresh_token:${target._id}`);
+      } catch (error) {
+        console.warn("Unable to repeat refresh-token revocation after deactivation", {
+          name: error?.name || "Error",
+          code: typeof error?.code === "string" ? error.code : undefined,
+        });
+      }
+    }
     await recordAuditEvent(req, {
       action: "customer.access_updated", targetType: "user", targetId: target._id,
       summary: "Customer account access updated",
@@ -157,12 +182,8 @@ export const getInventoryAlerts = async (req, res) => {
     const products = await Product.find({ isActive: { $ne: false } })
       .select("name image stock variants category price").sort({ createdAt: -1 }).limit(500).maxTimeMS(2500).lean();
     const alerts = products.map((product) => {
-      const variants = Array.isArray(product.variants) ? product.variants : [];
-      const variantStock = variants.filter((variant) => Number.isFinite(Number(variant.stock)));
-      const totalStock = variants.length
-        ? (variantStock.length ? variantStock.reduce((sum, variant) => sum + Math.max(0, Number(variant.stock) || 0), 0) : null)
-        : Number(product.stock);
-      return { ...product, totalStock: Number.isFinite(totalStock) ? totalStock : null, lowStock: Number.isFinite(totalStock) && totalStock <= threshold };
+      const totalStock = getKnownProductStock(product);
+      return { ...product, totalStock, lowStock: totalStock !== null && totalStock <= threshold };
     }).filter((product) => product.lowStock);
     return res.json({ threshold, alerts, scannedProducts: products.length, capped: products.length === 500 });
   } catch (error) {
