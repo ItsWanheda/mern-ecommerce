@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Campaign from "../models/campaign.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { ImageUploadError, ImageStorageError, resolveImageReference } from "../lib/image-upload.js";
 
 const persianSlugCharacters = {
   "آ": "a", "أ": "a", "إ": "e", "ا": "a", "ب": "b", "پ": "p", "ت": "t", "ث": "s",
@@ -131,13 +132,17 @@ export const createCampaign = async (req, res) => {
     if (validProducts.length !== productIds.length) {
       return res.status(400).json({ message: "One or more selected campaign products are unavailable" });
     }
+    const image = await resolveImageReference(req.body.image ?? "", {
+      folder: "campaigns",
+      maxBytes: 5 * 1024 * 1024,
+    });
     const campaignId = new mongoose.Types.ObjectId();
     const campaign = await Campaign.create({
       _id: campaignId,
       slug: createCampaignSlug(req.body.title.trim(), campaignId),
       title: req.body.title.trim(),
       description: typeof req.body.description === "string" ? req.body.description.trim().slice(0, 300) : "",
-      image: typeof req.body.image === "string" ? req.body.image.trim().slice(0, 2048) : "",
+      image,
       href: req.body.href.trim(),
       startsAt: req.body.startsAt ? new Date(req.body.startsAt) : new Date(),
       endsAt: new Date(req.body.endsAt),
@@ -169,6 +174,8 @@ export const createCampaign = async (req, res) => {
     });
     return res.status(201).json({ campaign });
   } catch (error) {
+    if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
+    if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     console.error("Error creating campaign", error.message);
     return res.status(500).json({ message: "Unable to create campaign" });
   }
@@ -201,9 +208,13 @@ export const updateCampaign = async (req, res) => {
     if (validProducts.length !== productIds.length) {
       return res.status(400).json({ message: "One or more selected campaign products are unavailable" });
     }
+    const image = await resolveImageReference(next.image ?? "", {
+      folder: "campaigns",
+      maxBytes: 5 * 1024 * 1024,
+    });
     current.title = next.title.trim();
     current.description = typeof next.description === "string" ? next.description.trim().slice(0, 300) : "";
-    current.image = typeof next.image === "string" ? next.image.trim().slice(0, 2048) : "";
+    current.image = image;
     current.href = next.href.trim();
     current.startsAt = new Date(next.startsAt);
     current.endsAt = new Date(next.endsAt);
@@ -235,6 +246,8 @@ export const updateCampaign = async (req, res) => {
     });
     return res.json({ campaign: current });
   } catch (error) {
+    if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
+    if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid campaign ID" });
     console.error("Error updating campaign", error.message);
     return res.status(500).json({ message: "Unable to update campaign" });
