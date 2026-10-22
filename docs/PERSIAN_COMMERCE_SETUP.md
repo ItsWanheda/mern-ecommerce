@@ -70,9 +70,9 @@ A typical self-hosted deployment has a Node.js backend service, MongoDB, a priva
 
 The repository still contains optional Vercel configuration for deployments that use Vercel. Those files do not configure cron jobs on an Iranian VPS, control panel, or other hosting provider.
 
-## 5. Frequent payment reconciliation (needed on every host)
+## 5. Frequent payment reconciliation (required on every host)
 
-**Yes: regular reconciliation is a general application requirement, not a Vercel-only requirement.** The payment callback and browser redirect do not guarantee that the backend receives every result. Reconciliation reviews expired pending orders, verifies payments when an authority is available, retries incomplete paid-order cleanup, and releases inventory from orders that can safely expire.
+**Reconciliation must run about every five minutes in production.** The payment callback can be missed, provider responses can time out, and successful payments can need finalization recovery.
 
 The endpoint is:
 
@@ -81,11 +81,24 @@ GET /api/payments/reconcile-pending
 Authorization: Bearer <CRON_SECRET>
 ```
 
-A scheduler must run this endpoint regularly. Vercel may use its own cron configuration; a self-hosted Iranian server should use a Linux cron job, systemd timer, or the scheduler supplied by the hosting provider. A five-minute interval is a reasonable initial target to test and tune based on order volume and the gateway's response times.
+### Vercel deployment using GitHub Actions
 
-### Self-hosted scheduler
+The repository uses `.github/workflows/reconcile-payments.yml` as its default five-minute scheduler. The backend's `vercel.json` intentionally does not configure Vercel Cron: Vercel Hobby plans support only daily schedules, which is not frequent enough for payment reconciliation. Pro/Enterprise Vercel Cron is an alternative if preferred; do not enable both schedules without accounting for duplicate invocations.
 
-The repository includes `scripts/reconcile-pending-payments.mjs`. Put the following values in a root-owned environment file such as `/etc/mern-ecommerce/reconcile.env`, readable only by the service administrator:
+Configure these **GitHub Actions repository secrets** at **Settings → Secrets and variables → Actions**:
+
+- `PAYMENTS_API_URL`: the backend's public HTTPS origin, without a trailing slash or `/api` suffix (for example, `https://your-api.example.ir`).
+- `CRON_SECRET`: the same long random secret configured for the backend's `CRON_SECRET`.
+
+The workflow calls the endpoint every five minutes and also supports manual execution through `workflow_dispatch`. It fails when the endpoint returns a non-200 response or a result whose `success` field is not `true`. Review the Actions run history and logs after configuration. GitHub scheduled workflows are best-effort and can be delayed; if reconciliation has a strict timing objective, use a managed scheduler with a suitable service-level guarantee.
+
+Do not put `CRON_SECRET` into repository files, workflow text, query parameters, or command-line arguments. The workflow sends it in the Authorization header.
+
+### Self-hosted scheduler alternative
+
+For an Iranian VPS or another host, use a Linux cron job, systemd timer, or hosting-provider scheduler instead. If using this option, disable the GitHub Actions schedule to avoid duplicate routine invocations. A five-minute interval is the starting target; verify runtime, volume, and backlog behavior before production.
+
+The repository includes `scripts/reconcile-pending-payments.mjs`. Put these values in a root-owned environment file such as `/etc/mern-ecommerce/reconcile.env`, readable only by the service administrator:
 
 ```dotenv
 API_URL=https://api.example.ir
@@ -98,10 +111,10 @@ Then add a cron entry after replacing paths for your server:
 */5 * * * * set -a; . /etc/mern-ecommerce/reconcile.env; set +a; /usr/bin/node /var/www/mern-ecommerce/scripts/reconcile-pending-payments.mjs >> /var/log/mern-ecommerce-reconciliation.log 2>&1
 ```
 
-Secure the environment file (for example, owner root and mode `0600`), create/rotate the log with suitable permissions, and monitor non-zero job exits and unresolved orders. Avoid putting the secret directly into command-line arguments or logs. If your hosting platform offers scheduled tasks, configure the same endpoint and authorization header there instead.
+Secure the environment file (for example, owner root and mode `0600`), rotate the log with suitable permissions, and monitor non-zero job exits and unresolved orders. The scheduler is not embedded in the Express process; deploying the API alone does not start a self-hosted scheduler.
 
-The schedule is not embedded in the ordinary Express process. Deploying the app alone does not start reconciliation. Also verify the endpoint actually runs successfully after deployment; a configured cron entry is not proof of successful recovery.
-
+The reconciliation endpoint uses a Redis distributed lock, bounded batches, and persisted retry/backoff state to prevent overlapping runs and avoid letting repeatedly failing records starve newer work. Confirm that the scheduler is running and that unresolved payment counts actually decrease after a sandbox recovery scenario.
+ 
 ## 6. Existing order index and payment metadata migration
 
 On a database used by an earlier checkout implementation, the orders collection may still contain an obsolete unique index and provider-specific metadata. Those remnants can block inserts or cause old amounts to be misrepresented after the application has switched to its single IRT/Zarinpal policy.
