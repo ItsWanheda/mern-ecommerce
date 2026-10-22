@@ -16,7 +16,7 @@ test("password policy accepts a long mixed password and a long Unicode passphras
 });
 
 test("password policy rejects inputs exceeding bcrypt's effective UTF-8 byte limit", () => {
-  assert.match(getPasswordPolicyError("آ".repeat(30)), /۷۲ بایت/);
+  assert.match(getPasswordPolicyError("آ".repeat(40)), /۷۲ بایت/);
 });
 
 test("password policy handles missing and non-string values safely", () => {
