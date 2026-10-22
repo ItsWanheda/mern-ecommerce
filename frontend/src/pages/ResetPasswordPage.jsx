@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, LoaderCircle, CheckCircle2 } from "lucide-react";
 import axios from "../lib/axios";
 import PageMeta from "../components/PageMeta";
+import { getPasswordPolicyError } from "../lib/password-policy";
 
 const ResetPasswordPage = () => {
   const [params] = useSearchParams();
@@ -18,7 +19,8 @@ const ResetPasswordPage = () => {
     event.preventDefault(); setMessage(""); setError("");
     if (!token) { setError("لینک بازیابی معتبر نیست یا توکن آن وجود ندارد."); return; }
     if (password !== confirm) { setError("تکرار رمز عبور یکسان نیست."); return; }
-    if (password.length < 8) { setError("رمز عبور باید دست‌کم ۸ نویسه داشته باشد."); return; }
+    const passwordError = getPasswordPolicyError(password);
+    if (passwordError) { setError(passwordError); return; }
     setLoading(true);
     try {
       const response = await axios.post("/auth/reset-password", { token, password });
@@ -37,10 +39,11 @@ const ResetPasswordPage = () => {
       {!token && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">این لینک بازیابی توکن معتبر ندارد؛ درخواست لینک تازه‌ای کنید.</p>}
       {!message && <form onSubmit={submit} className="mt-6 space-y-4">
         <label htmlFor="reset-password" className="block text-sm font-medium">رمز عبور جدید
-          <span className="relative mt-2 block"><input id="reset-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={8} maxLength={128} required value={password} onChange={(event) => setPassword(event.target.value)} className={field + " pl-12"} dir="ltr" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور"} aria-pressed={showPassword} className="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#77786f] hover:bg-[#e9ede4]">{showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}</button></span>
+          <span className="relative mt-2 block"><input id="reset-password" name="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={12} maxLength={64} required value={password} onChange={(event) => setPassword(event.target.value)} className={field + " pl-12"} dir="ltr" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور"} aria-pressed={showPassword} className="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#77786f] hover:bg-[#e9ede4]">{showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}</button></span>
+          <span className="mt-2 block text-xs leading-5 text-[#77786f]">حداقل ۱۲ نویسه با حروف کوچک و بزرگ انگلیسی، عدد و نماد؛ یا عبارت طولانی حداقل ۱۶ نویسه‌ای شامل حرف، عدد و نماد.</span>
         </label>
         <label htmlFor="reset-password-confirm" className="block text-sm font-medium">تکرار رمز عبور
-          <span className="relative mt-2 block"><input id="reset-password-confirm" name="confirmPassword" type={showConfirm ? "text" : "password"} autoComplete="new-password" minLength={8} maxLength={128} required value={confirm} onChange={(event) => setConfirm(event.target.value)} className={field + " pl-12"} dir="ltr" /><button type="button" onClick={() => setShowConfirm((value) => !value)} aria-label={showConfirm ? "پنهان کردن تکرار رمز عبور" : "نمایش تکرار رمز عبور"} aria-pressed={showConfirm} className="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#77786f] hover:bg-[#e9ede4]">{showConfirm ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}</button></span>
+          <span className="relative mt-2 block"><input id="reset-password-confirm" name="confirmPassword" type={showConfirm ? "text" : "password"} autoComplete="new-password" minLength={12} maxLength={64} required value={confirm} onChange={(event) => setConfirm(event.target.value)} className={field + " pl-12"} dir="ltr" /><button type="button" onClick={() => setShowConfirm((value) => !value)} aria-label={showConfirm ? "پنهان کردن تکرار رمز عبور" : "نمایش تکرار رمز عبور"} aria-pressed={showConfirm} className="absolute left-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#77786f] hover:bg-[#e9ede4]">{showConfirm ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}</button></span>
         </label>
         {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         <button type="submit" disabled={loading || !token} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#252722] px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{loading ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <LockKeyhole size={17} aria-hidden="true" />}ذخیره رمز عبور جدید</button>
