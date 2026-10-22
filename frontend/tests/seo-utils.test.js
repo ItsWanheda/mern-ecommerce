@@ -11,7 +11,7 @@ import {
   normalizeSeoText,
   hasIndexExcludedQuery,
 } from "../src/lib/seo-utils.js";
-import { renderHtmlShell } from "../../seo/server-utils.js";
+import { getCanonicalOrigin, renderHtmlShell } from "../../seo/server-utils.js";
 
 test("SEO text collapses whitespace without damaging Persian text", () => {
   assert.equal(normalizeSeoText("  پیراهن\n\n   آبی  ", "fallback", 100), "پیراهن آبی");
@@ -56,6 +56,27 @@ test("organization markup uses OnlineStore and only a configured valid support c
   });
   const invalidContact = buildSiteStructuredData("https://shop.example", { supportEmail: "not-an-email" });
   assert.equal(invalidContact[0].contactPoint, undefined);
+});
+
+test("server canonicals fail closed unless a production origin is known", () => {
+  const keys = ["PUBLIC_SITE_URL", "VERCEL_PROJECT_PRODUCTION_URL", "VERCEL_ENV"];
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  try {
+    delete process.env.PUBLIC_SITE_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    process.env.VERCEL_ENV = "production";
+    assert.equal(getCanonicalOrigin("https://arbitrary-host.example"), "");
+
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "shop.example";
+    assert.equal(getCanonicalOrigin("https://preview.example"), "https://shop.example");
+    process.env.PUBLIC_SITE_URL = "https://www.shop.example/";
+    assert.equal(getCanonicalOrigin("https://preview.example"), "https://www.shop.example");
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
 });
 
 test("relative images become absolute, safe HTTP(S) URLs", () => {
