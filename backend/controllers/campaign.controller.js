@@ -218,13 +218,21 @@ export const updateCampaign = async (req, res) => {
       return res.status(400).json({ message: "One or more selected campaign products are unavailable" });
     }
     const imageWasProvided = Object.prototype.hasOwnProperty.call(req.body || {}, "image");
-    const image = imageWasProvided
-      ? await resolveImageReference(next.image ?? "", {
+    // Older campaign records may contain the previously truncated Base64 string.
+    // Preserve it for non-image edits so toggling campaign status still works;
+    // a newly selected data URL is validated and stored normally.
+    const unchangedLegacyDataUrl = imageWasProvided &&
+      typeof next.image === "string" &&
+      next.image.startsWith("data:") &&
+      next.image === current.image;
+    const image = !imageWasProvided || unchangedLegacyDataUrl
+      ? (current.image || "")
+      : await resolveImageReference(next.image ?? "", {
           folder: "campaigns",
           maxBytes: 5 * 1024 * 1024,
-        })
-      : (current.image || "");
-    if (imageWasProvided && typeof next.image === "string" && next.image.startsWith("data:")) pendingUploadedImage = image;
+        });
+    if (imageWasProvided && !unchangedLegacyDataUrl &&
+        typeof next.image === "string" && next.image.startsWith("data:")) pendingUploadedImage = image;
     current.title = next.title.trim();
     current.description = typeof next.description === "string" ? next.description.trim().slice(0, 300) : "";
     current.image = image;
