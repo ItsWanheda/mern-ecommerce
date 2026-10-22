@@ -116,6 +116,44 @@ export const validateImageDataUrl = (value, maxBytes = 2 * 1024 * 1024) => {
   return { buffer, mime, format: MIME_FORMATS[mime], width: dimensions.width, height: dimensions.height };
 };
 
+export const getManagedCloudinaryPublicId = (
+  value,
+  { cloudName = process.env.CLOUDINARY_CLOUD_NAME, folder } = {}
+) => {
+  if (typeof value !== "string" || !cloudName || !folder) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.hostname !== "res.cloudinary.com" || url.username || url.password) return null;
+
+    const segments = url.pathname.split("/").filter(Boolean);
+    if (segments[0] !== cloudName || segments[1] !== "image" || segments[2] !== "upload") return null;
+
+    let assetSegments = segments.slice(3);
+    if (assetSegments[0] && /^v\d+$/.test(assetSegments[0])) assetSegments = assetSegments.slice(1);
+    // Transformed URLs are deliberately ignored: these paths are not guaranteed
+    // to map one-to-one to an uploaded source asset.
+    if (assetSegments.some((segment) => /^v\d+$/.test(segment))) return null;
+    if (!assetSegments.length || assetSegments[0] !== folder || assetSegments.some((part) => part === "." || part === "..")) return null;
+
+    const last = assetSegments[assetSegments.length - 1];
+    assetSegments[assetSegments.length - 1] = last.replace(/\.(?:jpe?g|png|webp|gif)$/i, "");
+    const publicId = assetSegments.map((part) => decodeURIComponent(part)).join("/");
+    return publicId && !publicId.includes("\\") && !publicId.includes("\0") ? publicId : null;
+  } catch {
+    return null;
+  }
+};
+
+export const deleteManagedCloudinaryImage = async (
+  value,
+  { folder, cloudName = process.env.CLOUDINARY_CLOUD_NAME, uploader = cloudinary.uploader } = {}
+) => {
+  const publicId = getManagedCloudinaryPublicId(value, { cloudName, folder });
+  if (!publicId) return false;
+  const result = await uploader.destroy(publicId, { resource_type: "image", invalidate: true });
+  return result?.result === "ok" || result?.result === "not found";
+};
+
 export const resolveImageReference = async (
   value,
   { folder, maxBytes = 2 * 1024 * 1024, uploader = cloudinary.uploader } = {}
