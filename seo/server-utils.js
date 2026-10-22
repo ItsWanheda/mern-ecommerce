@@ -20,7 +20,17 @@ export function getRequestOrigin(req) {
 }
 
 export function getCanonicalOrigin(requestOrigin) {
-  return canonicalOrigin(requestOrigin, process.env.PUBLIC_SITE_URL || "");
+  const configuredPublicUrl = String(process.env.PUBLIC_SITE_URL || "").trim();
+  const productionDomain = String(process.env.VERCEL_PROJECT_PRODUCTION_URL || "").trim();
+  const configuredOrigin = configuredPublicUrl ||
+    (productionDomain
+      ? (/^https?:\/\//i.test(productionDomain) ? productionDomain : "https://" + productionDomain)
+      : "");
+
+  // Do not create indexable preview-domain canonicals when Vercel has not
+  // supplied a stable production host and no explicit public URL was configured.
+  if (!configuredOrigin && process.env.VERCEL_ENV === "preview") return "";
+  return canonicalOrigin(requestOrigin, configuredOrigin);
 }
 
 export function resolveApiBase(_req, requestOrigin) {
