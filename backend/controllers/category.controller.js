@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Category from "../models/category.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
-import { ImageUploadError, ImageStorageError, resolveImageReference } from "../lib/image-upload.js";
+import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
 
 const objectIdPattern = /^[a-f\d]{24}$/i;
 const localized = (value, previous = {}) => ({
@@ -159,6 +159,7 @@ export const getAdminCategories = async (_req, res) => {
 };
 
 export const createCategory = async (req, res) => {
+  let pendingUploadedImage = "";
   try {
     const requestBody = req.body || {};
     const imageInput = requestBody.image;
@@ -179,11 +180,13 @@ export const createCategory = async (req, res) => {
       folder: "categories",
       maxBytes: 2 * 1024 * 1024,
     });
+    if (typeof imageInput === "string" && imageInput.startsWith("data:")) pendingUploadedImage = validated.value.image;
     const category = await Category.create({
       ...validated.value,
       parentId: parent?._id || null,
       ancestors: parent ? [...parent.ancestors, parent._id] : [],
     });
+    pendingUploadedImage = "";
     await recordAuditEvent(req, {
       action: "category.created", targetType: "category", targetId: category._id,
       summary: "Category created: " + (category.name?.fa || category.slug),
@@ -203,6 +206,11 @@ export const createCategory = async (req, res) => {
     });
     return res.status(201).json({ category });
   } catch (error) {
+    if (pendingUploadedImage) {
+      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "categories" }).catch((cleanupError) => {
+        console.error("Uploaded category image cleanup failed", { name: cleanupError?.name || "Error" });
+      });
+    }
     if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
     if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error?.code === 11000) return res.status(409).json({ message: "این slug قبلاً استفاده شده است." });
@@ -213,6 +221,7 @@ export const createCategory = async (req, res) => {
 };
 
 export const updateCategory = async (req, res) => {
+  let pendingUploadedImage = "";
   try {
     if (!objectIdPattern.test(String(req.params.id))) return res.status(400).json({ message: "شناسه دسته‌بندی معتبر نیست." });
     const category = await Category.findById(req.params.id);
@@ -245,6 +254,7 @@ export const updateCategory = async (req, res) => {
         folder: "categories",
         maxBytes: 2 * 1024 * 1024,
       });
+      if (typeof imageInput === "string" && imageInput.startsWith("data:")) pendingUploadedImage = validated.value.image;
     }
     const before = {
       name: category.name,
@@ -263,6 +273,12 @@ export const updateCategory = async (req, res) => {
     if (parentWasSent) category.parentId = parent?._id || null;
     category.ancestors = newAncestors;
     await category.save();
+    pendingUploadedImage = "";
+    if (before.image && before.image !== category.image) {
+      await deleteManagedCloudinaryImage(before.image, { folder: "categories" }).catch((cleanupError) => {
+        console.error("Replaced category image cleanup failed", { name: cleanupError?.name || "Error" });
+      });
+    }
 
     if (parentWasSent) {
       const descendants = await Category.find({ ancestors: category._id });
@@ -293,6 +309,11 @@ export const updateCategory = async (req, res) => {
     });
     return res.json({ category });
   } catch (error) {
+    if (pendingUploadedImage) {
+      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "categories" }).catch((cleanupError) => {
+        console.error("Unpersisted category image cleanup failed", { name: cleanupError?.name || "Error" });
+      });
+    }
     if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
     if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error?.code === 11000) return res.status(409).json({ message: "این slug قبلاً استفاده شده است." });
@@ -329,6 +350,9 @@ export const deleteCategory = async (req, res) => {
       attributes: category.attributes,
     };
     await Category.deleteOne({ _id: category._id });
+    await deleteManagedCloudinaryImage(category.image, { folder: "categories" }).catch((cleanupError) => {
+      console.error("Deleted category image cleanup failed", { name: cleanupError?.name || "Error" });
+    });
     await recordAuditEvent(req, {
       action: "category.deleted", targetType: "category", targetId: category._id,
       summary: "Category deleted: " + (category.name?.fa || category.slug),
