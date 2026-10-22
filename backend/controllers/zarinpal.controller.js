@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
@@ -14,6 +14,8 @@ import {
 } from "../lib/coupons.js";
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 import { hasConfiguredInventory, hasKnownFiniteStock } from "../lib/inventory-stock.js";
+import { redis } from "../lib/redis.js";
+import { getDueReconciliationFilter, getNextReconciliationDelayMs, PAYMENT_RECONCILIATION_BATCH_SIZE, PAYMENT_RECONCILIATION_LOCK_TTL_MS } from "../lib/payment-reconciliation.js";
 
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
@@ -707,6 +709,30 @@ export const getZarinpalOrderStatus = async (req, res) => {
 
 
 const reconciliationTerminalUnpaidCodes = new Set([-11, -12, -21, -22, -42]);
+const reconciliationLockKey = "lock:payment-reconciliation";
+const releaseReconciliationLockScript = "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end";
+
+const markReconciliationAttempt = async (order) => {
+  const now = new Date();
+  const nextAttemptNumber = Math.max(0, Number(order.reconciliationAttempts) || 0) + 1;
+  const nextAttemptAt = new Date(now.getTime() + getNextReconciliationDelayMs(nextAttemptNumber));
+  const result = await Order.updateOne(
+    {
+      _id: order._id,
+      paymentProvider: "zarinpal",
+      currency: "IRT",
+      paymentStatus: order.paymentStatus,
+    },
+    {
+      $inc: { reconciliationAttempts: 1 },
+      $set: {
+        reconciliationLastAttemptAt: now,
+        reconciliationNextAttemptAt: nextAttemptAt,
+      },
+    }
+  );
+  return result.modifiedCount > 0;
+};
 
 export const reconcilePendingZarinpalOrders = async (req, res) => {
   const cronSecret = process.env.CRON_SECRET;
@@ -719,6 +745,27 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
+  const lockToken = randomUUID();
+  let lockResult;
+  try {
+    lockResult = await redis.set(
+      reconciliationLockKey,
+      lockToken,
+      "PX",
+      PAYMENT_RECONCILIATION_LOCK_TTL_MS,
+      "NX"
+    );
+  } catch (error) {
+    console.error("Payment reconciliation lock is unavailable", {
+      name: error?.name || "Error",
+      code: typeof error?.code === "string" ? error.code : undefined,
+    });
+    return res.status(503).json({ message: "Payment reconciliation is temporarily unavailable" });
+  }
+  if (lockResult !== "OK") {
+    return res.status(409).json({ message: "Payment reconciliation is already running" });
+  }
+
   const summary = {
     stockReservationsRecovered: 0,
     paidOrdersFinalized: 0,
@@ -729,15 +776,20 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
   };
 
   try {
+    const now = new Date();
+    const due = getDueReconciliationFilter(now);
+
     const strandedOrders = await Order.find({
       paymentProvider: "zarinpal",
       currency: "IRT",
       paymentStatus: { $in: ["failed", "expired"] },
       products: { $elemMatch: { stockReserved: true } },
-    }).sort({ updatedAt: 1 }).limit(10).lean();
+      ...due,
+    }).sort({ reconciliationNextAttemptAt: 1, createdAt: 1 }).limit(PAYMENT_RECONCILIATION_BATCH_SIZE).lean();
 
     for (const order of strandedOrders) {
       try {
+        if (!await markReconciliationAttempt(order)) continue;
         await releaseReservedInventory(order.products, order._id);
         await releaseCouponReservationForOrder(order._id);
         summary.stockReservationsRecovered += 1;
@@ -748,11 +800,16 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
     }
 
     const unfinalizedPaidOrders = await Order.find({
-      paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "paid", finalizedAt: null,
-    }).sort({ updatedAt: 1 }).limit(10).lean();
+      paymentProvider: "zarinpal",
+      currency: "IRT",
+      paymentStatus: "paid",
+      finalizedAt: null,
+      ...due,
+    }).sort({ reconciliationNextAttemptAt: 1, createdAt: 1 }).limit(PAYMENT_RECONCILIATION_BATCH_SIZE).lean();
 
     for (const order of unfinalizedPaidOrders) {
       try {
+        if (!await markReconciliationAttempt(order)) continue;
         await finalizePaidOrder(order);
         summary.paidOrdersFinalized += 1;
       } catch (error) {
@@ -765,14 +822,24 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
       paymentProvider: "zarinpal",
       currency: "IRT",
       paymentStatus: "pending",
-      expiresAt: { $lte: new Date() },
-    }).sort({ expiresAt: 1, createdAt: 1 }).limit(10).lean();
+      expiresAt: { $lte: now },
+      ...due,
+    }).sort({ reconciliationNextAttemptAt: 1, expiresAt: 1, createdAt: 1 })
+      .limit(PAYMENT_RECONCILIATION_BATCH_SIZE).lean();
 
     for (const order of expiredPendingOrders) {
       try {
+        if (!await markReconciliationAttempt(order)) continue;
+
         if (!order.zarinpalAuthority) {
           const expired = await Order.findOneAndUpdate(
-            { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending", zarinpalAuthority: { $in: [null, ""] } },
+            {
+              _id: order._id,
+              paymentProvider: "zarinpal",
+              currency: "IRT",
+              paymentStatus: "pending",
+              zarinpalAuthority: { $in: [null, ""] },
+            },
             { $set: { paymentStatus: "expired", status: "expired", paymentRequestStatus: "expired" } },
             { new: true }
           );
@@ -826,8 +893,8 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
           continue;
         }
 
-        // Unknown/provider-configuration errors are deferred so stock is never
-        // released solely because verification timed out or returned an unknown code.
+        // Unknown/provider-configuration errors are deferred with a persisted,
+        // bounded backoff schedule so they do not monopolize every batch.
         if (reconciliationTerminalUnpaidCodes.has(code)) {
           const expired = await Order.findOneAndUpdate(
             { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
@@ -852,5 +919,14 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
   } catch (error) {
     console.error("Payment reconciliation failed", error.message);
     return res.status(500).json({ message: "Payment reconciliation failed" });
+  } finally {
+    try {
+      await redis.eval(releaseReconciliationLockScript, 1, reconciliationLockKey, lockToken);
+    } catch (error) {
+      console.error("Payment reconciliation lock release failed", {
+        name: error?.name || "Error",
+        code: typeof error?.code === "string" ? error.code : undefined,
+      });
+    }
   }
 };
