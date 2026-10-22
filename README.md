@@ -23,6 +23,7 @@ A production-focused MERN storefront with whole-Toman pricing, Zarinpal checkout
 [Features](#-features) · [Architecture](#-architecture) · [Setup](#-getting-started) · [Environment](#-environment-variables) · [API](#-api-reference) · [Deployment](#-deployment) · [Testing](#-testing-and-migrations)
 
 </div>
+
 ---
 
 ## ✨ Features
