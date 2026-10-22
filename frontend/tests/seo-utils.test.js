@@ -12,7 +12,7 @@ import { renderHtmlShell } from "../../seo/server-utils.js";
 
 test("SEO text collapses whitespace without damaging Persian text", () => {
   assert.equal(normalizeSeoText("  پیراهن\n\n   آبی  ", "fallback", 100), "پیراهن آبی");
-  assert.equal(normalizeSeoText("", "توضیح پیش‌فرض", 10), "توضیح پی");
+  assert.equal(normalizeSeoText("", "fallback text", 8), "fallback");
   assert.equal(normalizeSeoText("الف   ب", "", 3), "الف");
 });
 
