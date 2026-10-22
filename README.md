@@ -1,6 +1,6 @@
 <div align="center">
 
-# تیک بوتیک | Tik Boutique
+# Tik Boutique
 
 **A Persian-first, right-to-left commerce platform built for Iranian shoppers.**
 
