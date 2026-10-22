@@ -18,7 +18,10 @@ const hasLongPassphraseComplexity = (password) => {
 };
 
 const containsCommonPasswordPattern = (password) => {
-  const normalized = password.toLowerCase().normalize("NFKC").replace(/[^a-z0-9]/g, "");
+  const normalized = password.toLowerCase().normalize("NFKC")
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[^a-z0-9]/g, "");
   const commonFragments = ["password", "passw0rd", "pssw0rd", "qwerty", "letmein", "welcome", "changeme", "iloveyou", "123456", "654321", "abc123"];
   if (commonFragments.some((pattern) => normalized.includes(pattern))) return true;
 
