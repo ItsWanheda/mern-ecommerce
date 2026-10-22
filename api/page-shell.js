@@ -76,7 +76,7 @@ export default async function handler(req, res) {
   const missingCanonicalOrigin = !siteOrigin;
   const robots = isPrivate
     ? "noindex, nofollow"
-    : filtered
+    : filtered || missingCanonicalOrigin
       ? "noindex, follow"
       : "index, follow, max-image-preview:large";
   const canonical = isPrivate ? "" : canonicalUrlForQuery(path, req.query, siteOrigin, siteOrigin);
