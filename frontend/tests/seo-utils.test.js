@@ -47,7 +47,7 @@ test("relative images become absolute, safe HTTP(S) URLs", () => {
   assert.equal(absoluteUrlFor("", "https://shop.example"), "");
 });
 
-test("product structured data converts stored Toman to Rial and describes untracked stock consistently", () => {
+test("untracked stock does not produce a falsely available Product Offer", () => {
   const schema = buildProductStructuredData({
     product: { _id: "abc123", name: "پیراهن", price: 125000, stock: null, description: "پیراهن آبی" },
     title: "پیراهن",
@@ -56,8 +56,7 @@ test("product structured data converts stored Toman to Rial and describes untrac
     canonical: "https://shop.example/product/abc123",
     origin: "https://shop.example",
   });
-  assert.equal(schema.offers.priceCurrency, "IRR");
-  assert.equal(schema.offers.price, 1250000);
+  assert.equal(schema.name, "پیراهن");
   assert.equal(schema.offers, undefined);
   assert.deepEqual(schema.image, ["https://shop.example/shirt.jpg"]);
 });
@@ -70,6 +69,8 @@ test("tracked stock is reflected in Product Offer availability", () => {
     canonical: "https://shop.example/product/abc123",
     origin: "https://shop.example",
   });
+  assert.equal(schema.offers.priceCurrency, "IRR");
+  assert.equal(schema.offers.price, 1250000);
   assert.equal(schema.offers.availability, "https://schema.org/OutOfStock");
 });
 
