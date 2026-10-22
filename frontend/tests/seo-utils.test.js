@@ -80,7 +80,14 @@ test("untracked stock does not produce a falsely available Product Offer", () =>
 
 test("tracked stock is reflected in Product Offer availability", () => {
   const schema = buildProductStructuredData({
-    product: { _id: "abc123", name: "پیراهن", price: 125000, stock: 0 },
+    product: {
+      _id: "abc123",
+      name: "پیراهن",
+      price: 125000,
+      stock: 0,
+      sizes: ["M", "L"],
+      colors: [{ name: "آبی" }],
+    },
     title: "پیراهن",
     description: "جزئیات محصول",
     canonical: "https://shop.example/product/abc123",
@@ -89,6 +96,11 @@ test("tracked stock is reflected in Product Offer availability", () => {
   assert.equal(schema.offers.priceCurrency, "IRR");
   assert.equal(schema.offers.price, 1250000);
   assert.equal(schema.offers.availability, "https://schema.org/OutOfStock");
+  assert.deepEqual(schema.additionalProperty, [
+    { "@type": "PropertyValue", name: "سایز", value: "M" },
+    { "@type": "PropertyValue", name: "سایز", value: "L" },
+    { "@type": "PropertyValue", name: "رنگ", value: "آبی" },
+  ]);
 });
 
 test("variant availability reflects whether at least one combination is purchasable", () => {
