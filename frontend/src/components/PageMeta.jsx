@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+
 const DEFAULT_TITLE = "تیک بوتیک | فروشگاه آنلاین پوشاک و اکسسوری";
-const DEFAULT_DESCRIPTION = "خرید آنلاین پوشاک و اکسسوری با تجربه‌ای ساده، امن و سریع.";
+const DEFAULT_DESCRIPTION = "خرید آنلاین پوشاک و اکسسوری با انتخاب آسان و تجربه خرید امن.";
 const absoluteUrl = (value) => {
   if (!value || typeof window === "undefined") return "";
   try { return new URL(value, window.location.origin).toString(); } catch { return ""; }
@@ -10,22 +11,26 @@ const setMeta = (selector, attribute, key, value) => {
   if (!node) { node = document.createElement("meta"); node.setAttribute(attribute, key); document.head.appendChild(node); }
   if (value) node.setAttribute("content", String(value)); else node.removeAttribute("content");
 };
-export default function PageMeta({ title, description, image, path, type = "website", product, robots = "index, follow" }) {
+export default function PageMeta({ title, description, image, path, type = "website", product, robots = "index, follow, max-image-preview:large" }) {
   useEffect(() => {
-    const safeTitle = String(title || DEFAULT_TITLE).slice(0, 180);
-    const safeDescription = String(description || DEFAULT_DESCRIPTION).replace(/\s+/g, " ").trim().slice(0, 300);
-    const canonicalUrl = window.location.origin + (path || window.location.pathname + window.location.search);
+    const safeTitle = String(title || DEFAULT_TITLE).replace(/\\s+/g, " ").trim().slice(0, 180);
+    const safeDescription = String(description || DEFAULT_DESCRIPTION).replace(/\\s+/g, " ").trim().slice(0, 300);
+    // Canonicals intentionally omit query parameters to avoid indexing duplicate filtered URLs.
+    const canonicalUrl = new URL(path || window.location.pathname, window.location.origin).toString();
     const imageUrl = absoluteUrl(image);
-    document.title = safeTitle.includes("تیک بوتیک") ? safeTitle : safeTitle + " | تیک بوتیک";
+    const fullTitle = safeTitle.includes("تیک بوتیک") ? safeTitle : safeTitle + " | تیک بوتیک";
+    document.title = fullTitle;
     setMeta('meta[name="description"]', "name", "description", safeDescription);
     setMeta('meta[name="robots"]', "name", "robots", robots);
-    setMeta('meta[property="og:title"]', "property", "og:title", safeTitle);
+    setMeta('meta[property="og:locale"]', "property", "og:locale", "fa_IR");
+    setMeta('meta[property="og:site_name"]', "property", "og:site_name", "تیک بوتیک");
+    setMeta('meta[property="og:title"]', "property", "og:title", fullTitle);
     setMeta('meta[property="og:description"]', "property", "og:description", safeDescription);
     setMeta('meta[property="og:type"]', "property", "og:type", type === "product" ? "product" : "website");
     setMeta('meta[property="og:url"]', "property", "og:url", canonicalUrl);
     setMeta('meta[property="og:image"]', "property", "og:image", imageUrl);
     setMeta('meta[name="twitter:card"]', "name", "twitter:card", imageUrl ? "summary_large_image" : "summary");
-    setMeta('meta[name="twitter:title"]', "name", "twitter:title", safeTitle);
+    setMeta('meta[name="twitter:title"]', "name", "twitter:title", fullTitle);
     setMeta('meta[name="twitter:description"]', "name", "twitter:description", safeDescription);
     setMeta('meta[name="twitter:image"]', "name", "twitter:image", imageUrl);
     let canonical = document.head.querySelector('link[rel="canonical"]');
