@@ -28,7 +28,7 @@ const CampaignsPage = () => {
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-[#f7f5f0] px-3 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
-      <PageMeta title="پیشنهادهای ویژه" description="کمپین‌ها و پیشنهادهای فعال فروشگاه تیک بوتیک." path="/campaigns" />
+      <PageMeta title="پیشنهادهای ویژه" description="کمپین‌ها و پیشنهادهای فعال فروشگاه تیک بوتیک." path="/campaigns" breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }]} />
       <div className="mx-auto max-w-6xl">
         <p className="text-xs font-semibold tracking-wide text-[#68745f]">مجموعه تیک بوتیک</p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">پیشنهادهای ویژه</h1>
