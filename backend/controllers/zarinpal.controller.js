@@ -607,7 +607,7 @@ export const verifyZarinpalPayment = async (req, res) => {
       }
       const failed = await Order.findOneAndUpdate(
         { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
-        { $set: { paymentStatus: "failed", status: "failed" } },
+        { $set: { paymentStatus: "failed", status: "failed", reconciliationAttempts: 0, reconciliationLastAttemptAt: null, reconciliationNextAttemptAt: null } },
         { new: true }
       );
       if (failed) {
@@ -625,6 +625,9 @@ export const verifyZarinpalPayment = async (req, res) => {
           status: "paid",
           paymentRequestStatus: "accepted",
           zarinpalRefId: String(payload?.data?.ref_id ?? ""),
+          reconciliationAttempts: 0,
+          reconciliationLastAttemptAt: null,
+          reconciliationNextAttemptAt: null,
         },
       },
       { new: true }
@@ -811,7 +814,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
               paymentStatus: "pending",
               zarinpalAuthority: { $in: [null, ""] },
             },
-            { $set: { paymentStatus: "expired", status: "expired", paymentRequestStatus: "expired" } },
+            { $set: { paymentStatus: "expired", status: "expired", paymentRequestStatus: "expired", reconciliationAttempts: 0, reconciliationLastAttemptAt: null, reconciliationNextAttemptAt: null } },
             { new: true }
           );
           if (expired) {
@@ -848,6 +851,9 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
               status: "paid",
               paymentRequestStatus: "accepted",
               zarinpalRefId: String(payload?.data?.ref_id ?? order.zarinpalRefId ?? ""),
+              reconciliationAttempts: 0,
+              reconciliationLastAttemptAt: null,
+              reconciliationNextAttemptAt: null,
             } },
             { new: true }
           );
@@ -869,7 +875,7 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
         if (reconciliationTerminalUnpaidCodes.has(code)) {
           const expired = await Order.findOneAndUpdate(
             { _id: order._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "pending" },
-            { $set: { paymentStatus: "expired", status: "expired" } },
+            { $set: { paymentStatus: "expired", status: "expired", reconciliationAttempts: 0, reconciliationLastAttemptAt: null, reconciliationNextAttemptAt: null } },
             { new: true }
           );
           if (expired) {
