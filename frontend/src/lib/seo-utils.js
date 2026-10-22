@@ -323,9 +323,18 @@ export function buildSiteStructuredData(origin, options = {}) {
   const rootUrl = canonicalUrlFor("/", origin, origin);
   if (!rootUrl) return [];
 
-  const supportEmail = typeof options.supportEmail === "string" &&
-    /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(options.supportEmail.trim())
+  const candidateEmail = typeof options.supportEmail === "string"
     ? options.supportEmail.trim()
+    : "";
+  const atIndex = candidateEmail.indexOf("@");
+  const domainIndex = candidateEmail.indexOf(".", atIndex + 2);
+  const containsWhitespace = candidateEmail.split("").some((character) => character.charCodeAt(0) <= 32);
+  const supportEmail = atIndex > 0 &&
+    atIndex === candidateEmail.lastIndexOf("@") &&
+    domainIndex > atIndex + 1 &&
+    domainIndex < candidateEmail.length - 1 &&
+    !containsWhitespace
+    ? candidateEmail
     : "";
 
   return [
