@@ -20,7 +20,7 @@ const PageLayout = ({ eyebrow, title, intro, children }) => {
   const { pathname } = useLocation();
   return (
     <main dir="rtl" className="min-h-[60vh] bg-[#f7f5f0] px-3 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
-      <PageMeta title={title} description={intro || (title + " | راهنمای فروشگاه تیک بوتیک.")} path={pathname} />
+      <PageMeta title={title} description={intro || (title + " | راهنمای فروشگاه تیک بوتیک.")} path={pathname} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: title, path: pathname }]} />
       <div className="mx-auto max-w-5xl">
         <p className="mb-2 text-xs font-semibold tracking-wide text-[#68745f]">{eyebrow}</p>
         <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
