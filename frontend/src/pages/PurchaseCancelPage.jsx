@@ -1,13 +1,14 @@
 import { XCircle, ArrowLeft, Clock3 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
+import { isConfirmedPaymentFailure } from "../lib/payment-result";
 
 const PurchaseCancelPage = () => {
   const [searchParams] = useSearchParams();
   const reason = searchParams.get("reason") || "";
   // Only show a confirmed cancellation when the backend has an authoritative
   // terminal-unpaid result. Unknown reasons and callback errors are uncertain.
-  const confirmedFailure = reason === "payment-not-confirmed";
+  const confirmedFailure = isConfirmedPaymentFailure(reason);
   const verificationPending = !confirmedFailure;
   const orderId = searchParams.get("order_id");
   const StatusIcon = verificationPending ? Clock3 : XCircle;
