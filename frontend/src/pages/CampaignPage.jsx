@@ -36,7 +36,7 @@ const CampaignPage = () => {
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={campaign?.title || "کمپین فروشگاهی"} description={campaign?.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک."} image={campaign?.image} path={window.location.pathname} type="campaign" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }, { name: campaign?.title || "کمپین", path: window.location.pathname }]} robots={error || !campaign ? "noindex, nofollow" : "index, follow, max-image-preview:large"} canonical={Boolean(campaign)} />
+      <PageMeta title={campaign?.title || "کمپین فروشگاهی"} description={campaign?.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک."} image={campaign?.image} path={window.location.pathname} type="campaign" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }, { name: campaign?.title || "کمپین", path: window.location.pathname }]} robots={error ? "noindex, nofollow" : "index, follow, max-image-preview:large"} canonical={!error} />
       <div className="mx-auto max-w-6xl">
         <nav aria-label="مسیر صفحه" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[#77786f]">
           <Link to="/" className="hover:text-[#68745f]">صفحه اصلی</Link>
