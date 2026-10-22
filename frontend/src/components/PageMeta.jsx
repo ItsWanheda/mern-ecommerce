@@ -7,6 +7,7 @@ import {
   buildSiteStructuredData,
   canonicalOrigin,
   canonicalUrlFor,
+  canonicalUrlForQuery,
   DEFAULT_SEO_DESCRIPTION,
   DEFAULT_SEO_TITLE,
   normalizeSeoText,
@@ -81,8 +82,9 @@ export default function PageMeta({
     const siteOrigin = canonicalOrigin(window.location.origin, configuredSiteUrl);
     const safeTitle = normalizeSeoText(title, DEFAULT_SEO_TITLE, 180);
     const safeDescription = normalizeSeoText(description, DEFAULT_SEO_DESCRIPTION, 300);
+    const currentQuery = Object.fromEntries(new URLSearchParams(window.location.search).entries());
     const canonicalUrl = canonical
-      ? canonicalUrlFor(path || window.location.pathname, siteOrigin, siteOrigin)
+      ? canonicalUrlForQuery(path || window.location.pathname, currentQuery, siteOrigin, siteOrigin)
       : "";
     const imageUrl = absoluteUrlFor(image || "", siteOrigin);
     const fullTitle = safeTitle.includes(SITE_NAME) ? safeTitle : safeTitle + " | " + SITE_NAME;
