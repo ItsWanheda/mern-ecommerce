@@ -28,11 +28,13 @@ export const couponEligibilityError = (coupon, subtotal, now = new Date()) => {
   return "";
 };
 
-export const reserveCoupon = async (codeInput, subtotal, now = new Date()) => {
+export const reserveCoupon = async (codeInput, subtotal, now = new Date(), { session } = {}) => {
   const code = normalizeCouponCode(codeInput);
   if (!code) return { coupon: null, discountAmount: 0, error: "" };
 
-  let coupon = await Coupon.findOne({ code }).lean();
+  let lookup = Coupon.findOne({ code });
+  if (session) lookup = lookup.session(session);
+  let coupon = await lookup.lean();
   const error = couponEligibilityError(coupon, subtotal, now);
   if (error) return { coupon: null, discountAmount: 0, error };
 
@@ -55,9 +57,13 @@ export const reserveCoupon = async (codeInput, subtotal, now = new Date()) => {
     ],
   };
 
-  coupon = await Coupon.findOneAndUpdate(filter, { $inc: { reservedCount: 1 } }, { new: true });
+  const updateOptions = { new: true };
+  if (session) updateOptions.session = session;
+  coupon = await Coupon.findOneAndUpdate(filter, { $inc: { reservedCount: 1 } }, updateOptions);
   if (!coupon) {
-    const current = await Coupon.findOne({ code }).lean();
+    let currentQuery = Coupon.findOne({ code });
+    if (session) currentQuery = currentQuery.session(session);
+    const current = await currentQuery.lean();
     return {
       coupon: null,
       discountAmount: 0,
