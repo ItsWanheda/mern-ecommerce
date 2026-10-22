@@ -24,8 +24,6 @@ A production-focused MERN storefront with whole-Toman pricing, Zarinpal checkout
 
 </div>
 
----
-
 ## ✨ Features
 
 ### 🛒 Persian storefront
