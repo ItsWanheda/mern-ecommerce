@@ -361,8 +361,11 @@ export const createZarinpalCheckout = async (req, res) => {
           transactionDiscount = reservation.discountAmount;
         }
 
+        // Read dynamic shipping settings from the same transaction snapshot as
+        // the catalogue and inventory, so an admin update cannot race checkout totals.
+        const transactionShippingSettings = await getShippingSettings({ session });
         const transactionDiscountedSubtotal = transactionSubtotal - transactionDiscount;
-        const transactionShippingFee = calculateShippingFee(transactionDiscountedSubtotal, shippingSettings);
+        const transactionShippingFee = calculateShippingFee(transactionDiscountedSubtotal, transactionShippingSettings);
         const transactionTotal = transactionDiscountedSubtotal + transactionShippingFee;
         if (!Number.isSafeInteger(transactionTotal) || transactionTotal < 0) {
           const amountError = new Error("Invalid checkout amount");
