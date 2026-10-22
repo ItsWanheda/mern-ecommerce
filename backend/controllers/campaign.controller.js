@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Campaign from "../models/campaign.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
-import { ImageUploadError, ImageStorageError, resolveImageReference } from "../lib/image-upload.js";
+import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
 
 const persianSlugCharacters = {
   "آ": "a", "أ": "a", "إ": "e", "ا": "a", "ب": "b", "پ": "p", "ت": "t", "ث": "s",
@@ -121,6 +121,7 @@ export const getAllCampaigns = async (_req, res) => {
 };
 
 export const createCampaign = async (req, res) => {
+  let pendingUploadedImage = "";
   try {
     if (!isValidCampaignInput(req.body)) {
       return res.status(400).json({ message: "Enter a title, a valid local link, and a future end date" });
@@ -136,6 +137,7 @@ export const createCampaign = async (req, res) => {
       folder: "campaigns",
       maxBytes: 5 * 1024 * 1024,
     });
+    if (typeof req.body.image === "string" && req.body.image.startsWith("data:")) pendingUploadedImage = image;
     const campaignId = new mongoose.Types.ObjectId();
     const campaign = await Campaign.create({
       _id: campaignId,
@@ -151,6 +153,7 @@ export const createCampaign = async (req, res) => {
       sortOrder: Number(req.body.sortOrder ?? 0),
       createdBy: req.user._id,
     });
+    pendingUploadedImage = "";
     await recordAuditEvent(req, {
       action: "campaign.created",
       targetType: "campaign",
@@ -174,6 +177,11 @@ export const createCampaign = async (req, res) => {
     });
     return res.status(201).json({ campaign });
   } catch (error) {
+    if (pendingUploadedImage) {
+      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "campaigns" }).catch((cleanupError) => {
+        console.error("Unpersisted campaign image cleanup failed", { name: cleanupError?.name || "Error" });
+      });
+    }
     if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
     if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     console.error("Error creating campaign", error.message);
@@ -182,6 +190,7 @@ export const createCampaign = async (req, res) => {
 };
 
 export const updateCampaign = async (req, res) => {
+  let pendingUploadedImage = "";
   try {
     const current = await Campaign.findById(req.params.id);
     if (!current) return res.status(404).json({ message: "Campaign not found" });
@@ -215,6 +224,7 @@ export const updateCampaign = async (req, res) => {
           maxBytes: 5 * 1024 * 1024,
         })
       : (current.image || "");
+    if (imageWasProvided && typeof next.image === "string" && next.image.startsWith("data:")) pendingUploadedImage = image;
     current.title = next.title.trim();
     current.description = typeof next.description === "string" ? next.description.trim().slice(0, 300) : "";
     current.image = image;
@@ -225,6 +235,12 @@ export const updateCampaign = async (req, res) => {
     current.isActive = next.isActive !== false;
     current.sortOrder = Number(next.sortOrder ?? 0);
     await current.save();
+    pendingUploadedImage = "";
+    if (before.image && before.image !== current.image) {
+      await deleteManagedCloudinaryImage(before.image, { folder: "campaigns" }).catch((cleanupError) => {
+        console.error("Replaced campaign image cleanup failed", { name: cleanupError?.name || "Error" });
+      });
+    }
     await recordAuditEvent(req, {
       action: "campaign.updated",
       targetType: "campaign",
@@ -249,6 +265,11 @@ export const updateCampaign = async (req, res) => {
     });
     return res.json({ campaign: current });
   } catch (error) {
+    if (pendingUploadedImage) {
+      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "campaigns" }).catch((cleanupError) => {
+        console.error("Unpersisted campaign image cleanup failed", { name: cleanupError?.name || "Error" });
+      });
+    }
     if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
     if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error.name === "CastError") return res.status(400).json({ message: "Invalid campaign ID" });
@@ -274,6 +295,9 @@ export const deleteCampaign = async (req, res) => {
       productIds: (campaign.productIds || []).map(String),
     };
     await Campaign.deleteOne({ _id: campaign._id });
+    await deleteManagedCloudinaryImage(campaign.image, { folder: "campaigns" }).catch((cleanupError) => {
+      console.error("Deleted campaign image cleanup failed", { name: cleanupError?.name || "Error" });
+    });
     await recordAuditEvent(req, {
       action: "campaign.deleted",
       targetType: "campaign",
