@@ -250,6 +250,7 @@ export const createZarinpalCheckout = async (req, res) => {
 
   let reserved = [];
   let order = null;
+  let checkoutOrderId = null;
   let gatewayRequestStarted = false;
   let gatewayRequestRejected = false;
   let receivedAuthority = "";
@@ -307,19 +308,86 @@ export const createZarinpalCheckout = async (req, res) => {
       return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
     }
 
-    if (couponCode) {
-      const reservation = await reserveCoupon(couponCode, subtotal);
-      if (reservation.error) return res.status(400).json({ message: reservation.error });
-      coupon = reservation.coupon;
-      couponDiscountAmount = reservation.discountAmount;
-      couponReservedWithoutOrder = true;
-      reservedCouponCode = coupon.code;
-      discountedSubtotal = subtotal - couponDiscountAmount;
-      shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
-      totalToman = discountedSubtotal + shippingFee;
-      if (!Number.isSafeInteger(totalToman) || totalToman < 0) {
-        await releaseCouponReservationByCode(reservedCouponCode).catch(() => {});
-        couponReservedWithoutOrder = false;
+    // Reserve coupon usage, finite inventory, and the pending order in one MongoDB
+    // transaction. A crash cannot leave stock reserved without a durable order record.
+    checkoutOrderId = new mongoose.Types.ObjectId();
+    let transactionResult = null;
+    const transactionItems = validated.map((item) => ({
+      product: item.productId,
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+    }));
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        let transactionCoupon = coupon;
+        let transactionDiscount = couponDiscountAmount;
+        let transactionShippingFee = shippingFee;
+        let transactionTotal = totalToman;
+
+        if (couponCode) {
+          const reservation = await reserveCoupon(couponCode, subtotal, new Date(), { session });
+          if (reservation.error) {
+            const couponError = new Error(reservation.error);
+            couponError.code = "COUPON_REJECTED";
+            throw couponError;
+          }
+          transactionCoupon = reservation.coupon;
+          transactionDiscount = reservation.discountAmount;
+          const transactionDiscountedSubtotal = subtotal - transactionDiscount;
+          transactionShippingFee = calculateShippingFee(transactionDiscountedSubtotal, shippingSettings);
+          transactionTotal = transactionDiscountedSubtotal + transactionShippingFee;
+          if (!Number.isSafeInteger(transactionTotal) || transactionTotal < 0) {
+            const amountError = new Error("Invalid checkout amount");
+            amountError.code = "INVALID_CHECKOUT_AMOUNT";
+            throw amountError;
+          }
+        }
+
+        const reservations = await reserveInventory(transactionItems, productsById, { session });
+        const [createdOrder] = await Order.create([{
+          _id: checkoutOrderId,
+          user: req.user._id,
+          products: reservations.orderItems,
+          shippingAddress,
+          shipmentStatus: "not_ready",
+          totalAmount: transactionTotal,
+          subtotalAmount: subtotal,
+          shippingFee: transactionShippingFee,
+          currency: "IRT",
+          paymentProvider: "zarinpal",
+          paymentStatus: "pending",
+          status: "pending",
+          couponCode: transactionCoupon?.code || "",
+          couponDiscountAmount: transactionDiscount,
+          couponDiscountPercentage: transactionCoupon ? Number(transactionCoupon.discountPercentage) : 0,
+          couponReservationStatus: transactionCoupon ? "reserved" : "none",
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          paymentRequestStatus: "not_started",
+        }], { session });
+
+        transactionResult = {
+          order: createdOrder,
+          reserved: reservations.reserved,
+          coupon: transactionCoupon,
+          couponDiscountAmount: transactionDiscount,
+          shippingFee: transactionShippingFee,
+          totalToman: transactionTotal,
+        };
+      });
+    } finally {
+      await session.endSession();
+    }
+
+    if (!transactionResult) throw new Error("CHECKOUT_TRANSACTION_NO_RESULT");
+    order = transactionResult.order;
+    reserved = transactionResult.reserved;
+    coupon = transactionResult.coupon;
+    couponDiscountAmount = transactionResult.couponDiscountAmount;
+    shippingFee = transactionResult.shippingFee;
+    totalToman = transactionResult.totalToman;
+
         return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
       }
     }
@@ -422,6 +490,30 @@ export const createZarinpalCheckout = async (req, res) => {
     }
     throw new Error("ZARINPAL_REQUEST_AMBIGUOUS");
   } catch (error) {
+    if (error?.code === "COUPON_REJECTED") {
+      return res.status(400).json({ message: error.message });
+    }
+    if (error?.code === "INVALID_CHECKOUT_AMOUNT") {
+      return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
+    }
+    if (isTransactionUnsupported(error)) {
+      return res.status(503).json({ message: "ثبت سفارش به پایگاه داده تراکنشی نیاز دارد؛ پرداخت آغاز نشد." });
+    }
+    const unknownCommit = error?.hasErrorLabel?.("UnknownTransactionCommitResult") ||
+      (Array.isArray(error?.errorLabels) && error.errorLabels.includes("UnknownTransactionCommitResult"));
+    if (!order && checkoutOrderId && unknownCommit) {
+      // The transaction commit outcome itself is unknown. Never compensate by
+      // releasing stock: the order may already exist. Return a stable reference
+      // and require status/reconciliation before allowing another checkout.
+      return res.status(202).json({
+        status: "pending",
+        orderId: String(checkoutOrderId),
+        message: "نتیجه ثبت سفارش قطعی نیست؛ دوباره پرداخت نکنید و وضعیت سفارش را پیگیری کنید.",
+      });
+    }
+    if (error?.message === "UNTRACKED_INVENTORY") {
+      return res.status(409).json({ message: "موجودی این کالا مشخص نیست؛ تا ثبت موجودی معتبر امکان خرید وجود ندارد." });
+    }
     if (order && gatewayRequestStarted && !gatewayRequestRejected) {
       // The provider may have accepted the request even though our response or
       // local persistence failed. Never release inventory on this uncertain path.
