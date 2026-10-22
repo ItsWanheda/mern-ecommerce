@@ -45,7 +45,7 @@ export const getPasswordPolicyError = (password) => {
   }
   if (containsCommonPasswordPattern(password)) return "از رمزهای عبور رایج یا الگوهای قابل حدس استفاده نکنید.";
   if (hasTraditionalComplexity(password) || hasLongPassphraseComplexity(password)) return "";
-  return "از رمز عبور قوی استفاده کنید: حروف کوچک و بزرگ انگلیسی، عدد و نماد؛ یا یک عبارت حداقل ۱۶ نویسه‌ای شامل حرف، عدد و نماد.";
+  return "از رمز عبور قوی استفاده کنید: حروف کوچک و بزرگ انگلیسی، عدد و نماد؛ یا یک عبارت چندواژه‌ای حداقل ۱۶ نویسه‌ای شامل حرف، عدد و نماد.";
 };
 
 export const isStrongPassword = (password) => getPasswordPolicyError(password) === "";
