@@ -57,6 +57,9 @@ const orderSchema = new mongoose.Schema(
     paymentStatus: { type: String, enum: ["pending", "paid", "failed", "expired"], default: "pending", required: true },
     paymentRequestStatus: { type: String, enum: ["not_started", "in_flight", "accepted", "unknown", "rejected", "expired"], default: "not_started" },
     paymentRequestAttemptedAt: { type: Date, default: null },
+    reconciliationAttempts: { type: Number, min: 0, default: 0 },
+    reconciliationLastAttemptAt: { type: Date, default: null },
+    reconciliationNextAttemptAt: { type: Date, default: null },
     status: { type: String, enum: ["pending", "paid", "failed", "cancelled", "expired"], default: "pending" },
     subtotalAmount: { type: Number, min: 0, default: 0 },
     couponCode: { type: String, trim: true, maxlength: 40, default: "" },
@@ -76,6 +79,7 @@ orderSchema.index({ paymentStatus: 1, paymentProvider: 1, createdAt: 1 });
 orderSchema.index({ paymentProvider: 1, paymentStatus: 1, expiresAt: 1 });
 orderSchema.index({ paymentProvider: 1, paymentRequestStatus: 1, expiresAt: 1 });
 orderSchema.index({ paymentProvider: 1, paymentStatus: 1, finalizedAt: 1 });
+orderSchema.index({ paymentProvider: 1, paymentStatus: 1, reconciliationNextAttemptAt: 1, createdAt: 1 });
 orderSchema.index({ paymentStatus: 1, shipmentStatus: 1, createdAt: -1 });
 
 export default mongoose.model("Order", orderSchema);
