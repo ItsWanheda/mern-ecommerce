@@ -44,8 +44,8 @@ const legacyCategoryDescriptions = {
 const collectionConfigs = {
   shop: {
     routePath: "/shop",
-    title: "خرید آنلاین پوشاک و اکسسوری",
-    description: "محصولات تیک بوتیک را با جست‌وجو و فیلترهای کاربردی بررسی کنید.",
+    title: "فروشگاه پوشاک و اکسسوری",
+    description: "جست‌وجو، فیلتر و خرید محصولات فروشگاه تیک بوتیک.",
     endpoint: "products/search?page=1&limit=8&sort=newest",
   },
   campaigns: {
@@ -360,7 +360,7 @@ export default async function handler(req, res) {
         throw missing;
       }
       title = String(product.name);
-      description = String(product.description || "مشخصات، قیمت و موجودی این محصول را در تیک بوتیک ببینید.");
+      description = String(product.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک.");
       imageValue = product.image || product.images?.[0] || "";
       structuredData.push(buildProductStructuredData({
         product,
@@ -424,7 +424,7 @@ export default async function handler(req, res) {
         };
       }
       title = String(category.name?.fa || category.name?.en || id);
-      description = String(category.description?.fa || category.description?.en || ("محصولات دسته " + title + " را در تیک بوتیک ببینید."));
+      description = String(category.description?.fa || category.description?.en || ("خرید و فیلتر محصولات دسته " + title + " در تیک بوتیک."));
       imageValue = category.image || products[0]?.image || products[0]?.images?.[0] || "";
       structuredData.push(buildCollectionStructuredData({ title, description, image: imageValue, canonical, products, origin: siteOrigin }));
       structuredData.push(buildBreadcrumbStructuredData([
