@@ -116,10 +116,9 @@ const CampaignManager = () => {
 
   const toggleCampaign = async (campaign) => {
     try {
+      // Keep toggles narrow: do not resend media data or overwrite an image
+      // reference while changing only the active flag.
       await axios.patch(`/campaigns/${campaign._id}`, {
-        ...campaign,
-        startsAt: new Date(campaign.startsAt).toISOString(),
-        endsAt: new Date(campaign.endsAt).toISOString(),
         isActive: !campaign.isActive,
       });
       await loadCampaigns();
