@@ -5,6 +5,7 @@ import axiosInstance from "../src/lib/axios.js";
 import { useUserStore } from "../src/stores/useUserStore.js";
 import { getPasswordPolicyError as getFrontendPasswordPolicyError } from "../src/lib/password-policy.js";
 import { getPasswordPolicyError as getBackendPasswordPolicyError } from "../../backend/lib/password-policy.js";
+import { isConfirmedPaymentFailure } from "../src/lib/payment-result.js";
 
 const ok = (config, data = {}) => ({ data, status: 200, statusText: "OK", headers: {}, config });
 const unauthorized = (config, message = "Authentication session expired.") => {
@@ -125,5 +126,13 @@ test("signup password policy matches the backend policy for valid and invalid ex
   ];
   for (const password of passwords) {
     assert.equal(getFrontendPasswordPolicyError(password), getBackendPasswordPolicyError(password), password);
+  }
+});
+
+
+test("only an explicit authoritative terminal-unpaid reason is a confirmed payment failure", () => {
+  assert.equal(isConfirmedPaymentFailure("payment-not-confirmed"), true);
+  for (const reason of ["verification-pending", "verification-error", "invalid-callback", "order-not-found", "", null]) {
+    assert.equal(isConfirmedPaymentFailure(reason), false, String(reason));
   }
 });
