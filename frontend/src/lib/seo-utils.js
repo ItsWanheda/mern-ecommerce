@@ -147,6 +147,8 @@ export function canonicalUrlFor(path, currentOrigin, configuredOrigin = "") {
 export function canonicalUrlForQuery(path, query, currentOrigin, configuredOrigin = "") {
   const base = canonicalUrlFor(path, currentOrigin, configuredOrigin);
   if (!base || !query || typeof query !== "object") return base;
+  const normalizedPath = String(path || "").split("?")[0].replace(/\/+$/, "") || "/";
+  if (normalizedPath !== "/shop" && !normalizedPath.startsWith("/category/")) return base;
 
   const entries = Object.entries(query).filter(([, raw]) => {
     if (raw === undefined || raw === null) return false;
