@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { getPasswordPolicyError, isStrongPassword } from "../lib/password-policy.js";
 
 test("password policy rejects short, common-looking, and composition-weak passwords", () => {
-  for (const password of ["short", "password1234", "lowercaseonly123!", "NOLOWERCASE123!", "Password123!", "P@ssw0rd123!"]) {
+  for (const password of ["short", "password1234", "lowercaseonly123!", "NOLOWERCASE123!", "Password123!", "P@ssw0rd123!", "Abcdefgh123!", "RepeatedAAAAA12!"]) {
     assert.notEqual(getPasswordPolicyError(password), "");
     assert.equal(isStrongPassword(password), false);
   }
