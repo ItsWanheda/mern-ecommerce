@@ -117,7 +117,8 @@ test("signup password policy matches the backend policy for valid and invalid ex
   const passwords = [
     "",
     "password1234",
-    "StrongPassword2026!",
+    "Password123!",
+    "QuartzMeadow8!",
     "عبارت-امن-شده-با-عدد-123!",
     "آ".repeat(30),
     "correct horse battery staple",
