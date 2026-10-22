@@ -7,7 +7,7 @@ import User from "../models/user.model.js";
 import ServiceCase from "../models/service-case.model.js";
 import { redis } from "../lib/redis.js";
 import { getKnownProductStock } from "../lib/inventory-stock.js";
-import { hasAdministratorManagementAccess, canPreserveAdministratorManagement } from "../lib/admin-permissions.js";
+import { hasAdministratorManagementAccess, canPreserveAdministratorManagement, withAdministratorAccessLock, AdministratorAccessLockError } from "../lib/admin-permissions.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -120,62 +120,68 @@ export const updateCustomerAccess = async (req, res) => {
     return res.status(400).json({ message: "Invalid administrator permissions" });
   }
   if (isActive !== undefined && typeof isActive !== "boolean") return res.status(400).json({ message: "Invalid account status" });
+
   try {
-    const target = await User.findById(customerId);
-    if (!target) return res.status(404).json({ message: "Customer account not found" });
-    const nextRole = role ?? target.role;
-    const nextActive = isActive ?? target.isActive !== false;
-    const nextPermissions = permissions ?? target.permissions;
-    if (String(target._id) === String(req.user._id) && (nextRole !== "admin" || !nextActive || (Array.isArray(nextPermissions) && !nextPermissions.includes("*") && !nextPermissions.includes("roles.manage")))) {
-      return res.status(409).json({ message: "You cannot remove your own administrator access" });
-    }
-
-    const targetKeepsManagementAccess = hasAdministratorManagementAccess(nextRole, nextActive, nextPermissions);
-    if (!targetKeepsManagementAccess) {
-      const otherActiveAdmins = await User.find({
-        _id: { $ne: target._id }, role: "admin", isActive: { $ne: false },
-      }).select("permissions").lean();
-      if (!canPreserveAdministratorManagement({ nextRole, nextActive, nextPermissions, otherActiveAdmins })) {
-        return res.status(409).json({ message: "At least one active administrator must retain permission to manage administrator access" });
+    return await withAdministratorAccessLock(redis, async () => {
+      const target = await User.findById(customerId);
+      if (!target) return res.status(404).json({ message: "Customer account not found" });
+      const nextRole = role ?? target.role;
+      const nextActive = isActive ?? target.isActive !== false;
+      const nextPermissions = permissions ?? target.permissions;
+      if (String(target._id) === String(req.user._id) && (nextRole !== "admin" || !nextActive || (Array.isArray(nextPermissions) && !nextPermissions.includes("*") && !nextPermissions.includes("roles.manage")))) {
+        return res.status(409).json({ message: "You cannot remove your own administrator access" });
       }
-    }
 
-    if (target.role === "admin" && (nextRole !== "admin" || !nextActive)) {
-      const activeAdmins = await User.countDocuments({ role: "admin", isActive: { $ne: false } });
-      if (activeAdmins <= 1) return res.status(409).json({ message: "At least one active administrator must remain" });
-    }
+      const targetKeepsManagementAccess = hasAdministratorManagementAccess(nextRole, nextActive, nextPermissions);
+      if (!targetKeepsManagementAccess) {
+        const otherActiveAdmins = await User.find({
+          _id: { $ne: target._id }, role: "admin", isActive: { $ne: false },
+        }).select("permissions").lean();
+        if (!canPreserveAdministratorManagement({ nextRole, nextActive, nextPermissions, otherActiveAdmins })) {
+          return res.status(409).json({ message: "At least one active administrator must retain permission to manage administrator access" });
+        }
+      }
 
-    const isDisablingAccount = nextActive === false;
-    if (isDisablingAccount && target.isActive !== false) {
-      await redis.del(`refresh_token:${target._id}`);
-    }
-    target.role = nextRole;
-    target.isActive = nextActive;
-    if (nextRole === "customer") target.permissions = undefined;
-    else if (permissions !== undefined) target.permissions = permissions;
-    await target.save();
-    if (isDisablingAccount) {
-      try {
+      if (target.role === "admin" && (nextRole !== "admin" || !nextActive)) {
+        const activeAdmins = await User.countDocuments({ role: "admin", isActive: { $ne: false } });
+        if (activeAdmins <= 1) return res.status(409).json({ message: "At least one active administrator must remain" });
+      }
+
+      const isDisablingAccount = nextActive === false;
+      if (isDisablingAccount && target.isActive !== false) {
         await redis.del(`refresh_token:${target._id}`);
-      } catch (error) {
-        console.warn("Unable to repeat refresh-token revocation after deactivation", {
-          name: error?.name || "Error",
-          code: typeof error?.code === "string" ? error.code : undefined,
-        });
       }
-    }
-    await recordAuditEvent(req, {
-      action: "customer.access_updated", targetType: "user", targetId: target._id,
-      summary: "Customer account access updated",
-      metadata: { role: target.role, isActive: target.isActive, permissions: target.permissions || null },
+      target.role = nextRole;
+      target.isActive = nextActive;
+      if (nextRole === "customer") target.permissions = undefined;
+      else if (permissions !== undefined) target.permissions = permissions;
+      await target.save();
+      if (isDisablingAccount) {
+        try {
+          await redis.del(`refresh_token:${target._id}`);
+        } catch (error) {
+          console.warn("Unable to repeat refresh-token revocation after deactivation", {
+            name: error?.name || "Error",
+            code: typeof error?.code === "string" ? error.code : undefined,
+          });
+        }
+      }
+      await recordAuditEvent(req, {
+        action: "customer.access_updated", targetType: "user", targetId: target._id,
+        summary: "Customer account access updated",
+        metadata: { role: target.role, isActive: target.isActive, permissions: target.permissions || null },
+      });
+      return res.json({ customer: { _id: target._id, name: target.name, email: target.email, role: target.role, permissions: target.permissions, isActive: target.isActive } });
     });
-    return res.json({ customer: { _id: target._id, name: target.name, email: target.email, role: target.role, permissions: target.permissions, isActive: target.isActive } });
   } catch (error) {
+    if (error instanceof AdministratorAccessLockError) {
+      console.warn("Administrator access update temporarily unavailable", { code: error.code });
+      return res.status(503).json({ message: "Administrator access is temporarily busy. Please try again." });
+    }
     console.error("Unable to update customer access", { name: error?.name, message: error?.message });
     return res.status(500).json({ message: "Unable to update customer access" });
   }
 };
-
 export const getInventoryAlerts = async (req, res) => {
   const threshold = clampInteger(req.query.threshold, 5, 0, 50);
   try {
