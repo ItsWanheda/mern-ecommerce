@@ -17,12 +17,12 @@ export default function handler(req, res) {
     return res.status(400).send("Invalid request");
   }
   const siteOrigin = getCanonicalOrigin(requestOrigin);
-  const body = [
+  const lines = [
     "User-agent: *",
     "Allow: /",
-    "Sitemap: " + siteOrigin + "/sitemap.xml",
-    "",
-  ].join("\n");
+  ];
+  if (siteOrigin) lines.push("Sitemap: " + siteOrigin + "/sitemap.xml");
+  const body = lines.join("\n") + "\n";
 
   res.setHeader("Content-Type", "text/plain; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
