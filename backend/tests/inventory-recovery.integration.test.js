@@ -92,6 +92,24 @@ test("concurrent reservations never oversell tracked product stock", { skip: !te
   assert.equal(current.stock, 0);
 });
 
+test("reservation refuses a stale price snapshot without deducting stock", { skip: !testUri }, async () => {
+  const product = await createProduct({ stock: 5 });
+  const staleSnapshot = productMap(product);
+  await Product.updateOne({ _id: product._id }, { $set: { price: 1500 } });
+
+  await assert.rejects(
+    reserveInventory(
+      [{ product: product._id.toString(), quantity: 1, size: "", color: "" }],
+      staleSnapshot
+    ),
+    /INSUFFICIENT_STOCK/
+  );
+
+  const current = await Product.findById(product._id).lean();
+  assert.equal(current.price, 1500);
+  assert.equal(current.stock, 5, "stale-price checkout must not reserve any units");
+});
+
 test("partial multi-product reservation failure restores earlier stock", { skip: !testUri }, async () => {
   const first = await createProduct({ stock: 4 });
   const second = await createProduct({ stock: 0 });
