@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import AuditLog from "../models/audit-log.model.js";
+import { recordAuditEvent } from "../lib/audit-log.js";
 import { escapeSearchRegex } from "../lib/persian-search.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
