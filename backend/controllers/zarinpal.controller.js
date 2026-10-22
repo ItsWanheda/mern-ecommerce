@@ -385,6 +385,9 @@ export const createZarinpalCheckout = async (req, res) => {
 
     if (!transactionResult) throw new Error("CHECKOUT_TRANSACTION_NO_RESULT");
     order = transactionResult.order;
+    // Detach the committed order from the ended MongoDB session before later
+    // payment-request status updates call save().
+    if (typeof order.$session === "function") order.$session(null);
     reserved = transactionResult.reserved;
     coupon = transactionResult.coupon;
     couponDiscountAmount = transactionResult.couponDiscountAmount;
