@@ -181,6 +181,20 @@ Set CLIENT_URL to the public storefront origin. For credentialed direct API requ
 
 State-changing requests with a foreign Origin are rejected; requests with no Origin are rejected when Fetch Metadata identifies them as cross-site. This supplements HttpOnly/SameSite cookies, but does not replace HTTPS or safe cookie/domain configuration.
 
+## Inventory integrity and unknown-stock audit
+
+Unknown stock is **not unlimited stock**. Checkout now rejects active products whose stock or any sellable variant stock is missing, null, nonnumeric, negative, fractional, or outside the safe-integer range. No migration guesses quantities or changes the catalogue automatically.
+
+Before enabling checkout for an existing store, run the read-only inventory report from the repository root with a MongoDB account that has read access to the catalogue:
+
+```bash
+npm run audit:inventory
+```
+
+The report lists each affected product ID, product name/category, and every invalid variant stock field. Exit code `0` means no untracked inventory was found; exit code `2` means findings need review; exit code `1` means the audit could not run. The script never writes to MongoDB.
+
+For each finding, an authorized catalogue operator must review the physical/contractual stock and set an explicit non-negative whole-number quantity, including `0` only when the item is actually unavailable. If the business truly requires unlimited stock, define and implement a separate explicit inventory mode before selling such products. Do not use a null or string-valued stock as a substitute.
+
 ## Inventory integration tests
 
 Run `npm test --prefix backend`. Security header/origin tests do not require external services. Inventory integration tests require `MONGO_TEST_URI` to point at a dedicated disposable database whose name includes test. Concurrent reservation and partial rollback are tested with atomic MongoDB updates; duplicate-release and transaction-rollback tests require a MongoDB replica set or sharded deployment.
