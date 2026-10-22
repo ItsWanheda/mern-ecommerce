@@ -15,8 +15,17 @@ const hasLongPassphraseComplexity = (password) =>
 
 const containsCommonPasswordPattern = (password) => {
   const normalized = password.toLowerCase().normalize("NFKC").replace(/[^a-z0-9]/g, "");
-  return ["password", "passw0rd", "pssw0rd", "qwerty", "letmein", "welcome", "changeme", "iloveyou", "123456", "654321", "abc123"]
-    .some((pattern) => normalized.includes(pattern));
+  const commonFragments = ["password", "passw0rd", "pssw0rd", "qwerty", "letmein", "welcome", "changeme", "iloveyou", "123456", "654321", "abc123"];
+  if (commonFragments.some((pattern) => normalized.includes(pattern))) return true;
+
+  // Reject long ascending/descending keyboard-like sequences and repeated
+  // characters, even if punctuation was inserted between them.
+  if (/(.)\1{4,}/.test(normalized)) return true;
+  const sequences = ["abcdefghijklmnopqrstuvwxyz", "zyxwvutsrqponmlkjihgfedcba", "0123456789", "9876543210"];
+  return sequences.some((sequence) =>
+    Array.from({ length: sequence.length - 4 }, (_, index) => sequence.slice(index, index + 5))
+      .some((fragment) => normalized.includes(fragment))
+  );
 };
 
 export const getPasswordPolicyError = (password) => {
