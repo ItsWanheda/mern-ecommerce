@@ -79,7 +79,9 @@ export default function PageMeta({
   useEffect(() => {
     const runtimeSiteUrl = document.head.querySelector('meta[name="public-site-url"]')?.getAttribute("content") || "";
     const configuredSiteUrl = import.meta.env.VITE_PUBLIC_SITE_URL || runtimeSiteUrl;
+    const isSeoPreview = document.head.querySelector('meta[name="seo-preview"]')?.getAttribute("content") === "true";
     const siteOrigin = canonicalOrigin(window.location.origin, configuredSiteUrl);
+    const effectiveRobots = isSeoPreview ? "noindex, nofollow" : robots;
     const safeTitle = normalizeSeoText(title, DEFAULT_SEO_TITLE, 180);
     const safeDescription = normalizeSeoText(description, DEFAULT_SEO_DESCRIPTION, 300);
     const currentQuery = Object.fromEntries(new URLSearchParams(window.location.search).entries());
@@ -93,7 +95,7 @@ export default function PageMeta({
 
     document.title = fullTitle;
     setMeta('meta[name="description"]', "name", "description", safeDescription);
-    setMeta('meta[name="robots"]', "name", "robots", robots);
+    setMeta('meta[name="robots"]', "name", "robots", effectiveRobots);
     setMeta('meta[name="application-name"]', "name", "application-name", SITE_NAME);
     setMeta('meta[property="og:locale"]', "property", "og:locale", "fa_IR");
     setMeta('meta[property="og:site_name"]', "property", "og:site_name", SITE_NAME);
