@@ -123,7 +123,7 @@ export function renderHtmlShell(shell, options = {}) {
   ].filter(Boolean).join("\n");
 
   const schemas = [];
-  if (origin) schemas.push(...buildSiteStructuredData(origin));
+  if (origin) schemas.push(...buildSiteStructuredData(origin, { supportEmail: process.env.VITE_STORE_SUPPORT_EMAIL || "" }));
   if (options.structuredData) {
     schemas.push(...(Array.isArray(options.structuredData) ? options.structuredData : [options.structuredData]).filter(Boolean));
   }
