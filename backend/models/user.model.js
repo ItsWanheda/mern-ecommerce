@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import { getPasswordPolicyError } from "../lib/password-policy.js";
 
 const shippingAddressFields = {
  recipientName: { type: String, trim: true, minlength: 2, maxlength: 100, required: true },
@@ -35,7 +36,13 @@ const userSchema = new mongoose.Schema(
 		password: {
 			type: String,
 			required: [true, "Password is required"],
-			minlength: [6, "Password must be at least 6 characters long"],
+			minlength: [12, "Password must be at least 12 characters long"],
+			validate: {
+				validator(value) {
+					return !this.isModified("password") || getPasswordPolicyError(value) === "";
+				},
+				message: (props) => getPasswordPolicyError(props.value) || "Password does not meet the required strength policy",
+			},
 		},
 		passwordResetTokenHash: { type: String, select: false },
 		passwordResetExpiresAt: { type: Date, select: false },
