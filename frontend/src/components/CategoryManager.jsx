@@ -311,7 +311,7 @@ const CategoryManager = () => {
             </label>
             <div className={labelClass}>
               تصویر دسته‌بندی (حداکثر ۲ مگابایت)
-              <input className={fieldClass} type="file" accept="image/*" onChange={handleCategoryImageChange} />
+              <input className={fieldClass} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleCategoryImageChange} />
               <span className="mt-1 block text-xs text-[var(--ui-muted)]">فرمت‌های تصویری؛ حداکثر ۲ مگابایت.</span>
               {form.image && <div className="mt-3 flex items-center gap-3">
                 <img src={form.image} alt="پیش‌نمایش تصویر دسته‌بندی" className="h-20 w-20 rounded-xl border border-[var(--ui-border)] object-cover" />
