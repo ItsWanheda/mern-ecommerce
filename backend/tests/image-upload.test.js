@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   ImageUploadError,
   ImageStorageError,
+  deleteManagedCloudinaryImage,
+  getManagedCloudinaryPublicId,
   resolveImageReference,
   validateImageDataUrl,
 } from "../lib/image-upload.js";
@@ -60,4 +62,38 @@ test("rejects unsafe remote references and does not expose provider errors", asy
 test("allows existing local image paths and trusted HTTPS references without reuploading", async () => {
   assert.equal(await resolveImageReference("/images/category.webp"), "/images/category.webp");
   assert.equal(await resolveImageReference("https://images.example.ir/campaign.webp"), "https://images.example.ir/campaign.webp");
+});
+
+
+test("managed Cloudinary IDs are derived only from the expected untransformed app folder", () => {
+  assert.equal(
+    getManagedCloudinaryPublicId("https://res.cloudinary.com/test/image/upload/v123/categories/nested/item.png", { cloudName: "test", folder: "categories" }),
+    "categories/nested/item"
+  );
+  assert.equal(
+    getManagedCloudinaryPublicId("https://res.cloudinary.com/test/image/upload/c_fill,w_100/v123/categories/item.png", { cloudName: "test", folder: "categories" }),
+    null
+  );
+  assert.equal(
+    getManagedCloudinaryPublicId("https://res.cloudinary.com/test/image/upload/v123/campaigns/item.webp", { cloudName: "test", folder: "categories" }),
+    null
+  );
+  assert.equal(getManagedCloudinaryPublicId("https://images.example.ir/categories/item.png", { cloudName: "test", folder: "categories" }), null);
+});
+
+test("image cleanup calls Cloudinary only for recognized app-managed assets", async () => {
+  const calls = [];
+  const uploader = { async destroy(publicId, options) { calls.push({ publicId, options }); return { result: "ok" }; } };
+  assert.equal(await deleteManagedCloudinaryImage(
+    "https://res.cloudinary.com/test/image/upload/v123/campaigns/item.gif",
+    { cloudName: "test", folder: "campaigns", uploader }
+  ), true);
+  assert.equal(await deleteManagedCloudinaryImage(
+    "https://res.cloudinary.com/test/image/upload/v123/categories/item.gif",
+    { cloudName: "test", folder: "campaigns", uploader }
+  ), false);
+  assert.deepEqual(calls, [{
+    publicId: "campaigns/item",
+    options: { resource_type: "image", invalidate: true },
+  }]);
 });
