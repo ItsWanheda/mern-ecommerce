@@ -303,16 +303,29 @@ export function buildBreadcrumbStructuredData(items, origin) {
   };
 }
 
-export function buildSiteStructuredData(origin) {
+export function buildSiteStructuredData(origin, options = {}) {
   const rootUrl = canonicalUrlFor("/", origin, origin);
   if (!rootUrl) return [];
+
+  const supportEmail = typeof options.supportEmail === "string" &&
+    /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(options.supportEmail.trim())
+    ? options.supportEmail.trim()
+    : "";
+
   return [
     {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": "OnlineStore",
       "@id": rootUrl + "#organization",
       name: SITE_NAME,
       url: rootUrl,
+      ...(supportEmail ? {
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: supportEmail,
+        },
+      } : {}),
     },
     {
       "@context": "https://schema.org",
