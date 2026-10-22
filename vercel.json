@@ -135,7 +135,7 @@
       "destination": "/api/page-shell?path=/purchase-cancel"
     },
     {
-      "source": "/:path((?!api/|assets/|.*\\.(?:svg|png|jpg|jpeg|webp|avif|gif|css|js|json|ico|woff2?|ttf|map|html|xml|txt|webmanifest)$).*)",
+      "source": "/:path*",
       "destination": "/api/page-shell?path=/:path*"
     }
   ]
