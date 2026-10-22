@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /secret-dashboard
+Disallow: /profile
+Disallow: /orders
+Disallow: /cart
+Disallow: /wishlist
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /purchase-success
+Disallow: /purchase-cancel
