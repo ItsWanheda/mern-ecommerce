@@ -1,12 +1,9 @@
 import mongoose from "mongoose";
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
 import {
-  calculateCouponDiscount,
-  couponEligibilityError,
   redeemCouponReservationForOrder,
   releaseCouponReservationByCode,
   releaseCouponReservationForOrder,
@@ -289,27 +286,11 @@ export const createZarinpalCheckout = async (req, res) => {
       return res.status(409).json({ message: "موجودی یا اطلاعات یکی از کالاهای سبد خرید معتبر نیست؛ سبد خرید را به‌روزرسانی کنید." });
     }
 
-    const subtotal = validated.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    if (!Number.isSafeInteger(subtotal) || subtotal < 0) {
-      return res.status(400).json({ message: "مبلغ سبد خرید معتبر نیست." });
-    }
     const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode.trim().toUpperCase() : "";
     let coupon = null;
     let couponDiscountAmount = 0;
-    if (couponCode) {
-      coupon = await Coupon.findOne({ code: couponCode }).lean();
-      const couponError = couponEligibilityError(coupon, subtotal);
-      if (couponError) return res.status(400).json({ message: couponError });
-      couponDiscountAmount = calculateCouponDiscount(coupon, subtotal);
-    }
-
-    const shippingSettings = await getShippingSettings();
-    let discountedSubtotal = subtotal - couponDiscountAmount;
-    let shippingFee = calculateShippingFee(discountedSubtotal, shippingSettings);
-    let totalToman = discountedSubtotal + shippingFee;
-    if (!Number.isSafeInteger(totalToman) || totalToman < 0) {
-      return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
-    }
+    let shippingFee = 0;
+    let totalToman = 0;
 
     // Reserve coupon usage, finite inventory, and the pending order in one MongoDB
     // transaction. A crash cannot leave stock reserved without a durable order record.
