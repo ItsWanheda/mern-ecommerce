@@ -3,7 +3,6 @@ import {
   getCanonicalOrigin,
   getRequestOrigin,
   resolveApiBase,
-  sendHtml,
   validLastmod,
   xmlEscape,
 } from "../seo/server-utils.js";
@@ -24,6 +23,11 @@ export default async function handler(req, res) {
     return res.status(400).send("Invalid request");
   }
   const siteOrigin = getCanonicalOrigin(requestOrigin);
+  if (!siteOrigin) {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(404).send(method === "HEAD" ? "" : "Sitemap unavailable for this deployment");
+  }
   const rawPage = typeof req.query?.page === "string" ? req.query.page : "1";
   const page = Number(rawPage);
   if (!Number.isInteger(page) || page < 1 || page > 5000) {
