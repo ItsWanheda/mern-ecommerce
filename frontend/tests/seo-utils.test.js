@@ -1,0 +1,82 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  absoluteUrlFor,
+  buildProductStructuredData,
+  canonicalUrlFor,
+  escapeHtml,
+  getSchemaAvailability,
+  normalizeSeoText,
+} from "../src/lib/seo-utils.js";
+import { renderHtmlShell } from "../../seo/server-utils.js";
+
+test("SEO text collapses whitespace without damaging Persian text", () => {
+  assert.equal(normalizeSeoText("  پیراهن\n\n   آبی  ", "fallback", 100), "پیراهن آبی");
+  assert.equal(normalizeSeoText("", "توضیح پیش‌فرض", 10), "توضیح پی");
+  assert.equal(normalizeSeoText("الف   ب", "", 3), "الف");
+});
+
+test("canonical URLs use the configured origin and discard query/hash duplicates", () => {
+  assert.equal(
+    canonicalUrlFor("/category/jeans?color=blue#products", "https://preview.example", "https://shop.example/path/"),
+    "https://shop.example/category/jeans"
+  );
+  assert.equal(canonicalUrlFor("//evil.example/path", "https://shop.example"), "https://shop.example/");
+});
+
+test("relative images become absolute, safe HTTP(S) URLs", () => {
+  assert.equal(absoluteUrlFor("/images/shirt.jpg", "https://shop.example/path"), "https://shop.example/images/shirt.jpg");
+  assert.equal(absoluteUrlFor("javascript:alert(1)", "https://shop.example"), "");
+  assert.equal(absoluteUrlFor("", "https://shop.example"), "");
+});
+
+test("product structured data converts stored Toman to Rial and describes untracked stock consistently", () => {
+  const schema = buildProductStructuredData({
+    product: { _id: "abc123", name: "پیراهن", price: 125000, stock: null, description: "پیراهن آبی" },
+    title: "پیراهن",
+    description: "جزئیات محصول",
+    image: "/shirt.jpg",
+    canonical: "https://shop.example/product/abc123",
+    origin: "https://shop.example",
+  });
+  assert.equal(schema.offers.priceCurrency, "IRR");
+  assert.equal(schema.offers.price, 1250000);
+  assert.equal(schema.offers.availability, "https://schema.org/InStock");
+  assert.deepEqual(schema.image, ["https://shop.example/shirt.jpg"]);
+});
+
+test("variant availability reflects whether at least one combination is purchasable", () => {
+  assert.equal(getSchemaAvailability({ variants: [{ stock: 0 }, { stock: 2 }] }), "https://schema.org/InStock");
+  assert.equal(getSchemaAvailability({ variants: [{ stock: 0 }], stock: null }), "https://schema.org/OutOfStock");
+  assert.equal(getSchemaAvailability({ isActive: false, stock: 5 }), "https://schema.org/Discontinued");
+});
+
+test("server HTML transform keeps the app bundle and injects unique Persian metadata and content", () => {
+  const source = '<!doctype html><html lang="fa" dir="rtl"><head><title>default</title><meta name="description" content="old"><meta name="robots" content="index, follow"><script type="module" src="/assets/app.js"></script></head><body><div id="root"></div></body></html>';
+  const rendered = renderHtmlShell(source, {
+    title: "پیراهن\n آبی",
+    description: "توضیح محصول",
+    canonical: "https://shop.example/product/abc123",
+    siteOrigin: "https://shop.example",
+    robots: "index, follow",
+    type: "product",
+    structuredData: { "@type": "Product", name: "پیراهن" },
+    rootContent: "<main><h1>پیراهن آبی</h1></main>",
+  });
+  assert.match(rendered, /<title>پیراهن آبی \| تیک بوتیک<\/title>/);
+  assert.match(rendered, /<link rel="canonical" href="https:\/\/shop\.example\/product\/abc123">/);
+  assert.match(rendered, /<div id="root"><main><h1>پیراهن آبی<\/h1><\/main><\/div>/);
+  assert.match(rendered, /src="\/assets\/app\.js"/);
+  assert.equal((rendered.match(/<title>/g) || []).length, 1);
+  assert.equal((rendered.match(/name="description"/g) || []).length, 1);
+});
+
+test("server HTML escapes user-provided text before placing it in metadata", () => {
+  const rendered = renderHtmlShell(
+    '<html><head><title>old</title></head><body><div id="root"></div></body></html>',
+    { title: 'Shirt <script>alert("x")</script>', description: "a & b", rootContent: "" }
+  );
+  assert.match(rendered, /Shirt &lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
+  assert.match(rendered, /content="a &amp; b"/);
+  assert.doesNotMatch(rendered, /<title>Shirt <script>/);
+});
