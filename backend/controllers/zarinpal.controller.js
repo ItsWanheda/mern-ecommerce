@@ -391,40 +391,6 @@ export const createZarinpalCheckout = async (req, res) => {
     shippingFee = transactionResult.shippingFee;
     totalToman = transactionResult.totalToman;
 
-        return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
-      }
-    }
-
-    const reservations = await reserveInventory(validated.map((item) => ({
-      product: item.productId,
-      quantity: item.quantity,
-      size: item.size,
-      color: item.color,
-    })), productsById);
-    reserved = reservations.reserved;
-    const orderItems = reservations.orderItems;
-
-    order = await Order.create({
-      user: req.user._id,
-      products: orderItems,
-      shippingAddress,
-      shipmentStatus: "not_ready",
-      totalAmount: totalToman,
-      subtotalAmount: subtotal,
-      shippingFee,
-      currency: "IRT",
-      paymentProvider: "zarinpal",
-      paymentStatus: "pending",
-      status: "pending",
-      couponCode: coupon?.code || "",
-      couponDiscountAmount,
-      couponDiscountPercentage: coupon ? Number(coupon.discountPercentage) : 0,
-      couponReservationStatus: coupon ? "reserved" : "none",
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-      paymentRequestStatus: "not_started",
-    });
-    couponReservedWithoutOrder = false;
-
     // 100% discounts can legitimately create a zero-payable order when shipping is free.
     // Finalize locally instead of sending a zero amount to the payment gateway.
     if (totalToman === 0) {
