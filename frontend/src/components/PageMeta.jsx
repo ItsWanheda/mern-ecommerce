@@ -113,7 +113,7 @@ export default function PageMeta({
     setCanonical(canonicalUrl);
 
     removeJsonLd();
-    buildSiteStructuredData(siteOrigin).forEach((schema, index) => addJsonLd("site-jsonld-" + index, schema));
+    buildSiteStructuredData(siteOrigin, { supportEmail: import.meta.env.VITE_STORE_SUPPORT_EMAIL || "" }).forEach((schema, index) => addJsonLd("site-jsonld-" + index, schema));
 
     if (type === "product" && product?.name) {
       addJsonLd("page-jsonld", buildProductStructuredData({
