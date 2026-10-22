@@ -31,6 +31,16 @@ const categoryLabels = {
   bags: "کیف",
 };
 
+const legacyCategoryDescriptions = {
+  jeans: "مدل‌های متنوع شلوار جین برای استایل روزمره و ترکیب‌های مختلف پوشاک.",
+  "t-shirts": "تی‌شرت‌های متنوع برای استفاده روزمره و ساختن استایل‌های ساده و راحت.",
+  shoes: "کفش‌های متنوع برای تکمیل استایل روزمره و انتخاب‌های مختلف.",
+  glasses: "عینک‌ها و اکسسوری‌های مکمل برای کامل‌کردن ظاهر.",
+  jackets: "کت و کاپشن برای لایه‌بندی لباس و استایل روزهای خنک.",
+  suits: "کت‌وشلوار و پوشاک رسمی برای موقعیت‌های مختلف.",
+  bags: "کیف‌های کاربردی برای تکمیل استایل و استفاده روزمره.",
+};
+
 const collectionConfigs = {
   shop: {
     routePath: "/shop",
@@ -366,13 +376,21 @@ export default async function handler(req, res) {
       ], siteOrigin));
       rootContent = renderProductContent(product, canonical, siteOrigin);
     } else if (type === "category") {
-      const payload = await getApiJson(apiBase, "categories/" + encodeURIComponent(id));
-      category = payload?.category;
-      if (!category || category.isActive === false) {
-        const missing = new Error("Category not found");
+      try {
+        const payload = await getApiJson(apiBase, "categories/" + encodeURIComponent(id));
+        category = payload?.category || null;
+      } catch (error) {
+        // Older catalogues can still have public legacy category slugs without
+        // a corresponding Category document. Confirm the route against the
+        // public category-products endpoint before deciding whether it is 404.
+        if (error.status !== 404) throw error;
+      }
+      if (category?.isActive === false) {
+        const missing = new Error("Category is not publicly available");
         missing.status = 404;
         throw missing;
       }
+
       const categoryQuery = new URLSearchParams();
       for (const key of ["q", "minPrice", "maxPrice", "size", "color", "fit", "brand", "inStock", "attributes", "sort", "page"]) {
         const raw = req.query?.[key];
@@ -385,6 +403,23 @@ export default async function handler(req, res) {
       categoryQuery.set("limit", "8");
       const catalog = await getApiJson(apiBase, "products/category/" + encodeURIComponent(id) + "?" + categoryQuery.toString());
       products = Array.isArray(catalog?.products) ? catalog.products : [];
+
+      if (!category) {
+        const legacyName = categoryLabels[id] || products[0]?.category;
+        if (!legacyName && products.length === 0) {
+          const missing = new Error("Category not found");
+          missing.status = 404;
+          throw missing;
+        }
+        const fallbackTitle = String(legacyName || id.replace(/-/g, " "));
+        category = {
+          slug: id,
+          name: { fa: fallbackTitle },
+          description: { fa: legacyCategoryDescriptions[id] || ("محصولات دسته " + fallbackTitle + " را در تیک بوتیک ببینید.") },
+          image: products[0]?.image || products[0]?.images?.[0] || "",
+          isActive: true,
+        };
+      }
       title = String(category.name?.fa || category.name?.en || id);
       description = String(category.description?.fa || category.description?.en || ("محصولات دسته " + title + " را در تیک بوتیک ببینید."));
       imageValue = category.image || products[0]?.image || products[0]?.images?.[0] || "";
