@@ -1,4 +1,5 @@
 import { redis } from "../lib/redis.js";
+import { getPasswordPolicyError } from "../lib/password-policy.js";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
@@ -43,6 +44,8 @@ const setCookies = (res, accessToken, refreshToken) => {
 
 export const signup = async (req, res) => {
 	const { email, password, name } = req.body;
+	const passwordError = getPasswordPolicyError(password);
+	if (passwordError) return res.status(400).json({ message: passwordError, fieldErrors: { password: passwordError } });
 	try {
 		const userExists = await User.findOne({ email });
 
@@ -382,7 +385,8 @@ export const resetPassword = async (req, res) => {
   const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
   const password = typeof req.body?.password === "string" ? req.body.password : "";
   if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ message: "لینک بازیابی نامعتبر یا منقضی شده است." });
-  if (password.length < 8 || password.length > 128) return res.status(400).json({ message: "رمز عبور باید دست‌کم ۸ نویسه داشته باشد." });
+  const passwordError = getPasswordPolicyError(password);
+  if (passwordError) return res.status(400).json({ message: passwordError, fieldErrors: { password: passwordError } });
   try {
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const user = await User.findOne({
