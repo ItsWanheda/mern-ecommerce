@@ -144,6 +144,28 @@ export function canonicalUrlFor(path, currentOrigin, configuredOrigin = "") {
   }
 }
 
+export function canonicalUrlForQuery(path, query, currentOrigin, configuredOrigin = "") {
+  const base = canonicalUrlFor(path, currentOrigin, configuredOrigin);
+  if (!base || !query || typeof query !== "object") return base;
+
+  const entries = Object.entries(query).filter(([, raw]) => {
+    if (raw === undefined || raw === null) return false;
+    const values = Array.isArray(raw) ? raw : [raw];
+    return values.some((value) => String(value ?? "").trim() !== "");
+  });
+  const isPaginationOnly = entries.every(([key, raw]) => {
+    if (["page", "path", "type", "id"].includes(key)) return true;
+    const values = Array.isArray(raw) ? raw : [raw];
+    if (key === "sort" && values.every((value) => String(value) === "newest")) return true;
+    return key.toLowerCase().startsWith("utm_");
+  });
+
+  const rawPage = Array.isArray(query.page) ? query.page[0] : query.page;
+  const page = Number(rawPage);
+  if (!isPaginationOnly || !Number.isSafeInteger(page) || page < 2) return base;
+  return base + "?page=" + String(page);
+}
+
 export function absoluteUrlFor(value, origin) {
   if (typeof value !== "string" || !value.trim()) return "";
   const base = canonicalOrigin(origin, "");
@@ -174,18 +196,19 @@ export function safeJson(value) {
 
 export function getSchemaAvailability(product) {
   if (product?.isActive === false) return "https://schema.org/Discontinued";
+
   const variants = Array.isArray(product?.variants) ? product.variants : [];
   if (variants.length) {
     return variants.some((variant) => Number(variant?.stock) > 0)
       ? "https://schema.org/InStock"
       : "https://schema.org/OutOfStock";
   }
+
+  // Unknown/null stock must not be advertised as available: checkout requires
+  // finite stock, so omit availability until inventory is explicitly tracked.
   const stock = product?.stock;
-  const isTracked = stock !== null && stock !== undefined && stock !== "" && Number.isFinite(Number(stock));
-  // The storefront treats null stock as untracked inventory, not as zero stock.
-  return !isTracked || Number(stock) > 0
-    ? "https://schema.org/InStock"
-    : "https://schema.org/OutOfStock";
+  if (typeof stock !== "number" || !Number.isFinite(stock)) return undefined;
+  return stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
 }
 
 export function buildProductStructuredData({ product, title, description, image, canonical, origin }) {
@@ -198,6 +221,7 @@ export function buildProductStructuredData({ product, title, description, image,
   const images = [...new Set(imageValues.map((value) => absoluteUrlFor(value, origin)).filter(Boolean))];
   const priceToman = Number(product.price);
   const hasValidPrice = Number.isFinite(priceToman) && priceToman >= 0;
+  const availability = getSchemaAvailability(product);
   const result = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -205,12 +229,12 @@ export function buildProductStructuredData({ product, title, description, image,
     description: normalizeSeoText(product.description || description, description, 1000),
     image: images.length ? images : undefined,
     sku: product._id ? String(product._id) : undefined,
-    offers: hasValidPrice ? {
+    offers: hasValidPrice && availability ? {
       "@type": "Offer",
       priceCurrency: "IRR",
       // The storefront stores prices in Toman; structured data uses Rial (IRR).
       price: Math.round(priceToman * 10),
-      availability: getSchemaAvailability(product),
+      availability,
       url: canonical || undefined,
     } : undefined,
   };
