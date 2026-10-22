@@ -1,148 +1,285 @@
-const escapeHtml = (value) => String(value ?? "")
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;")
-  .replace(/'/g, "&#39;");
+import {
+  absoluteUrlFor,
+  buildBreadcrumbStructuredData,
+  buildCollectionStructuredData,
+  buildProductStructuredData,
+  canonicalUrlFor,
+  escapeHtml,
+  getSchemaAvailability,
+  hasIndexExcludedQuery,
+  normalizeSeoText,
+} from "../frontend/src/lib/seo-utils.js";
+import {
+  fetchAppShell,
+  getApiJson,
+  getCanonicalOrigin,
+  getRequestOrigin,
+  renderHtmlShell,
+  resolveApiBase,
+  sendHtml,
+} from "../seo/server-utils.js";
 
-const safeJson = (value) => JSON.stringify(value)
-  .replace(/</g, "\\u003c")
-  .replace(/>/g, "\\u003e")
-  .replace(/&/g, "\\u0026");
+const MINIMAL_SHELL = '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>تیک بوتیک</title></head><body><div id="root"></div></body></html>';
 
-const absoluteImageUrl = (value, origin) => {
-  if (typeof value !== "string" || !value.trim()) return "";
-  try {
-    const parsed = new URL(value.trim(), origin);
-    return ["https:", "http:"].includes(parsed.protocol) ? parsed.toString() : "";
-  } catch {
-    return "";
-  }
+const categoryLabels = {
+  jeans: "شلوار جین",
+  "t-shirts": "تی‌شرت",
+  shoes: "کفش",
+  glasses: "عینک",
+  jackets: "کت و کاپشن",
+  suits: "کت‌وشلوار",
+  bags: "کیف",
 };
 
-function resolveApiBase(req, origin) {
-  const configured = String(process.env.API_BASE_URL || process.env.VITE_API_URL || "/api").trim();
-  if (!configured || /[\r\n]/.test(configured)) throw new Error("Invalid API base URL");
-  let base;
-  if (/^https?:\/\//i.test(configured)) {
-    base = new URL(configured);
-  } else {
-    base = new URL(configured.startsWith("/") ? configured : "/" + configured, origin);
-  }
-  if (!["http:", "https:"].includes(base.protocol)) throw new Error("Unsupported API protocol");
-  base.pathname = base.pathname.replace(/\/+$/, "");
-  if (!/\/api$/i.test(base.pathname)) base.pathname += "/api";
-  base.search = "";
-  base.hash = "";
-  return base.toString().replace(/\/$/, "");
-}
+const collectionConfigs = {
+  "new-arrivals": {
+    routePath: "/new-arrivals",
+    title: "تازه‌واردها",
+    description: "جدیدترین محصولات اضافه‌شده به تیک بوتیک را ببینید.",
+    endpoint: "products/newest?limit=8",
+  },
+  bestsellers: {
+    routePath: "/bestsellers",
+    title: "پرفروش‌های فروشگاه",
+    description: "محصولات پرفروش تیک بوتیک را مشاهده کنید.",
+    endpoint: "products/bestsellers?limit=8",
+  },
+  "featured-products": {
+    routePath: "/featured-products",
+    title: "محصولات منتخب",
+    description: "مجموعه‌ای از محصولات منتخب تیک بوتیک را بررسی کنید.",
+    endpoint: "products/featured",
+  },
+  "look-daily-style": {
+    routePath: "/looks/daily-style",
+    title: "استایل روزمره",
+    description: "پایه‌های راحت برای ترکیب روزانه؛ از شلوار جین تا تی‌شرت و کفش.",
+    categories: ["jeans", "t-shirts", "shoes"],
+    image: "/jeans.jpg",
+  },
+  "look-layers": {
+    routePath: "/looks/layers",
+    title: "لایه‌های ماندگار",
+    description: "ترکیب کت و شلوار برای روزهای خنک و انتخاب‌های چندفصلی.",
+    categories: ["jackets", "jeans", "t-shirts"],
+    image: "/jackets.jpg",
+  },
+  "look-details": {
+    routePath: "/looks/details",
+    title: "جزئیات تکمیل‌کننده",
+    description: "اکسسوری‌ها و انتخاب‌های ساده برای کامل‌کردن ظاهر.",
+    categories: ["bags", "glasses", "shoes"],
+    image: "/bags.jpg",
+  },
+};
 
-async function getApiJson(apiBase, endpoint) {
-  const url = apiBase + "/" + String(endpoint).replace(/^\/+/, "");
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(4500),
+const priceText = (value) => {
+  const price = Number(value);
+  return Number.isFinite(price) && price >= 0
+    ? new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(Math.round(price)) + " تومان"
+    : "";
+};
+
+const imageHtml = (image, alt, dimensions = "width=\"800\" height=\"1000\"") => {
+  const source = absoluteUrlFor(image || "", image);
+  if (!source) return "";
+  return '<img src="' + escapeHtml(source) + '" alt="' + escapeHtml(alt) + '" ' + dimensions +
+    ' style="display:block;max-width:100%;height:auto;object-fit:cover;border-radius:12px" fetchpriority="high">';
+};
+
+const pageLayout = (title, description, innerHtml) =>
+  '<main lang="fa" dir="rtl" style="max-width:1200px;margin:0 auto;padding:24px 16px;color:#252722;font-family:Tahoma,Arial,sans-serif;line-height:1.9">' +
+    '<nav aria-label="مسیر صفحه" style="font-size:13px;margin-bottom:16px"><a href="/" style="color:#68745f">صفحه اصلی</a> / <a href="/shop" style="color:#68745f">فروشگاه</a></nav>' +
+    '<h1 style="font-size:28px;line-height:1.5;margin:0 0 12px">' + escapeHtml(title) + '</h1>' +
+    '<p style="font-size:15px;color:#62645c;margin:0 0 20px">' + escapeHtml(normalizeSeoText(description, "", 1000)) + '</p>' +
+    innerHtml +
+    '<p style="margin-top:28px"><a href="/shop" style="display:inline-block;border-radius:999px;background:#252722;color:#fff;padding:9px 18px;text-decoration:none">مشاهده فروشگاه</a></p>' +
+  '</main>';
+
+const renderProductCards = (products, origin) => {
+  const items = (Array.isArray(products) ? products : [])
+    .filter((product) => product && product._id && product.isActive !== false)
+    .slice(0, 24);
+  if (!items.length) return "";
+  return '<section aria-label="محصولات مرتبط" style="margin-top:24px"><h2 style="font-size:20px">محصولات</h2>' +
+    '<ul style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;list-style:none;padding:0">' +
+    items.map((product) => {
+      const href = "/product/" + encodeURIComponent(String(product._id));
+      const image = absoluteUrlFor(product.image || product.images?.[0] || "", origin);
+      return '<li style="border:1px solid #e4e0d8;border-radius:14px;padding:12px;background:#fffefa">' +
+        '<a href="' + escapeHtml(href) + '" style="color:#252722;text-decoration:none">' +
+        (image ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(product.name || "تصویر محصول") + '" width="400" height="500" loading="lazy" style="width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:8px">' : "") +
+        '<h3 style="font-size:15px;line-height:1.7">' + escapeHtml(product.name || "محصول") + '</h3>' +
+        '</a>' +
+        (priceText(product.price) ? '<p style="font-weight:bold">' + escapeHtml(priceText(product.price)) + '</p>' : "") +
+      '</li>';
+    }).join("") +
+    '</ul></section>';
+};
+
+const renderProductContent = (product, canonical, origin) => {
+  const image = product.image || product.images?.[0] || "";
+  const category = typeof product.category === "string" ? product.category : "";
+  const categoryName = categoryLabels[category] || category.replace(/-/g, " ");
+  const availability = getSchemaAvailability(product) === "https://schema.org/InStock"
+    ? "وضعیت: موجود"
+    : getSchemaAvailability(product) === "https://schema.org/Discontinued"
+      ? "وضعیت: فروش این محصول متوقف شده است"
+      : "وضعیت: ناموجود";
+  const detailHtml =
+    (image ? '<div style="max-width:480px;margin:16px 0">' + imageHtml(absoluteUrlFor(image, origin), product.name || "تصویر محصول") + '</div>' : "") +
+    (priceText(product.price) ? '<p style="font-size:21px;font-weight:bold">' + escapeHtml(priceText(product.price)) + '</p>' : "") +
+    '<p style="font-size:14px;color:#62645c">' + escapeHtml(availability) + '</p>' +
+    (category ? '<p>دسته‌بندی: <a href="/category/' + escapeHtml(encodeURIComponent(category)) + '">' + escapeHtml(categoryName) + '</a></p>' : "") +
+    '<p><a href="' + escapeHtml(canonical) + '" style="color:#526149">مشاهده جزئیات و گزینه‌های محصول</a></p>';
+  return pageLayout(product.name || "محصول", product.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک.", detailHtml);
+};
+
+const renderCategoryContent = (category, products, origin) => {
+  const name = category.name?.fa || category.name?.en || category.slug;
+  const description = category.description?.fa || category.description?.en ||
+    ("محصولات دسته " + name + " را در تیک بوتیک ببینید.");
+  const image = absoluteUrlFor(category.image || "", origin);
+  const introImage = image
+    ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(image, name, 'width="1000" height="700"') + '</div>'
+    : "";
+  return pageLayout(name, description, introImage + renderProductCards(products, origin));
+};
+
+const renderCollectionContent = (config, products, origin) => {
+  const image = absoluteUrlFor(config.image || "", origin);
+  const introImage = image
+    ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(image, config.title, 'width="1000" height="700"') + '</div>'
+    : "";
+  return pageLayout(config.title, config.description, introImage + renderProductCards(products, origin));
+};
+
+const renderCampaignContent = (campaign, origin) => {
+  const image = absoluteUrlFor(campaign.image || "", origin);
+  const imageBlock = image
+    ? '<div style="max-width:720px;margin:16px 0">' + imageHtml(image, campaign.title || "پیشنهاد ویژه", 'width="1200" height="700"') + '</div>'
+    : "";
+  const target = typeof campaign.href === "string" && campaign.href.startsWith("/") && !campaign.href.startsWith("//")
+    ? campaign.href
+    : "/shop";
+  return pageLayout(campaign.title || "پیشنهاد ویژه", campaign.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک.", imageBlock +
+    '<p><a href="' + escapeHtml(target) + '" style="color:#526149">مشاهده پیشنهاد</a></p>');
+};
+
+const renderNotFoundContent = () =>
+  '<main lang="fa" dir="rtl" style="max-width:800px;margin:0 auto;padding:48px 16px;text-align:center;font-family:Tahoma,Arial,sans-serif;line-height:1.9">' +
+  '<p style="font-size:13px;color:#68745f">تیک بوتیک · خطای ۴۰۴</p>' +
+  '<h1 style="font-size:30px">صفحه موردنظر پیدا نشد</h1>' +
+  '<p>ممکن است محصول حذف شده باشد، کمپین به پایان رسیده باشد یا نشانی صفحه اشتباه باشد.</p>' +
+  '<p><a href="/" style="color:#526149">صفحه اصلی</a> · <a href="/shop" style="color:#526149">مشاهده محصولات</a></p>' +
+  '</main>';
+
+const notFoundDocument = (shell, canonicalOrigin, isHead) => {
+  const html = renderHtmlShell(shell || MINIMAL_SHELL, {
+    title: "صفحه پیدا نشد",
+    description: "این محصول، دسته‌بندی، مجموعه یا کمپین در تیک بوتیک در دسترس نیست.",
+    siteOrigin: canonicalOrigin,
+    canonical: "",
+    robots: "noindex, nofollow",
+    rootContent: renderNotFoundContent(),
   });
-  if (!response.ok) {
-    const error = new Error("Public metadata API returned HTTP " + response.status);
-    error.status = response.status;
-    throw error;
-  }
-  return response.json();
-}
-
-const htmlDocument = ({ title, description, image, canonical, kind, structuredData }) => {
-  const fullTitle = title.includes("تیک بوتیک") ? title : title + " | تیک بوتیک";
-  const shortDescription = String(description || "خرید آنلاین پوشاک و اکسسوری در تیک بوتیک.")
-    .replace(/\s+/g, " ").trim().slice(0, 300);
-  const imageMeta = image
-    ? `<meta property="og:image" content="${escapeHtml(image)}"><meta property="og:image:alt" content="${escapeHtml(fullTitle)}"><meta name="twitter:image" content="${escapeHtml(image)}">`
-    : "";
-  const jsonLd = structuredData
-    ? `<script type="application/ld+json">${safeJson(structuredData)}</script>`
-    : "";
-  const productPriceMeta = kind === "product" && structuredData?.offers
-    ? `<meta property="product:price:amount" content="${escapeHtml(structuredData.offers.price)}"><meta property="product:price:currency" content="IRR">`
-    : "";
-  return `<!doctype html>
-<html lang="fa" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(fullTitle)}</title>
-<meta name="description" content="${escapeHtml(shortDescription)}">
-<meta name="robots" content="index,follow">
-<link rel="canonical" href="${escapeHtml(canonical)}">
-<meta property="og:locale" content="fa_IR">
-<meta property="og:site_name" content="تیک بوتیک">
-<meta property="og:type" content="${kind === "product" ? "product" : "website"}">
-<meta property="og:title" content="${escapeHtml(fullTitle)}">
-<meta property="og:description" content="${escapeHtml(shortDescription)}">
-<meta property="og:url" content="${escapeHtml(canonical)}">
-${imageMeta}
-<meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}">
-<meta name="twitter:title" content="${escapeHtml(fullTitle)}">
-<meta name="twitter:description" content="${escapeHtml(shortDescription)}">
-${productPriceMeta}
-${jsonLd}
-</head>
-<body><main><h1>${escapeHtml(fullTitle)}</h1><p>${escapeHtml(shortDescription)}</p>${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(fullTitle)}" width="1200" height="1200">` : ""}<p><a href="${escapeHtml(canonical)}">مشاهده در تیک بوتیک</a></p></main></body>
-</html>`;
+  return { html, isHead };
 };
 
-const notFoundPage = (canonical) => htmlDocument({
-  title: "صفحه پیدا نشد",
-  description: "این محصول، دسته‌بندی یا کمپین در تیک بوتیک در دسترس نیست.",
-  image: "",
-  canonical,
-  kind: "website",
-});
+const getProducts = async (apiBase, endpoint) => {
+  const result = await getApiJson(apiBase, endpoint);
+  const products = Array.isArray(result) ? result : result?.products;
+  return Array.isArray(products) ? products.filter((item) => item && item._id && item.isActive !== false) : [];
+};
 
 export default async function handler(req, res) {
-  if (!["GET", "HEAD"].includes(req.method || "GET")) {
+  const method = req.method || "GET";
+  if (!["GET", "HEAD"].includes(method)) {
     res.setHeader("Allow", "GET, HEAD");
     return res.status(405).send("Method not allowed");
   }
 
-  let origin;
+  let requestOrigin;
   try {
-    const protocol = req.headers["x-forwarded-proto"] === "http" ? "http" : "https";
-    const host = String(req.headers.host || "").trim();
-    if (!host || /[\r\n]/.test(host)) return res.status(400).send("Invalid request");
-    origin = protocol + "://" + host;
-    new URL(origin);
+    requestOrigin = getRequestOrigin(req);
   } catch {
     return res.status(400).send("Invalid request");
   }
-
+  const siteOrigin = getCanonicalOrigin(requestOrigin);
   const type = typeof req.query?.type === "string" ? req.query.type : "";
   const id = typeof req.query?.id === "string" ? req.query.id.trim() : "";
-  if (!["product", "category", "campaign"].includes(type) || !id || id.length > 140) {
-    return res.status(400).send("Invalid preview request");
+  if (!["product", "category", "campaign", "collection"].includes(type) || !id || id.length > 140 || /[\r\n]/.test(id)) {
+    return res.status(400).send("Invalid SEO page request");
   }
 
-  const routePath = type === "product" ? "/product/" + encodeURIComponent(id)
-    : type === "category" ? "/category/" + encodeURIComponent(id)
-    : "/campaign/" + encodeURIComponent(id);
-  const canonical = new URL(routePath, origin).toString();
+  let routePath;
+  if (type === "product") {
+    if (!/^[a-f0-9]{24}$/i.test(id)) {
+      const shell = await fetchAppShell(requestOrigin).catch(() => null);
+      const page = notFoundDocument(shell, siteOrigin, method === "HEAD");
+      return sendHtml(res, 404, page.html, {
+        head: method === "HEAD",
+        robotsHeader: "noindex, nofollow",
+        cacheControl: "public, s-maxage=30, stale-while-revalidate=60",
+      });
+    }
+    routePath = "/product/" + encodeURIComponent(id);
+  } else if (type === "category") {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
+      const shell = await fetchAppShell(requestOrigin).catch(() => null);
+      const page = notFoundDocument(shell, siteOrigin, method === "HEAD");
+      return sendHtml(res, 404, page.html, {
+        head: method === "HEAD",
+        robotsHeader: "noindex, nofollow",
+        cacheControl: "public, s-maxage=30, stale-while-revalidate=60",
+      });
+    }
+    routePath = "/category/" + encodeURIComponent(id);
+  } else if (type === "campaign") {
+    if (!/^[a-z0-9-]+$/i.test(id)) {
+      const shell = await fetchAppShell(requestOrigin).catch(() => null);
+      const page = notFoundDocument(shell, siteOrigin, method === "HEAD");
+      return sendHtml(res, 404, page.html, {
+        head: method === "HEAD",
+        robotsHeader: "noindex, nofollow",
+        cacheControl: "public, s-maxage=30, stale-while-revalidate=60",
+      });
+    }
+    routePath = "/campaign/" + encodeURIComponent(id);
+  } else {
+    const config = collectionConfigs[id];
+    if (!config) {
+      const shell = await fetchAppShell(requestOrigin).catch(() => null);
+      const page = notFoundDocument(shell, siteOrigin, method === "HEAD");
+      return sendHtml(res, 404, page.html, {
+        head: method === "HEAD",
+        robotsHeader: "noindex, nofollow",
+        cacheControl: "public, s-maxage=30, stale-while-revalidate=60",
+      });
+    }
+    routePath = config.routePath;
+  }
 
+  const canonical = canonicalUrlFor(routePath, siteOrigin, siteOrigin);
+  const shellPromise = fetchAppShell(requestOrigin);
+  let shell;
   let apiBase;
-  try {
-    apiBase = resolveApiBase(req, origin);
-  } catch {
-    return res.status(500).send("Preview API is not configured correctly");
-  }
+  let title = "";
+  let description = "";
+  let imageValue = "";
+  let products = [];
+  let product = null;
+  let category = null;
+  let campaign = null;
+  let structuredData = [];
+  let rootContent = "";
 
   try {
-    let title;
-    let description;
-    let imageValue = "";
-    let structuredData;
-    let productMetadata = false;
+    apiBase = resolveApiBase(req, requestOrigin);
 
     if (type === "product") {
-      const product = await getApiJson(apiBase, "products/" + encodeURIComponent(id));
-      if (!product?.name) {
+      product = await getApiJson(apiBase, "products/" + encodeURIComponent(id));
+      if (!product || !product.name || product.isActive === false) {
         const missing = new Error("Product not found");
         missing.status = 404;
         throw missing;
@@ -150,94 +287,152 @@ export default async function handler(req, res) {
       title = String(product.name);
       description = String(product.description || "مشخصات، قیمت و موجودی این محصول را در تیک بوتیک ببینید.");
       imageValue = product.image || product.images?.[0] || "";
-      const variants = Array.isArray(product.variants) ? product.variants : [];
-      const hasTrackedVariants = variants.length > 0;
-      const inStock = hasTrackedVariants
-        ? variants.some((variant) => Number(variant.stock) > 0)
-        : product.stock === null || product.stock === undefined || Number(product.stock) > 0;
-      const structuredPrice = Number(product.price) * 10; // product.price is whole Toman; schema uses ISO currency IRR.
-      structuredData = {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        name: title,
-        description: description.slice(0, 1000),
-        image: (Array.isArray(product.images) ? product.images : [imageValue])
-          .map((value) => absoluteImageUrl(value, origin)).filter(Boolean),
-        sku: product._id ? String(product._id) : undefined,
-        offers: Number.isFinite(structuredPrice) ? {
-          "@type": "Offer",
-          priceCurrency: "IRR",
-          price: structuredPrice,
-          availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-          url: canonical,
-        } : undefined,
-      };
-      productMetadata = true;
+      structuredData.push(buildProductStructuredData({
+        product,
+        title,
+        description,
+        image: imageValue,
+        canonical,
+        origin: siteOrigin,
+      }));
+      const crumbCategory = typeof product.category === "string" ? product.category : "";
+      const crumbName = categoryLabels[crumbCategory] || crumbCategory.replace(/-/g, " ");
+      structuredData.push(buildBreadcrumbStructuredData([
+        { name: "صفحه اصلی", path: "/" },
+        ...(crumbCategory ? [{ name: crumbName, path: "/category/" + encodeURIComponent(crumbCategory) }] : []),
+        { name: title, path: routePath },
+      ], siteOrigin));
+      rootContent = renderProductContent(product, canonical, siteOrigin);
     } else if (type === "category") {
       const payload = await getApiJson(apiBase, "categories/" + encodeURIComponent(id));
-      const category = payload?.category;
-      if (!category) {
+      category = payload?.category;
+      if (!category || category.isActive === false) {
         const missing = new Error("Category not found");
         missing.status = 404;
         throw missing;
       }
-      title = category.name?.fa || category.name?.en || id;
-      description = category.description?.fa || category.description?.en || ("محصولات دسته " + title + " را در تیک بوتیک ببینید.");
-      imageValue = category.image || "";
-      if (!imageValue) {
-        try {
-          const catalog = await getApiJson(apiBase, "products/category/" + encodeURIComponent(id) + "?page=1&limit=1");
-          imageValue = catalog?.products?.[0]?.image || catalog?.products?.[0]?.images?.[0] || "";
-        } catch {
-          // Category metadata is still valid without a preview image.
-        }
-      }
-      structuredData = {
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        name: title,
-        description: String(description).slice(0, 1000),
-        url: canonical,
-        image: absoluteImageUrl(imageValue, origin) || undefined,
-      };
-    } else {
+      const catalog = await getApiJson(apiBase, "products/category/" + encodeURIComponent(id) + "?page=1&limit=8");
+      products = Array.isArray(catalog?.products) ? catalog.products : [];
+      title = String(category.name?.fa || category.name?.en || id);
+      description = String(category.description?.fa || category.description?.en || ("محصولات دسته " + title + " را در تیک بوتیک ببینید."));
+      imageValue = category.image || products[0]?.image || products[0]?.images?.[0] || "";
+      structuredData.push(buildCollectionStructuredData({ title, description, image: imageValue, canonical, products, origin: siteOrigin }));
+      structuredData.push(buildBreadcrumbStructuredData([
+        { name: "صفحه اصلی", path: "/" },
+        { name: title, path: routePath },
+      ], siteOrigin));
+      rootContent = renderCategoryContent(category, products, siteOrigin);
+    } else if (type === "campaign") {
       const payload = await getApiJson(apiBase, "campaigns?limit=100");
       const campaigns = Array.isArray(payload?.campaigns) ? payload.campaigns : [];
-      const campaign = campaigns.find((item) => String(item._id || "") === id || String(item.slug || "") === id);
+      campaign = campaigns.find((item) =>
+        String(item?._id || "") === id || String(item?.slug || "") === id
+      );
       if (!campaign) {
         const missing = new Error("Campaign not found");
         missing.status = 404;
         throw missing;
       }
-      title = String(campaign.title || "کمپین فروشگاهی");
+      title = String(campaign.title || "پیشنهاد ویژه");
       description = String(campaign.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک.");
       imageValue = campaign.image || "";
-      structuredData = {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        name: title,
-        description: description.slice(0, 1000),
-        image: absoluteImageUrl(imageValue, origin) || undefined,
-        startDate: campaign.startsAt,
-        endDate: campaign.endsAt,
-        url: canonical,
-      };
+      structuredData.push(buildCollectionStructuredData({
+        title,
+        description,
+        image: imageValue,
+        canonical,
+        products: Array.isArray(campaign.productIds) ? campaign.productIds : [],
+        origin: siteOrigin,
+      }));
+      structuredData.push(buildBreadcrumbStructuredData([
+        { name: "صفحه اصلی", path: "/" },
+        { name: "پیشنهادهای ویژه", path: "/campaigns" },
+        { name: title, path: routePath },
+      ], siteOrigin));
+      rootContent = renderCampaignContent(campaign, siteOrigin);
+    } else {
+      const config = collectionConfigs[id];
+      title = config.title;
+      description = config.description;
+      imageValue = config.image || "";
+      if (Array.isArray(config.categories)) {
+        const groups = await Promise.all(config.categories.map((slug) =>
+          getProducts(apiBase, "products/category/" + encodeURIComponent(slug) + "?page=1&limit=6")
+        ));
+        products = groups.flat();
+      } else {
+        products = await getProducts(apiBase, config.endpoint);
+      }
+      products = products.filter((item, index, all) =>
+        item?._id && all.findIndex((candidate) => String(candidate?._id) === String(item._id)) === index
+      ).slice(0, 24);
+      structuredData.push(buildCollectionStructuredData({ title, description, image: imageValue, canonical, products, origin: siteOrigin }));
+      structuredData.push(buildBreadcrumbStructuredData([
+        { name: "صفحه اصلی", path: "/" },
+        { name: "فروشگاه", path: "/shop" },
+        { name: title, path: routePath },
+      ], siteOrigin));
+      rootContent = renderCollectionContent(config, products, siteOrigin);
     }
 
-    const image = absoluteImageUrl(imageValue, origin);
-    const html = htmlDocument({ title, description, image, canonical, kind: type, structuredData, productMetadata });
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    return res.status(200).send(req.method === "HEAD" ? "" : html);
+    shell = await shellPromise;
+    const filtered = type === "category" && hasIndexExcludedQuery(req.query);
+    const robots = filtered ? "noindex, follow" : "index, follow, max-image-preview:large";
+    const html = renderHtmlShell(shell, {
+      title,
+      description,
+      image: absoluteUrlFor(imageValue, siteOrigin),
+      canonical,
+      robots,
+      type,
+      productPrice: product && Number.isFinite(Number(product.price)) ? Math.round(Number(product.price) * 10) : undefined,
+      productPrice,
+      structuredData,
+      rootContent,
+      siteOrigin,
+    });
+    return sendHtml(res, 200, html, {
+      head: method === "HEAD",
+      robotsHeader: filtered ? "noindex, follow" : "",
+      cacheControl: "public, s-maxage=60, stale-while-revalidate=300",
+    });
   } catch (error) {
     if (error.status === 404) {
-      const html = notFoundPage(canonical);
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("X-Robots-Tag", "noindex, nofollow");
-      return res.status(404).send(req.method === "HEAD" ? "" : html);
+      try {
+        shell = await shellPromise;
+      } catch {
+        shell = null;
+      }
+      const page = notFoundDocument(shell, siteOrigin, method === "HEAD");
+      return sendHtml(res, 404, page.html, {
+        head: method === "HEAD",
+        robotsHeader: "noindex, nofollow",
+        cacheControl: "public, s-maxage=30, stale-while-revalidate=60",
+      });
     }
-    console.error("Share preview metadata request failed", { type, id, message: error.message });
-    return res.status(502).send("Share preview metadata is temporarily unavailable");
+
+    console.error("SEO page rendering failed", {
+      type,
+      message: error?.message || "Unknown error",
+      status: error?.status || 0,
+    });
+    try {
+      shell = shell || await shellPromise;
+    } catch {
+      shell = null;
+    }
+    const html = renderHtmlShell(shell || MINIMAL_SHELL, {
+      title: "صفحه موقتاً در دسترس نیست",
+      description: "دریافت اطلاعات این صفحه موقتاً امکان‌پذیر نیست. لطفاً دوباره تلاش کنید.",
+      siteOrigin,
+      canonical: "",
+      robots: "noindex, nofollow",
+    });
+    return sendHtml(res, 503, html, {
+      head: method === "HEAD",
+      robotsHeader: "noindex, nofollow",
+      retryAfter: 60,
+      cacheControl: "no-store",
+    });
   }
 }
