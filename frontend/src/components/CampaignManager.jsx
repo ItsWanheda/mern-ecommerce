@@ -164,7 +164,7 @@ const CampaignManager = () => {
           </label>
           <div className="text-sm text-[var(--ui-muted)] sm:col-span-2">
             <label>بارگذاری تصویر کمپین (اختیاری، حداکثر ۵ مگابایت)
-              <input type="file" accept="image/*" className={fieldClass} onChange={handleCampaignImageChange} />
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className={fieldClass} onChange={handleCampaignImageChange} />
             </label>
             <p className="mt-1 text-xs leading-5">یک تصویر برای بنر کمپین انتخاب کنید. فرمت‌های تصویری پذیرفته می‌شوند و محدودیت حجم ۵ مگابایت است.</p>
             {form.image && <div className="mt-3 flex flex-wrap items-center gap-3">
