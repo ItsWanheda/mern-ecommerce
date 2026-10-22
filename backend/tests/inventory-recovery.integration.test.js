@@ -160,3 +160,40 @@ test("a failed transaction keeps the stock and reservation recoverable", { skip:
   assert.equal(currentProduct.variants[0].stock, 7, "transaction should roll back all stock changes");
   assert.equal(currentOrder.products[0].stockReserved, true, "reservation should remain recoverable");
 });
+
+
+test("unknown product stock is rejected instead of treated as unlimited inventory", { skip: !testUri }, async () => {
+  const product = await createProduct({ stock: null });
+  await assert.rejects(
+    reserveInventory([{ product: product._id.toString(), quantity: 1 }], productMap(product)),
+    /UNTRACKED_INVENTORY/
+  );
+  const current = await Product.findById(product._id).lean();
+  assert.equal(current.stock, null);
+});
+
+test("transaction-scoped reservations roll back when order creation fails", { skip: !testUri }, async (t) => {
+  if (!transactionSupport) {
+    t.skip("Requires a MongoDB replica set or sharded cluster.");
+    return;
+  }
+  const product = await createProduct({ stock: 5 });
+  const session = await mongoose.startSession();
+  try {
+    await assert.rejects(
+      session.withTransaction(async () => {
+        await reserveInventory(
+          [{ product: product._id.toString(), quantity: 2 }],
+          productMap(product),
+          { session }
+        );
+        throw new Error("SIMULATED_ORDER_PERSISTENCE_FAILURE");
+      }),
+      /SIMULATED_ORDER_PERSISTENCE_FAILURE/
+    );
+  } finally {
+    await session.endSession();
+  }
+  const current = await Product.findById(product._id).lean();
+  assert.equal(current.stock, 5, "aborted transaction must restore the original stock");
+});
