@@ -133,12 +133,23 @@ export const getManagedCloudinaryPublicId = (
     // Transformed URLs are deliberately ignored: these paths are not guaranteed
     // to map one-to-one to an uploaded source asset.
     if (assetSegments.some((segment) => /^v\d+$/.test(segment))) return null;
-    if (!assetSegments.length || assetSegments[0] !== folder || assetSegments.some((part) => part === "." || part === "..")) return null;
+    if (!assetSegments.length) return null;
+    let decodedSegments;
+    try {
+      decodedSegments = assetSegments.map((part) => decodeURIComponent(part));
+    } catch {
+      return null;
+    }
+    // Decode before checking boundaries: encoded slashes, traversal segments,
+    // backslashes, and control characters must never escape the managed folder.
+    if (decodedSegments[0] !== folder || decodedSegments.some((part) =>
+      !part || part === "." || part === ".." || /[\/\\\u0000-\u001f\u007f]/.test(part)
+    )) return null;
 
-    const last = assetSegments[assetSegments.length - 1];
-    assetSegments[assetSegments.length - 1] = last.replace(/\.(?:jpe?g|png|webp|gif)$/i, "");
-    const publicId = assetSegments.map((part) => decodeURIComponent(part)).join("/");
-    return publicId && !publicId.includes("\\") && !publicId.includes("\0") ? publicId : null;
+    const last = decodedSegments[decodedSegments.length - 1];
+    decodedSegments[decodedSegments.length - 1] = last.replace(/\.(?:jpe?g|png|webp|gif)$/i, "");
+    const publicId = decodedSegments.join("/");
+    return publicId || null;
   } catch {
     return null;
   }
