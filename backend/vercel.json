@@ -4,11 +4,5 @@
     "api/index.js": {
       "maxDuration": 60
     }
-  },
-  "crons": [
-    {
-      "path": "/api/payments/reconcile-pending",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  }
 }
