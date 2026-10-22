@@ -661,7 +661,7 @@ const CategoryPage = () => {
               {pageTitle}
             </motion.h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#77786f]">
-              با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به {priceUnitLabel}، انتخابتان را دقیق‌تر کنید.
+              {selectedCategory?.description?.fa?.trim() || selectedCategory?.description?.en?.trim() || ("با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به " + priceUnitLabel + "، انتخابتان را دقیق‌تر کنید.")}
             </p>
             {currentFilterError && <p role="alert" className="mt-2 text-sm font-medium text-red-700">{currentFilterError}</p>}
           </div>
