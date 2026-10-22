@@ -32,6 +32,18 @@ const categoryLabels = {
 };
 
 const collectionConfigs = {
+  shop: {
+    routePath: "/shop",
+    title: "خرید آنلاین پوشاک و اکسسوری",
+    description: "محصولات تیک بوتیک را با جست‌وجو و فیلترهای کاربردی بررسی کنید.",
+    endpoint: "products/search?page=1&limit=8&sort=newest",
+  },
+  campaigns: {
+    routePath: "/campaigns",
+    title: "پیشنهادهای ویژه",
+    description: "کمپین‌ها و پیشنهادهای فعال فروشگاه تیک بوتیک.",
+    campaigns: true,
+  },
   "new-arrivals": {
     routePath: "/new-arrivals",
     title: "تازه‌واردها",
@@ -121,17 +133,43 @@ const renderProductContent = (product, canonical, origin) => {
   const image = product.image || product.images?.[0] || "";
   const category = typeof product.category === "string" ? product.category : "";
   const categoryName = categoryLabels[category] || category.replace(/-/g, " ");
-  const availability = getSchemaAvailability(product) === "https://schema.org/InStock"
+  const availabilityCode = getSchemaAvailability(product);
+  const availability = availabilityCode === "https://schema.org/InStock"
     ? "وضعیت: موجود"
-    : getSchemaAvailability(product) === "https://schema.org/Discontinued"
-      ? "وضعیت: فروش این محصول متوقف شده است"
-      : "وضعیت: ناموجود";
+    : availabilityCode === "https://schema.org/OutOfStock"
+      ? "وضعیت: ناموجود"
+      : availabilityCode === "https://schema.org/Discontinued"
+        ? "وضعیت: فروش این محصول متوقف شده است"
+        : "وضعیت: موجودی این محصول هنوز تأیید نشده است";
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  const sizes = [...new Set([
+    ...(Array.isArray(product.sizes) ? product.sizes : []),
+    ...variants.map((variant) => variant?.size),
+  ].filter((value) => typeof value === "string" && value.trim()))];
+  const colors = [...new Set([
+    ...(Array.isArray(product.colors) ? product.colors.map((color) => color?.name) : []),
+    ...variants.map((variant) => variant?.color),
+  ].filter((value) => typeof value === "string" && value.trim()))];
+  const fitDescription = typeof product.fit?.description === "string" ? product.fit.description.trim() : "";
+  const variantRows = variants.slice(0, 48).map((variant) => {
+    const label = [variant?.size, variant?.color].filter((value) => typeof value === "string" && value.trim()).map(escapeHtml).join(" / ") || "ترکیب محصول";
+    const stock = Number(variant?.stock);
+    const state = Number.isFinite(stock) ? (stock > 0 ? "موجود" : "ناموجود") : "موجودی نامشخص";
+    return '<li>' + label + ': ' + escapeHtml(state) + '</li>';
+  }).join("");
+  const detailsHtml = [
+    sizes.length ? '<p><strong>سایزها:</strong> ' + sizes.map(escapeHtml).join("، ") + '</p>' : "",
+    colors.length ? '<p><strong>رنگ‌ها:</strong> ' + colors.map(escapeHtml).join("، ") + '</p>' : "",
+    fitDescription ? '<p><strong>توضیحات تن‌خور:</strong> ' + escapeHtml(fitDescription) + '</p>' : "",
+    variantRows ? '<section><h2 style="font-size:18px">موجودی سایز و رنگ</h2><ul>' + variantRows + '</ul></section>' : "",
+  ].filter(Boolean).join("");
   const detailHtml =
     (image ? '<div style="max-width:480px;margin:16px 0">' + imageHtml(absoluteUrlFor(image, origin), product.name || "تصویر محصول") + '</div>' : "") +
     (priceText(product.price) ? '<p style="font-size:21px;font-weight:bold">' + escapeHtml(priceText(product.price)) + '</p>' : "") +
     '<p style="font-size:14px;color:#62645c">' + escapeHtml(availability) + '</p>' +
     (category ? '<p>دسته‌بندی: <a href="/category/' + escapeHtml(encodeURIComponent(category)) + '">' + escapeHtml(categoryName) + '</a></p>' : "") +
-    '<p><a href="' + escapeHtml(canonical) + '" style="color:#526149">مشاهده جزئیات و گزینه‌های محصول</a></p>';
+    detailsHtml +
+    '<p><a href="' + escapeHtml(canonical || "/product/" + encodeURIComponent(String(product._id || ""))) + '" style="color:#526149">مشاهده جزئیات و گزینه‌های محصول</a></p>';
   return pageLayout(product.name || "محصول", product.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک.", detailHtml);
 };
 
@@ -152,6 +190,30 @@ const renderCollectionContent = (config, products, origin) => {
     ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(image, config.title, 'width="1000" height="700"') + '</div>'
     : "";
   return pageLayout(config.title, config.description, introImage + renderProductCards(products, origin));
+};
+
+const renderCampaignCards = (campaigns, origin) => {
+  const items = (Array.isArray(campaigns) ? campaigns : [])
+    .filter((campaign) => campaign && (campaign.slug || campaign._id))
+    .slice(0, 24);
+  if (!items.length) {
+    return '<p>در حال حاضر پیشنهاد فعالی برای نمایش وجود ندارد.</p>';
+  }
+  return '<section aria-label="کمپین‌های فعال"><ul style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;list-style:none;padding:0">' +
+    items.map((campaign) => {
+      const key = String(campaign.slug || campaign._id);
+      const href = "/campaign/" + encodeURIComponent(key);
+      const image = absoluteUrlFor(campaign.image || "", origin);
+      const imageBlock = image
+        ? '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(campaign.title || "تصویر کمپین") + '" width="800" height="450" loading="lazy" style="width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;border-radius:10px">'
+        : "";
+      return '<li style="border:1px solid #e4e0d8;border-radius:14px;padding:12px;background:#fffefa">' +
+        '<a href="' + escapeHtml(href) + '" style="color:#252722;text-decoration:none">' +
+        imageBlock + '<h2 style="font-size:18px;line-height:1.7">' + escapeHtml(campaign.title || "پیشنهاد ویژه") + '</h2>' +
+        (campaign.description ? '<p style="font-size:14px;color:#62645c">' + escapeHtml(normalizeSeoText(campaign.description, "", 240)) + '</p>' : "") +
+        '<span style="font-weight:bold;color:#526149">مشاهده پیشنهاد</span></a></li>';
+    }).join("") +
+    '</ul></section>';
 };
 
 const renderCampaignContent = (campaign, origin) => {
@@ -365,24 +427,46 @@ export default async function handler(req, res) {
       title = config.title;
       description = config.description;
       imageValue = config.image || "";
-      if (Array.isArray(config.categories)) {
-        const groups = await Promise.all(config.categories.map((slug) =>
-          getProducts(apiBase, "products/category/" + encodeURIComponent(slug) + "?page=1&limit=6")
-        ));
-        products = groups.flat();
+      if (config.campaigns) {
+        const payload = await getApiJson(apiBase, "campaigns?limit=24");
+        const campaigns = Array.isArray(payload?.campaigns) ? payload.campaigns : [];
+        structuredData.push(buildCollectionStructuredData({ title, description, image: imageValue, canonical, products: [], origin: siteOrigin }));
+        structuredData.push(buildBreadcrumbStructuredData([
+          { name: "صفحه اصلی", path: "/" },
+          { name: title, path: routePath },
+        ], siteOrigin));
+        rootContent = pageLayout(title, description, renderCampaignCards(campaigns, siteOrigin));
       } else {
-        products = await getProducts(apiBase, config.endpoint);
+        if (Array.isArray(config.categories)) {
+          const groups = await Promise.all(config.categories.map((slug) =>
+            getProducts(apiBase, "products/category/" + encodeURIComponent(slug) + "?page=1&limit=6")
+          ));
+          products = groups.flat();
+        } else if (id === "shop") {
+          const shopQuery = new URLSearchParams();
+          for (const key of ["q", "category", "minPrice", "maxPrice", "sort", "page"]) {
+            const raw = req.query?.[key];
+            const values = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
+            for (const value of values) {
+              if (typeof value === "string" && !/[\\r\\n]/.test(value)) shopQuery.append(key, value.slice(0, 160));
+            }
+          }
+          shopQuery.set("limit", "8");
+          products = await getProducts(apiBase, "products/search?" + shopQuery.toString());
+        } else {
+          products = await getProducts(apiBase, config.endpoint);
+        }
+        products = products.filter((item, index, all) =>
+          item?._id && all.findIndex((candidate) => String(candidate?._id) === String(item._id)) === index
+        ).slice(0, 24);
+        structuredData.push(buildCollectionStructuredData({ title, description, image: imageValue, canonical, products, origin: siteOrigin }));
+        structuredData.push(buildBreadcrumbStructuredData([
+          { name: "صفحه اصلی", path: "/" },
+          { name: "فروشگاه", path: "/shop" },
+          { name: title, path: routePath },
+        ], siteOrigin));
+        rootContent = renderCollectionContent(config, products, siteOrigin);
       }
-      products = products.filter((item, index, all) =>
-        item?._id && all.findIndex((candidate) => String(candidate?._id) === String(item._id)) === index
-      ).slice(0, 24);
-      structuredData.push(buildCollectionStructuredData({ title, description, image: imageValue, canonical, products, origin: siteOrigin }));
-      structuredData.push(buildBreadcrumbStructuredData([
-        { name: "صفحه اصلی", path: "/" },
-        { name: "فروشگاه", path: "/shop" },
-        { name: title, path: routePath },
-      ], siteOrigin));
-      rootContent = renderCollectionContent(config, products, siteOrigin);
     }
 
     shell = await shellPromise;
