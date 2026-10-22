@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { AxiosError } from "axios";
 import axiosInstance from "../src/lib/axios.js";
 import { useUserStore } from "../src/stores/useUserStore.js";
+import { getPasswordPolicyError as getFrontendPasswordPolicyError } from "../src/lib/password-policy.js";
+import { getPasswordPolicyError as getBackendPasswordPolicyError } from "../../backend/lib/password-policy.js";
 
 const ok = (config, data = {}) => ({ data, status: 200, statusText: "OK", headers: {}, config });
 const unauthorized = (config, message = "Authentication session expired.") => {
@@ -109,3 +111,18 @@ for (const scenario of ["expired", "replayed"]) {
     assert.equal(useUserStore.getState().user, null);
   });
 }
+
+
+test("signup password policy matches the backend policy for valid and invalid examples", () => {
+  const passwords = [
+    "",
+    "password1234",
+    "StrongPassword2026!",
+    "عبارت-امن-شده-با-عدد-123!",
+    "آ".repeat(30),
+    "correct horse battery staple",
+  ];
+  for (const password of passwords) {
+    assert.equal(getFrontendPasswordPolicyError(password), getBackendPasswordPolicyError(password), password);
+  }
+});
