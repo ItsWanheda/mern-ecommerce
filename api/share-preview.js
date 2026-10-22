@@ -3,7 +3,7 @@ import {
   buildBreadcrumbStructuredData,
   buildCollectionStructuredData,
   buildProductStructuredData,
-  canonicalUrlFor,
+  canonicalUrlForQuery,
   escapeHtml,
   getSchemaAvailability,
   hasIndexExcludedQuery,
@@ -260,7 +260,7 @@ export default async function handler(req, res) {
     routePath = config.routePath;
   }
 
-  const canonical = canonicalUrlFor(routePath, siteOrigin, siteOrigin);
+  const canonical = canonicalUrlForQuery(routePath, req.query, siteOrigin, siteOrigin);
   const shellPromise = fetchAppShell(requestOrigin);
   let shell;
   let apiBase;
@@ -311,7 +311,17 @@ export default async function handler(req, res) {
         missing.status = 404;
         throw missing;
       }
-      const catalog = await getApiJson(apiBase, "products/category/" + encodeURIComponent(id) + "?page=1&limit=8");
+      const categoryQuery = new URLSearchParams();
+      for (const key of ["q", "minPrice", "maxPrice", "size", "color", "fit", "brand", "inStock", "attributes", "sort", "page"]) {
+        const raw = req.query?.[key];
+        const values = Array.isArray(raw) ? raw : raw === undefined ? [] : [raw];
+        for (const value of values) {
+          if (typeof value === "string" && !/[\\r\\n]/.test(value)) categoryQuery.append(key, value.slice(0, 2400));
+        }
+      }
+      if (!categoryQuery.has("page")) categoryQuery.set("page", "1");
+      categoryQuery.set("limit", "8");
+      const catalog = await getApiJson(apiBase, "products/category/" + encodeURIComponent(id) + "?" + categoryQuery.toString());
       products = Array.isArray(catalog?.products) ? catalog.products : [];
       title = String(category.name?.fa || category.name?.en || id);
       description = String(category.description?.fa || category.description?.en || ("محصولات دسته " + title + " را در تیک بوتیک ببینید."));
@@ -376,8 +386,9 @@ export default async function handler(req, res) {
     }
 
     shell = await shellPromise;
-    const filtered = type === "category" && hasIndexExcludedQuery(req.query);
-    const robots = filtered ? "noindex, follow" : "index, follow, max-image-preview:large";
+    const filtered = (type === "category" || (type === "collection" && id === "shop")) && hasIndexExcludedQuery(req.query);
+    const missingCanonicalOrigin = !siteOrigin;
+    const robots = filtered || missingCanonicalOrigin ? "noindex, follow" : "index, follow, max-image-preview:large";
     const html = renderHtmlShell(shell, {
       title,
       description,
@@ -392,7 +403,7 @@ export default async function handler(req, res) {
     });
     return sendHtml(res, 200, html, {
       head: method === "HEAD",
-      robotsHeader: filtered ? "noindex, follow" : "",
+      robotsHeader: filtered || missingCanonicalOrigin ? "noindex, follow" : "",
       cacheControl: "public, s-maxage=60, stale-while-revalidate=300",
     });
   } catch (error) {
