@@ -78,6 +78,14 @@ test("managed Cloudinary IDs are derived only from the expected untransformed ap
     getManagedCloudinaryPublicId("https://res.cloudinary.com/test/image/upload/v123/campaigns/item.webp", { cloudName: "test", folder: "categories" }),
     null
   );
+  assert.equal(
+    getManagedCloudinaryPublicId("https://res.cloudinary.com/test/image/upload/v123/categories/%2E%2E%2Fproducts%2Fvictim.png", { cloudName: "test", folder: "categories" }),
+    null
+  );
+  assert.equal(
+    getManagedCloudinaryPublicId("https://res.cloudinary.com/test/image/upload/v123/categories/%2Fproducts%2Fvictim.png", { cloudName: "test", folder: "categories" }),
+    null
+  );
   assert.equal(getManagedCloudinaryPublicId("https://images.example.ir/categories/item.png", { cloudName: "test", folder: "categories" }), null);
 });
 
