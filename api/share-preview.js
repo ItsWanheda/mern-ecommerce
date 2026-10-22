@@ -92,8 +92,8 @@ const priceText = (value) => {
     : "";
 };
 
-const imageHtml = (image, alt, dimensions = "width=\"800\" height=\"1000\"") => {
-  const source = absoluteUrlFor(image || "", image);
+const imageHtml = (image, alt, origin, dimensions = "width=\"800\" height=\"1000\"") => {
+  const source = absoluteUrlFor(image || "", origin || "");
   if (!source) return "";
   return '<img src="' + escapeHtml(source) + '" alt="' + escapeHtml(alt) + '" ' + dimensions +
     ' style="display:block;max-width:100%;height:auto;object-fit:cover;border-radius:12px" fetchpriority="high">';
@@ -164,7 +164,7 @@ const renderProductContent = (product, canonical, origin) => {
     variantRows ? '<section><h2 style="font-size:18px">موجودی سایز و رنگ</h2><ul>' + variantRows + '</ul></section>' : "",
   ].filter(Boolean).join("");
   const detailHtml =
-    (image ? '<div style="max-width:480px;margin:16px 0">' + imageHtml(absoluteUrlFor(image, origin), product.name || "تصویر محصول") + '</div>' : "") +
+    (image ? '<div style="max-width:480px;margin:16px 0">' + imageHtml(image, product.name || "تصویر محصول", origin) + '</div>' : "") +
     (priceText(product.price) ? '<p style="font-size:21px;font-weight:bold">' + escapeHtml(priceText(product.price)) + '</p>' : "") +
     '<p style="font-size:14px;color:#62645c">' + escapeHtml(availability) + '</p>' +
     (category ? '<p>دسته‌بندی: <a href="/category/' + escapeHtml(encodeURIComponent(category)) + '">' + escapeHtml(categoryName) + '</a></p>' : "") +
@@ -179,7 +179,7 @@ const renderCategoryContent = (category, products, origin) => {
     ("محصولات دسته " + name + " را در تیک بوتیک ببینید.");
   const image = absoluteUrlFor(category.image || "", origin);
   const introImage = image
-    ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(image, name, 'width="1000" height="700"') + '</div>'
+    ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(category.image || "", name, origin, 'width="1000" height="700"') + '</div>'
     : "";
   return pageLayout(name, description, introImage + renderProductCards(products, origin));
 };
@@ -187,7 +187,7 @@ const renderCategoryContent = (category, products, origin) => {
 const renderCollectionContent = (config, products, origin) => {
   const image = absoluteUrlFor(config.image || "", origin);
   const introImage = image
-    ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(image, config.title, 'width="1000" height="700"') + '</div>'
+    ? '<div style="max-width:520px;margin:16px 0">' + imageHtml(config.image || "", config.title, origin, 'width="1000" height="700"') + '</div>'
     : "";
   return pageLayout(config.title, config.description, introImage + renderProductCards(products, origin));
 };
@@ -219,7 +219,7 @@ const renderCampaignCards = (campaigns, origin) => {
 const renderCampaignContent = (campaign, origin) => {
   const image = absoluteUrlFor(campaign.image || "", origin);
   const imageBlock = image
-    ? '<div style="max-width:720px;margin:16px 0">' + imageHtml(image, campaign.title || "پیشنهاد ویژه", 'width="1200" height="700"') + '</div>'
+    ? '<div style="max-width:720px;margin:16px 0">' + imageHtml(campaign.image || "", campaign.title || "پیشنهاد ویژه", origin, 'width="1200" height="700"') + '</div>'
     : "";
   const target = typeof campaign.href === "string" && campaign.href.startsWith("/") && !campaign.href.startsWith("//")
     ? campaign.href
