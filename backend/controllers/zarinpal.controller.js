@@ -302,6 +302,9 @@ export const createZarinpalCheckout = async (req, res) => {
       size: item.size,
       color: item.color,
     }));
+    const initialPricesByProductId = new Map(
+      validated.map((item) => [String(item.productId), item.product.price])
+    );
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
@@ -314,6 +317,13 @@ export const createZarinpalCheckout = async (req, res) => {
         const transactionProductsById = new Map(currentProducts.map((product) => [String(product._id), product]));
         if (transactionProductsById.size !== uniqueProductIds.length) {
           throw new Error("INVALID_CART");
+        }
+        for (const [productId, currentProduct] of transactionProductsById) {
+          if (currentProduct.price !== initialPricesByProductId.get(productId)) {
+            const priceError = new Error("PRICE_CHANGED");
+            priceError.code = "PRICE_CHANGED";
+            throw priceError;
+          }
         }
 
         const transactionSubtotal = transactionItems.reduce((sum, item) => {
@@ -473,6 +483,9 @@ export const createZarinpalCheckout = async (req, res) => {
     }
     if (error?.code === "INVALID_CHECKOUT_AMOUNT") {
       return res.status(400).json({ message: "مبلغ سفارش به تومان معتبر نیست." });
+    }
+    if (error?.code === "PRICE_CHANGED") {
+      return res.status(409).json({ message: "قیمت یکی از کالاها تغییر کرده است؛ سبد خرید را تازه‌سازی کنید و دوباره تلاش کنید." });
     }
     if (isTransactionUnsupported(error)) {
       return res.status(503).json({ message: "ثبت سفارش به پایگاه داده تراکنشی نیاز دارد؛ پرداخت آغاز نشد." });
