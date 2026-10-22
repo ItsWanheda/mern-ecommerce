@@ -118,6 +118,8 @@ test("signup password policy matches the backend policy for valid and invalid ex
   const passwords = [
     "",
     "password1234",
+    "lowercaseonly123!",
+    "aaaaaaaaaaaaaaaa1!",
     "Password123!",
     "Abcdefgh123!",
     "RepeatedAAAAA12!",
