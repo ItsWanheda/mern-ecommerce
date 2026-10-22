@@ -124,6 +124,8 @@ test("signup password policy matches the backend policy for valid and invalid ex
     "Abcdefgh123!",
     "RepeatedAAAAA12!",
     "Abcdefgh۱۲۳۴۵۶!",
+    "Dinosaur5678!",
+    "Summer5678!",
     "superultrasensitivepassphrase123!",
     "QuartzMeadow8!",
     "عبارت-امن-شده-با-عدد-123!",
