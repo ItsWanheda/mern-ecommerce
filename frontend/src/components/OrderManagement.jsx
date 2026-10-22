@@ -83,7 +83,7 @@ const OrderManagement = () => {
     }
   };
 
-  const fieldClass = "mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
+  const fieldClass = "mt-1 w-full rounded-lg border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-accent)]/30";
   return (
     <section dir="rtl" className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -118,8 +118,8 @@ const OrderManagement = () => {
                     <p className="mt-1 text-xs text-[var(--ui-muted)]">{formatIranianDateTime(order.createdAt)} · {order.user?.name || order.user?.email || "مشتری"}</p>
                   </div>
                   <div className="text-left">
-                    <p dir="ltr" className="text-lg font-bold text-[#9aa58e]">{formatPrice(order.totalAmount)}</p>
-                    <span className="mt-1 inline-flex rounded-full bg-[var(--brand-primary)]/20 px-3 py-1 text-xs text-[#d7dfce]">{labels[draft.status] || "در انتظار آماده‌سازی"}</span>
+                    <p dir="ltr" className="text-lg font-bold text-[var(--ui-accent)]">{formatPrice(order.totalAmount)}</p>
+                    <span className="mt-1 inline-flex rounded-full bg-[var(--ui-accent-soft)] px-3 py-1 text-xs text-[var(--ui-accent)]">{labels[draft.status] || "در انتظار آماده‌سازی"}</span>
                   </div>
                 </div>
                 <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-2">

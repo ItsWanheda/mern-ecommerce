@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Banknote, CalendarRange, LoaderCircle, Package, RefreshCw, ShoppingCart, Users } from "lucide-react";
+import { Banknote, CalendarRange, LoaderCircle, Package, RefreshCw, ShoppingCart, Users, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "../lib/axios";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
@@ -20,6 +20,7 @@ const AnalyticsTab = () => {
   const [days, setDays] = useState(7);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   const loadAnalyticsData = useCallback(async () => {
     setIsLoading(true);
@@ -40,6 +41,25 @@ const AnalyticsTab = () => {
   useEffect(() => { loadAnalyticsData(); }, [loadAnalyticsData]);
   const hasSales = dailySalesData.some((point) => Number(point.sales) > 0 || Number(point.revenue) > 0);
 
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      const response = await axios.get("/analytics/export", { params: { days }, responseType: "blob" });
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "tik-boutique-sales-" + days + "d.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("دریافت فایل گزارش فروش ناموفق بود. بازه کوتاه‌تری انتخاب کنید یا دوباره تلاش کنید.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <section dir="rtl" className="mx-auto max-w-7xl space-y-5 px-3 sm:px-6 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -57,6 +77,9 @@ const AnalyticsTab = () => {
               </select>
             </span>
           </label>
+          <button type="button" onClick={exportCsv} disabled={exporting} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] px-4 text-sm font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-hover)] disabled:opacity-50">
+            <Download size={15} aria-hidden="true" /> {exporting ? "در حال ساخت فایل…" : "خروجی CSV"}
+          </button>
           <button type="button" onClick={loadAnalyticsData} disabled={isLoading} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] px-4 text-sm font-semibold text-[var(--ui-text)] hover:bg-[var(--ui-hover)] disabled:opacity-50">
             <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} aria-hidden="true" /> تازه‌سازی
           </button>

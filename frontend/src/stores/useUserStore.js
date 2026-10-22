@@ -1,11 +1,12 @@
 import { create } from "zustand";
-import axios from "../lib/axios";
+import axios from "../lib/axios.js";
 import { toast } from "react-hot-toast";
+import { createRefreshCoordinator, shouldAttemptTokenRefresh } from "../lib/refresh-coordinator.js";
 
 const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
 	error.response?.data?.message || error.message || fallback;
 
-export const useUserStore = create((set, get) => ({
+export const useUserStore = create((set) => ({
 	user: null,
 	loading: false,
 	checkingAuth: true,
@@ -74,8 +75,6 @@ export const useUserStore = create((set, get) => ({
 	},
 
 	refreshToken: async () => {
-		if (get().checkingAuth) return;
-
 		set({ checkingAuth: true });
 
 		try {
@@ -89,31 +88,24 @@ export const useUserStore = create((set, get) => ({
 	},
 }));
 
-let refreshPromise = null;
+const refreshSessionOnce = createRefreshCoordinator(
+	() => useUserStore.getState().refreshToken()
+);
 
 axios.interceptors.response.use(
 	(response) => response,
 	async (error) => {
 		const originalRequest = error.config;
-
-		if (!originalRequest || error.response?.status !== 401 || originalRequest._retry) {
-			return Promise.reject(error);
-		}
+		if (!shouldAttemptTokenRefresh(error)) return Promise.reject(error);
 
 		originalRequest._retry = true;
 
 		try {
-			if (!refreshPromise) {
-				refreshPromise = useUserStore.getState().refreshToken();
-			}
-
-			await refreshPromise;
+			await refreshSessionOnce();
 			return axios(originalRequest);
 		} catch (refreshError) {
-			useUserStore.getState().logout();
+			void useUserStore.getState().logout();
 			return Promise.reject(refreshError);
-		} finally {
-			refreshPromise = null;
 		}
 	}
 );

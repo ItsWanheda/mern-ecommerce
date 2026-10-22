@@ -10,7 +10,8 @@ const unavailable = async () => {
 
 const redisClient = redisUrl
   ? new Redis(redisUrl, {
-      connectTimeout: 1500,
+      // Allow normal TLS/network setup time without letting Redis commands hang.
+      connectTimeout: 5000,
       commandTimeout: 2000,
       maxRetriesPerRequest: 1,
       enableOfflineQueue: false,

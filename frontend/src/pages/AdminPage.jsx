@@ -1,5 +1,5 @@
-import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent, Users, LifeBuoy, Boxes } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
@@ -16,18 +16,28 @@ const AuditLogTab = lazy(() => import("../components/AuditLogTab"));
 const CategoryManager = lazy(() => import("../components/CategoryManager"));
 const CouponManager = lazy(() => import("../components/CouponManager"));
 const OperationsDashboard = lazy(() => import("../components/OperationsDashboard"));
+const CustomerManagement = lazy(() => import("../components/CustomerManagement"));
+const ServiceCases = lazy(() => import("../components/ServiceCases"));
+const InventoryAlerts = lazy(() => import("../components/InventoryAlerts"));
 
 const groups = [
  { id:"catalogue", label:"کاتالوگ", items:[{id:"create",label:"ایجاد محصول",icon:PlusCircle},{id:"products",label:"محصولات و موجودی",icon:ShoppingBasket},{id:"categories",label:"مدیریت دسته‌بندی‌ها",icon:FolderTree}] },
- { id:"orders-group", label:"سفارش‌ها", items:[{id:"orders",label:"صف سفارش‌ها",icon:Truck},{id:"shipping",label:"تنظیمات ارسال",icon:Truck}] },
+ { id:"orders-group", label:"سفارش‌ها و پشتیبانی", items:[{id:"orders",label:"صف سفارش‌ها",icon:Truck},{id:"service-cases",label:"پشتیبانی و مرجوعی",icon:LifeBuoy},{id:"customers",label:"مشتریان و دسترسی‌ها",icon:Users},{id:"inventory",label:"هشدار موجودی",icon:Boxes},{id:"shipping",label:"تنظیمات ارسال",icon:Truck}] },
  { id:"marketing", label:"بازاریابی", items:[{id:"campaigns",label:"کمپین‌ها",icon:Megaphone},{id:"coupons",label:"کدهای تخفیف",icon:TicketPercent},{id:"newsletter",label:"خبرنامه",icon:Mail}] },
  { id:"reports-system", label:"گزارش‌ها و سامانه", items:[{id:"dashboard",label:"نمای کلی",icon:Activity},{id:"analytics",label:"آمار و تحلیل",icon:BarChart},{id:"audit",label:"تاریخچه اقدامات",icon:ScrollText},{id:"operations",label:"وضعیت سامانه",icon:Activity}] },
 ];
-const tabs = groups.flatMap(group => group.items);
 const AdminPage = () => {
  const [searchParams,setSearchParams]=useSearchParams();
  const requestedTab=searchParams.get("tab");
- const initialTab=tabs.some(tab=>tab.id===requestedTab)?requestedTab:"dashboard";
+ const [adminPermissions,setAdminPermissions]=useState(null);
+ useEffect(()=>{axios.get("/auth/profile").then(({data})=>setAdminPermissions(Array.isArray(data.permissions)?data.permissions:null)).catch(()=>setAdminPermissions(null));},[]);
+ const visibleGroups=useMemo(()=>{
+  if(!Array.isArray(adminPermissions)||adminPermissions.includes("*"))return groups;
+  const permissionByTab={dashboard:"reports.view",create:"catalogue.manage",products:"catalogue.manage",categories:"catalogue.manage",orders:"orders.manage","service-cases":"support.manage",customers:"customers.manage",inventory:"inventory.manage",shipping:"settings.manage",campaigns:"marketing.manage",coupons:"marketing.manage",newsletter:"marketing.manage",analytics:"reports.view",audit:"audit.view",operations:"system.view"};
+  return groups.map(group=>({...group,items:group.items.filter(tab=>adminPermissions.includes(permissionByTab[tab.id])||(tab.id==="customers"&&adminPermissions.includes("roles.manage")))})).filter(group=>group.items.length>0);
+ },[adminPermissions]);
+ const tabs=useMemo(()=>visibleGroups.flatMap(group=>group.items),[visibleGroups]);
+ const initialTab=tabs.some(tab=>tab.id===requestedTab)?requestedTab:(tabs.some(tab=>tab.id==="dashboard")?"dashboard":tabs[0]?.id||"dashboard");
  const [activeTab,setActiveTab]=useState(initialTab);
  const [packingCount,setPackingCount]=useState(null);
  const refreshPackingCount=useCallback(async()=>{
@@ -37,7 +47,7 @@ const AdminPage = () => {
    setPackingCount(Number.isFinite(total)&&total>=0?total:null);
   } catch { setPackingCount(null); }
  },[]);
- useEffect(()=>{setActiveTab(tabs.some(tab=>tab.id===requestedTab)?requestedTab:"dashboard");},[requestedTab]);
+ useEffect(()=>{setActiveTab(tabs.some(tab=>tab.id===requestedTab)?requestedTab:(tabs.some(tab=>tab.id==="dashboard")?"dashboard":tabs[0]?.id||"dashboard"));},[requestedTab,tabs]);
  useEffect(()=>{void refreshPackingCount();},[refreshPackingCount]);
  const selectTab=(id)=>{
   setActiveTab(id);
@@ -66,18 +76,18 @@ const AdminPage = () => {
    </motion.header>
    <div className="mb-5 md:hidden"><label htmlFor="admin-mobile-nav" className="mb-2 block text-xs font-semibold text-[var(--ui-muted)]">رفتن به بخش</label>
     <select id="admin-mobile-nav" value={activeTab} onChange={event=>selectTab(event.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25">
-     {groups.map(group=><optgroup key={group.id} label={group.label}>{group.items.map(tab=><option key={tab.id} value={tab.id}>{tab.label}{tab.id==="orders"&&packingCount>0?" ("+new Intl.NumberFormat("fa-IR").format(packingCount)+")":""}</option>)}</optgroup>)}
+     {visibleGroups.map(group=><optgroup key={group.id} label={group.label}>{group.items.map(tab=><option key={tab.id} value={tab.id}>{tab.label}{tab.id==="orders"&&packingCount>0?" ("+new Intl.NumberFormat("fa-IR").format(packingCount)+")":""}</option>)}</optgroup>)}
     </select>
    </div>
    <div dir="rtl" className="grid items-start gap-5 md:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-7">
     <aside className="hidden md:sticky md:top-5 md:block md:max-h-[calc(100vh-2.5rem)] md:overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 xl:p-4">
      <p className="mb-3 px-3 pt-1 text-xs font-semibold text-[var(--ui-muted)]">ناوبری مدیریت</p><nav role="tablist" aria-label="بخش‌های مدیریت" aria-orientation="vertical" className="space-y-5">
-      {groups.map(group=><section key={group.id} aria-label={group.label}><h2 className="mb-2 px-3 text-[11px] font-bold tracking-wide text-[var(--ui-muted)]">{group.label}</h2><div className="space-y-1">{group.items.map(renderTab)}</div></section>)}
+      {visibleGroups.map(group=><section key={group.id} aria-label={group.label}><h2 className="mb-2 px-3 text-[11px] font-bold tracking-wide text-[var(--ui-muted)]">{group.label}</h2><div className="space-y-1">{group.items.map(renderTab)}</div></section>)}
      </nav>
     </aside>
     <section className="min-w-0" id="admin-tab-panel" role="tabpanel" aria-labelledby={"admin-tab-"+activeTab}>
      <Suspense fallback={<div role="status" className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-8 text-center text-sm text-[var(--ui-muted)]">در حال بارگذاری بخش مدیریت…</div>}>
-      {activeTab==="dashboard"&&<DashboardOverview/>}{activeTab==="create"&&<CreateProductForm/>}{activeTab==="products"&&<ProductsList/>}{activeTab==="categories"&&<CategoryManager/>}{activeTab==="coupons"&&<CouponManager/>}{activeTab==="campaigns"&&<CampaignManager/>}{activeTab==="shipping"&&<ShippingSettings/>}{activeTab==="newsletter"&&<NewsletterManager/>}{activeTab==="analytics"&&<AnalyticsTab/>}{activeTab==="orders"&&<OrderManagement/>}{activeTab==="audit"&&<AuditLogTab/>}{activeTab==="operations"&&<OperationsDashboard/>}
+      {activeTab==="dashboard"&&<DashboardOverview/>}{activeTab==="create"&&<CreateProductForm/>}{activeTab==="products"&&<ProductsList/>}{activeTab==="categories"&&<CategoryManager/>}{activeTab==="coupons"&&<CouponManager/>}{activeTab==="campaigns"&&<CampaignManager/>}{activeTab==="shipping"&&<ShippingSettings/>}{activeTab==="newsletter"&&<NewsletterManager/>}{activeTab==="analytics"&&<AnalyticsTab/>}{activeTab==="orders"&&<OrderManagement/>}{activeTab==="audit"&&<AuditLogTab/>}{activeTab==="operations"&&<OperationsDashboard/>}{activeTab==="customers"&&<CustomerManagement/>}{activeTab==="service-cases"&&<ServiceCases/>}{activeTab==="inventory"&&<InventoryAlerts/>}
      </Suspense>
     </section>
    </div>
