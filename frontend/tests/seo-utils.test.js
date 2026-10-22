@@ -4,9 +4,11 @@ import {
   absoluteUrlFor,
   buildProductStructuredData,
   canonicalUrlFor,
+  canonicalUrlForQuery,
   escapeHtml,
   getSchemaAvailability,
   normalizeSeoText,
+  hasIndexExcludedQuery,
 } from "../src/lib/seo-utils.js";
 import { renderHtmlShell } from "../../seo/server-utils.js";
 
@@ -22,6 +24,21 @@ test("canonical URLs use the configured origin and discard query/hash duplicates
     "https://shop.example/category/jeans"
   );
   assert.equal(canonicalUrlFor("//evil.example/path", "https://shop.example"), "https://shop.example/");
+});
+
+test("pagination gets a page-specific canonical while filters stay excluded", () => {
+  assert.equal(
+    canonicalUrlForQuery("/category/jeans", { page: "2", type: "category", id: "jeans" }, "https://preview.example", "https://shop.example"),
+    "https://shop.example/category/jeans?page=2"
+  );
+  assert.equal(
+    canonicalUrlForQuery("/category/jeans", { page: "2", q: "shirt", type: "category", id: "jeans" }, "https://shop.example"),
+    "https://shop.example/category/jeans"
+  );
+  assert.equal(hasIndexExcludedQuery({ page: "2" }), false);
+  assert.equal(hasIndexExcludedQuery({ page: "2", q: "shirt" }), true);
+  assert.equal(hasIndexExcludedQuery({ sort: "newest" }), false);
+  assert.equal(hasIndexExcludedQuery({ sort: "priceAsc" }), true);
 });
 
 test("relative images become absolute, safe HTTP(S) URLs", () => {
@@ -41,8 +58,19 @@ test("product structured data converts stored Toman to Rial and describes untrac
   });
   assert.equal(schema.offers.priceCurrency, "IRR");
   assert.equal(schema.offers.price, 1250000);
-  assert.equal(schema.offers.availability, "https://schema.org/InStock");
+  assert.equal(schema.offers, undefined);
   assert.deepEqual(schema.image, ["https://shop.example/shirt.jpg"]);
+});
+
+test("tracked stock is reflected in Product Offer availability", () => {
+  const schema = buildProductStructuredData({
+    product: { _id: "abc123", name: "پیراهن", price: 125000, stock: 0 },
+    title: "پیراهن",
+    description: "جزئیات محصول",
+    canonical: "https://shop.example/product/abc123",
+    origin: "https://shop.example",
+  });
+  assert.equal(schema.offers.availability, "https://schema.org/OutOfStock");
 });
 
 test("variant availability reflects whether at least one combination is purchasable", () => {
