@@ -15,7 +15,7 @@ const hasLongPassphraseComplexity = (password) =>
 
 const containsCommonPasswordPattern = (password) => {
   const normalized = password.toLowerCase().normalize("NFKC").replace(/[^a-z0-9]/g, "");
-  return ["password", "passw0rd", "qwerty", "letmein", "welcome", "changeme", "iloveyou", "123456", "654321", "abc123"]
+  return ["password", "passw0rd", "pssw0rd", "qwerty", "letmein", "welcome", "changeme", "iloveyou", "123456", "654321", "abc123"]
     .some((pattern) => normalized.includes(pattern));
 };
 
