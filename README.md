@@ -1,28 +1,28 @@
 <div align="center">
 
-# 🛍️ Persian Commerce Store
+# تیک بوتیک | Tik Boutique
 
-**A Persian-first, RTL e-commerce platform built for Iranian shoppers.**
+**A Persian-first, right-to-left commerce platform built for Iranian shoppers.**
 
-A production-oriented MERN storefront with Toman pricing, Zarinpal checkout, inventory reservation and recovery, order tracking, and operational tooling.
+A production-focused MERN storefront with whole-Toman pricing, Zarinpal checkout, inventory safeguards, order tracking, and tools for customers and store administrators.
 
 <p>
-  <a href="https://github.com/ItsWanheda/mern-ecommerce"><img src="https://img.shields.io/badge/Storefront-Persian%20Commerce-68745f?style=for-the-badge&logo=shopify&logoColor=white" alt="Persian Commerce Store" /></a>
-  <img src="https://img.shields.io/badge/Currency-IRT%20%7C%20Toman-16803c?style=for-the-badge" alt="IRT Toman only" />
-  <img src="https://img.shields.io/badge/Payments-Zarinpal-4e7b59?style=for-the-badge" alt="Zarinpal only" />
+  <a href="https://github.com/ItsWanheda/mern-ecommerce/actions/workflows/ci.yml"><img src="https://github.com/ItsWanheda/mern-ecommerce/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI status for master" /></a>
+  <a href="https://github.com/ItsWanheda/mern-ecommerce/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-68745f?style=flat-square" alt="MIT License" /></a>
+  <img src="https://img.shields.io/badge/Currency-IRT%20%7C%20Toman-16803c?style=flat-square" alt="IRT Toman only" />
+  <img src="https://img.shields.io/badge/Payments-Zarinpal-4e7b59?style=flat-square" alt="Zarinpal only" />
 </p>
 <p>
   <img src="https://img.shields.io/badge/React-Vite-646CFF?style=flat-square&logo=react&logoColor=white" alt="React and Vite" />
   <img src="https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js and Express" />
   <img src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB and Mongoose" />
   <img src="https://img.shields.io/badge/Redis-ioredis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Language-fa--IR%20%7C%20RTL-68745f?style=flat-square" alt="Persian right-to-left interface" />
+  <img src="https://img.shields.io/badge/Persian-fa--IR%20%7C%20RTL-68745f?style=flat-square" alt="Persian right-to-left interface" />
 </p>
 
 [Features](#-features) · [Architecture](#-architecture) · [Setup](#-getting-started) · [Environment](#-environment-variables) · [API](#-api-reference) · [Deployment](#-deployment) · [Testing](#-testing-and-migrations)
 
 </div>
-
 ---
 
 ## ✨ Features
@@ -30,6 +30,7 @@ A production-oriented MERN storefront with Toman pricing, Zarinpal checkout, inv
 ### 🛒 Persian storefront
 - Persian-first right-to-left (RTL) layout, navigation, product discovery, and category browsing.
 - Responsive home, shop, category, product-detail, cart, wishlist, account, and order-history experiences.
+- Customer profile editing and saved delivery-address management, including a direct **«پروفایل و نشانی‌ها»** link in the mobile hamburger menu.
 - Product variants, stock availability, recommendations, coupons, campaigns, and newsletter subscription management.
 - Toman-only price formatting with whole-Toman validation.
 
@@ -45,7 +46,8 @@ A production-oriented MERN storefront with Toman pricing, Zarinpal checkout, inv
 - Iranian delivery-address validation and an address snapshot stored with each new order.
 - Customer order history and shipment events.
 - Admin shipment queue with guarded status transitions and carrier/tracking-code requirements.
-- Administrative audit log and an operational dashboard for payment, shipment, database, and Redis signals.
+- Product, category, campaign, coupon, customer, and fulfillment management, plus inventory alerts, service requests, analytics, and an administrative audit log.
+- An operational dashboard for payment, shipment, database, and Redis signals.
 
 ### 🔐 Security and reliability
 - HTTP-only authentication cookies and role-protected administrative routes.
@@ -118,9 +120,15 @@ mern-ecommerce/
 │       └── lib/             # API and commerce helpers
 ├── docs/
 │   ├── PERSIAN_COMMERCE_OVERVIEW.md
-│   └── PERSIAN_COMMERCE_SETUP.md
+│   ├── PERSIAN_COMMERCE_SETUP.md
+│   ├── admin-expansion-requirements.md
+│   ├── password-recovery.md
+│   └── seo-share-previews.md
 ├── scripts/
+│   ├── audit-untracked-inventory.mjs
 │   ├── backfill-persian-search.mjs
+│   ├── migrate-categories.mjs
+│   ├── migrate-coupons.mjs
 │   ├── migrate-orders-to-zarinpal-only.mjs
 │   └── reconcile-pending-payments.mjs
 ├── package.json
@@ -246,7 +254,13 @@ All routes are prefixed with `/api`.
 | `POST` | `/auth/login` | Public | Authenticate and set cookies. |
 | `POST` | `/auth/logout` | Session | Clear authentication cookies. |
 | `POST` | `/auth/refresh-token` | Session | Refresh the access session. |
-| `GET` | `/auth/profile` | Authenticated | Read the current user profile. |
+| `GET` | `/auth/profile` | Authenticated | Read the current user profile and saved addresses. |
+| `PATCH` | `/auth/profile` | Authenticated | Update profile information. |
+| `PATCH` | `/auth/profile/default-address` | Authenticated | Save/update the legacy default delivery address. |
+| `POST` | `/auth/profile/addresses` | Authenticated | Add a saved delivery address. |
+| `PATCH` | `/auth/profile/addresses/:addressId` | Authenticated | Edit a saved delivery address. |
+| `PATCH` | `/auth/profile/addresses/:addressId/default` | Authenticated | Make a saved address the default. |
+| `DELETE` | `/auth/profile/addresses/:addressId` | Authenticated | Delete a saved delivery address. |
 | `GET` | `/products` | Admin | List products for management. |
 | `GET` | `/products/featured` | Public | List featured products. |
 | `GET` | `/products/category/:category` | Public | Browse a product category. |
@@ -316,5 +330,11 @@ For existing order collections, take a verified backup and follow the guarded mi
 ---
 
 <div align="center">
-  <sub>Built with React, Node.js, MongoDB, and a Persian-first shopping experience.</sub>
+
+**Made for a Persian-first shopping experience.**
+
+[Project](https://github.com/ItsWanheda/mern-ecommerce) · [Setup guide](docs/PERSIAN_COMMERCE_SETUP.md) · [License](LICENSE)
+
+<sub>Built with React, Node.js, Express, MongoDB, and Redis.</sub>
+
 </div>
