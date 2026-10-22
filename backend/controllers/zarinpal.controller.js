@@ -732,7 +732,9 @@ export const reconcilePendingZarinpalOrders = async (req, res) => {
     return res.status(503).json({ message: "Payment reconciliation is temporarily unavailable" });
   }
   if (lockResult !== "OK") {
-    return res.status(409).json({ message: "Payment reconciliation is already running" });
+    // Another invocation owns the distributed lock. This is a safe no-op,
+    // not a reconciliation failure that should page an operator every 5 minutes.
+    return res.status(200).json({ success: true, skipped: true, reason: "already-running" });
   }
 
   const summary = {
