@@ -141,8 +141,12 @@ function apiResponder(url) {
   if (path === "/api/products/" + PRODUCT_ID) return jsonResponse(product);
   if (path === "/api/products/" + SECOND_PRODUCT_ID) return jsonResponse(product);
   if (path === "/api/categories/jeans") return jsonResponse({ category });
+  if (path === "/api/categories/t-shirts") return jsonResponse({ message: "Category not found" }, 404);
   if (path === "/api/products/category/jeans") {
     return jsonResponse({ products: [product], pagination: { page: 1, limit: 8, total: 1, pages: 1 } });
+  }
+  if (path === "/api/products/category/t-shirts") {
+    return jsonResponse({ products: [{ ...product, category: "t-shirts" }], pagination: { page: 1, limit: 8, total: 1, pages: 1 } });
   }
   if (path === "/api/products/search") {
     return jsonResponse({ products: [product], pagination: { page: Number(url.searchParams.get("page") || 1), limit: Number(url.searchParams.get("limit") || 24), total: 2, totalPages: 2 } });
@@ -180,6 +184,15 @@ test("server SEO handlers return rendered HTML, accurate statuses, and dynamic s
     assert.match(categoryResponse.body, /شلوار جین/);
     assert.match(categoryResponse.body, /شلوار جین برای استفاده روزمره/);
     assert.match(categoryResponse.body, /پیراهن آبی/);
+
+    const legacyCategoryResponse = createResponse();
+    await sharePreviewHandler(
+      createRequest("/category/t-shirts", { type: "category", id: "t-shirts" }),
+      legacyCategoryResponse
+    );
+    assert.equal(legacyCategoryResponse.statusCode, 200);
+    assert.match(legacyCategoryResponse.body, /تی‌شرت/);
+    assert.match(legacyCategoryResponse.body, /پیراهن آبی/);
 
     const paginatedCategoryResponse = createResponse();
     await sharePreviewHandler(
