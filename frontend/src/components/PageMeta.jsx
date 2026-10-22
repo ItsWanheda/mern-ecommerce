@@ -81,7 +81,7 @@ export default function PageMeta({
     const runtimeSiteUrl = document.head.querySelector('meta[name="public-site-url"]')?.getAttribute("content") || "";
     const configuredSiteUrl = import.meta.env.VITE_PUBLIC_SITE_URL || runtimeSiteUrl;
     const isSeoPreview = document.head.querySelector('meta[name="seo-preview"]')?.getAttribute("content") === "true";
-    const siteOrigin = canonicalOrigin(window.location.origin, configuredSiteUrl);
+    const siteOrigin = isSeoPreview ? "" : canonicalOrigin(window.location.origin, configuredSiteUrl);
     const effectiveRobots = isSeoPreview ? "noindex, nofollow" : robots;
     const safeTitle = normalizeSeoText(title, DEFAULT_SEO_TITLE, 180);
     const safeDescription = normalizeSeoText(description, DEFAULT_SEO_DESCRIPTION, 300);
