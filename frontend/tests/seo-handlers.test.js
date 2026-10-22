@@ -156,6 +156,7 @@ function apiResponder(url) {
   if (path === "/api/products/featured") return jsonResponse([product]);
   if (path === "/api/categories") return jsonResponse({ categories: [category] });
   if (path === "/api/campaigns") return jsonResponse({ campaigns });
+  if (path === "/api/campaigns/new-sale") return jsonResponse({ campaign: campaigns[0] });
   return jsonResponse({ message: "Not found" }, 404);
 }
 
@@ -237,6 +238,16 @@ test("server SEO handlers return rendered HTML, accurate statuses, and dynamic s
     assert.equal(campaignListResponse.statusCode, 200);
     assert.match(campaignListResponse.body, /پیشنهاد ویژه/);
     assert.match(campaignListResponse.body, /\/campaign\/new-sale/);
+
+    const campaignDetailResponse = createResponse();
+    await sharePreviewHandler(
+      createRequest("/campaign/new-sale", { type: "campaign", id: "new-sale" }),
+      campaignDetailResponse
+    );
+    assert.equal(campaignDetailResponse.statusCode, 200);
+    assert.match(campaignDetailResponse.body, /پیشنهاد ویژه/);
+    assert.match(campaignDetailResponse.body, /پیراهن آبی/);
+    assert.match(campaignDetailResponse.body, /"@type":"Product"/);
 
     const unknownPageResponse = createResponse();
     await pageShellHandler(
