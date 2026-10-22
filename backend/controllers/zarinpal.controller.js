@@ -321,6 +321,7 @@ export const createZarinpalCheckout = async (req, res) => {
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
+        transactionResult = null;
         let transactionCoupon = coupon;
         let transactionDiscount = couponDiscountAmount;
         let transactionShippingFee = shippingFee;
@@ -606,7 +607,10 @@ export const verifyZarinpalPayment = async (req, res) => {
       return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
     }
     if (order.paymentStatus !== "pending") {
-      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
+      if (["failed", "expired"].includes(order.paymentStatus)) {
+        return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=payment-not-confirmed&order_id=${order._id}`);
+      }
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending&order_id=${order._id}`);
     }
 
     const response = await fetch(`${apiBase()}/verify.json`, {
@@ -639,7 +643,7 @@ export const verifyZarinpalPayment = async (req, res) => {
         await releaseReservedInventory(failed.products, failed._id);
         await releaseCouponReservationForOrder(failed._id);
       }
-      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&order_id=${order._id}`);
+      return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=payment-not-confirmed&order_id=${order._id}`);
     }
 
     const paid = await Order.findOneAndUpdate(
@@ -666,7 +670,10 @@ export const verifyZarinpalPayment = async (req, res) => {
     return res.redirect(`${resultBase}/purchase-success?provider=zarinpal&order_id=${order._id}`);
   } catch (error) {
     console.error("Error verifying Zarinpal payment", error.message);
-    return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-error`);
+    // Any exception may occur after the gateway succeeded or the paid status
+    // was stored. Keep the customer on an explicitly uncertain path.
+    const orderQuery = mongoose.isValidObjectId(orderId) ? `&order_id=${encodeURIComponent(orderId)}` : "";
+    return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending${orderQuery}`);
   }
 };
 
