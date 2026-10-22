@@ -7,7 +7,7 @@ import {
   safeJson,
 } from "../frontend/src/lib/seo-utils.js";
 
-const DYNAMIC_META_KEYS = /^(description|robots|application-name|og:(locale|site_name|type|title|description|url|image|image:alt)|twitter:(card|title|description|image)|product:price:(amount|currency))$/i;
+const DYNAMIC_META_KEYS = /^(description|robots|application-name|public-site-url|og:(locale|site_name|type|title|description|url|image|image:alt)|twitter:(card|title|description|image)|product:price:(amount|currency))$/i;
 
 export function getRequestOrigin(req) {
   const forwarded = String(req?.headers?.["x-forwarded-proto"] || "").split(",")[0].trim().toLowerCase();
@@ -92,6 +92,7 @@ export function renderHtmlShell(shell, options = {}) {
     '<meta name="description" content="' + escapeHtml(description) + '">',
     '<meta name="robots" content="' + escapeHtml(robots) + '">',
     '<meta name="application-name" content="تیک بوتیک">',
+    origin ? '<meta name="public-site-url" content="' + escapeHtml(origin) + '">' : "",
     '<meta property="og:locale" content="fa_IR">',
     '<meta property="og:site_name" content="تیک بوتیک">',
     '<meta property="og:type" content="' + type + '">',
