@@ -38,6 +38,7 @@ A production-oriented MERN storefront with Toman pricing, Zarinpal checkout, inv
 - **IRT (Toman) is the only storefront and order currency.**
 - Server-side price, coupon, shipping, and inventory checks before initiating checkout.
 - Inventory reservation, safe release, idempotent paid-order finalization, and scheduled recovery of uncertain payment results.
+- Checkout rejects unknown or missing stock quantities; null stock is not interpreted as unlimited inventory.
 - Payment status verification is performed server-side; the browser redirect alone is not treated as proof of payment.
 
 ### 🚚 Orders and fulfillment
@@ -49,6 +50,8 @@ A production-oriented MERN storefront with Toman pricing, Zarinpal checkout, inv
 ### 🔐 Security and reliability
 - HTTP-only authentication cookies and role-protected administrative routes.
 - Explicit security headers, exact-origin CORS allowlisting, origin/Fetch Metadata checks, and API rate limits.
+- Strong password creation and reset policy, including common-pattern rejection and bcrypt input-length protection.
+- Category and campaign Base64 uploads are validated and stored as HTTPS Cloudinary URLs.
 - Persian/Arabic character and digit normalization for product search.
 - Lazy-loaded frontend routes and admin sections to reduce initial JavaScript work.
 
@@ -280,13 +283,7 @@ The complete route definitions and request validation are in `backend/routes/` a
 
 ### Payment reconciliation
 
-The callback may be delayed or the provider/network response may be ambiguous. Schedule a request to `GET /api/payments/reconcile-pending` at a tested interval with:
-
-```http
-Authorization: Bearer <CRON_SECRET>
-```
-
-The repository includes `scripts/reconcile-pending-payments.mjs` for a server-side scheduled task. See [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md) for the Linux cron example and operational precautions. Deploying the API does not run a self-hosted scheduler automatically.
+The callback may be delayed or the provider/network response may be ambiguous. Production reconciliation must run about every five minutes using `GET /api/payments/reconcile-pending` with the `Authorization: Bearer <CRON_SECRET>` header. The repository includes `.github/workflows/reconcile-payments.yml`; configure the repository Actions secrets `PAYMENTS_API_URL` (public API origin without `/api`) and `CRON_SECRET` (same value as the backend secret). Vercel Cron is intentionally not configured in `backend/vercel.json` because Hobby plans do not support the required interval. Self-hosted deployments can use `scripts/reconcile-pending-payments.mjs` and the Linux cron example in [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md). Configure only one routine scheduler.
 
 ## 🧪 Testing and migrations
 
