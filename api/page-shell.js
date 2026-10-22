@@ -1,8 +1,7 @@
 import {
   PRIVATE_ROUTE_META,
   STATIC_PAGE_META,
-  canonicalUrlFor,
-  escapeHtml,
+  canonicalUrlForQuery,
   hasIndexExcludedQuery,
 } from "../frontend/src/lib/seo-utils.js";
 import {
@@ -74,12 +73,13 @@ export default async function handler(req, res) {
   }
 
   const filtered = !isPrivate && hasIndexExcludedQuery(req.query);
+  const missingCanonicalOrigin = !siteOrigin;
   const robots = isPrivate
     ? "noindex, nofollow"
     : filtered
       ? "noindex, follow"
       : "index, follow, max-image-preview:large";
-  const canonical = isPrivate ? "" : canonicalUrlFor(path, siteOrigin, siteOrigin);
+  const canonical = isPrivate ? "" : canonicalUrlForQuery(path, req.query, siteOrigin, siteOrigin);
   const html = renderHtmlShell(shell, {
     title: metadata.title,
     description: metadata.description,
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
   });
   return sendHtml(res, 200, html, {
     head: method === "HEAD",
-    robotsHeader: isPrivate ? "noindex, nofollow" : filtered ? "noindex, follow" : "",
+    robotsHeader: isPrivate ? "noindex, nofollow" : filtered || missingCanonicalOrigin ? "noindex, follow" : "",
     cacheControl: isPrivate ? "private, no-store" : "public, s-maxage=60, stale-while-revalidate=300",
   });
 }
