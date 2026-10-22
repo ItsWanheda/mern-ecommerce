@@ -212,6 +212,7 @@ export const reserveInventory = async (items, productsById, { session } = {}) =>
           {
             _id: product._id,
             isActive: { $ne: false },
+            price: product.price,
             variants: { $elemMatch: { size, color, stock: { $gte: quantity } } },
           },
           { $inc: { "variants.$.stock": -quantity } },
@@ -222,7 +223,7 @@ export const reserveInventory = async (items, productsById, { session } = {}) =>
         orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: true, stockReserved: true });
       } else if (isTracked(product)) {
         const updated = await Product.findOneAndUpdate(
-          { _id: product._id, isActive: { $ne: false }, stock: { $gte: quantity } },
+          { _id: product._id, isActive: { $ne: false }, price: product.price, stock: { $gte: quantity } },
           { $inc: { stock: -quantity } },
           session ? { new: true, session } : { new: true }
         ).lean();
