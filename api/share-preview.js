@@ -234,8 +234,11 @@ const renderCampaignContent = (campaign, origin) => {
   const target = typeof campaign.href === "string" && campaign.href.startsWith("/") && !campaign.href.startsWith("//")
     ? campaign.href
     : "/shop";
-  return pageLayout(campaign.title || "پیشنهاد ویژه", campaign.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک.", imageBlock +
-    '<p><a href="' + escapeHtml(target) + '" style="color:#526149">مشاهده پیشنهاد</a></p>');
+  const products = Array.isArray(campaign.productIds) ? campaign.productIds : [];
+  return pageLayout(campaign.title || "پیشنهاد ویژه", campaign.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک.",
+    imageBlock +
+    '<p><a href="' + escapeHtml(target) + '" style="color:#526149">مشاهده پیشنهاد</a></p>' +
+    renderProductCards(products, origin));
 };
 
 const renderNotFoundContent = () =>
@@ -430,11 +433,10 @@ export default async function handler(req, res) {
       ], siteOrigin));
       rootContent = renderCategoryContent(category, products, siteOrigin);
     } else if (type === "campaign") {
-      const payload = await getApiJson(apiBase, "campaigns?limit=100");
-      const campaigns = Array.isArray(payload?.campaigns) ? payload.campaigns : [];
-      campaign = campaigns.find((item) =>
-        String(item?._id || "") === id || String(item?.slug || "") === id
-      );
+      // The detail endpoint filters inactive/expired campaigns and populates
+      // only active products, so initial HTML and JSON-LD match the real page.
+      const payload = await getApiJson(apiBase, "campaigns/" + encodeURIComponent(id));
+      campaign = payload?.campaign || null;
       if (!campaign) {
         const missing = new Error("Campaign not found");
         missing.status = 404;
