@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://mern-ecommerce-api-wanhedas-projects.vercel.app/api/:path*"
+      "destination": "https://mern-ecommerce-api-tau.vercel.app/api/:path*"
     },
     {
       "source": "/product/:productId",
