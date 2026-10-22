@@ -27,9 +27,10 @@ export function getCanonicalOrigin(requestOrigin) {
       ? (/^https?:\/\//i.test(productionDomain) ? productionDomain : "https://" + productionDomain)
       : "");
 
-  // Do not create indexable preview-domain canonicals when Vercel has not
-  // supplied a stable production host and no explicit public URL was configured.
-  if (!configuredOrigin && process.env.VERCEL_ENV === "preview") return "";
+  // Never choose the incoming Host header as the canonical domain. If no
+  // verified production origin is configured/provided by Vercel, suppress
+  // canonicals and indexing until the deployment has a stable public URL.
+  if (!configuredOrigin) return "";
   return canonicalOrigin(requestOrigin, configuredOrigin);
 }
 
