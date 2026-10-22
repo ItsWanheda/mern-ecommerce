@@ -1,10 +1,7 @@
-const parseKnownQuantity = (value) => {
-  if (typeof value === "number") return Number.isSafeInteger(value) && value >= 0 ? value : null;
-  if (typeof value === "string" && value.trim() !== "" && Number.isSafeInteger(Number(value)) && Number(value) >= 0) {
-    return Number(value);
-  }
-  return null;
-};
+const parseKnownQuantity = (value) =>
+  typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : null;
 
 export const getKnownProductStock = (product) => {
   const variants = Array.isArray(product?.variants) ? product.variants : [];
