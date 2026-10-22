@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Category from "../models/category.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { ImageUploadError, ImageStorageError, resolveImageReference } from "../lib/image-upload.js";
 
 const objectIdPattern = /^[a-f\d]{24}$/i;
 const localized = (value, previous = {}) => ({
@@ -159,9 +160,18 @@ export const getAdminCategories = async (_req, res) => {
 
 export const createCategory = async (req, res) => {
   try {
-    const validated = validateCategoryInput(req.body || {});
+    const requestBody = req.body || {};
+    const imageInput = requestBody.image;
+    const validationBody = typeof imageInput === "string" && imageInput.startsWith("data:")
+      ? { ...requestBody, image: "" }
+      : requestBody;
+    const validated = validateCategoryInput(validationBody);
     if (validated.error) return res.status(400).json({ message: validated.error });
-    const parentId = req.body.parentId || null;
+    validated.value.image = await resolveImageReference(imageInput, {
+      folder: "categories",
+      maxBytes: 2 * 1024 * 1024,
+    });
+    const parentId = requestBody.parentId || null;
     let parent = null;
     if (parentId) {
       if (!objectIdPattern.test(String(parentId))) return res.status(400).json({ message: "دسته‌بندی والد معتبر نیست." });
@@ -193,6 +203,8 @@ export const createCategory = async (req, res) => {
     });
     return res.status(201).json({ category });
   } catch (error) {
+    if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
+    if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error?.code === 11000) return res.status(409).json({ message: "این slug قبلاً استفاده شده است." });
     if (error instanceof mongoose.Error.ValidationError) return res.status(400).json({ message: "اطلاعات دسته‌بندی معتبر نیست." });
     console.error("Error creating category:", error.message);
@@ -208,9 +220,20 @@ export const updateCategory = async (req, res) => {
     if (req.body?.slug !== undefined && String(req.body.slug).trim().toLowerCase() !== category.slug) {
       return res.status(400).json({ message: "برای حفظ لینک‌های پایدار، slug پس از ایجاد قابل تغییر نیست." });
     }
-    const validated = validateCategoryInput({ ...req.body, slug: category.slug }, category.toObject());
+    const requestBody = req.body || {};
+    const imageInput = requestBody.image;
+    const validationBody = typeof imageInput === "string" && imageInput.startsWith("data:")
+      ? { ...requestBody, image: "" }
+      : requestBody;
+    const validated = validateCategoryInput({ ...validationBody, slug: category.slug }, category.toObject());
     if (validated.error) return res.status(400).json({ message: validated.error });
-    const parentWasSent = Object.prototype.hasOwnProperty.call(req.body || {}, "parentId");
+    if (imageInput !== undefined) {
+      validated.value.image = await resolveImageReference(imageInput, {
+        folder: "categories",
+        maxBytes: 2 * 1024 * 1024,
+      });
+    }
+    const parentWasSent = Object.prototype.hasOwnProperty.call(requestBody, "parentId");
     let parent = category.parentId ? await Category.findById(category.parentId) : null;
     if (parentWasSent) {
       const parentId = req.body.parentId || null;
@@ -270,6 +293,8 @@ export const updateCategory = async (req, res) => {
     });
     return res.json({ category });
   } catch (error) {
+    if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
+    if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error?.code === 11000) return res.status(409).json({ message: "این slug قبلاً استفاده شده است." });
     if (error instanceof mongoose.Error.ValidationError) return res.status(400).json({ message: "اطلاعات دسته‌بندی معتبر نیست." });
     console.error("Error updating category:", error.message);
