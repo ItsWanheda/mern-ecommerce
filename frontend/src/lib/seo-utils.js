@@ -221,6 +221,21 @@ export function buildProductStructuredData({ product, title, description, image,
     image,
   ].filter((value) => typeof value === "string" && value.trim());
   const images = [...new Set(imageValues.map((value) => absoluteUrlFor(value, origin)).filter(Boolean))];
+  const sizes = [...new Set([
+    ...(Array.isArray(product.sizes) ? product.sizes : []),
+    ...(Array.isArray(product.variants) ? product.variants.map((variant) => variant?.size) : []),
+  ].filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim()))];
+  const colors = [...new Set([
+    ...(Array.isArray(product.colors) ? product.colors.map((color) => color?.name) : []),
+    ...(Array.isArray(product.variants) ? product.variants.map((variant) => variant?.color) : []),
+  ].filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim()))];
+  const additionalProperty = [
+    ...sizes.map((size) => ({ "@type": "PropertyValue", name: "سایز", value: size })),
+    ...colors.map((color) => ({ "@type": "PropertyValue", name: "رنگ", value: color })),
+    ...(typeof product.fit?.description === "string" && product.fit.description.trim()
+      ? [{ "@type": "PropertyValue", name: "توضیحات تن‌خور", value: normalizeSeoText(product.fit.description, "", 500) }]
+      : []),
+  ];
   const priceToman = Number(product.price);
   const hasValidPrice = Number.isFinite(priceToman) && priceToman >= 0;
   const availability = getSchemaAvailability(product);
@@ -231,6 +246,7 @@ export function buildProductStructuredData({ product, title, description, image,
     description: normalizeSeoText(product.description || description, description, 1000),
     image: images.length ? images : undefined,
     sku: product._id ? String(product._id) : undefined,
+    additionalProperty: additionalProperty.length ? additionalProperty : undefined,
     offers: hasValidPrice && availability ? {
       "@type": "Offer",
       priceCurrency: "IRR",
