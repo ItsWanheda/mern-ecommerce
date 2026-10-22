@@ -83,7 +83,7 @@ const SignUpPage = () => {
 										{showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
 									</button>
 								</div>
-								<p id="password-requirements" className="mt-2 text-xs leading-5 text-[#77786f]">حداقل ۱۲ نویسه با حروف کوچک و بزرگ انگلیسی، عدد و نماد؛ یا عبارت طولانی حداقل ۱۶ نویسه‌ای شامل حرف، عدد و نماد.</p>
+								<p id="password-requirements" className="mt-2 text-xs leading-5 text-[#77786f]">حداقل ۱۲ نویسه با حروف کوچک و بزرگ انگلیسی، عدد و نماد؛ یا عبارت چندواژه‌ای حداقل ۱۶ نویسه‌ای شامل حرف، عدد و نماد.</p>
 								{passwordError && <p role="alert" className="mt-2 text-xs leading-5 text-red-600">{passwordError}</p>}
 							</div>
 
