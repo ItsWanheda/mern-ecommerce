@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ArrowUpLeft, Heart, ShoppingCart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -33,11 +34,16 @@ const ProductCard = ({ product }) => {
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
   const navigate = useNavigate();
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => setImageFailed(false), [product.image]);
   const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
   const outOfStock = hasVariants
     ? product.variants.every((variant) => Number(variant.stock) <= 0)
     : isOutOfStock(product);
   const colors = getProductColors(product);
+  const sizes = Array.isArray(product.sizes) && product.sizes.length
+    ? product.sizes
+    : [...new Set((Array.isArray(product.variants) ? product.variants : []).map((variant) => variant.size).filter(Boolean))];
   const saved = isSaved(product._id);
   const variantStock = hasVariants
     ? product.variants.reduce((total, variant) => total + Math.max(0, Number(variant.stock) || 0), 0)
@@ -60,10 +66,20 @@ const ProductCard = ({ product }) => {
       <div className="relative">
         <Link to={`/product/${product._id}`} aria-label={`مشاهده جزئیات ${product.name}`} className="relative block overflow-hidden bg-[#f0eee8] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#68745f]">
           <div className="aspect-[4/5] overflow-hidden">
-            {product.image ? (
-              <img src={product.image} alt={product.name} loading="lazy" decoding="async" className={`h-full w-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none ${outOfStock ? "grayscale-[0.3]" : ""}`} />
+            {product.image && !imageFailed ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                loading="lazy"
+                decoding="async"
+                onError={() => setImageFailed(true)}
+                className={`h-full w-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none ${outOfStock ? "grayscale-[0.3]" : ""}`}
+              />
             ) : (
-              <div className="flex h-full items-center justify-center px-6 text-center text-sm text-[#77786f]">تصویر محصول به‌زودی اضافه می‌شود</div>
+              <div role="img" aria-label={"تصویر " + product.name + " در دسترس نیست"} className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-[#77786f]">
+                <span aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d5d0c5] text-lg">◇</span>
+                <span>تصویر محصول به‌زودی اضافه می‌شود</span>
+              </div>
             )}
           </div>
         </Link>
@@ -93,21 +109,27 @@ const ProductCard = ({ product }) => {
             <span className="line-clamp-2">{product.name}</span>
           </Link>
 
-          {colors.length > 0 && (
-            <div role="group" aria-label={`رنگ‌های موجود برای ${product.name}`} className="mt-2.5 flex min-h-5 flex-wrap items-center gap-1.5">
-              {colors.slice(0, 5).map((color) => (
-                <span
-                  key={color.name}
-                  title={color.name}
-                  aria-label={`رنگ ${color.name}`}
-                  className="inline-flex h-[17px] w-[17px] rounded-full border border-black/10 ring-1 ring-transparent transition group-hover:ring-[#d5d0c5]"
-                  style={{ backgroundColor: /^#[0-9a-fA-F]{6}$/.test(color.hex || "") ? color.hex : "#d5d0c5" }}
-                />
-              ))}
-              {colors.length > 5 && <span className="text-[10px] text-[#77786f]">+{new Intl.NumberFormat("fa-IR").format(colors.length - 5)}</span>}
-              <span className="mr-1 text-[10px] text-[#85867d]">{new Intl.NumberFormat("fa-IR").format(colors.length)} رنگ</span>
-            </div>
-          )}
+          <div role={colors.length ? "group" : undefined} aria-label={colors.length ? `رنگ‌های موجود برای ${product.name}` : undefined} className="mt-2.5 flex min-h-6 items-center gap-1.5 overflow-hidden">
+            {colors.length > 0 ? (
+              <>
+                {colors.slice(0, 5).map((color) => (
+                  <span
+                    key={color.name}
+                    title={color.name}
+                    aria-label={`رنگ ${color.name}`}
+                    className="inline-flex h-[17px] w-[17px] shrink-0 rounded-full border border-black/10 ring-1 ring-transparent transition group-hover:ring-[#d5d0c5]"
+                    style={{ backgroundColor: /^#[0-9a-fA-F]{6}$/.test(color.hex || "") ? color.hex : "#d5d0c5" }}
+                  />
+                ))}
+                {colors.length > 5 && <span className="shrink-0 text-[10px] text-[#77786f]">+{new Intl.NumberFormat("fa-IR").format(colors.length - 5)}</span>}
+                <span className="mr-1 truncate text-[10px] text-[#85867d]">{new Intl.NumberFormat("fa-IR").format(colors.length)} رنگ</span>
+              </>
+            ) : sizes.length > 0 ? (
+              <span className="truncate text-[10px] text-[#77786f]">سایزهای موجود: {sizes.slice(0, 3).join("، ")}{sizes.length > 3 ? " +" + new Intl.NumberFormat("fa-IR").format(sizes.length - 3) : ""}</span>
+            ) : (
+              <span aria-hidden="true" className="block h-4" />
+            )}
+          </div>
 
           <p className="mt-3 text-lg font-semibold tabular-nums tracking-tight text-[#252722]">{formatPrice(product.price)}</p>
         </div>
