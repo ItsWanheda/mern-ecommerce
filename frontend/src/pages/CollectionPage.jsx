@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, LoaderCircle, PackageSearch, RefreshCw } from "lucide-react";
 import axios from "../lib/axios";
 import ProductCard from "../components/ProductCard";
+import PageMeta from "../components/PageMeta";
 
 const looks = {
   "daily-style": {
@@ -73,7 +74,6 @@ const CollectionPage = ({ type = "newest" }) => {
         product?._id && product.isActive !== false && all.findIndex((item) => item?._id === product._id) === index
       );
       setProducts(unique);
-      document.title = config.title + " | تیک بوتیک";
     } catch (requestError) {
       setError(requestError.response?.data?.message || "بارگذاری محصولات این مجموعه ناموفق بود.");
     } finally {
@@ -83,11 +83,11 @@ const CollectionPage = ({ type = "newest" }) => {
 
   useEffect(() => {
     loadCollection();
-    return () => { document.title = "تیک بوتیک | فروشگاه آنلاین پوشاک و اکسسوری"; };
   }, [loadCollection]);
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-[#f7f5f0] px-3 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
+      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.description || "این مجموعه در تیک بوتیک در دسترس نیست."} image={config?.image} path={type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products" }] : []} />
       <div className="mx-auto max-w-[1920px]">
         <nav aria-label="مسیر صفحه" className="mb-5 flex items-center gap-2 text-xs text-[#77786f]">
           <Link to="/" className="hover:text-[#68745f]">صفحه اصلی</Link><span aria-hidden="true">/</span><Link to="/shop" className="hover:text-[#68745f]">فروشگاه</Link><span aria-hidden="true">/</span><span className="font-semibold text-[#41443b]">{config?.title || "مجموعه"}</span>

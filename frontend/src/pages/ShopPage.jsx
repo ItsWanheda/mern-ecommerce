@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PageMeta from "../components/PageMeta";
+import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
 import { Search, LoaderCircle, Sparkles, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
@@ -111,7 +112,7 @@ const ShopPage = () => {
       dir="rtl"
       className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8"
     >
-      <PageMeta title="فروشگاه پوشاک و اکسسوری" description="جست‌وجو، فیلتر و خرید محصولات فروشگاه تیک بوتیک." path="/shop" />
+      <PageMeta title="فروشگاه پوشاک و اکسسوری" description="جست‌وجو، فیلتر و خرید محصولات فروشگاه تیک بوتیک." path="/shop" type="collection" itemList={products} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) ? "noindex, follow" : "index, follow, max-image-preview:large"} />
       <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">

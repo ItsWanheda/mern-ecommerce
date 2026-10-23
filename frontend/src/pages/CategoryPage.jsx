@@ -4,6 +4,7 @@ import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from 
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import PageMeta from "../components/PageMeta";
+import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
@@ -68,6 +69,11 @@ const makeEmptyFilters = () => ({
 });
 
 const CATEGORY_PAGE_SIZE = 24;
+
+const parsePageNumber = (value) => {
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page >= 1 ? Math.min(page, 100000) : 1;
+};
 
 const filtersFromParams = (params) => {
   const filters = makeEmptyFilters();
@@ -138,7 +144,7 @@ const CategoryPage = () => {
   const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
   const [draftFilters, setDraftFilters] = useState(() => filtersFromParams(searchParams));
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => parsePageNumber(searchParams.get("page")));
   const [draftResultCount, setDraftResultCount] = useState(0);
 
   useEffect(() => {
@@ -149,6 +155,7 @@ const CategoryPage = () => {
       const fromUrl = filtersFromParams(searchParams);
       setFilters(fromUrl);
       setDraftFilters(fromUrl);
+      setPage(parsePageNumber(searchParams.get("page")));
     }
   }, [searchParams]);
 
@@ -157,21 +164,21 @@ const CategoryPage = () => {
       urlChangedRef.current = false;
       return;
     }
-    const serialized = paramsFromFilters(filters).toString();
+    const nextParams = paramsFromFilters(filters);
+    if (page > 1) nextParams.set("page", String(page));
+    const serialized = nextParams.toString();
     if (serialized !== searchParams.toString()) {
       lastAppliedUrlRef.current = serialized;
       setSearchParams(new URLSearchParams(serialized), { replace: true });
     }
-  }, [filters, searchParams, setSearchParams]);
-
-  useEffect(() => { setPage(1); }, [filters, category]);
+  }, [filters, page, searchParams, setSearchParams]);
 
   useEffect(() => {
     const fromUrl = filtersFromParams(new URLSearchParams(window.location.search));
     setFilters(fromUrl);
     setDraftFilters(fromUrl);
     setMobileFiltersOpen(false);
-    setPage(1);
+    setPage(parsePageNumber(new URLSearchParams(window.location.search).get("page")));
   }, [category]);
 
   useEffect(() => {
@@ -305,6 +312,7 @@ const CategoryPage = () => {
       }
       return { ...current, [field]: value };
     });
+    if (setter === setFilters) setPage(1);
   };
 
   const clearAllFilters = () => {
@@ -316,6 +324,7 @@ const CategoryPage = () => {
   };
 
   const removeFilter = (field, value) => {
+    setPage(1);
     setFilters((current) => {
       if (["sizes", "colors", "fits", "brands"].includes(field)) {
         return { ...current, [field]: current[field].filter((entry) => entry !== value) };
@@ -635,7 +644,7 @@ const CategoryPage = () => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} />
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: pageTitle, path: "/category/" + category }]} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
       <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
@@ -652,7 +661,7 @@ const CategoryPage = () => {
               {pageTitle}
             </motion.h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#77786f]">
-              با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به {priceUnitLabel}، انتخابتان را دقیق‌تر کنید.
+              {selectedCategory?.description?.fa?.trim() || selectedCategory?.description?.en?.trim() || ("با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به " + priceUnitLabel + "، انتخابتان را دقیق‌تر کنید.")}
             </p>
             {currentFilterError && <p role="alert" className="mt-2 text-sm font-medium text-red-700">{currentFilterError}</p>}
           </div>
@@ -724,13 +733,13 @@ const CategoryPage = () => {
               id="category-product-search"
               type="search"
               value={filters.q}
-              onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
+              onChange={(event) => { setFilters((current) => ({ ...current, q: event.target.value })); setPage(1); }}
               placeholder="مثلاً تی‌شرت مشکی، سایز بزرگ، شلوار جین…"
               autoComplete="off"
               className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
             />
             {filters.q && (
-              <button type="button" onClick={() => setFilters((current) => ({ ...current, q: "" }))} aria-label="پاک‌کردن عبارت جست‌وجو" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#77786f] transition hover:bg-[#f2f0e9] hover:text-[#252722]">
+              <button type="button" onClick={() => { setFilters((current) => ({ ...current, q: "" })); setPage(1); }} aria-label="پاک‌کردن عبارت جست‌وجو" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#77786f] transition hover:bg-[#f2f0e9] hover:text-[#252722]">
                 <X size={16} aria-hidden="true" />
               </button>
             )}
@@ -888,6 +897,7 @@ const CategoryPage = () => {
                   disabled={Boolean(getPriceError(draftFilters))}
                   onClick={() => {
                     setFilters((current) => ({ ...draftFilters, q: current.q }));
+                    setPage(1);
                     setMobileFiltersOpen(false);
                   }}
                   className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#252722] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-50"

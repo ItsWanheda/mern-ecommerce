@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ArrowLeft, Home, Search, ShoppingBag } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import PageMeta from "../components/PageMeta";
 
 const popularCategories = [
   { label: "شلوار جین", to: "/category/jeans" },
@@ -13,6 +14,7 @@ const popularCategories = [
 const NotFoundPage = () => {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -23,6 +25,7 @@ const NotFoundPage = () => {
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-[#f7f5f0] px-4 py-12 text-[#252722] sm:px-6 sm:py-16">
+      <PageMeta title="صفحه پیدا نشد" description="نشانی واردشده معتبر نیست یا این صفحه دیگر در تیک بوتیک در دسترس نیست." path={location.pathname} robots="noindex, nofollow" canonical={false} />
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-[#e4e0d8] bg-[#fffefa] text-[#68745f] shadow-sm">
           <ShoppingBag size={28} aria-hidden="true" />

@@ -5,6 +5,8 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import StoreFooter from "./components/StoreFooter";
 import LoadingSpinner from "./components/LoadingSpinner";
+import PageMeta from "./components/PageMeta";
+import { PRIVATE_ROUTE_META } from "./lib/seo-utils.js";
 import { useUserStore } from "./stores/useUserStore";
 import { useCartStore } from "./stores/useCartStore";
 
@@ -29,6 +31,11 @@ const CampaignPage = lazy(() => import("./pages/CampaignPage"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+
+const privateRoutePage = (path, element) => {
+  const meta = PRIVATE_ROUTE_META[path];
+  return <>{meta && <PageMeta title={meta.title} description={meta.description} path={path} robots="noindex, nofollow" canonical={false} />}{element}</>;
+};
 
 const RouteLoadingFallback = () => (
   <div
@@ -73,26 +80,26 @@ function App() {
             <Route path="/looks/:slug" element={<CollectionPage type="look" />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/campaign/:campaignId" element={<CampaignPage />} />
-            <Route path="/signup" element={!user ? <SignUpPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
-            <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={location.state?.from?.pathname || "/"} />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/secret-dashboard" element={user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />} />
+            <Route path="/signup" element={!user ? privateRoutePage("/signup", <SignUpPage />) : <Navigate to={location.state?.from?.pathname || "/"} />} />
+            <Route path="/login" element={!user ? privateRoutePage("/login", <LoginPage />) : <Navigate to={location.state?.from?.pathname || "/"} />} />
+            <Route path="/forgot-password" element={privateRoutePage("/forgot-password", <ForgotPasswordPage />)} />
+            <Route path="/reset-password" element={privateRoutePage("/reset-password", <ResetPasswordPage />)} />
+            <Route path="/secret-dashboard" element={privateRoutePage("/secret-dashboard", user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />)} />
             <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/profile" element={user ? <ProfilePage /> : <Navigate to="/login" state={{ from: { pathname: "/profile" } }} />} />
-            <Route path="/orders" element={user ? <MyOrdersPage /> : <Navigate to="/login" state={{ from: { pathname: "/orders" } }} />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/cart" element={privateRoutePage("/cart", <CartPage />)} />
+            <Route path="/profile" element={user ? privateRoutePage("/profile", <ProfilePage />) : <Navigate to="/login" state={{ from: { pathname: "/profile" } }} />} />
+            <Route path="/orders" element={user ? privateRoutePage("/orders", <MyOrdersPage />) : <Navigate to="/login" state={{ from: { pathname: "/orders" } }} />} />
+            <Route path="/wishlist" element={privateRoutePage("/wishlist", <WishlistPage />)} />
             <Route path="/shipping-policy" element={<StoreInfoPage />} />
             <Route path="/returns-policy" element={<StoreInfoPage />} />
             <Route path="/support" element={<StoreInfoPage />} />
             <Route path="/faq" element={<StoreInfoPage />} />
             <Route path="/privacy-policy" element={<StoreInfoPage />} />
             <Route path="/terms-of-use" element={<StoreInfoPage />} />
-            <Route path="/newsletter-unsubscribe" element={<NewsletterUnsubscribePage />} />
-            <Route path="/purchase-success" element={user ? <PurchaseSuccessPage /> : <Navigate to="/login" />} />
-            <Route path="/purchase-cancel" element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />} />
+            <Route path="/newsletter-unsubscribe" element={privateRoutePage("/newsletter-unsubscribe", <NewsletterUnsubscribePage />)} />
+            <Route path="/purchase-success" element={user ? privateRoutePage("/purchase-success", <PurchaseSuccessPage />) : <Navigate to="/login" />} />
+            <Route path="/purchase-cancel" element={user ? privateRoutePage("/purchase-cancel", <PurchaseCancelPage />) : <Navigate to="/login" />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
