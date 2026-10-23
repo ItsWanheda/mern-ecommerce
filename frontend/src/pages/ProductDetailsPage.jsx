@@ -4,7 +4,7 @@ import ProductCard from "../components/ProductCard";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
-  X, Shirt, ZoomIn,
+  X, Shirt, ZoomIn, RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
@@ -33,6 +33,7 @@ const ProductDetailsPage = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -71,14 +72,23 @@ const ProductDetailsPage = () => {
           setSizeGuideOpen(false);
         }
       } catch (requestError) {
-        if (active) setError(requestError.response?.data?.message || "بارگذاری این محصول انجام نشد. لطفاً دوباره تلاش کنید.");
+        if (active) {
+          const status = requestError.response?.status;
+          if (status === 404 || requestError.response?.data?.message === "Product not found") {
+            setError("این محصول وجود ندارد یا دیگر در دسترس نیست.");
+          } else if (status === 400 || requestError.response?.data?.message === "Invalid product ID") {
+            setError("شناسه محصول معتبر نیست.");
+          } else {
+            setError("بارگذاری این محصول انجام نشد. اتصال را بررسی کنید و دوباره تلاش کنید.");
+          }
+        }
       } finally {
         if (active) setLoading(false);
       }
     };
     fetchProduct();
     return () => { active = false; };
-  }, [productId]);
+  }, [productId, retryCount]);
 
   const galleryImages = useMemo(() => {
     if (!product) return [];
@@ -250,7 +260,7 @@ const ProductDetailsPage = () => {
   };
 
   if (loading) return <main dir="rtl" className="flex min-h-[60vh] items-center justify-center bg-[var(--ui-canvas)] px-4 text-[var(--ui-text)]"><div className="flex items-center gap-3 text-sm text-[var(--ui-muted)]" role="status"><LoaderCircle className="animate-spin" size={20} aria-hidden="true" />در حال بارگذاری جزئیات محصول…</div></main>;
-  if (error || !product) return <main dir="rtl" className="min-h-[60vh] bg-[var(--ui-canvas)] px-4 py-16 text-[var(--ui-text)] sm:px-6"><PageMeta title="محصول موردنظر پیدا نشد" description="ممکن است این محصول حذف شده باشد یا دیگر در دسترس نباشد." robots="noindex, nofollow" canonical={false} /><div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-6 py-12 text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ui-accent)]">محصول در دسترس نیست</p><h1 className="mt-3 font-serif text-3xl">محصول موردنظر پیدا نشد.</h1><p className="mt-3 text-sm leading-6 text-[var(--ui-muted)]">{error || "ممکن است این محصول حذف شده باشد."}</p><Link to="/" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-5 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به مجموعه</Link></div></main>;
+  if (error || !product) return <main dir="rtl" className="min-h-[60vh] bg-[var(--ui-canvas)] px-4 py-16 text-[var(--ui-text)] sm:px-6"><PageMeta title="محصول در دسترس نیست" description="ممکن است شناسه محصول نادرست باشد یا محصول دیگر در دسترس نباشد." robots="noindex, nofollow" canonical={false} /><div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-6 py-12 text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ui-accent)]">محصول در دسترس نیست</p><h1 className="mt-3 font-serif text-3xl">محصول موردنظر پیدا نشد.</h1><p role="status" className="mt-3 text-sm leading-6 text-[var(--ui-muted)]">{error || "ممکن است این محصول حذف شده باشد."}</p><div className="mt-7 flex flex-col justify-center gap-2 sm:flex-row"><button type="button" onClick={() => setRetryCount(count => count + 1)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--ui-border)] px-5 py-3 text-sm font-semibold text-[var(--ui-text)] transition hover:bg-[var(--ui-surface-raised)]"><RefreshCw size={16} aria-hidden="true" />دوباره تلاش کنید</button><Link to="/" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-5 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به مجموعه</Link></div></div></main>;
 
   return (
     <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 sm:pb-28 lg:px-8 lg:pb-10">
