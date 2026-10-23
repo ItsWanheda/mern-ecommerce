@@ -34,6 +34,7 @@ const benefits = [
 ];
 
 const HomePage = () => {
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
@@ -89,6 +90,7 @@ const HomePage = () => {
     !(typeof product.stock === "number" && product.stock <= 0)
   );
   const heroImage = heroCampaign?.image || heroProduct?.image || "/jackets.jpg";
+  useEffect(() => setHeroImageFailed(false), [heroImage]);
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
   );
@@ -112,16 +114,20 @@ const HomePage = () => {
         <section className="relative isolate overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc]">
           <div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
             <div className="relative order-1 min-h-[250px] overflow-hidden sm:min-h-[320px] lg:order-2 lg:min-h-[540px]">
-              <img
-                src={heroImage}
-                alt={heroCampaign ? heroCampaign.title : heroProduct?.name || "پوشاک تیک بوتیک"}
-                className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center p-6 sm:p-8 lg:p-10"}`}
-                fetchPriority="high"
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = "/jackets.jpg";
-                }}
-              />
+              {!heroImageFailed ? (
+                <img
+                  src={heroImage}
+                  alt={heroCampaign ? heroCampaign.title : heroProduct?.name || "پوشاک تیک بوتیک"}
+                  className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center p-6 sm:p-8 lg:p-10"}`}
+                  fetchPriority="high"
+                  onError={() => setHeroImageFailed(true)}
+                />
+              ) : (
+                <div role="img" aria-label="تصویر پیشنهادی در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#eeeae2] via-[#e4dfd4] to-[#d9d3c7] p-8 text-center text-[#62645c]">
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full border border-[#b8b2a5] bg-white/45 font-serif text-4xl" aria-hidden="true">T</span>
+                  <span className="max-w-xs text-sm font-medium leading-6">برای مشاهده محصولات پیشنهادی، مجموعه تیک بوتیک را ببینید.</span>
+                </div>
+              )}
               <div className={`absolute inset-0 ${heroCampaign ? "bg-gradient-to-l from-[#252722]/30 via-transparent to-transparent" : "bg-gradient-to-t from-[#e9e5dc]/20 via-transparent to-transparent"}`} />
               {heroCampaign ? (
                 <div className="absolute bottom-5 right-5 inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/80 px-4 py-2 text-xs font-semibold text-[#252722] shadow-sm backdrop-blur-sm">
