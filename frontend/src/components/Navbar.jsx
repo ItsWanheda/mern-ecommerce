@@ -1194,6 +1194,17 @@ const Navbar = () => {
                 <section aria-label="حساب و مدیریت" className="space-y-2 border-t border-[var(--ui-border)] pt-4">
                   {user && (
                     <Link
+                      to="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex min-h-12 items-center gap-3 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
+                    >
+                      <UserRound size={17} aria-hidden="true" />
+                      پروفایل و نشانی‌ها
+                      <ChevronLeft size={15} className="mr-auto text-[var(--ui-accent)]" aria-hidden="true" />
+                    </Link>
+                  )}
+                  {user && (
+                    <Link
                       to="/orders"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
