@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import PageMeta from "../components/PageMeta";
 import ProductCard from "../components/ProductCard";
 import { Link, useParams } from "react-router-dom";
@@ -39,6 +39,7 @@ const ProductDetailsPage = () => {
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const imageViewerCloseRef = useRef(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const { addToCart } = useCartStore();
@@ -147,7 +148,10 @@ const ProductDetailsPage = () => {
   useEffect(() => {
     if (!imageViewerOpen) return undefined;
     const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement;
+    const dialog = document.querySelector("[data-product-image-dialog]");
     document.body.style.overflow = "hidden";
+    imageViewerCloseRef.current?.focus();
     const handleViewerKey = event => {
       if (event.key === "Escape") setImageViewerOpen(false);
       if (event.key === "ArrowLeft" && galleryImages.length > 1) {
@@ -158,11 +162,30 @@ const ProductDetailsPage = () => {
         event.preventDefault();
         setActiveImageIndex(index => (index - 1 + galleryImages.length) % galleryImages.length);
       }
+      if (event.key === "Tab") {
+        const focusable = Array.from(dialog?.querySelectorAll(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+        ) || []).filter(element => element.getAttribute("aria-hidden") !== "true");
+        if (!focusable.length) {
+          event.preventDefault();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !dialog?.contains(document.activeElement))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !dialog?.contains(document.activeElement))) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener("keydown", handleViewerKey);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleViewerKey);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [imageViewerOpen, galleryImages.length]);
 
@@ -230,7 +253,7 @@ const ProductDetailsPage = () => {
   if (error || !product) return <main dir="rtl" className="min-h-[60vh] bg-[var(--ui-canvas)] px-4 py-16 text-[var(--ui-text)] sm:px-6"><PageMeta title="محصول موردنظر پیدا نشد" description="ممکن است این محصول حذف شده باشد یا دیگر در دسترس نباشد." robots="noindex, nofollow" canonical={false} /><div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-6 py-12 text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ui-accent)]">محصول در دسترس نیست</p><h1 className="mt-3 font-serif text-3xl">محصول موردنظر پیدا نشد.</h1><p className="mt-3 text-sm leading-6 text-[var(--ui-muted)]">{error || "ممکن است این محصول حذف شده باشد."}</p><Link to="/" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-5 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به مجموعه</Link></div></main>;
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
+    <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8 lg:pb-10">
       <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={window.location.pathname} type="product" product={product || undefined} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(product?.category ? [{ name: categoryLabels[product.category] || product.category, path: "/category/" + encodeURIComponent(product.category) }] : []), { name: product?.name || "محصول", path: window.location.pathname }]} />
       <div className="mx-auto max-w-[1600px]">
         <Link to={product.category ? "/category/" + encodeURIComponent(product.category) : "/"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {categoryLabels[product.category] || product.category || "مجموعه"}</Link>
@@ -454,8 +477,8 @@ const ProductDetailsPage = () => {
       </div>
 
       {imageViewerOpen && activeGalleryImage && !failedImageUrls.has(activeGalleryImage) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setImageViewerOpen(false); }}>
-          <button type="button" onClick={() => setImageViewerOpen(false)} aria-label="بستن تصویر بزرگ" className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:right-5 sm:top-5"><X size={21} aria-hidden="true" /></button>
+        <div data-product-image-dialog role="dialog" aria-modal="true" aria-label={"نمایش بزرگ تصویر " + product.name} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setImageViewerOpen(false); }}>
+          <button ref={imageViewerCloseRef} type="button" onClick={() => setImageViewerOpen(false)} aria-label="بستن تصویر بزرگ" className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:right-5 sm:top-5"><X size={21} aria-hidden="true" /></button>
           {galleryImages.length > 1 && <button type="button" onClick={showPreviousImage} aria-label="تصویر قبلی" className="absolute right-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 sm:right-6"><ArrowRight size={20} aria-hidden="true" /></button>}
           <img src={activeGalleryImage} alt={product.name} onError={() => markGalleryImageFailed(activeGalleryImage)} className="max-h-[88dvh] max-w-[94vw] touch-pinch-zoom object-contain" />
           {galleryImages.length > 1 && <button type="button" onClick={showNextImage} aria-label="تصویر بعدی" className="absolute left-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 sm:left-6"><ArrowLeft size={20} aria-hidden="true" /></button>}
