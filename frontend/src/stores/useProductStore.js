@@ -100,9 +100,11 @@ export const useProductStore = create((set) => ({
   fetchNewestProducts: async () => {
     try {
       const response = await axios.get("/products/newest?limit=8");
-      set({ newestProducts: response.data.products || [] });
+      set({ newestProducts: Array.isArray(response.data.products) ? response.data.products : [] });
+      return true;
     } catch (error) {
       console.error("Error fetching newest products:", error.message);
+      return false;
     }
   },
 
