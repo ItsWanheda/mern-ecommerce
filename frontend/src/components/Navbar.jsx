@@ -206,6 +206,7 @@ const Navbar = () => {
   );
   const appliedSort = appliedFilterParams.get("sort") || "newest";
   const activeFilterCount = [
+    appliedFilterParams.get("q"),
     appliedFilterParams.get("category"),
     appliedFilterParams.get("minPrice"),
     appliedFilterParams.get("maxPrice"),
@@ -347,15 +348,41 @@ const Navbar = () => {
     if (!mobileMenuOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement;
+    const panel = document.querySelector("#store-menu-panel aside[role='dialog']");
     document.body.style.overflow = "hidden";
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMobileMenuOpen(false);
-    };
-    document.addEventListener("keydown", closeOnEscape);
 
+    const getFocusable = () => Array.from(panel?.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ) || []).filter(element => element.getAttribute("aria-hidden") !== "true");
+    const closeOnEscapeAndTrapFocus = event => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (!focusable.length) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !panel?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !panel?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    panel?.querySelector('button[aria-label="بستن منوی فروشگاه"]')?.focus();
+    document.addEventListener("keydown", closeOnEscapeAndTrapFocus);
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", closeOnEscapeAndTrapFocus);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [mobileMenuOpen]);
 
