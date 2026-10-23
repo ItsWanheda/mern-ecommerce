@@ -37,6 +37,9 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState({ name: "", email: "", savedShippingAddresses: [] });
   const [name, setName] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const profileNameRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
   const [addressForm, setAddressForm] = useState(null);
@@ -87,15 +90,24 @@ const ProfilePage = () => {
   const saveProfile = async event => {
     event.preventDefault();
     const value = name.trim();
-    if (value.length < 2 || value.length > 100) return toast.error("نام باید بین ۲ تا ۱۰۰ نویسه باشد.");
+    setProfileError("");
+    setProfileSuccess("");
+    if (value.length < 2 || value.length > 100) {
+      setProfileError("نام و نام خانوادگی باید بین ۲ تا ۱۰۰ نویسه باشد.");
+      window.requestAnimationFrame(() => profileNameRef.current?.focus());
+      return;
+    }
     setProfileSaving(true);
     try {
       const updated = await updateProfile(value);
       setProfile(current => ({ ...current, ...updated }));
       setName(updated?.name || value);
+      setProfileSuccess("اطلاعات پروفایل با موفقیت ذخیره شد.");
       toast.success("اطلاعات پروفایل ذخیره شد.");
     } catch (error) {
-      toast.error(getMessage(error, "ذخیره پروفایل ناموفق بود."));
+      const message = getMessage(error, "ذخیره پروفایل ناموفق بود.");
+      setProfileError(message);
+      toast.error(message);
     } finally {
       setProfileSaving(false);
     }
@@ -261,8 +273,10 @@ const ProfilePage = () => {
           <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
             <section className="h-fit rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]"><UserRound size={23} aria-hidden="true" /></div><div><h2 className="font-bold text-[var(--ui-text)]">اطلاعات شخصی</h2><p className="mt-1 text-xs text-[var(--ui-muted)]">اطلاعات حساب کاربری شما</p></div></div>
-              <form onSubmit={saveProfile} className="space-y-4">
-                <label className="block text-sm text-[var(--ui-muted)]">نام و نام خانوادگی<input value={name} onChange={event => setName(event.target.value)} required minLength={2} maxLength={100} autoComplete="name" className={fieldClass} placeholder="نام و نام خانوادگی" /></label>
+              <form onSubmit={saveProfile} noValidate className="space-y-4">
+                <label className="block text-sm text-[var(--ui-muted)]">نام و نام خانوادگی<input ref={profileNameRef} id="profile-name" value={name} onChange={event => { setName(event.target.value); setProfileError(""); setProfileSuccess(""); }} required minLength={2} maxLength={100} autoComplete="name" aria-invalid={Boolean(profileError)} aria-describedby={profileError ? "profile-name-error" : profileSuccess ? "profile-save-success" : undefined} className={fieldClass + (profileError ? " border-[var(--ui-danger)]" : "")} placeholder="نام و نام خانوادگی" /></label>
+                {profileError && <p id="profile-name-error" role="alert" className="text-xs leading-5 text-[var(--ui-danger)]">{profileError}</p>}
+                {profileSuccess && <p id="profile-save-success" role="status" className="text-xs leading-5 text-[var(--ui-success)]">{profileSuccess}</p>}
                 <label className="block text-sm text-[var(--ui-muted)]">ایمیل حساب<input type="email" value={profile.email || user?.email || ""} readOnly className={fieldClass + " cursor-not-allowed opacity-75"} dir="ltr" /><span className="mt-1 block text-xs leading-5 text-[var(--ui-muted)]">ایمیل ورود در این بخش قابل تغییر نیست.</span></label>
                 <button type="submit" disabled={profileSaving || name.trim() === profile.name} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"><Save size={16} aria-hidden="true" /> {profileSaving ? "در حال ذخیره…" : "ذخیره اطلاعات"}</button>
               </form>
