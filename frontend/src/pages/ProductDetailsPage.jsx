@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import PageMeta from "../components/PageMeta";
+import ProductCard from "../components/ProductCard";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
-  X, Shirt,
+  X, Shirt, ZoomIn,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
@@ -36,6 +37,10 @@ const ProductDetailsPage = () => {
   const [selectedColor, setSelectedColor] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
   const isWishlisted = Boolean(product && isSaved(product._id));
@@ -44,6 +49,9 @@ const ProductDetailsPage = () => {
     let active = true;
     const fetchProduct = async () => {
       setLoading(true); setError(""); setProduct(null);
+      setFailedImageUrls(new Set());
+      setImageViewerOpen(false);
+      setRelatedProducts([]);
       try {
         const response = await axios.get("/products/" + productId);
         if (active) {
@@ -76,6 +84,87 @@ const ProductDetailsPage = () => {
     const candidates = [...(Array.isArray(product.images) ? product.images : []), product.image];
     return [...new Set(candidates.filter((image) => typeof image === "string" && image.trim()))];
   }, [product]);
+
+  const activeGalleryImage = galleryImages[Math.min(activeImageIndex, Math.max(0, galleryImages.length - 1))] || "";
+  const markGalleryImageFailed = image => {
+    if (!image) return;
+    setFailedImageUrls(current => {
+      const next = new Set(current);
+      next.add(image);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!product?._id || !product?.category) return undefined;
+    const controller = new AbortController();
+    setRelatedProducts([]);
+    axios.get(`/products/category/${encodeURIComponent(product.category)}?page=1&limit=8`, { signal: controller.signal })
+      .then(({ data }) => {
+        if (controller.signal.aborted) return;
+        const candidates = Array.isArray(data.products) ? data.products : [];
+        const available = candidates.filter(candidate => {
+          if (!candidate?._id || String(candidate._id) === String(product._id)) return false;
+          const variants = Array.isArray(candidate.variants) ? candidate.variants : [];
+          return variants.length
+            ? variants.some(variant => Number(variant.stock) > 0)
+            : !isOutOfStock(candidate);
+        });
+        setRelatedProducts(available.slice(0, 4));
+      })
+      .catch(error => {
+        if (!controller.signal.aborted && error.code !== "ERR_CANCELED") setRelatedProducts([]);
+      });
+    return () => controller.abort();
+  }, [product?._id, product?.category]);
+
+  useEffect(() => {
+    if (!product?._id) return;
+    try {
+      const stored = JSON.parse(window.localStorage.getItem("tik-boutique-recently-viewed") || "[]");
+      const previous = Array.isArray(stored)
+        ? stored.filter(item => item?._id && String(item._id) !== String(product._id))
+        : [];
+      setRecentlyViewed(previous.slice(0, 4));
+      const currentItem = {
+        _id: product._id,
+        name: product.name,
+        description: product.description || "",
+        image: product.image || galleryImages[0] || "",
+        price: product.price,
+        category: product.category,
+        stock: product.stock,
+        variants: Array.isArray(product.variants) ? product.variants : [],
+        sizes: Array.isArray(product.sizes) ? product.sizes : [],
+        colors: Array.isArray(product.colors) ? product.colors : [],
+      };
+      window.localStorage.setItem("tik-boutique-recently-viewed", JSON.stringify([currentItem, ...previous].slice(0, 6)));
+    } catch {
+      setRecentlyViewed([]);
+    }
+  }, [product?._id, product?.name, product?.description, product?.image, product?.price, product?.category, product?.stock, product?.variants, product?.sizes, product?.colors, galleryImages]);
+
+  useEffect(() => {
+    if (!imageViewerOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleViewerKey = event => {
+      if (event.key === "Escape") setImageViewerOpen(false);
+      if (event.key === "ArrowLeft" && galleryImages.length > 1) {
+        event.preventDefault();
+        setActiveImageIndex(index => (index + 1) % galleryImages.length);
+      }
+      if (event.key === "ArrowRight" && galleryImages.length > 1) {
+        event.preventDefault();
+        setActiveImageIndex(index => (index - 1 + galleryImages.length) % galleryImages.length);
+      }
+    };
+    document.addEventListener("keydown", handleViewerKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleViewerKey);
+    };
+  }, [imageViewerOpen, galleryImages.length]);
 
   const variants = Array.isArray(product?.variants) ? product.variants : [];
   const hasVariants = variants.length > 0;
@@ -149,10 +238,16 @@ const ProductDetailsPage = () => {
         <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:gap-8">
           <section aria-label="تصاویر محصول" className="min-w-0">
             <div className="relative overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
-              {galleryImages.length ? (
-                <img src={galleryImages[Math.min(activeImageIndex, galleryImages.length - 1)]} alt={product.name} fetchPriority="high" className="aspect-[4/5] max-h-[850px] w-full object-cover sm:aspect-[5/4] lg:aspect-[4/5]" />
+              {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
+                <button type="button" onClick={() => setImageViewerOpen(true)} aria-label="نمایش تصویر محصول در اندازه بزرگ" className="group block w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[var(--ui-focus)]">
+                  <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-[4/5] max-h-[850px] w-full object-cover sm:aspect-[5/4] lg:aspect-[4/5]" />
+                  <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 py-2 text-xs font-semibold text-[var(--ui-text)] shadow-sm transition group-hover:bg-[var(--ui-surface)]"><ZoomIn size={15} aria-hidden="true" />بزرگ‌نمایی تصویر</span>
+                </button>
               ) : (
-                <div className="flex aspect-[4/5] w-full items-center justify-center px-6 text-center text-sm text-[var(--ui-muted)]">تصویر محصول به‌زودی اضافه می‌شود</div>
+                <div role="img" aria-label={"تصویر " + product.name + " در دسترس نیست"} className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-[var(--ui-muted)] sm:aspect-[5/4] lg:aspect-[4/5]">
+                  <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--ui-border)] text-2xl">◇</span>
+                  <span>تصویر محصول به‌زودی اضافه می‌شود</span>
+                </div>
               )}
               {galleryImages.length > 1 && (
                 <>
@@ -174,7 +269,7 @@ const ProductDetailsPage = () => {
               <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="انتخاب تصویر محصول">
                 {galleryImages.map((image, index) => (
                   <button key={image} type="button" onClick={() => setActiveImageIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={activeImageIndex === index} className={"overflow-hidden rounded-xl border-2 bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (activeImageIndex === index ? "border-[var(--ui-accent)]" : "border-transparent hover:border-[var(--ui-border-strong)]")}>
-                    <img src={image} alt="" loading="lazy" className="aspect-[4/5] w-full object-cover" />
+                    {failedImageUrls.has(image) ? <span className="flex aspect-[4/5] w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={image} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-[4/5] w-full object-cover" />}
                   </button>
                 ))}
               </div>
@@ -191,7 +286,7 @@ const ProductDetailsPage = () => {
               <section aria-labelledby="size-options-heading" className="mb-6">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 id="size-options-heading" className="text-sm font-semibold">انتخاب سایز</h2>
-                  {product.sizeChart?.length > 0 && (
+                  {sizes.length > 0 && (
                     <button type="button" onClick={() => setSizeGuideOpen((open) => !open)} aria-expanded={sizeGuideOpen} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
                       <Ruler size={15} aria-hidden="true" />راهنمای سایز
                     </button>
@@ -258,30 +353,41 @@ const ProductDetailsPage = () => {
               </section>
             )}
 
-            {sizeGuideOpen && product.sizeChart?.length > 0 && (
+            {sizeGuideOpen && sizes.length > 0 && (
               <section id="product-size-guide" className="mb-6 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]" aria-labelledby="size-guide-heading">
                 <div className="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3">
                   <h2 id="size-guide-heading" className="text-sm font-bold">جدول اندازه‌ها (سانتی‌متر)</h2>
                   <button type="button" onClick={() => setSizeGuideOpen(false)} aria-label="بستن راهنمای سایز" className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"><X size={16} aria-hidden="true" /></button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[440px] text-right text-xs">
-                    <thead className="bg-[var(--ui-canvas)] text-[var(--ui-muted)]"><tr><th scope="col" className="px-3 py-3 font-semibold">سایز</th>{measurementLabels.map(([key, label]) => <th scope="col" key={key} className="px-3 py-3 font-semibold">{label}</th>)}</tr></thead>
-                    <tbody className="divide-y divide-[var(--ui-border)]">
-                      {product.sizeChart.map((row) => (
-                        <tr key={row.size} className={row.size === selectedSize ? "bg-[var(--ui-hover)]/70 font-semibold" : ""}>
-                          <th scope="row" className="px-3 py-3">{row.size}</th>
-                          {measurementLabels.map(([key]) => <td key={key} className="px-3 py-3 tabular-nums">{row[key] == null ? "—" : new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row[key])}</td>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="px-4 py-3 text-[11px] leading-5 text-[var(--ui-muted)]">این جدول راهنمای اندازه‌گیری محصول است؛ برای مقایسه دقیق، اندازه‌های درج‌شده و توضیح تن‌خور را در نظر بگیرید.</p>
+                {product.sizeChart?.length > 0 ? (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[440px] text-right text-xs">
+                        <thead className="bg-[var(--ui-canvas)] text-[var(--ui-muted)]"><tr><th scope="col" className="px-3 py-3 font-semibold">سایز</th>{measurementLabels.map(([key, label]) => <th scope="col" key={key} className="px-3 py-3 font-semibold">{label}</th>)}</tr></thead>
+                        <tbody className="divide-y divide-[var(--ui-border)]">
+                          {product.sizeChart.map((row) => (
+                            <tr key={row.size} className={row.size === selectedSize ? "bg-[var(--ui-hover)]/70 font-semibold" : ""}>
+                              <th scope="row" className="px-3 py-3">{row.size}</th>
+                              {measurementLabels.map(([key]) => <td key={key} className="px-3 py-3 tabular-nums">{row[key] == null ? "—" : new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row[key])}</td>)}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="px-4 py-3 text-[11px] leading-5 text-[var(--ui-muted)]">اندازه‌ها بر حسب سانتی‌متر هستند. برای مقایسه دقیق، اندازه‌های لباس فعلی خود را با جدول مطابقت دهید.</p>
+                  </>
+                ) : (
+                  <p className="px-4 py-4 text-sm leading-7 text-[var(--ui-muted)]">برای این محصول جدول اندازه‌گیری ثبت نشده است. راهنمای تن‌خور و اندازه سایزی که مدل پوشیده را بررسی کنید یا پیش از خرید از پشتیبانی راهنمایی بگیرید.</p>
+                )}
               </section>
             )}
 
             <div role="status" aria-live="polite" aria-atomic="true" className="mb-6 rounded-xl border border-[var(--ui-border)] px-4 py-3">
+              {(sizes.length > 0 || colors.length > 0) && (
+                <p className="mb-2 text-xs leading-5 text-[var(--ui-muted)]">
+                  انتخاب شما: {sizes.length > 0 ? "سایز " + (selectedSize || "انتخاب‌نشده") : "بدون سایز"} · {colors.length > 0 ? "رنگ " + (selectedColor || "انتخاب‌نشده") : "بدون رنگ"}
+                </p>
+              )}
               <p className={"flex items-center gap-2 text-sm font-semibold " + (outOfStock ? "text-[var(--ui-danger)]" : "text-[var(--ui-accent)]")}>
                 <span className={"h-2 w-2 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-accent)]")} aria-hidden="true" />
                 {outOfStock ? (hasVariants ? "این ترکیب سایز و رنگ ناموجود است" : "در حال حاضر ناموجود") : "موجود برای سفارش"}
@@ -309,7 +415,52 @@ const ProductDetailsPage = () => {
             <p className="mt-4 flex items-center gap-2 text-xs leading-5 text-[var(--ui-muted)]"><Check size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
           </section>
         </div>
+
+        {(relatedProducts.length > 0 || recentlyViewed.length > 0) && (
+          <section className="mt-10 border-t border-[var(--ui-border)] pt-8 sm:mt-14 sm:pt-10" aria-label="پیشنهادهای بیشتر">
+            {relatedProducts.length > 0 && (
+              <div className="mb-10">
+                <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                  <div><p className="text-xs font-semibold text-[var(--ui-accent)]">انتخاب‌های مشابه</p><h2 className="mt-1 text-xl font-bold sm:text-2xl">محصولات مشابه</h2></div>
+                  {product.category && <Link to={"/category/" + encodeURIComponent(product.category)} className="inline-flex min-h-9 items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">مشاهده دسته‌بندی <ArrowLeft size={14} aria-hidden="true" /></Link>}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                  {relatedProducts.map(item => <ProductCard key={item._id} product={item} />)}
+                </div>
+              </div>
+            )}
+            {recentlyViewed.filter(item => String(item._id) !== String(product._id) && !relatedProducts.some(related => String(related._id) === String(item._id))).length > 0 && (
+              <div>
+                <h2 className="mb-5 text-xl font-bold sm:text-2xl">بازدیدهای اخیر شما</h2>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                  {recentlyViewed.filter(item => String(item._id) !== String(product._id) && !relatedProducts.some(related => String(related._id) === String(item._id))).map(item => <ProductCard key={item._id} product={item} />)}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_35px_-24px_rgba(0,0,0,0.3)] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-[var(--ui-muted)]">{product.name}</p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>
+          </div>
+          <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-4 py-2.5 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]">
+            <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
+          </button>
+        </div>
+      </div>
+
+      {imageViewerOpen && activeGalleryImage && !failedImageUrls.has(activeGalleryImage) && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setImageViewerOpen(false); }}>
+          <button type="button" onClick={() => setImageViewerOpen(false)} aria-label="بستن تصویر بزرگ" className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:right-5 sm:top-5"><X size={21} aria-hidden="true" /></button>
+          {galleryImages.length > 1 && <button type="button" onClick={showPreviousImage} aria-label="تصویر قبلی" className="absolute right-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 sm:right-6"><ArrowRight size={20} aria-hidden="true" /></button>}
+          <img src={activeGalleryImage} alt={product.name} onError={() => markGalleryImageFailed(activeGalleryImage)} className="max-h-[88dvh] max-w-[94vw] touch-pinch-zoom object-contain" />
+          {galleryImages.length > 1 && <button type="button" onClick={showNextImage} aria-label="تصویر بعدی" className="absolute left-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 sm:left-6"><ArrowLeft size={20} aria-hidden="true" /></button>}
+        </div>
+      )}
     </main>
   );
 };
