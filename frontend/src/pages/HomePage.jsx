@@ -38,7 +38,9 @@ const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
   const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
+  const [bestsellersError, setBestsellersError] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
+  const [newestError, setNewestError] = useState(false);
   const { categories: storeCategories, fetchCategories } = useCategoryStore();
   const categories = storeCategories.length
     ? storeCategories
@@ -60,15 +62,23 @@ const HomePage = () => {
     let active = true;
     fetchFeaturedProducts();
     fetchCategories();
-    Promise.resolve(fetchNewestProducts()).finally(() => {
-      if (active) setNewestLoaded(true);
-    });
+    Promise.resolve(fetchNewestProducts())
+      .then((succeeded) => { if (active) setNewestError(succeeded === false); })
+      .finally(() => { if (active) setNewestLoaded(true); });
     axios.get("/campaigns")
-      .then(({ data }) => { if (active) setCampaigns(data.campaigns || []); })
+      .then(({ data }) => { if (active) setCampaigns(Array.isArray(data.campaigns) ? data.campaigns : []); })
       .catch((error) => console.error("Could not load campaigns:", error.message));
     axios.get("/products/bestsellers?limit=8")
-      .then(({ data }) => { if (active) setBestsellers(Array.isArray(data.products) ? data.products : []); })
-      .catch((error) => console.error("Could not load bestsellers:", error.message))
+      .then(({ data }) => {
+        if (!active) return;
+        setBestsellers(Array.isArray(data.products) ? data.products : []);
+        setBestsellersError(false);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setBestsellersError(true);
+        console.error("Could not load bestsellers:", error.message);
+      })
       .finally(() => { if (active) setBestsellersLoaded(true); });
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts, fetchCategories]);
@@ -94,6 +104,33 @@ const HomePage = () => {
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
   );
+
+  const retryBestsellers = async () => {
+    setBestsellersLoaded(false);
+    setBestsellersError(false);
+    try {
+      const { data } = await axios.get("/products/bestsellers?limit=8");
+      setBestsellers(Array.isArray(data.products) ? data.products : []);
+    } catch (error) {
+      setBestsellersError(true);
+      console.error("Could not retry bestsellers:", error.message);
+    } finally {
+      setBestsellersLoaded(true);
+    }
+  };
+
+  const retryNewest = async () => {
+    setNewestLoaded(false);
+    setNewestError(false);
+    try {
+      const succeeded = await fetchNewestProducts();
+      setNewestError(succeeded === false);
+    } catch {
+      setNewestError(true);
+    } finally {
+      setNewestLoaded(true);
+    }
+  };
 
   const sampleProductsForLook = (collection) => {
     const used = new Set();
@@ -229,7 +266,7 @@ const HomePage = () => {
           </section>
         )}
 
-        {bestsellersLoaded && bestsellers.length > 0 && (
+        {bestsellersLoaded && (bestsellers.length > 0 || bestsellersError) && (
           <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="bestsellers-heading">
             <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
               <div>
@@ -241,9 +278,17 @@ const HomePage = () => {
                 مشاهده همه محصولات<ArrowLeft size={15} aria-hidden="true" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-              {bestsellers.slice(0, 8).map((product) => <ProductCard key={product._id} product={product} />)}
-            </div>
+            {bestsellersError ? (
+              <div role="alert" className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-5 py-8 text-center sm:py-10">
+                <p className="text-sm font-semibold text-[#41443b]">پرفروش‌ها بارگذاری نشدند.</p>
+                <p className="mt-1 text-xs leading-5 text-[#77786f]">اتصال را بررسی کنید و دوباره تلاش کنید.</p>
+                <button type="button" onClick={retryBestsellers} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#252722] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b]">تلاش دوباره</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                {bestsellers.slice(0, 8).map((product) => <ProductCard key={product._id} product={product} />)}
+              </div>
+            )}
           </section>
         )}
 
@@ -275,6 +320,13 @@ const HomePage = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : newestError ? (
+            <div role="alert" className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] px-5 py-8 text-center sm:py-10">
+              <PackageCheck size={24} className="mx-auto text-[#68745f]" aria-hidden="true" />
+              <p className="mt-3 text-sm font-semibold text-[#41443b]">تازه‌واردها بارگذاری نشدند.</p>
+              <p className="mt-1 text-xs leading-5 text-[#77786f]">برای دریافت تازه‌ترین محصولات دوباره تلاش کنید.</p>
+              <button type="button" onClick={retryNewest} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#252722] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#41443b]">تلاش دوباره</button>
             </div>
           ) : newestProducts.length > 0 ? (
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
