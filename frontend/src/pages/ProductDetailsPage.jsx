@@ -253,7 +253,7 @@ const ProductDetailsPage = () => {
   if (error || !product) return <main dir="rtl" className="min-h-[60vh] bg-[var(--ui-canvas)] px-4 py-16 text-[var(--ui-text)] sm:px-6"><PageMeta title="محصول موردنظر پیدا نشد" description="ممکن است این محصول حذف شده باشد یا دیگر در دسترس نباشد." robots="noindex, nofollow" canonical={false} /><div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-6 py-12 text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ui-accent)]">محصول در دسترس نیست</p><h1 className="mt-3 font-serif text-3xl">محصول موردنظر پیدا نشد.</h1><p className="mt-3 text-sm leading-6 text-[var(--ui-muted)]">{error || "ممکن است این محصول حذف شده باشد."}</p><Link to="/" className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-5 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به مجموعه</Link></div></main>;
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8 lg:pb-10">
+    <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 sm:pb-28 lg:px-8 lg:pb-10">
       <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={window.location.pathname} type="product" product={product || undefined} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(product?.category ? [{ name: categoryLabels[product.category] || product.category, path: "/category/" + encodeURIComponent(product.category) }] : []), { name: product?.name || "محصول", path: window.location.pathname }]} />
       <div className="mx-auto max-w-[1600px]">
         <Link to={product.category ? "/category/" + encodeURIComponent(product.category) : "/"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {categoryLabels[product.category] || product.category || "مجموعه"}</Link>
@@ -452,11 +452,11 @@ const ProductDetailsPage = () => {
                 </div>
               </div>
             )}
-            {recentlyViewed.filter(item => String(item._id) !== String(product._id) && !relatedProducts.some(related => String(related._id) === String(item._id))).length > 0 && (
+            {recentlyViewed.filter(item => String(item._id) !== String(product._id) && !relatedProducts.some(related => String(related._id) === String(item._id)) && (Array.isArray(item.variants) && item.variants.length ? item.variants.some(variant => Number(variant.stock) > 0) : !isOutOfStock(item))).length > 0 && (
               <div>
                 <h2 className="mb-5 text-xl font-bold sm:text-2xl">بازدیدهای اخیر شما</h2>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-                  {recentlyViewed.filter(item => String(item._id) !== String(product._id) && !relatedProducts.some(related => String(related._id) === String(item._id))).map(item => <ProductCard key={item._id} product={item} />)}
+                  {recentlyViewed.filter(item => String(item._id) !== String(product._id) && !relatedProducts.some(related => String(related._id) === String(item._id)) && (Array.isArray(item.variants) && item.variants.length ? item.variants.some(variant => Number(variant.stock) > 0) : !isOutOfStock(item))).map(item => <ProductCard key={item._id} product={item} />)}
                 </div>
               </div>
             )}
