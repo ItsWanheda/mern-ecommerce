@@ -195,6 +195,7 @@ const Navbar = () => {
   const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuScrollPositionRef = useRef(0);
   const [expandedCategories, setExpandedCategories] = useState({});
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
@@ -350,7 +351,9 @@ const Navbar = () => {
     const previousOverflow = document.body.style.overflow;
     const previouslyFocused = document.activeElement;
     const panel = document.querySelector("#store-menu-panel aside[role='dialog']");
+    const scrollContainer = panel?.querySelector("[data-mobile-menu-scroll]");
     document.body.style.overflow = "hidden";
+    if (scrollContainer) scrollContainer.scrollTop = mobileMenuScrollPositionRef.current;
 
     const getFocusable = () => Array.from(panel?.querySelectorAll(
       'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -380,6 +383,7 @@ const Navbar = () => {
     panel?.querySelector('button[aria-label="بستن منوی فروشگاه"]')?.focus();
     document.addEventListener("keydown", closeOnEscapeAndTrapFocus);
     return () => {
+      if (scrollContainer) mobileMenuScrollPositionRef.current = scrollContainer.scrollTop;
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", closeOnEscapeAndTrapFocus);
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
@@ -1110,7 +1114,7 @@ const Navbar = () => {
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-4">
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-4" data-mobile-menu-scroll>
               <section aria-label="تنظیمات نمایش" className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2">
                 {renderThemeToggle(true)}
               </section>
