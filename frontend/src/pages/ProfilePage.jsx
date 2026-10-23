@@ -316,6 +316,26 @@ const ProfilePage = () => {
             aria-modal="true"
             aria-labelledby="delete-address-title"
             aria-describedby="delete-address-description"
+            onKeyDown={event => {
+              if (event.key !== "Tab") return;
+              const focusable = Array.from(event.currentTarget.querySelectorAll(
+                'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+              )).filter(element => element.getAttribute("aria-hidden") !== "true");
+              if (!focusable.length) {
+                event.preventDefault();
+                return;
+              }
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (event.shiftKey && event.target === first) {
+                event.preventDefault();
+                last.focus();
+              } else if (!event.shiftKey && event.target === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
+            tabIndex={-1}
             className="w-full max-w-md rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 text-[var(--ui-text)] shadow-2xl sm:p-6"
           >
             <div className="flex items-start gap-3">
