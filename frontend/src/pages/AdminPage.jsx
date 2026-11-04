@@ -70,26 +70,28 @@ const AdminPage = () => {
    {tab.id==="orders"&&packingCount!==null&&<span aria-label={packingCount+" سفارش در انتظار بسته‌بندی"} className={"inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums "+(packingCount>0?"bg-[var(--ui-warning-bg)] text-[var(--ui-warning)]":"bg-[var(--ui-surface-raised)] text-[var(--ui-muted)]")}>{new Intl.NumberFormat("fa-IR").format(packingCount)}</span>}
   </button>;
  };
- return <div className="min-h-[65vh] bg-[var(--ui-canvas)] text-[var(--ui-text)]">
+ return <div className="admin-page min-h-[65vh] bg-[var(--ui-canvas)] text-[var(--ui-text)]">
   <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:py-8">
-   <motion.header className="mb-6" initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} transition={{duration:.25}}>
+   <motion.header className="admin-page-header mb-6" initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} transition={{duration:.25}}>
     <h1 className="text-2xl font-bold sm:text-3xl">داشبورد مدیریت</h1><p className="mt-2 text-sm leading-6 text-[var(--ui-muted)]">کاتالوگ، سفارش‌ها، بازاریابی و گزارش‌های فروشگاه را از یک فضای کاری مدیریت کنید.</p>
    </motion.header>
    <div className="mb-5 md:hidden"><label htmlFor="admin-mobile-nav" className="mb-2 block text-xs font-semibold text-[var(--ui-muted)]">رفتن به بخش</label>
-    <select id="admin-mobile-nav" value={activeTab} onChange={event=>selectTab(event.target.value)} className="min-h-12 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25">
+    <select id="admin-mobile-nav" value={activeTab} onChange={event=>selectTab(event.target.value)} className="admin-mobile-nav min-h-12 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25">
      {visibleGroups.map(group=><optgroup key={group.id} label={group.label}>{group.items.map(tab=><option key={tab.id} value={tab.id}>{tab.label}{tab.id==="orders"&&packingCount>0?" ("+new Intl.NumberFormat("fa-IR").format(packingCount)+")":""}</option>)}</optgroup>)}
     </select>
    </div>
-   <div dir="rtl" className="grid items-start gap-5 md:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-7">
-    <aside className="hidden md:sticky md:top-5 md:block md:max-h-[calc(100vh-2.5rem)] md:overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 xl:p-4">
+   <div dir="rtl" className="admin-layout grid items-start gap-5 md:grid-cols-[15rem_minmax(0,1fr)] xl:grid-cols-[17rem_minmax(0,1fr)] xl:gap-7">
+    <aside className="admin-nav-panel hidden md:sticky md:top-5 md:block md:max-h-[calc(100vh-2.5rem)] md:overflow-y-auto rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 xl:p-4">
      <p className="mb-3 px-3 pt-1 text-xs font-semibold text-[var(--ui-muted)]">ناوبری مدیریت</p><nav role="tablist" aria-label="بخش‌های مدیریت" aria-orientation="vertical" className="space-y-5">
       {visibleGroups.map(group=><section key={group.id} aria-label={group.label}><h2 className="mb-2 px-3 text-[11px] font-bold tracking-wide text-[var(--ui-muted)]">{group.label}</h2><div className="space-y-1">{group.items.map(renderTab)}</div></section>)}
      </nav>
     </aside>
-    <section className="min-w-0" id="admin-tab-panel" role="tabpanel" aria-labelledby={"admin-tab-"+activeTab}>
+    <section className="admin-tab-panel min-w-0" id="admin-tab-panel" role="tabpanel" aria-label="محتوای بخش مدیریت">
+     <div className="admin-workspace">
      <Suspense fallback={<div role="status" className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-8 text-center text-sm text-[var(--ui-muted)]">در حال بارگذاری بخش مدیریت…</div>}>
       {activeTab==="reviews"&&<ProductReviewModeration/>}{activeTab==="dashboard"&&<DashboardOverview/>}{activeTab==="create"&&<CreateProductForm/>}{activeTab==="products"&&<ProductsList/>}{activeTab==="categories"&&<CategoryManager/>}{activeTab==="coupons"&&<CouponManager/>}{activeTab==="campaigns"&&<CampaignManager/>}{activeTab==="shipping"&&<ShippingSettings/>}{activeTab==="newsletter"&&<NewsletterManager/>}{activeTab==="analytics"&&<AnalyticsTab/>}{activeTab==="orders"&&<OrderManagement/>}{activeTab==="audit"&&<AuditLogTab/>}{activeTab==="operations"&&<OperationsDashboard/>}{activeTab==="customers"&&<CustomerManagement/>}{activeTab==="service-cases"&&<ServiceCases/>}{activeTab==="inventory"&&<InventoryAlerts/>}
      </Suspense>
+     </div>
     </section>
    </div>
   </div>

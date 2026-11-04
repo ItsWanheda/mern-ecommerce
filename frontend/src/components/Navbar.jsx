@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "../lib/axios";
+import { useDialogAccessibility } from "../lib/useDialogAccessibility.js";
 import { formatPrice } from "../lib/commerce";
 import {
   ShoppingCart,
@@ -181,7 +182,6 @@ const Navbar = () => {
     });
   }, [dynamicCategories, location.pathname]);
   const desktopSearchRef = useRef(null);
-  const mobileSearchInputRef = useRef(null);
   const accountMenuRef = useRef(null);
   const [shippingAnnouncement, setShippingAnnouncement] = useState({
     loading: true,
@@ -201,6 +201,11 @@ const Navbar = () => {
   const [activeSearchSurface, setActiveSearchSurface] = useState(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [searchSuggestions, setSearchSuggestions] = useState({ products: [], loading: false, error: false });
+  const mobileMenuDialogRef = useDialogAccessibility(mobileMenuOpen, () => setMobileMenuOpen(false));
+  const mobileSearchDialogRef = useDialogAccessibility(mobileSearchOpen, () => {
+    setMobileSearchOpen(false);
+    setActiveSearchSurface(null);
+  });
   const suggestionQuery = filters.q.trim();
   const appliedFilterParams = new URLSearchParams(
     location.pathname === "/shop" ? location.search : "",
@@ -348,65 +353,14 @@ const Navbar = () => {
   useEffect(() => {
     if (!mobileMenuOpen) return undefined;
 
-    const previousOverflow = document.body.style.overflow;
-    const previouslyFocused = document.activeElement;
-    const panel = document.querySelector("#store-menu-panel aside[role='dialog']");
-    const scrollContainer = panel?.querySelector("[data-mobile-menu-scroll]");
-    document.body.style.overflow = "hidden";
+    const scrollContainer = mobileMenuDialogRef.current?.querySelector("[data-mobile-menu-scroll]");
     if (scrollContainer) scrollContainer.scrollTop = mobileMenuScrollPositionRef.current;
 
-    const getFocusable = () => Array.from(panel?.querySelectorAll(
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    ) || []).filter(element => element.getAttribute("aria-hidden") !== "true");
-    const closeOnEscapeAndTrapFocus = event => {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = getFocusable();
-      if (!focusable.length) {
-        event.preventDefault();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && (document.activeElement === first || !panel?.contains(document.activeElement))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && (document.activeElement === last || !panel?.contains(document.activeElement))) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    panel?.querySelector('button[aria-label="بستن منوی فروشگاه"]')?.focus();
-    document.addEventListener("keydown", closeOnEscapeAndTrapFocus);
     return () => {
       if (scrollContainer) mobileMenuScrollPositionRef.current = scrollContainer.scrollTop;
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscapeAndTrapFocus);
-      if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
   }, [mobileMenuOpen]);
 
-  useEffect(() => {
-    if (!mobileSearchOpen) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    mobileSearchInputRef.current?.focus();
-
-    const closeOnEscape = (event) => {
-      if (event.key === "Escape") setMobileSearchOpen(false);
-    };
-    document.addEventListener("keydown", closeOnEscape);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [mobileSearchOpen]);
 
   const handleLogout = async () => {
     setAccountMenuOpen(false);
@@ -1088,6 +1042,7 @@ const Navbar = () => {
             className="absolute inset-0 h-full w-full bg-[#252722]/45 backdrop-blur-sm"
           />
           <aside
+            ref={mobileMenuDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="store-nav-heading"
@@ -1108,6 +1063,7 @@ const Navbar = () => {
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="بستن منوی فروشگاه"
+                data-dialog-initial-focus
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
               >
                 <X size={18} aria-hidden="true" />
@@ -1300,6 +1256,7 @@ const Navbar = () => {
           />
 
           <section
+            ref={mobileSearchDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-search-heading"
@@ -1326,8 +1283,8 @@ const Navbar = () => {
               <div className="mb-5 flex min-h-12 items-center gap-2 rounded-2xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] p-1.5 transition focus-within:border-[var(--ui-accent)] focus-within:ring-4 focus-within:ring-[#68745f]/10">
                 <Search size={19} className="mr-2 shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
                 <input
-                  ref={mobileSearchInputRef}
                   id="mobile-product-search"
+                  data-dialog-initial-focus
                   type="search"
                   value={filters.q}
                   onFocus={() => setActiveSearchSurface("mobile")}
