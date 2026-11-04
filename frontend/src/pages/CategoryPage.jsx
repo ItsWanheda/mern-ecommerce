@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useDialogAccessibility } from "../lib/useDialogAccessibility.js";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
@@ -144,6 +145,10 @@ const CategoryPage = () => {
   const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
   const [draftFilters, setDraftFilters] = useState(() => filtersFromParams(searchParams));
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const mobileFiltersDialogRef = useDialogAccessibility(
+    mobileFiltersOpen,
+    () => setMobileFiltersOpen(false),
+  );
   const [page, setPage] = useState(() => parsePageNumber(searchParams.get("page")));
   const [draftResultCount, setDraftResultCount] = useState(0);
 
@@ -858,6 +863,7 @@ const CategoryPage = () => {
             className="absolute inset-0 h-full w-full bg-[#252722]/45 backdrop-blur-sm"
           />
           <section
+            ref={mobileFiltersDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-category-filters-title"
@@ -872,6 +878,7 @@ const CategoryPage = () => {
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
                 aria-label="بستن پنجره فیلترها"
+                data-dialog-initial-focus
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e4e0d8] bg-white text-[#62645c] transition hover:bg-[#f2f0e9] hover:text-[#252722]"
               >
                 <X size={18} aria-hidden="true" />

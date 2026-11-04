@@ -208,7 +208,6 @@ html[data-theme="dark"] #root {
   color: var(--dark-text);
 }
 
-html[data-theme="dark"] header,
 html[data-theme="dark"] footer,
 html[data-theme="dark"] [class~="bg-[#f7f5f0]"],
 html[data-theme="dark"] [class~="bg-[#f7f5f0]/95"] {
@@ -217,10 +216,17 @@ html[data-theme="dark"] [class~="bg-[#f7f5f0]/95"] {
 
 html[data-theme="dark"] [class~="bg-[#fffefa]"],
 html[data-theme="dark"] [class~="bg-[#fffefa]/95"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/90"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/80"],
 html[data-theme="dark"] [class~="bg-[#fffefa]/70"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/60"],
 html[data-theme="dark"] [class~="bg-white"],
+html[data-theme="dark"] [class~="bg-white/95"],
+html[data-theme="dark"] [class~="bg-white/90"],
+html[data-theme="dark"] [class~="bg-white/80"],
 html[data-theme="dark"] [class~="bg-white/70"],
-html[data-theme="dark"] [class~="bg-white/60"] {
+html[data-theme="dark"] [class~="bg-white/60"],
+html[data-theme="dark"] [class~="bg-white/50"] {
   background-color: var(--dark-surface) !important;
 }
 
@@ -358,4 +364,72 @@ html[data-theme="dark"] button {
 html[data-theme="dark"] ::selection {
   color: #090a0c;
   background: var(--dark-accent);
+}
+
+
+/* Shared admin workspace treatment. Kept token-based so light and dark themes
+   stay aligned without changing each admin feature's content layout. */
+.admin-page-header {
+  border: 1px solid var(--ui-border);
+  border-radius: 1.25rem;
+  background: var(--ui-surface);
+  padding: 1rem 1.125rem;
+  box-shadow: 0 12px 32px -28px var(--ui-shadow-color);
+}
+
+.admin-layout > .admin-nav-panel {
+  border-color: var(--ui-border);
+  border-radius: 1rem;
+  background: var(--ui-surface);
+  box-shadow: 0 12px 32px -28px var(--ui-shadow-color);
+}
+
+.admin-mobile-nav {
+  border-color: var(--ui-border-strong);
+  border-radius: 0.875rem;
+  background: var(--ui-input-bg);
+  color: var(--ui-text);
+}
+
+.admin-tab-panel,
+.admin-workspace {
+  min-width: 0;
+  color: var(--ui-text);
+}
+
+.admin-workspace > :first-child {
+  width: 100%;
+  max-width: 92rem;
+  margin-inline: auto;
+}
+
+.admin-workspace > :first-child > :first-child {
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 1rem;
+  background: var(--ui-surface);
+  padding: 1rem 1.125rem;
+}
+
+.admin-workspace > :first-child > :first-child :is(h2, h3) {
+  color: var(--ui-text);
+  line-height: 1.4;
+}
+
+.admin-workspace :is(article, section, form)[class*="rounded-xl"][class*="border"],
+.admin-workspace :is(article, section, form)[class*="rounded-2xl"][class*="border"] {
+  border-radius: 1rem;
+}
+
+.admin-workspace :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  border-color: var(--ui-border-strong);
+  border-radius: 0.75rem;
+  background-color: var(--ui-input-bg);
+  color: var(--ui-text);
+}
+
+.admin-workspace :where(button, a):focus-visible {
+  outline-color: var(--ui-focus);
+  outline-offset: 2px;
 }

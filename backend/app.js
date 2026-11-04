@@ -16,6 +16,7 @@ import campaignRoutes from "./routes/campaign.route.js";
 import shippingRoutes from "./routes/shipping.route.js";
 import newsletterRoutes from "./routes/newsletter.route.js";
 import orderRoutes from "./routes/order.route.js";
+import productReviewRoutes from "./routes/product-review.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import serviceCaseRoutes from "./routes/service-case.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
@@ -105,6 +106,7 @@ app.use("/api/campaigns", campaignRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", productReviewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/service-cases", serviceCaseRoutes);
 

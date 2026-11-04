@@ -47,6 +47,8 @@ const ADMIN_PERMISSION_RULES = [
   { base: "/api/products", method: "PATCH", path: "/:id/variant-stock", permission: "catalogue.manage" },
   { base: "/api/products", method: "PATCH", path: "/:id", permission: "catalogue.manage" },
   { base: "/api/products", method: "DELETE", path: "/:id", permission: "catalogue.manage" },
+  { base: "/api/reviews", method: "GET", path: "/admin/pending", permission: "catalogue.manage" },
+  { base: "/api/reviews", method: "PATCH", path: "/admin/:reviewId", permission: "catalogue.manage" },
   { base: "/api/categories", method: "GET", path: "/admin", permission: "catalogue.manage" },
   { base: "/api/categories", method: "POST", path: "/", permission: "catalogue.manage" },
   { base: "/api/categories", method: "PATCH", path: "/:id", permission: "catalogue.manage" },
