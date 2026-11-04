@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Archive, FolderPlus, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
+import { Archive, BookOpen, FolderPlus, Lightbulb, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 import { useCategoryStore } from "../stores/useCategoryStore";
 
 const emptyForm = () => ({
@@ -267,6 +267,7 @@ const CategoryManager = () => {
 
   const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
   const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
+  const hintClass = "mt-1 block text-xs font-normal leading-5 text-[var(--ui-muted)]";
 
   return (
     <section dir="rtl" className="mx-auto max-w-6xl space-y-5 text-[var(--ui-text)]">
@@ -283,6 +284,53 @@ const CategoryManager = () => {
 
       {(notice || error) && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-[var(--ui-danger)]">{notice || error}</div>}
 
+      <details className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--ui-text)] [&::-webkit-details-marker]:hidden">
+          <BookOpen size={18} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
+          <span>راهنمای ایجاد و مدیریت دسته‌بندی</span>
+          <span className="mr-auto text-xs font-normal text-[var(--ui-muted)]">برای مشاهده نکته‌ها باز کنید</span>
+        </summary>
+        <div className="grid gap-4 border-t border-[var(--ui-border)] p-4 sm:grid-cols-2 sm:p-5">
+          <section className="min-w-0">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]">
+              <FolderPlus size={16} className="text-[var(--ui-accent)]" aria-hidden="true" /> ساختار والد و زیر‌دسته
+            </h4>
+            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
+              برای ساخت دسته اصلی، والد را روی «بدون والد» بگذارید. برای ساخت زیر‌دسته، والد مناسب را انتخاب کنید. صفحه دسته والد، محصولات زیر‌دسته‌های فعال آن را هم در نتایج خود لحاظ می‌کند.
+            </p>
+            <pre dir="rtl" className="mt-2 overflow-x-auto rounded-xl bg-[var(--ui-surface-raised)] p-3 text-xs leading-6 text-[var(--ui-text)]">پوشاک
+├── زنانه
+│   ├── مانتو
+│   └── شلوار
+└── مردانه
+    └── پیراهن</pre>
+          </section>
+          <section className="min-w-0">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]">
+              <Lightbulb size={16} className="text-[var(--ui-accent)]" aria-hidden="true" /> نام و نشانی دسته
+            </h4>
+            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
+              نام فارسی عنوان قابل‌مشاهده در فروشگاه است. شناسه لاتین بخشی از نشانی صفحه، مانند <code dir="ltr" className="rounded bg-[var(--ui-surface-raised)] px-1">/category/womens-coats</code>، است و پس از ایجاد قفل می‌شود تا لینک‌های قبلی نشکنند.
+            </p>
+            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
+              ترتیب نمایش عددی است؛ عدد کوچک‌تر زودتر نمایش داده می‌شود. در صورت برابر بودن ترتیب، نام دسته برای مرتب‌سازی استفاده می‌شود.
+            </p>
+          </section>
+          <section className="min-w-0">
+            <h4 className="text-sm font-semibold text-[var(--ui-text)]">وضعیت نمایش</h4>
+            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
+              غیرفعال‌سازی، دسته را از فروشگاه عمومی حذف می‌کند؛ اگر والد را غیرفعال کنید، زیر‌دسته‌های آن نیز در فروشگاه نمایش داده نمی‌شوند. خاموش‌کردن «نمایش در منوی همبرگری» فقط آن را از منو پنهان می‌کند؛ دسته فعال همچنان در صفحه همه دسته‌بندی‌ها و نشانی مستقیم خود قابل دسترسی است.
+            </p>
+          </section>
+          <section className="min-w-0">
+            <h4 className="text-sm font-semibold text-[var(--ui-text)]">ویژگی‌های محصول</h4>
+            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
+              ویژگی‌ها در فرم ثبت یا ویرایش محصول استفاده می‌شوند. «اجباری» بودن توسط سرور بررسی می‌شود، «قابل فیلتر» بودن فیلتر صفحه دسته را کنترل می‌کند و «ارث‌بری» مشخص می‌کند ویژگی والد به زیر‌دسته‌ها منتقل شود یا نه. گزینه «قابل جست‌وجو» فعلاً ذخیره می‌شود اما در منطق جست‌وجوی فعلی محصول استفاده نمی‌شود.
+            </p>
+          </section>
+        </div>
+      </details>
+
       {formOpen && (
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
@@ -292,27 +340,31 @@ const CategoryManager = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>نام فارسی
               <input className={fieldClass} required maxLength={120} value={form.name.fa} onChange={(event) => updateLocalized("name", "fa", event.target.value)} />
+              <span className={hintClass}>عنوانی که مشتری در فروشگاه می‌بیند؛ کوتاه و مشخص بنویسید، مثل «مانتو» یا «شلوار جین».</span>
             </label>
             <label className={labelClass}>English name
               <input className={fieldClass} required maxLength={120} dir="ltr" value={form.name.en} onChange={(event) => updateLocalized("name", "en", event.target.value)} />
+              <span className={hintClass}>معادل انگلیسی همان نام است؛ برای داده‌های چندزبانه نگهداری می‌شود و تکمیل آن الزامی است.</span>
             </label>
             <label className={labelClass}>شناسه لاتین برگرفته از نام فارسی
               <input className={fieldClass} required maxLength={96} pattern="[a-z0-9]+(-[a-z0-9]+)*" dir="ltr" disabled={Boolean(editingId)} value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase() }))} />
-              <span className="mt-1 block text-xs text-[var(--ui-muted)]">هنگام ایجاد، از نام فارسی به شکل لاتین ساخته می‌شود؛ شناسه دسته‌های موجود برای حفظ لینک‌ها تغییر نمی‌کند.</span>
+              <span className={hintClass}>بخش لاتین نشانی صفحه است: /category/slug. هنگام ایجاد از نام فارسی ساخته می‌شود؛ پس از ذخیره قابل ویرایش نیست تا لینک‌های قبلی حفظ شوند.</span>
             </label>
             <label className={labelClass}>دسته والد
               <select className={fieldClass} value={form.parentId} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value }))}>
                 <option value="">بدون والد (دسته اصلی)</option>
                 {editableParents.map((category) => <option key={idOf(category._id)} value={idOf(category._id)}>{getPath(category, sorted)}</option>)}
               </select>
+              <span className={hintClass}>برای دسته اصلی خالی بگذارید. با انتخاب والد، این دسته زیرمجموعه آن می‌شود؛ تغییر والد مسیر زیر‌دسته‌های موجود را نیز به‌روزرسانی می‌کند.</span>
             </label>
             <label className={labelClass}>ترتیب نمایش
               <input className={fieldClass} type="number" min="0" max="100000" step="1" required value={form.sortOrder} onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))} />
+              <span className={hintClass}>عدد صحیح بین ۰ تا ۱۰۰٬۰۰۰ وارد کنید. عدد کوچک‌تر در فهرست زودتر نمایش داده می‌شود.</span>
             </label>
             <div className={labelClass}>
               تصویر دسته‌بندی (حداکثر ۲ مگابایت)
               <input className={fieldClass} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleCategoryImageChange} />
-              <span className="mt-1 block text-xs text-[var(--ui-muted)]">فرمت‌های تصویری؛ حداکثر ۲ مگابایت.</span>
+              <span className={hintClass}>فرمت‌های مجاز: JPG، PNG، WEBP و GIF؛ حداکثر ۲ مگابایت. تصویر در صفحه همه دسته‌بندی‌ها و پیش‌نمایش اشتراک صفحه دسته استفاده می‌شود.</span>
               {form.image && <div className="mt-3 flex items-center gap-3">
                 <img src={form.image} alt="پیش‌نمایش تصویر دسته‌بندی" className="h-20 w-20 rounded-xl border border-[var(--ui-border)] object-cover" />
                 <button type="button" onClick={() => setForm((current) => ({ ...current, image: "" }))} className="rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs hover:bg-[var(--ui-hover)]">حذف تصویر</button>
@@ -322,18 +374,25 @@ const CategoryManager = () => {
           <div>
             <label className={labelClass}>توضیحات فارسی
               <textarea className={fieldClass} rows={3} maxLength={1000} value={form.description.fa} onChange={(event) => updateLocalized("description", "fa", event.target.value)} />
+              <span className={hintClass}>معرفی کوتاهی از این مجموعه بنویسید. این متن در بالای صفحه دسته نمایش داده می‌شود و برای توضیحات موتورهای جست‌وجو نیز استفاده می‌شود؛ حداکثر ۱٬۰۰۰ نویسه.</span>
             </label>
           </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-3 rounded-xl bg-[var(--ui-input-bg)] p-3 text-sm">
-            <label className="flex items-center gap-2"><input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} /> فعال در فروشگاه</label>
-            <label className="flex items-center gap-2"><input type="checkbox" checked={form.showInNavigation} onChange={(event) => setForm((current) => ({ ...current, showInNavigation: event.target.checked }))} /> نمایش در منوی همبرگری فروشگاه</label>
+          <div className="space-y-3 rounded-xl bg-[var(--ui-input-bg)] p-3 text-sm">
+            <label className="flex items-start gap-2">
+              <input type="checkbox" checked={form.isActive} onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))} />
+              <span><span className="font-medium text-[var(--ui-text)]">فعال در فروشگاه</span><span className={hintClass}>در صورت غیرفعال‌بودن، این دسته از فروشگاه عمومی حذف می‌شود؛ غیرفعال‌کردن والد، زیر‌دسته‌هایش را نیز پنهان می‌کند.</span></span>
+            </label>
+            <label className="flex items-start gap-2">
+              <input type="checkbox" checked={form.showInNavigation} onChange={(event) => setForm((current) => ({ ...current, showInNavigation: event.target.checked }))} />
+              <span><span className="font-medium text-[var(--ui-text)]">نمایش در منوی همبرگری فروشگاه</span><span className={hintClass}>فقط نمایش در منوی دسته‌بندی‌ها را کنترل می‌کند؛ دسته فعال با این گزینه خاموش همچنان در صفحه «همه دسته‌بندی‌ها» قابل مشاهده است.</span></span>
+            </label>
           </div>
 
           <section className="space-y-3 rounded-xl border border-[var(--ui-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h4 className="font-semibold text-[var(--ui-text)]">ویژگی‌های این دسته</h4>
-                <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">برای گزینه‌ها هر خط را به شکل value|نام فارسی|English label وارد کنید. ویژگی ارث‌پذیر به زیر‌دسته‌ها منتقل می‌شود.</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">این ویژگی‌ها در فرم ثبت یا ویرایش محصول به کار می‌روند. کلید فنی باید یکتا و انگلیسی باشد؛ نوع ویژگی مشخص می‌کند مدیر محصول چه نوع مقداری وارد می‌کند.</p>
               </div>
               <button type="button" onClick={() => setForm((current) => ({ ...current, attributes: [...current.attributes, normalizeAttribute({ key: "", type: "select", options: [], inherited: true }, current.attributes.length)] }))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><Plus size={14} aria-hidden="true" /> ویژگی جدید</button>
             </div>
@@ -347,22 +406,27 @@ const CategoryManager = () => {
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <label className={labelClass}>کلید داخلی
                     <input className={fieldClass} required pattern="[a-z][a-z0-9_]*" dir="ltr" placeholder="leg_cut" value={attribute.key} onChange={(event) => updateAttribute(index, "key", event.target.value.toLowerCase())} />
+                    <span className={hintClass}>شناسه فنی ذخیره مقدار در محصول است؛ با حرف کوچک انگلیسی شروع شود و فقط حروف، عدد و زیرخط داشته باشد. برای ویژگی‌های همین دسته تکراری نباشد.</span>
                   </label>
                   <label className={labelClass}>نام فارسی
                     <input className={fieldClass} required value={attribute.name.fa} onChange={(event) => updateAttribute(index, "name", { ...attribute.name, fa: event.target.value })} />
+                    <span className={hintClass}>برچسبی که مدیر هنگام ثبت محصول و مشتری در فیلتر دسته می‌بیند؛ مثل «مدل برش».</span>
                   </label>
                   <label className={labelClass}>English label
                     <input className={fieldClass} required dir="ltr" value={attribute.name.en} onChange={(event) => updateAttribute(index, "name", { ...attribute.name, en: event.target.value })} />
+                    <span className={hintClass}>معادل انگلیسی برچسب ویژگی است؛ تکمیل آن الزامی است.</span>
                   </label>
                   <label className={labelClass}>نوع ویژگی
                     <select className={fieldClass} value={attribute.type} onChange={(event) => updateAttribute(index, "type", event.target.value)}>
                       <option value="select">یک گزینه</option><option value="multi-select">چند گزینه</option><option value="boolean">بله / خیر</option><option value="number">عدد</option><option value="text">متن</option>
                     </select>
+                    <span className={hintClass}>یک گزینه = انتخاب تکی؛ چند گزینه = انتخاب هم‌زمان؛ بله/خیر = چک‌باکس؛ عدد و متن = ورود مقدار توسط مدیر محصول.</span>
                   </label>
                 </div>
                 {["select", "multi-select"].includes(attribute.type) && (
                   <label className={labelClass}>گزینه‌ها (هر خط: value|نام فارسی|English label)
                     <textarea className={fieldClass} rows={3} dir="ltr" placeholder={"baggy|بگ|Baggy\nstraight|راسته|Straight"} value={attribute.optionsText} onChange={(event) => updateAttribute(index, "optionsText", event.target.value)} required />
+                    <span className={hintClass}>برای هر گزینه یک خط وارد کنید. بخش اول value فنی ذخیره‌شده و دو بخش بعدی نام فارسی و انگلیسی هستند؛ بین بخش‌ها از | استفاده کنید.</span>
                   </label>
                 )}
                 <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--ui-muted)]">
@@ -371,6 +435,9 @@ const CategoryManager = () => {
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.searchable} onChange={(event) => updateAttribute(index, "searchable", event.target.checked)} /> قابل جست‌وجو</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.inherited} onChange={(event) => updateAttribute(index, "inherited", event.target.checked)} /> ارث‌بری برای زیر‌دسته‌ها</label>
                 </div>
+                <p className={hintClass}>
+                  اجباری: هنگام ذخیره محصول باید مقدار وارد شود. قابل فیلتر: این ویژگی در فیلتر صفحه دسته ظاهر می‌شود. ارث‌بری: ویژگی را از والد به زیر‌دسته منتقل می‌کند. قابل جست‌وجو: در نسخه فعلی فقط ذخیره می‌شود و هنوز بر جست‌وجوی محصولات اثر ندارد.
+                </p>
               </div>
             ))}
           </section>

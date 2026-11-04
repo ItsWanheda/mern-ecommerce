@@ -1162,7 +1162,7 @@ const Navbar = () => {
                     <h3 id="store-categories-heading" className="text-sm font-bold text-[var(--ui-text)]">دسته‌بندی‌ها</h3>
                   </div>
                   <Link
-                    to="/shop"
+                    to="/categories"
                     onClick={() => setMobileMenuOpen(false)}
                     className="inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-xs font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
                   >

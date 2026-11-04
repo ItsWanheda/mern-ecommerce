@@ -148,11 +148,23 @@ const AnalyticsTab = () => {
 export default AnalyticsTab;
 
 const AnalyticsCard = ({ title, value, icon: Icon }) => (
-  <motion.article className="relative isolate min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-lg sm:p-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-    <div className="relative z-10 flex min-w-0 flex-col gap-2 pr-1 sm:pr-0">
-      <p className="max-w-full break-words text-sm font-semibold leading-6 text-[var(--ui-accent)]">{title}</p>
-      <p className="max-w-full break-words text-xl font-bold leading-tight tabular-nums text-[var(--ui-text)] [overflow-wrap:anywhere] sm:text-3xl">{value}</p>
+  <motion.article
+    className="flex min-h-[128px] min-w-0 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-lg sm:min-h-[140px] sm:p-6"
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    <div className="min-w-0 flex-1">
+      <p className="min-h-12 break-words text-sm font-semibold leading-6 text-[var(--ui-accent)]">{title}</p>
+      <p
+        dir="auto"
+        className="mt-2 max-w-full break-all text-lg font-bold leading-tight tabular-nums text-[var(--ui-text)] sm:text-2xl xl:text-3xl"
+      >
+        {value}
+      </p>
     </div>
-    <Icon className="pointer-events-none absolute bottom-3 left-3 h-8 w-8 text-[var(--ui-text)]/10 sm:bottom-4 sm:left-4 sm:h-10 sm:w-10" aria-hidden="true" />
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--ui-accent-soft)] text-[var(--ui-accent)] sm:h-12 sm:w-12">
+      <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+    </span>
   </motion.article>
 );

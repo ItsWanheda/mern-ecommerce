@@ -18,6 +18,7 @@ const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
 const ProductDetailsPage = lazy(() => import("./pages/ProductDetailsPage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const WishlistPage = lazy(() => import("./pages/WishlistPage"));
@@ -85,6 +86,7 @@ function App() {
             <Route path="/forgot-password" element={privateRoutePage("/forgot-password", <ForgotPasswordPage />)} />
             <Route path="/reset-password" element={privateRoutePage("/reset-password", <ResetPasswordPage />)} />
             <Route path="/secret-dashboard" element={privateRoutePage("/secret-dashboard", user?.role === "admin" ? <AdminPage /> : <Navigate to="/login" />)} />
+            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/category/:slug" element={<CategoryPage />} />
             <Route path="/product/:productId" element={<ProductDetailsPage />} />
             <Route path="/cart" element={privateRoutePage("/cart", <CartPage />)} />
