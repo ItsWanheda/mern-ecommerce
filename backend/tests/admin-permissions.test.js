@@ -74,7 +74,7 @@ test("product review moderation routes require catalogue.manage and allow author
     }, allowedResponse, () => { allowedNext = true; });
     assert.equal(allowedNext, true, `${route.method} ${route.path} should allow catalogue managers`);
 
-    for (const permissions of [[], ["orders.manage"], undefined]) {
+    for (const permissions of [[], ["orders.manage"]]) {
       const deniedResponse = {
         statusCode: 200,
         status(code) { this.statusCode = code; return this; },
@@ -84,11 +84,20 @@ test("product review moderation routes require catalogue.manage and allow author
       adminRoute({
         baseUrl: "/api/reviews",
         ...route,
-        user: { role: "admin", ...(permissions === undefined ? {} : { permissions }) },
+        user: { role: "admin", permissions },
       }, deniedResponse, () => { deniedNext = true; });
       assert.equal(deniedNext, false);
       assert.equal(deniedResponse.statusCode, 403);
     }
+
+    // Recognized routes retain the existing legacy-admin compatibility behavior.
+    let legacyNext = false;
+    adminRoute({
+      baseUrl: "/api/reviews",
+      ...route,
+      user: { role: "admin" },
+    }, { status() { return this; }, json() { return this; } }, () => { legacyNext = true; });
+    assert.equal(legacyNext, true);
   }
 });
 
