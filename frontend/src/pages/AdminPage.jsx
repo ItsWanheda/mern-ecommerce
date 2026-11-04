@@ -1,4 +1,4 @@
-import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent, Users, LifeBuoy, Boxes } from "lucide-react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent, Users, LifeBuoy, Boxes, Star } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
@@ -19,9 +19,10 @@ const OperationsDashboard = lazy(() => import("../components/OperationsDashboard
 const CustomerManagement = lazy(() => import("../components/CustomerManagement"));
 const ServiceCases = lazy(() => import("../components/ServiceCases"));
 const InventoryAlerts = lazy(() => import("../components/InventoryAlerts"));
+const ProductReviewModeration = lazy(() => import("../components/ProductReviewModeration"));
 
 const groups = [
- { id:"catalogue", label:"کاتالوگ", items:[{id:"create",label:"ایجاد محصول",icon:PlusCircle},{id:"products",label:"محصولات و موجودی",icon:ShoppingBasket},{id:"categories",label:"مدیریت دسته‌بندی‌ها",icon:FolderTree}] },
+ { id:"catalogue", label:"کاتالوگ", items:[{id:"create",label:"ایجاد محصول",icon:PlusCircle},{id:"products",label:"محصولات و موجودی",icon:ShoppingBasket},{id:"reviews",label:"دیدگاه‌های محصولات",icon:Star},{id:"categories",label:"مدیریت دسته‌بندی‌ها",icon:FolderTree}] },
  { id:"orders-group", label:"سفارش‌ها و پشتیبانی", items:[{id:"orders",label:"صف سفارش‌ها",icon:Truck},{id:"service-cases",label:"پشتیبانی و مرجوعی",icon:LifeBuoy},{id:"customers",label:"مشتریان و دسترسی‌ها",icon:Users},{id:"inventory",label:"هشدار موجودی",icon:Boxes},{id:"shipping",label:"تنظیمات ارسال",icon:Truck}] },
  { id:"marketing", label:"بازاریابی", items:[{id:"campaigns",label:"کمپین‌ها",icon:Megaphone},{id:"coupons",label:"کدهای تخفیف",icon:TicketPercent},{id:"newsletter",label:"خبرنامه",icon:Mail}] },
  { id:"reports-system", label:"گزارش‌ها و سامانه", items:[{id:"dashboard",label:"نمای کلی",icon:Activity},{id:"analytics",label:"آمار و تحلیل",icon:BarChart},{id:"audit",label:"تاریخچه اقدامات",icon:ScrollText},{id:"operations",label:"وضعیت سامانه",icon:Activity}] },
@@ -33,7 +34,7 @@ const AdminPage = () => {
  useEffect(()=>{axios.get("/auth/profile").then(({data})=>setAdminPermissions(Array.isArray(data.permissions)?data.permissions:null)).catch(()=>setAdminPermissions(null));},[]);
  const visibleGroups=useMemo(()=>{
   if(!Array.isArray(adminPermissions)||adminPermissions.includes("*"))return groups;
-  const permissionByTab={dashboard:"reports.view",create:"catalogue.manage",products:"catalogue.manage",categories:"catalogue.manage",orders:"orders.manage","service-cases":"support.manage",customers:"customers.manage",inventory:"inventory.manage",shipping:"settings.manage",campaigns:"marketing.manage",coupons:"marketing.manage",newsletter:"marketing.manage",analytics:"reports.view",audit:"audit.view",operations:"system.view"};
+  const permissionByTab={dashboard:"reports.view",create:"catalogue.manage",products:"catalogue.manage",reviews:"catalogue.manage",categories:"catalogue.manage",orders:"orders.manage","service-cases":"support.manage",customers:"customers.manage",inventory:"inventory.manage",shipping:"settings.manage",campaigns:"marketing.manage",coupons:"marketing.manage",newsletter:"marketing.manage",analytics:"reports.view",audit:"audit.view",operations:"system.view"};
   return groups.map(group=>({...group,items:group.items.filter(tab=>adminPermissions.includes(permissionByTab[tab.id])||(tab.id==="customers"&&adminPermissions.includes("roles.manage")))})).filter(group=>group.items.length>0);
  },[adminPermissions]);
  const tabs=useMemo(()=>visibleGroups.flatMap(group=>group.items),[visibleGroups]);
@@ -87,7 +88,7 @@ const AdminPage = () => {
     </aside>
     <section className="min-w-0" id="admin-tab-panel" role="tabpanel" aria-labelledby={"admin-tab-"+activeTab}>
      <Suspense fallback={<div role="status" className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-8 text-center text-sm text-[var(--ui-muted)]">در حال بارگذاری بخش مدیریت…</div>}>
-      {activeTab==="dashboard"&&<DashboardOverview/>}{activeTab==="create"&&<CreateProductForm/>}{activeTab==="products"&&<ProductsList/>}{activeTab==="categories"&&<CategoryManager/>}{activeTab==="coupons"&&<CouponManager/>}{activeTab==="campaigns"&&<CampaignManager/>}{activeTab==="shipping"&&<ShippingSettings/>}{activeTab==="newsletter"&&<NewsletterManager/>}{activeTab==="analytics"&&<AnalyticsTab/>}{activeTab==="orders"&&<OrderManagement/>}{activeTab==="audit"&&<AuditLogTab/>}{activeTab==="operations"&&<OperationsDashboard/>}{activeTab==="customers"&&<CustomerManagement/>}{activeTab==="service-cases"&&<ServiceCases/>}{activeTab==="inventory"&&<InventoryAlerts/>}
+      {activeTab==="reviews"&&<ProductReviewModeration/>}{activeTab==="dashboard"&&<DashboardOverview/>}{activeTab==="create"&&<CreateProductForm/>}{activeTab==="products"&&<ProductsList/>}{activeTab==="categories"&&<CategoryManager/>}{activeTab==="coupons"&&<CouponManager/>}{activeTab==="campaigns"&&<CampaignManager/>}{activeTab==="shipping"&&<ShippingSettings/>}{activeTab==="newsletter"&&<NewsletterManager/>}{activeTab==="analytics"&&<AnalyticsTab/>}{activeTab==="orders"&&<OrderManagement/>}{activeTab==="audit"&&<AuditLogTab/>}{activeTab==="operations"&&<OperationsDashboard/>}{activeTab==="customers"&&<CustomerManagement/>}{activeTab==="service-cases"&&<ServiceCases/>}{activeTab==="inventory"&&<InventoryAlerts/>}
      </Suspense>
     </section>
    </div>

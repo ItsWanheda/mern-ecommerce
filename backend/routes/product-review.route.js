@@ -1,0 +1,10 @@
+import express from "express";
+import {adminRoute,protectRoute} from "../middleware/auth.middleware.js";
+import {createProductReview,getPendingProductReviews,getProductReviews,getReviewEligibility,moderateProductReview} from "../controllers/product-review.controller.js";
+const router=express.Router();
+router.get("/admin/pending",protectRoute,adminRoute,getPendingProductReviews);
+router.patch("/admin/:reviewId",protectRoute,adminRoute,moderateProductReview);
+router.get("/:productId/eligibility",protectRoute,getReviewEligibility);
+router.post("/:productId",protectRoute,createProductReview);
+router.get("/:productId",getProductReviews);
+export default router;

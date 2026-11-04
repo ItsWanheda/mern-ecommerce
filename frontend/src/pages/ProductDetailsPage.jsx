@@ -4,12 +4,13 @@ import ProductCard from "../components/ProductCard";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
-  X, Shirt, ZoomIn, RefreshCw,
+  X, Shirt, ZoomIn, RefreshCw, Star,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
+import { useUserStore } from "../stores/useUserStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
 const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
@@ -45,6 +46,13 @@ const ProductDetailsPage = () => {
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
+  const user = useUserStore((state) => state.user);
+  const [reviews, setReviews] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0, distribution: {} });
+  const [reviewEligibility, setReviewEligibility] = useState({ loading: true, eligible: false, reason: "" });
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const isWishlisted = Boolean(product && isSaved(product._id));
 
   useEffect(() => {
@@ -128,6 +136,39 @@ const ProductDetailsPage = () => {
       });
     return () => controller.abort();
   }, [product?._id, product?.category]);
+
+  useEffect(() => {
+    let active = true;
+    axios.get("/reviews/" + productId).then(({data}) => {
+      if (!active) return;
+      setReviews(Array.isArray(data.reviews) ? data.reviews : []);
+      setReviewSummary(data.summary || {average:0,count:0,distribution:{}});
+    }).catch(() => { if(active){setReviews([]);setReviewSummary({average:0,count:0,distribution:{}});} });
+    return () => { active = false; };
+  }, [productId]);
+
+  useEffect(() => {
+    let active = true;
+    if (!user?._id) { setReviewEligibility({loading:false,eligible:false,reason:"برای ثبت دیدگاه ابتدا وارد حساب کاربری شوید."}); return () => {active=false;}; }
+    setReviewEligibility({loading:true,eligible:false,reason:""});
+    axios.get("/reviews/"+productId+"/eligibility").then(({data}) => {
+      if(active) setReviewEligibility({loading:false,eligible:Boolean(data.eligible),reason:data.reason||""});
+    }).catch(error => { if(active) setReviewEligibility({loading:false,eligible:false,reason:error.response?.data?.message||"امکان بررسی شرایط ثبت دیدگاه وجود ندارد."}); });
+    return () => {active=false;};
+  }, [productId,user?._id]);
+
+  const handleSubmitReview = async (event) => {
+    event.preventDefault();
+    if (!user?._id || !reviewEligibility.eligible || reviewSubmitting) return;
+    setReviewSubmitting(true);
+    try {
+      await axios.post("/reviews/"+productId,{rating:reviewRating,comment:reviewComment});
+      toast.success("دیدگاه شما ثبت شد و پس از تأیید مدیریت نمایش داده می‌شود.");
+      setReviewComment("");
+      setReviewEligibility({loading:false,eligible:false,reason:"دیدگاه شما در انتظار تأیید مدیریت است."});
+    } catch(error) { toast.error(error.response?.data?.message||"ثبت دیدگاه انجام نشد."); }
+    finally { setReviewSubmitting(false); }
+  };
 
   useEffect(() => {
     if (!product?._id) return;
@@ -268,7 +309,7 @@ const ProductDetailsPage = () => {
       <div className="mx-auto max-w-[1600px]">
         <Link to={product.category ? "/category/" + encodeURIComponent(product.category) : "/"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {categoryLabels[product.category] || product.category || "مجموعه"}</Link>
 
-        <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:gap-8">
+        <div className="mt-7 grid items-start gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-12">
           <section aria-label="تصاویر محصول" className="min-w-0">
             <div className="relative overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
               {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
@@ -309,7 +350,7 @@ const ProductDetailsPage = () => {
             )}
           </section>
 
-          <section className="min-w-0 rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-6 sm:px-8 sm:py-9 lg:sticky lg:top-24 lg:px-10">
+          <section className="min-w-0 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-7 shadow-[0_18px_55px_-42px_var(--ui-shadow-color)] sm:px-8 sm:py-10 lg:px-10">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{categoryLabels[product.category] || product.category || "مجموعه تیک بوتیک"}</p>
             <h1 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <p className="mt-5 text-2xl font-semibold tabular-nums">{formatPrice(product.price)}</p>
@@ -332,7 +373,7 @@ const ProductDetailsPage = () => {
                     const compatible = !hasVariants || hasStockForSize(size);
                     const unavailable = hasVariants && !hasAnyStock;
                     return (
-                      <button key={size} type="button" disabled={unavailable} onClick={() => handleSizeSelect(size)} aria-pressed={selectedSize === size} aria-label={hasAnyStock && !compatible ? "سایز " + size + "؛ رنگ سازگار خودکار انتخاب می‌شود" : "سایز " + size} className={"relative min-h-11 min-w-12 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:border-[var(--ui-border)] disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-disabled-text)] disabled:line-through " + (selectedSize === size ? "border-[var(--ui-strong-surface)] bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)]" : compatible ? "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]" : "border-dashed border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]")}>
+                      <button key={size} type="button" disabled={unavailable} onClick={() => handleSizeSelect(size)} aria-pressed={selectedSize === size} aria-label={hasAnyStock && !compatible ? "سایز " + size + "؛ رنگ سازگار خودکار انتخاب می‌شود" : "سایز " + size} className={"relative min-h-12 min-w-[3.5rem] rounded-2xl border px-5 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:border-[var(--ui-border)] disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-disabled-text)] disabled:line-through " + (selectedSize === size ? "border-[var(--ui-strong-surface)] bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)]" : compatible ? "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]" : "border-dashed border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]")}>
                         {size}
                       </button>
                     );
@@ -415,7 +456,7 @@ const ProductDetailsPage = () => {
               </section>
             )}
 
-            <div role="status" aria-live="polite" aria-atomic="true" className="mb-6 rounded-xl border border-[var(--ui-border)] px-4 py-3">
+            <div role="status" aria-live="polite" aria-atomic="true" className="mb-7 rounded-2xl bg-[var(--ui-canvas)] px-5 py-4">
               {(sizes.length > 0 || colors.length > 0) && (
                 <p className="mb-2 text-xs leading-5 text-[var(--ui-muted)]">
                   انتخاب شما: {sizes.length > 0 ? "سایز " + (selectedSize || "انتخاب‌نشده") : "بدون سایز"} · {colors.length > 0 ? "رنگ " + (selectedColor || "انتخاب‌نشده") : "بدون رنگ"}
@@ -430,7 +471,7 @@ const ProductDetailsPage = () => {
             </div>
 
             <h2 className="text-sm font-semibold">درباره این محصول</h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[var(--ui-muted)]">{product.description || "انتخابی کاربردی برای تکمیل مجموعه روزمره شما."}</p>
+            <p className="mt-4 whitespace-pre-line text-[15px] leading-9 text-[var(--ui-muted)]">{product.description || "انتخابی کاربردی برای تکمیل مجموعه روزمره شما."}</p>
 
             <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
               <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-4 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
@@ -448,6 +489,20 @@ const ProductDetailsPage = () => {
             <p className="mt-4 flex items-center gap-2 text-xs leading-5 text-[var(--ui-muted)]"><Check size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
           </section>
         </div>
+
+        <section className="mt-14 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-8 sm:mt-20 sm:px-10 sm:py-12" aria-labelledby="customer-reviews-heading">
+          <div className="mx-auto max-w-5xl">
+            <div className="flex flex-wrap items-end justify-between gap-5 border-b border-[var(--ui-border)] pb-7">
+              <div><p className="text-xs font-semibold text-[var(--ui-accent)]">تجربه خریداران</p><h2 id="customer-reviews-heading" className="mt-2 text-2xl font-semibold sm:text-3xl">دیدگاه مشتریان</h2><p className="mt-2 text-sm text-[var(--ui-muted)]">دیدگاه‌ها پس از تأیید مدیریت منتشر می‌شوند.</p></div>
+              <div><div className="flex items-center gap-2"><Star size={22} className="fill-current text-[var(--ui-accent)]"/><strong className="text-3xl tabular-nums">{reviewSummary.count?reviewSummary.average.toFixed(1):"—"}</strong><span className="text-sm text-[var(--ui-muted)]">از ۵</span></div><p className="mt-1 text-xs text-[var(--ui-muted)]">{new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه تأییدشده</p></div>
+            </div>
+            {reviewSummary.count>0&&<div className="mt-6 grid gap-2 sm:max-w-xl">{[5,4,3,2,1].map(star=><div key={star} className="flex items-center gap-3 text-xs"><span className="w-12 text-[var(--ui-muted)]">{star} ستاره</span><div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--ui-canvas)]"><div className="h-full rounded-full bg-[var(--ui-accent)]" style={{width:((reviewSummary.distribution?.[star]||0)/reviewSummary.count*100)+"%"}}/></div><span>{reviewSummary.distribution?.[star]||0}</span></div>)}</div>}
+            <div className="mt-8 space-y-5">{reviews.length?reviews.map(review=><article key={review._id} className="border-b border-[var(--ui-border)] pb-6 last:border-0"><div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">{review.displayName||"خریدار تأییدشده"}</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">خریدار تأییدشده</p></div><div className="flex gap-1">{[1,2,3,4,5].map(n=><Star key={n} size={15} className={n<=review.rating?"fill-current text-[var(--ui-accent)]":"text-[var(--ui-border-strong)]"}/>)}</div></div>{review.comment&&<p className="mt-4 whitespace-pre-line text-sm leading-8 text-[var(--ui-muted)]">{review.comment}</p>}</article>):<p className="py-8 text-center text-sm leading-8 text-[var(--ui-muted)]">هنوز دیدگاهی برای این محصول ثبت نشده است.</p>}</div>
+            <div className="mt-8 rounded-2xl bg-[var(--ui-canvas)] p-5 sm:p-7"><h3 className="text-lg font-semibold">تجربه‌تان را به اشتراک بگذارید</h3>
+              {reviewEligibility.loading?<p className="mt-3 text-sm text-[var(--ui-muted)]">در حال بررسی شرایط ثبت دیدگاه…</p>:reviewEligibility.eligible?<form onSubmit={handleSubmitReview} className="mt-5 space-y-5"><fieldset><legend className="mb-3 text-sm font-medium">امتیاز شما</legend><div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>setReviewRating(n)} aria-label={n+" ستاره"} aria-pressed={reviewRating===n} className="rounded-lg p-1"><Star size={27} className={n<=reviewRating?"fill-current text-[var(--ui-accent)]":"text-[var(--ui-border-strong)]"}/></button>)}</div></fieldset><label htmlFor="product-review-comment" className="block text-sm font-medium">نظر شما (اختیاری)<textarea id="product-review-comment" value={reviewComment} onChange={e=>setReviewComment(e.target.value.slice(0,1500))} rows={5} className="mt-2 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 text-sm leading-8 outline-none focus:border-[var(--ui-focus)]" placeholder="از تجربه خرید و کیفیت محصول بنویسید…"/></label><button disabled={reviewSubmitting} className="min-h-11 rounded-full bg-[var(--ui-strong-surface)] px-6 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] disabled:opacity-50">{reviewSubmitting?"در حال ثبت…":"ارسال برای بررسی"}</button></form>:<p className="mt-3 text-sm leading-8 text-[var(--ui-muted)]">{reviewEligibility.reason||"برای ثبت دیدگاه باید سفارش پرداخت‌شده این محصول به شما تحویل شده باشد."}</p>}
+            </div>
+          </div>
+        </section>
 
         {(relatedProducts.length > 0 || recentlyViewed.length > 0) && (
           <section className="mt-10 border-t border-[var(--ui-border)] pt-8 sm:mt-14 sm:pt-10" aria-label="پیشنهادهای بیشتر">
