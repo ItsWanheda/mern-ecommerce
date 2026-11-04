@@ -54,6 +54,44 @@ test("unknown admin routes and methods fail closed for wildcard and legacy admin
   }
 });
 
+test("product review moderation routes require catalogue.manage and allow authorized admins", () => {
+  const routes = [
+    { method: "GET", path: "/admin/pending" },
+    { method: "PATCH", path: "/admin/507f1f77bcf86cd799439011" },
+  ];
+
+  for (const route of routes) {
+    const allowedResponse = {
+      statusCode: 200,
+      status(code) { this.statusCode = code; return this; },
+      json(body) { this.body = body; return this; },
+    };
+    let allowedNext = false;
+    adminRoute({
+      baseUrl: "/api/reviews",
+      ...route,
+      user: { role: "admin", permissions: ["catalogue.manage"] },
+    }, allowedResponse, () => { allowedNext = true; });
+    assert.equal(allowedNext, true, `${route.method} ${route.path} should allow catalogue managers`);
+
+    for (const permissions of [[], ["orders.manage"], undefined]) {
+      const deniedResponse = {
+        statusCode: 200,
+        status(code) { this.statusCode = code; return this; },
+        json(body) { this.body = body; return this; },
+      };
+      let deniedNext = false;
+      adminRoute({
+        baseUrl: "/api/reviews",
+        ...route,
+        user: { role: "admin", ...(permissions === undefined ? {} : { permissions }) },
+      }, deniedResponse, () => { deniedNext = true; });
+      assert.equal(deniedNext, false);
+      assert.equal(deniedResponse.statusCode, 403);
+    }
+  }
+});
+
 test("route permissions require an exact method and route shape", () => {
   const allowedResponse = {
     statusCode: 200,
