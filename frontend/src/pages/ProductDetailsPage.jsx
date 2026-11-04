@@ -470,8 +470,7 @@ const ProductDetailsPage = () => {
               {!hasVariants && !isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
             </div>
 
-            <h2 className="text-sm font-semibold">درباره این محصول</h2>
-            <p className="mt-4 whitespace-pre-line text-[15px] leading-9 text-[var(--ui-muted)]">{product.description || "انتخابی کاربردی برای تکمیل مجموعه روزمره شما."}</p>
+
 
             <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
               <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-4 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
@@ -489,6 +488,15 @@ const ProductDetailsPage = () => {
             <p className="mt-4 flex items-center gap-2 text-xs leading-5 text-[var(--ui-muted)]"><Check size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
           </section>
         </div>
+
+        <section className="mt-14 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-9 sm:mt-20 sm:px-10 sm:py-14" aria-labelledby="product-description-heading">
+          <div className="mx-auto max-w-4xl">
+            <p className="text-xs font-semibold text-[var(--ui-accent)]">نگاهی نزدیک‌تر</p>
+            <h2 id="product-description-heading" className="mt-3 text-2xl font-semibold leading-relaxed sm:text-3xl">درباره این محصول</h2>
+            <p className="mt-6 whitespace-pre-line text-[15px] leading-9 text-[var(--ui-muted)] sm:text-base sm:leading-10">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
+            {product.attributes && Object.entries(product.attributes).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="").length>0 && <div className="mt-10 border-t border-[var(--ui-border)] pt-8"><h3 className="text-lg font-semibold">مشخصات محصول</h3><dl className="mt-5 grid gap-x-10 gap-y-5 sm:grid-cols-2">{Object.entries(product.attributes).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="").map(([key,value])=><div key={key} className="flex items-start justify-between gap-4 border-b border-[var(--ui-border)]/70 pb-3"><dt className="text-sm text-[var(--ui-muted)]">{key}</dt><dd className="text-sm font-medium text-[var(--ui-text)]">{Array.isArray(value)?value.join("، "):String(value)}</dd></div>)}</dl></div>}
+          </div>
+        </section>
 
         <section className="mt-14 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-8 sm:mt-20 sm:px-10 sm:py-12" aria-labelledby="customer-reviews-heading">
           <div className="mx-auto max-w-5xl">

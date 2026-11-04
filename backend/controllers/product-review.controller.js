@@ -39,7 +39,7 @@ export const createProductReview=async(req,res)=>{
   if(!product)return res.status(404).json({message:"محصول پیدا نشد."});
   const check=await eligibility(req.user._id,productId);
   if(!check.eligible)return res.status(403).json({message:check.reason});
-  const review=await ProductReview.create({product:productId,user:req.user._id,order:check.orderId,rating,comment,displayName:String(req.user.name||"خریدار تیک بوتیک").trim().slice(0,80),verifiedPurchase:true,status:"pending"});
+  const review=await ProductReview.create({product:productId,user:req.user._id,order:check.orderId,rating,comment,displayName:"خریدار تأییدشده",verifiedPurchase:true,status:"pending"});
   return res.status(201).json({message:"دیدگاه برای بررسی مدیریت ثبت شد.",review:{_id:review._id,status:review.status}});
  }catch(error){if(error.code===11000)return res.status(409).json({message:"برای این محصول قبلاً دیدگاهی ثبت کرده‌اید."});console.error("Unable to create product review",error.message);return res.status(500).json({message:"ثبت دیدگاه انجام نشد."});}
 };
