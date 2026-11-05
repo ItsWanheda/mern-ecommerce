@@ -19,31 +19,31 @@ const categoryLinks = [
 const PageLayout = ({ eyebrow, title, intro, children }) => {
   const { pathname } = useLocation();
   return (
-    <main dir="rtl" className="min-h-[60vh] bg-[#f7f5f0] px-3 py-8 text-[#252722] sm:px-6 sm:py-12 lg:px-8">
+    <main dir="rtl" className="min-h-[60vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
       <PageMeta title={title} description={intro || (title + " | راهنمای فروشگاه تیک بوتیک.")} path={pathname} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: title, path: pathname }]} />
       <div className="mx-auto max-w-5xl">
-        <p className="mb-2 text-xs font-semibold tracking-wide text-[#68745f]">{eyebrow}</p>
+        <p className="mb-2 text-xs font-semibold tracking-wide text-brand">{eyebrow}</p>
         <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
-        {intro && <p className="mt-3 max-w-3xl text-sm leading-7 text-[#62645c] sm:text-base">{intro}</p>}
+        {intro && <p className="mt-3 max-w-3xl text-sm leading-7 text-muted sm:text-base">{intro}</p>}
         <div className="mt-7 space-y-4">{children}</div>
-        <nav aria-label="صفحات راهنما" className="mt-9 flex flex-wrap gap-2 border-t border-[#e4e0d8] pt-5">
+        <nav aria-label="صفحات راهنما" className="mt-9 flex flex-wrap gap-2 border-t border-border pt-5">
           {categoryLinks.filter(([href]) => href !== pathname).map(([href, label]) => (
-            <Link key={href} to={href} className="inline-flex min-h-9 items-center rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#62645c] transition hover:border-[#a8a597] hover:text-[#252722]">{label}</Link>
+            <Link key={href} to={href} className="inline-flex min-h-9 items-center rounded-full border border-border-strong bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-muted-soft hover:text-ink">{label}</Link>
           ))}
         </nav>
-        {supportEmail && <p className="mt-5 text-sm text-[#62645c]">راه ارتباط با پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold underline underline-offset-2" dir="ltr">{supportEmail}</a></p>}
+        {supportEmail && <p className="mt-5 text-sm text-muted">راه ارتباط با پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold underline underline-offset-2" dir="ltr">{supportEmail}</a></p>}
       </div>
     </main>
   );
 };
 
 const InfoCard = ({ title, children, icon: Icon = CheckCircle2 }) => (
-  <section className="rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-5 sm:p-6">
+  <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
     <div className="flex items-start gap-3">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e9ede4] text-[#68745f]"><Icon size={19} aria-hidden="true" /></span>
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><Icon size={19} aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
         <h2 className="text-base font-semibold">{title}</h2>
-        <div className="mt-2 space-y-2 text-sm leading-7 text-[#62645c]">{children}</div>
+        <div className="mt-2 space-y-2 text-sm leading-7 text-muted">{children}</div>
       </div>
     </div>
   </section>
@@ -70,9 +70,9 @@ const StoreInfoPage = () => {
       <PageLayout eyebrow="راهنمای خرید" title="ارسال و تحویل" intro="هزینه ارسال طبق تنظیمات فعلی فروشگاه محاسبه می‌شود و مبلغ نهایی پیش از پرداخت در سبد خرید نمایش داده می‌شود.">
         <InfoCard title="هزینه ارسال" icon={Truck}>
           {shipping.loading ? <p>در حال دریافت قوانین ارسال…</p> : shipping.error ? <p>دریافت تنظیمات ارسال موقتاً امکان‌پذیر نیست. مبلغ نهایی را پیش از پرداخت در سبد خرید بررسی کنید.</p> : <>
-            <p>هزینه ثابت فعلی: <strong className="font-semibold text-[#252722]">{formatPrice(shipping.flatRate, shipping.currency)}</strong></p>
+            <p>هزینه ثابت فعلی: <strong className="font-semibold text-ink">{formatPrice(shipping.flatRate, shipping.currency)}</strong></p>
             {shipping.freeShippingThreshold > 0
-              ? <p>ارسال رایگان برای سفارش‌هایی با مبلغ کالا پس از تخفیف، حداقل <strong className="font-semibold text-[#252722]">{formatPrice(shipping.freeShippingThreshold, shipping.currency)}</strong> است.</p>
+              ? <p>ارسال رایگان برای سفارش‌هایی با مبلغ کالا پس از تخفیف، حداقل <strong className="font-semibold text-ink">{formatPrice(shipping.freeShippingThreshold, shipping.currency)}</strong> است.</p>
               : <p>حداقل مبلغ برای فعال‌شدن ارسال رایگان تعریف نشده است.</p>}
             {shipping.flatRate === 0 && <p>طبق تنظیمات فعلی، هزینه ثابت ارسال صفر است؛ مبلغ نهایی همچنان در سبد خرید تأیید می‌شود.</p>}
           </>}
@@ -106,12 +106,12 @@ const StoreInfoPage = () => {
       <PageLayout eyebrow="در کنار شما" title="پشتیبانی و تماس" intro="برای پرسش درباره سفارش، هزینه ارسال، موجودی یا شرایط کالا، جزئیات سفارش را آماده داشته باشید.">
         <InfoCard title="راه ارتباطی فروشگاه" icon={Mail}>
           {supportEmail
-            ? <p>ایمیل پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold text-[#252722] underline underline-offset-2" dir="ltr">{supportEmail}</a></p>
+            ? <p>ایمیل پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold text-ink underline underline-offset-2" dir="ltr">{supportEmail}</a></p>
             : <p>نشانی ایمیل یا شماره تماس رسمی هنوز در تنظیمات فروشگاه ثبت نشده است؛ برای فعال‌شدن این بخش، مقدار VITE_STORE_SUPPORT_EMAIL باید در تنظیمات فرانت‌اند ثبت شود.</p>}
           <p>در پیام خود شناسه سفارش (در صورت وجود)، ایمیل حساب و توضیح کوتاه مشکل را ذکر کنید؛ هرگز رمز عبور یا اطلاعات کامل کارت بانکی را ارسال نکنید.</p>
         </InfoCard>
         <InfoCard title="پاسخ‌های سریع" icon={CheckCircle2}>
-          <p>هزینه و شرط ارسال رایگان در <Link to="/shipping-policy" className="font-semibold text-[#526149] underline underline-offset-2">صفحه ارسال</Link> و سؤالات رایج در <Link to="/faq" className="font-semibold text-[#526149] underline underline-offset-2">سؤالات متداول</Link> آمده‌اند.</p>
+          <p>هزینه و شرط ارسال رایگان در <Link to="/shipping-policy" className="font-semibold text-brand-deep underline underline-offset-2">صفحه ارسال</Link> و سؤالات رایج در <Link to="/faq" className="font-semibold text-brand-deep underline underline-offset-2">سؤالات متداول</Link> آمده‌اند.</p>
         </InfoCard>
       </PageLayout>
     );
@@ -121,11 +121,11 @@ const StoreInfoPage = () => {
     return (
       <PageLayout eyebrow="راهنما" title="سؤالات متداول" intro="پاسخ‌ها بر اساس قابلیت‌های فعلی فروشگاه نوشته شده‌اند.">
         <InfoCard title="چطور از موجودی و سایز مطمئن شوم؟" icon={PackageCheck}><p>در صفحه جزئیات هر محصول، سایزها و رنگ‌های ثبت‌شده و وضعیت موجودی گزینه‌ها را بررسی کنید. موجودی در زمان سفارش نیز سمت سرور کنترل می‌شود.</p></InfoCard>
-        <InfoCard title="هزینه ارسال را کجا می‌بینم؟" icon={Truck}><p>هزینه فعلی و شرط ارسال رایگان در <Link to="/shipping-policy" className="font-semibold text-[#526149] underline underline-offset-2">صفحه ارسال</Link> قابل مشاهده است و هزینه نهایی پیش از پرداخت در سبد خرید نمایش داده می‌شود.</p></InfoCard>
+        <InfoCard title="هزینه ارسال را کجا می‌بینم؟" icon={Truck}><p>هزینه فعلی و شرط ارسال رایگان در <Link to="/shipping-policy" className="font-semibold text-brand-deep underline underline-offset-2">صفحه ارسال</Link> قابل مشاهده است و هزینه نهایی پیش از پرداخت در سبد خرید نمایش داده می‌شود.</p></InfoCard>
         <InfoCard title="می‌توانم بدون ورود محصول اضافه کنم؟" icon={PackageCheck}><p>بله، می‌توانید به‌عنوان مهمان سبد خرید را بسازید و بعداً وارد حساب شوید. برای ثبت سفارش و پرداخت، ورود به حساب لازم است.</p></InfoCard>
         <InfoCard title="پرداخت من چطور تأیید می‌شود؟" icon={CreditCard}><p>وضعیت تراکنش در سمت سرور بررسی می‌شود. از صفحه موفقیت پرداخت فقط زمانی استفاده کنید که درگاه، پرداخت را تأیید کرده باشد.</p></InfoCard>
-        <InfoCard title="شرایط مرجوعی چیست؟" icon={ShieldCheck}><p>بازه و ضوابط رسمی مرجوعی هنوز در فروشگاه ثبت نشده است؛ پیش از خرید، شرایط کالای موردنظر را از <Link to="/support" className="font-semibold text-[#526149] underline underline-offset-2">پشتیبانی</Link> بپرسید.</p></InfoCard>
-        <InfoCard title="آیا خبرنامه ایمیل ارسال می‌کند؟" icon={Mail}><p>در حال حاضر درخواست عضویت ذخیره می‌شود، اما سرویس ارسال ایمیل هنوز متصل نشده است. می‌توانید هر زمان از صفحه <Link to="/newsletter-unsubscribe" className="font-semibold text-[#526149] underline underline-offset-2">لغو عضویت</Link> درخواست توقف عضویت بدهید.</p></InfoCard>
+        <InfoCard title="شرایط مرجوعی چیست؟" icon={ShieldCheck}><p>بازه و ضوابط رسمی مرجوعی هنوز در فروشگاه ثبت نشده است؛ پیش از خرید، شرایط کالای موردنظر را از <Link to="/support" className="font-semibold text-brand-deep underline underline-offset-2">پشتیبانی</Link> بپرسید.</p></InfoCard>
+        <InfoCard title="آیا خبرنامه ایمیل ارسال می‌کند؟" icon={Mail}><p>در حال حاضر درخواست عضویت ذخیره می‌شود، اما سرویس ارسال ایمیل هنوز متصل نشده است. می‌توانید هر زمان از صفحه <Link to="/newsletter-unsubscribe" className="font-semibold text-brand-deep underline underline-offset-2">لغو عضویت</Link> درخواست توقف عضویت بدهید.</p></InfoCard>
       </PageLayout>
     );
   }
@@ -146,7 +146,7 @@ const StoreInfoPage = () => {
       <InfoCard title="قیمت و موجودی" icon={PackageCheck}><p>اطلاعات قیمت، تصاویر و مشخصات از کاتالوگ فروشگاه می‌آیند و ممکن است به‌روزرسانی شوند. موجودی نهایی و مبلغ سفارش پیش از پرداخت در سمت سرور دوباره بررسی می‌شوند.</p></InfoCard>
       <InfoCard title="ثبت سفارش و پرداخت" icon={CreditCard}><p>افزودن محصول به سبد خرید، به‌تنهایی به معنی تکمیل سفارش نیست. سفارش پس از طی مراحل پرداخت و تأیید سمت سرور نهایی می‌شود.</p></InfoCard>
       <InfoCard title="ارسال و مرجوعی" icon={Truck}><p>هزینه ارسال بر اساس تنظیمات فعلی در سبد خرید نمایش داده می‌شود. چون بازه و شرایط رسمی مرجوعی هنوز در فروشگاه ثبت نشده، قبل از خرید برای روشن‌شدن شرایط از پشتیبانی سؤال کنید.</p></InfoCard>
-      <InfoCard title="اطلاعات بیشتر" icon={ShieldCheck}><p>برای جزئیات داده‌های نگهداری‌شده، <Link to="/privacy-policy" className="font-semibold text-[#526149] underline underline-offset-2">سیاست حریم خصوصی</Link> را بخوانید.</p></InfoCard>
+      <InfoCard title="اطلاعات بیشتر" icon={ShieldCheck}><p>برای جزئیات داده‌های نگهداری‌شده، <Link to="/privacy-policy" className="font-semibold text-brand-deep underline underline-offset-2">سیاست حریم خصوصی</Link> را بخوانید.</p></InfoCard>
     </PageLayout>
   );
 };

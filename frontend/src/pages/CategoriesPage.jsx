@@ -29,7 +29,7 @@ const CategoryBranch = ({ category, childrenByParent, depth = 0, ancestors = [] 
           aria-label={"مشاهده محصولات دسته " + title}
           className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)]"
         >
-          <div className={"relative isolate min-h-[15rem] overflow-hidden rounded-3xl border border-[var(--ui-border)] shadow-sm transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-xl " + (hasImage ? "bg-[#20231e]" : "bg-[var(--ui-surface-raised)]")}>
+          <div className={"relative isolate min-h-[15rem] overflow-hidden rounded-3xl border border-[var(--ui-border)] shadow-sm transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-xl " + (hasImage ? "bg-strong" : "bg-[var(--ui-surface-raised)]")}>
             <div className="absolute inset-0 flex items-center justify-center text-[var(--ui-accent)]">
               <FolderTree size={58} strokeWidth={1.25} aria-hidden="true" />
             </div>
@@ -49,7 +49,7 @@ const CategoryBranch = ({ category, childrenByParent, depth = 0, ancestors = [] 
               <p className={"mt-2 max-h-12 max-w-xl overflow-hidden text-sm leading-6 " + (hasImage ? "text-white/85" : "text-[var(--ui-muted)]")}>
                 {description || "برای مشاهده محصولات این دسته و زیر‌دسته‌های آن وارد شوید."}
               </p>
-              <span className={"mt-4 inline-flex min-h-9 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold " + (hasImage ? "bg-white/15 text-white" : "bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]")}>
+              <span className={"mt-4 inline-flex min-h-9 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold " + (hasImage ? "bg-surface/15 text-white" : "bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]")}>
                 مشاهده مجموعه <ArrowUpLeft size={15} aria-hidden="true" />
               </span>
             </div>

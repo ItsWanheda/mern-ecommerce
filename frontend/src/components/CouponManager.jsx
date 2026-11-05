@@ -121,7 +121,7 @@ const CouponManager = () => {
     }
   };
 
-  const fieldClass = "mt-1 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30 disabled:opacity-50";
+  const fieldClass = "mt-1 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-brand-muted focus:ring-2 focus:ring-brand/30 disabled:opacity-50";
   const labelClass = "block text-sm leading-6 text-[var(--ui-muted)]";
   const canRename = !editingId || !coupons.find((coupon) => coupon._id === editingId && (coupon.usageCount > 0 || coupon.reservedCount > 0));
 
@@ -129,7 +129,7 @@ const CouponManager = () => {
     <section dir="rtl" className="mx-auto max-w-6xl space-y-7">
       <form onSubmit={handleSubmit} className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-lg sm:p-7">
         <div className="mb-6 flex items-start gap-3">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-primary)]/20 text-[#b9c5af]"><TicketPercent size={22} aria-hidden="true" /></span>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--brand-primary)]/20 text-brand-soft"><TicketPercent size={22} aria-hidden="true" /></span>
           <div>
             <h2 className="text-xl font-semibold text-[var(--ui-text)]">{editingId ? "ویرایش کد تخفیف" : "ساخت کد تخفیف جدید"}</h2>
             <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">کد عمومی با درصد تخفیف، تاریخ اعتبار، حداقل خرید، سقف تخفیف و محدودیت استفاده بسازید. مبلغ تخفیف در سمت سرور محاسبه می‌شود.</p>
@@ -162,7 +162,7 @@ const CouponManager = () => {
             <input type="number" min="1" step="1" className={fieldClass} value={form.usageLimit} onChange={(event) => setForm({ ...form, usageLimit: event.target.value })} placeholder="نامحدود" />
           </label>
           <label className={labelClass + " flex items-center gap-3 rounded-xl border border-[var(--ui-border)] px-3 py-2.5"}>
-            <input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} className="h-4 w-4 accent-[#68745f]" />
+            <input type="checkbox" checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} className="h-4 w-4 accent-brand" />
             <span>کد پس از ذخیره فعال باشد</span>
           </label>
         </div>
@@ -205,7 +205,7 @@ const CouponManager = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <code dir="ltr" className="rounded-md bg-[var(--ui-surface-raised)] px-2.5 py-1.5 text-sm font-bold tracking-wider text-[var(--ui-text)]">{coupon.code}</code>
-                        <span className="rounded-full bg-[var(--brand-primary)]/20 px-2.5 py-1 text-xs font-semibold text-[#c4d0bb]">{persianNumber(coupon.discountPercentage)}٪ تخفیف</span>
+                        <span className="rounded-full bg-[var(--brand-primary)]/20 px-2.5 py-1 text-xs font-semibold text-brand-soft">{persianNumber(coupon.discountPercentage)}٪ تخفیف</span>
                         <span className={"rounded-full px-2.5 py-1 text-xs font-semibold " + (effective ? "bg-emerald-900/40 text-[var(--ui-success)]" : "bg-[var(--ui-surface-raised)] text-[var(--ui-muted)]")}>{effective ? "فعال و قابل استفاده" : coupon.isActive ? "فعلاً قابل استفاده نیست" : "غیرفعال"}</span>
                       </div>
                       {coupon.description && <p className="mt-2 text-sm text-[var(--ui-muted)]">{coupon.description}</p>}

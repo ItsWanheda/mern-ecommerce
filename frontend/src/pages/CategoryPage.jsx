@@ -401,9 +401,9 @@ const CategoryPage = () => {
     return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       <fieldset className="min-w-0 space-y-3">
-        <legend className="text-sm font-semibold text-[#41443b]">محدوده قیمت ({priceUnitLabel})</legend>
+        <legend className="text-sm font-semibold text-ink-strong">محدوده قیمت ({priceUnitLabel})</legend>
         <div className="grid grid-cols-2 gap-2">
-          <label className="block text-xs text-[#77786f]">
+          <label className="block text-xs text-muted-soft">
             از
             <input
               type="text"
@@ -414,10 +414,10 @@ const CategoryPage = () => {
               onChange={(event) => onFilterChange("minPrice", event.target.value)}
               placeholder="بدون محدودیت"
               aria-label={"حداقل قیمت به " + priceUnitLabel}
-              className="mt-1 min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm tabular-nums text-[#252722] outline-none transition placeholder:text-[#aaa99f] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
+              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm tabular-nums text-ink outline-none transition placeholder:text-muted-soft focus:border-brand focus:ring-4 focus:ring-brand/10"
             />
           </label>
-          <label className="block text-xs text-[#77786f]">
+          <label className="block text-xs text-muted-soft">
             تا
             <input
               type="text"
@@ -428,19 +428,19 @@ const CategoryPage = () => {
               onChange={(event) => onFilterChange("maxPrice", event.target.value)}
               placeholder="بدون محدودیت"
               aria-label={"حداکثر قیمت به " + priceUnitLabel}
-              className="mt-1 min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm tabular-nums text-[#252722] outline-none transition placeholder:text-[#aaa99f] focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
+              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm tabular-nums text-ink outline-none transition placeholder:text-muted-soft focus:border-brand focus:ring-4 focus:ring-brand/10"
             />
           </label>
         </div>
-        <div className="rounded-xl border border-[#e4e0d8] bg-[#f7f5f0] px-3 py-3">
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-[#62645c]">
-            <span>از <strong className="tabular-nums text-[#252722]">{formatStorePrice(sliderMinValue)}</strong></span>
-            <span>تا <strong className="tabular-nums text-[#252722]">{formatStorePrice(sliderMaxValue)}</strong></span>
+        <div className="rounded-xl border border-border bg-canvas px-3 py-3">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted">
+            <span>از <strong className="tabular-nums text-ink">{formatStorePrice(sliderMinValue)}</strong></span>
+            <span>تا <strong className="tabular-nums text-ink">{formatStorePrice(sliderMaxValue)}</strong></span>
           </div>
           <div className={"relative h-7 " + (priceBounds.count > 0 ? "" : "opacity-50")} dir="ltr">
-            <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#dedbd2]" />
+            <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-border" />
             <div
-              className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[#68745f]"
+              className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
               style={{ left: sliderMinPercent + "%", right: 100 - sliderMaxPercent + "%" }}
             />
             <input
@@ -470,30 +470,30 @@ const CategoryPage = () => {
               style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 4 : 5 }}
             />
           </div>
-          <p className="mt-1 text-[11px] leading-5 text-[#85867d]">با جابه‌جایی هر دستگیره، نتایج همان لحظه به‌روز می‌شوند.</p>
+          <p className="mt-1 text-[11px] leading-5 text-muted-soft">با جابه‌جایی هر دستگیره، نتایج همان لحظه به‌روز می‌شوند.</p>
         </div>
         {getPriceError(current) && (
-          <p role="alert" className="text-xs leading-5 text-[#a13f35]">{getPriceError(current)}</p>
+          <p role="alert" className="text-xs leading-5 text-danger">{getPriceError(current)}</p>
         )}
-        <p className="text-[11px] leading-5 text-[#85867d]">قیمت‌ها بر اساس {priceUnitLabel} هستند؛ اعداد فارسی و انگلیسی پذیرفته می‌شوند.</p>
+        <p className="text-[11px] leading-5 text-muted-soft">قیمت‌ها بر اساس {priceUnitLabel} هستند؛ اعداد فارسی و انگلیسی پذیرفته می‌شوند.</p>
       </fieldset>
 
       <fieldset className="min-w-0 space-y-2">
-        <legend className="text-sm font-semibold text-[#41443b]">مرتب‌سازی</legend>
+        <legend className="text-sm font-semibold text-ink-strong">مرتب‌سازی</legend>
         <select
           value={current.sort}
           onChange={(event) => onFilterChange("sort", event.target.value)}
           aria-label="مرتب‌سازی محصولات"
-          className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none transition focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10"
+          className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10"
         >
           {sortOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[#e4e0d8] bg-white px-3 py-2 text-sm text-[#41443b] transition hover:border-[#c7c3b9]">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink-strong transition hover:border-border-strong">
           <input
             type="checkbox"
             checked={current.inStock}
             onChange={(event) => onFilterChange("inStock", event.target.checked)}
-            className="h-4 w-4 accent-[#68745f]"
+            className="h-4 w-4 accent-brand"
           />
           فقط کالاهای موجود
         </label>
@@ -501,15 +501,15 @@ const CategoryPage = () => {
 
       {sizeOptions.length > 0 && (
         <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-[#41443b]">سایز</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-[#e4e0d8] bg-white p-2">
+          <legend className="text-sm font-semibold text-ink-strong">سایز</legend>
+          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
             {sizeOptions.map((option) => (
-              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.sizes.includes(option) ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#ece9e1] text-[#62645c] hover:border-[#c7c3b9]")}>
+              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.sizes.includes(option) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
                 <input
                   type="checkbox"
                   checked={current.sizes.includes(option)}
                   onChange={() => onFilterChange("sizes", option)}
-                  className="h-3.5 w-3.5 accent-[#68745f]"
+                  className="h-3.5 w-3.5 accent-brand"
                 />
                 <span>{option}</span>
               </label>
@@ -520,15 +520,15 @@ const CategoryPage = () => {
 
       {colorOptions.length > 0 && (
         <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-[#41443b]">رنگ</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-[#e4e0d8] bg-white p-2">
+          <legend className="text-sm font-semibold text-ink-strong">رنگ</legend>
+          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
             {colorOptions.map((option) => (
-              <label key={option.name} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.colors.includes(option.name) ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#ece9e1] text-[#62645c] hover:border-[#c7c3b9]")}>
+              <label key={option.name} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.colors.includes(option.name) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
                 <input
                   type="checkbox"
                   checked={current.colors.includes(option.name)}
                   onChange={() => onFilterChange("colors", option.name)}
-                  className="h-3.5 w-3.5 accent-[#68745f]"
+                  className="h-3.5 w-3.5 accent-brand"
                 />
                 {option.hex && <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: option.hex }} />}
                 <span>{option.name}</span>
@@ -540,7 +540,7 @@ const CategoryPage = () => {
 
       {(fitOptions.length > 0 || categoryAttributeDefinitions.length > 0 || brandOptions.length > 0) && (
         <details
-          className="min-w-0 rounded-2xl border border-[#e4e0d8] bg-white/70 p-3 sm:col-span-2 sm:p-4 xl:col-span-3"
+          className="min-w-0 rounded-2xl border border-border bg-surface/70 p-3 sm:col-span-2 sm:p-4 xl:col-span-3"
           open={Boolean(
             current.fits.length ||
             current.brands.length ||
@@ -549,22 +549,22 @@ const CategoryPage = () => {
             )
           )}
         >
-          <summary className="cursor-pointer list-none text-sm font-semibold text-[#41443b] outline-none focus-visible:ring-2 focus-visible:ring-[#68745f]">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-ink-strong outline-none focus-visible:ring-2 focus-visible:ring-brand">
             فیلترهای بیشتر
-            <span className="mr-2 text-xs font-normal text-[#85867d]">تن‌خور، ویژگی‌های تخصصی و برند</span>
+            <span className="mr-2 text-xs font-normal text-muted-soft">تن‌خور، ویژگی‌های تخصصی و برند</span>
           </summary>
           <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
       {fitOptions.length > 0 && (
         <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-[#41443b]">نوع تن‌خور</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-[#e4e0d8] bg-white p-2">
+          <legend className="text-sm font-semibold text-ink-strong">نوع تن‌خور</legend>
+          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
             {fitOptions.map((option) => (
-              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.fits.includes(option) ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#ece9e1] text-[#62645c] hover:border-[#c7c3b9]")}>
+              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.fits.includes(option) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
                 <input
                   type="checkbox"
                   checked={current.fits.includes(option)}
                   onChange={() => onFilterChange("fits", option)}
-                  className="h-3.5 w-3.5 accent-[#68745f]"
+                  className="h-3.5 w-3.5 accent-brand"
                 />
                 <span>{fitLabels[option] || option}</span>
               </label>
@@ -578,22 +578,22 @@ const CategoryPage = () => {
         const updateAttributeFilter = (value) => onFilterChange("attributes", { ...(current.attributes || {}), [attribute.key]: value });
         return (
           <fieldset key={attribute.key} className="min-w-0 space-y-2">
-            <legend className="text-sm font-semibold text-[#41443b]">{attribute.name?.fa || attribute.name?.en || attribute.key}</legend>
+            <legend className="text-sm font-semibold text-ink-strong">{attribute.name?.fa || attribute.name?.en || attribute.key}</legend>
             {attribute.type === "select" ? (
-              <select value={selected === undefined ? "" : String(selected)} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value)} className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10">
+              <select value={selected === undefined ? "" : String(selected)} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value)} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
                 <option value="">همه</option>
                 {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
               </select>
             ) : attribute.type === "multi-select" ? (
-              <select multiple value={Array.isArray(selected) ? selected.map(String) : []} onChange={(event) => updateAttributeFilter([...event.target.selectedOptions].map((option) => option.value))} className="min-h-24 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f] focus:ring-4 focus:ring-[#68745f]/10">
+              <select multiple value={Array.isArray(selected) ? selected.map(String) : []} onChange={(event) => updateAttributeFilter([...event.target.selectedOptions].map((option) => option.value))} className="min-h-24 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
                 {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
               </select>
             ) : attribute.type === "boolean" ? (
-              <select value={selected === undefined ? "" : (selected ? "true" : "false")} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value === "true")} className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f]">
+              <select value={selected === undefined ? "" : (selected ? "true" : "false")} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value === "true")} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand">
                 <option value="">همه</option><option value="true">بله</option><option value="false">خیر</option>
               </select>
             ) : (
-              <input type={attribute.type === "number" ? "number" : "text"} value={selected ?? ""} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : (attribute.type === "number" ? Number(event.target.value) : event.target.value))} className="min-h-11 w-full rounded-xl border border-[#dedbd2] bg-white px-3 py-2 text-sm text-[#252722] outline-none focus:border-[#68745f]" />
+              <input type={attribute.type === "number" ? "number" : "text"} value={selected ?? ""} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : (attribute.type === "number" ? Number(event.target.value) : event.target.value))} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand" />
             )}
           </fieldset>
         );
@@ -601,15 +601,15 @@ const CategoryPage = () => {
 
       {brandOptions.length > 0 && (
         <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-[#41443b]">برند</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-[#e4e0d8] bg-white p-2">
+          <legend className="text-sm font-semibold text-ink-strong">برند</legend>
+          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
             {brandOptions.map((option) => (
-              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.brands.includes(option) ? "border-[#68745f] bg-[#e9ede4] text-[#41443b]" : "border-[#ece9e1] text-[#62645c] hover:border-[#c7c3b9]")}>
+              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.brands.includes(option) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
                 <input
                   type="checkbox"
                   checked={current.brands.includes(option)}
                   onChange={() => onFilterChange("brands", option)}
-                  className="h-3.5 w-3.5 accent-[#68745f]"
+                  className="h-3.5 w-3.5 accent-brand"
                 />
                 <span>{option}</span>
               </label>
@@ -648,39 +648,39 @@ const CategoryPage = () => {
   const priceError = getPriceError(filters);
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[#f7f5f0] px-3 py-7 text-[#252722] sm:px-6 sm:py-10 lg:px-8">
+    <main dir="rtl" className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
       <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: pageTitle, path: "/category/" + category }]} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
       <div className="mx-auto max-w-[1920px]">
-        <header className="mb-6 flex flex-col gap-4 border-b border-[#e4e0d8] pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
+        <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[#68745f]">
+            <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand">
               <ShoppingBag size={15} aria-hidden="true" />
               مجموعه تیک بوتیک
             </p>
             <motion.h1
-              className="text-3xl font-semibold tracking-tight text-[#252722] sm:text-4xl"
+              className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
               {pageTitle}
             </motion.h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#77786f]">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-soft">
               {selectedCategory?.description?.fa?.trim() || selectedCategory?.description?.en?.trim() || ("با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به " + priceUnitLabel + "، انتخابتان را دقیق‌تر کنید.")}
             </p>
             {currentFilterError && <p role="alert" className="mt-2 text-sm font-medium text-red-700">{currentFilterError}</p>}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div aria-live="polite" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#e4e0d8] bg-[#fffefa] px-4 py-2 text-sm text-[#62645c]">
+            <div aria-live="polite" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted">
               {loading ? (
                 <>
-                  <LoaderCircle size={16} className="animate-spin text-[#68745f]" aria-hidden="true" />
+                  <LoaderCircle size={16} className="animate-spin text-brand" aria-hidden="true" />
                   در حال دریافت محصولات…
                 </>
               ) : (
                 <>
-                  <ShoppingBag size={16} className="text-[#68745f]" aria-hidden="true" />
+                  <ShoppingBag size={16} className="text-brand" aria-hidden="true" />
                   {new Intl.NumberFormat("fa-IR").format(resultCount)} محصول
                 </>
               )}
@@ -691,37 +691,37 @@ const CategoryPage = () => {
                 setDraftFilters(filters);
                 setMobileFiltersOpen(true);
               }}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa] px-4 py-2 text-sm font-semibold text-[#41443b] transition hover:border-[#a8a597] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] md:hidden"
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-ink-strong transition hover:border-muted-soft hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand md:hidden"
             >
               <Filter size={16} aria-hidden="true" />
               فیلترها
               {activeChips.length > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#68745f] px-1.5 py-0.5 text-xs font-bold text-white">
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-brand px-1.5 py-0.5 text-xs font-bold text-white">
                   {new Intl.NumberFormat("fa-IR").format(activeChips.length)}
                 </span>
               )}
             </button>
-            <button type="button" onClick={copyFilterLink} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-2 text-xs font-semibold text-[#41443b] transition hover:border-[#68745f]" aria-label="کپی لینک این دسته‌بندی با فیلترهای فعلی">کپی لینک فیلترها</button>
+            <button type="button" onClick={copyFilterLink} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-strong bg-surface px-3 py-2 text-xs font-semibold text-ink-strong transition hover:border-brand" aria-label="کپی لینک این دسته‌بندی با فیلترهای فعلی">کپی لینک فیلترها</button>
           </div>
         </header>
 
         {selectedCategory && (categoryAncestors.length > 0 || categoryChildren.length > 0) && (
           <nav aria-label="مسیر دسته‌بندی" className="mb-5 space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-[#77786f]">
-              <Link to="/shop" className="hover:text-[#68745f]">فروشگاه</Link>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-soft">
+              <Link to="/shop" className="hover:text-brand">فروشگاه</Link>
               {categoryAncestors.map((ancestor) => (
                 <span key={ancestor._id} className="inline-flex items-center gap-2">
                   <span aria-hidden="true">/</span>
-                  <Link to={"/category/" + ancestor.slug} className="hover:text-[#68745f]">{ancestor.name?.fa || ancestor.name?.en}</Link>
+                  <Link to={"/category/" + ancestor.slug} className="hover:text-brand">{ancestor.name?.fa || ancestor.name?.en}</Link>
                 </span>
               ))}
               <span aria-hidden="true">/</span>
-              <span className="font-semibold text-[#41443b]">{pageTitle}</span>
+              <span className="font-semibold text-ink-strong">{pageTitle}</span>
             </div>
             {categoryChildren.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {categoryChildren.map((child) => (
-                  <Link key={child._id} to={"/category/" + child.slug} className="inline-flex min-h-9 items-center rounded-full border border-[#d5d0c5] bg-white px-3 py-1.5 text-xs font-medium text-[#41443b] transition hover:border-[#68745f] hover:bg-[#e9ede4]">
+                  <Link key={child._id} to={"/category/" + child.slug} className="inline-flex min-h-9 items-center rounded-full border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink-strong transition hover:border-brand hover:bg-brand-soft">
                     {child.name?.fa || child.name?.en}
                   </Link>
                 ))}
@@ -730,10 +730,10 @@ const CategoryPage = () => {
           </nav>
         )}
 
-        <section aria-label="جست‌وجو در این دسته‌بندی" className="mb-5 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-3 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] sm:p-4">
-          <label htmlFor="category-product-search" className="mb-2 block text-sm font-semibold text-[#41443b]">جست‌وجو در {pageTitle}</label>
-          <div className="flex min-h-12 items-center gap-2 rounded-xl border border-[#dedbd2] bg-white px-3 transition focus-within:border-[#68745f] focus-within:ring-4 focus-within:ring-[#68745f]/10">
-            <Search size={19} className="shrink-0 text-[#68745f]" aria-hidden="true" />
+        <section aria-label="جست‌وجو در این دسته‌بندی" className="mb-5 rounded-2xl border border-border bg-surface p-3 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] sm:p-4">
+          <label htmlFor="category-product-search" className="mb-2 block text-sm font-semibold text-ink-strong">جست‌وجو در {pageTitle}</label>
+          <div className="flex min-h-12 items-center gap-2 rounded-xl border border-border bg-surface px-3 transition focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10">
+            <Search size={19} className="shrink-0 text-brand" aria-hidden="true" />
             <input
               id="category-product-search"
               type="search"
@@ -741,29 +741,29 @@ const CategoryPage = () => {
               onChange={(event) => { setFilters((current) => ({ ...current, q: event.target.value })); setPage(1); }}
               placeholder="مثلاً تی‌شرت مشکی، سایز بزرگ، شلوار جین…"
               autoComplete="off"
-              className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-sm text-[#252722] outline-none placeholder:text-[#9a9a90]"
+              className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-sm text-ink outline-none placeholder:text-muted-soft"
             />
             {filters.q && (
-              <button type="button" onClick={() => { setFilters((current) => ({ ...current, q: "" })); setPage(1); }} aria-label="پاک‌کردن عبارت جست‌وجو" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#77786f] transition hover:bg-[#f2f0e9] hover:text-[#252722]">
+              <button type="button" onClick={() => { setFilters((current) => ({ ...current, q: "" })); setPage(1); }} aria-label="پاک‌کردن عبارت جست‌وجو" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-soft transition hover:bg-surface-raised hover:text-ink">
                 <X size={16} aria-hidden="true" />
               </button>
             )}
           </div>
-          <p className="mt-2 text-xs leading-5 text-[#85867d]">جست‌وجو با حروف «ی» و «ک» فارسی یا عربی و اعداد فارسی و انگلیسی پشتیبانی می‌شود.</p>
+          <p className="mt-2 text-xs leading-5 text-muted-soft">جست‌وجو با حروف «ی» و «ک» فارسی یا عربی و اعداد فارسی و انگلیسی پشتیبانی می‌شود.</p>
         </section>
 
-        <section aria-label="فیلترهای محصولات" className="mb-5 hidden rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] md:block sm:p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#eeeae1] pb-3">
+        <section aria-label="فیلترهای محصولات" className="mb-5 hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] md:block sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
             <div className="flex items-center gap-2">
-              <SlidersHorizontal size={18} className="text-[#68745f]" aria-hidden="true" />
-              <h2 className="text-base font-semibold text-[#252722]">فیلترها</h2>
-              <span className="text-xs text-[#85867d]">نتایج بر اساس مشخصات ثبت‌شده محصول</span>
+              <SlidersHorizontal size={18} className="text-brand" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-ink">فیلترها</h2>
+              <span className="text-xs text-muted-soft">نتایج بر اساس مشخصات ثبت‌شده محصول</span>
             </div>
             <button
               type="button"
               onClick={clearAllFilters}
               disabled={activeChips.length === 0}
-              className="inline-flex min-h-9 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold text-[#68745f] transition hover:bg-[#e9ede4] hover:text-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:text-[#a9a99f] disabled:hover:bg-transparent"
+              className="inline-flex min-h-9 items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold text-brand transition hover:bg-brand-soft hover:text-ink-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:text-muted-soft disabled:hover:bg-transparent"
             >
               <X size={15} aria-hidden="true" />
               پاک‌کردن فیلترها
@@ -773,17 +773,17 @@ const CategoryPage = () => {
         </section>
 
         {activeChips.length > 0 && (
-          <section aria-label="فیلترهای فعال" className="mb-5 rounded-2xl border border-[#e4e0d8] bg-white/70 p-3 sm:p-4">
+          <section aria-label="فیلترهای فعال" className="mb-5 rounded-2xl border border-border bg-surface/70 p-3 sm:p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#41443b]">
-                <SlidersHorizontal size={15} className="text-[#68745f]" aria-hidden="true" />
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink-strong">
+                <SlidersHorizontal size={15} className="text-brand" aria-hidden="true" />
                 فیلترهای فعال
-                <span className="text-xs font-medium text-[#85867d]">({new Intl.NumberFormat("fa-IR").format(activeChips.length)})</span>
+                <span className="text-xs font-medium text-muted-soft">({new Intl.NumberFormat("fa-IR").format(activeChips.length)})</span>
               </div>
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="inline-flex min-h-9 items-center rounded-full px-3 text-xs font-bold text-[#68745f] transition hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                className="inline-flex min-h-9 items-center rounded-full px-3 text-xs font-bold text-brand transition hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
               >
                 پاک‌کردن فیلترها
               </button>
@@ -795,10 +795,10 @@ const CategoryPage = () => {
                   type="button"
                   onClick={() => removeFilter(chip.field, chip.value)}
                   aria-label={"حذف فیلتر " + chip.label}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#d5d0c5] bg-[#fffefa] px-3 py-1.5 text-xs font-medium text-[#41443b] transition hover:border-[#a8a597] hover:bg-[#e9ede4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink-strong transition hover:border-muted-soft hover:bg-brand-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   <span>{chip.label}</span>
-                  <X size={13} className="text-[#85867d]" aria-hidden="true" />
+                  <X size={13} className="text-muted-soft" aria-hidden="true" />
                 </button>
               ))}
             </div>
@@ -810,8 +810,8 @@ const CategoryPage = () => {
         )}
 
         {loading ? (
-          <div role="status" className="flex min-h-64 flex-col items-center justify-center gap-3 text-sm text-[#62645c]">
-            <LoaderCircle size={28} className="animate-spin text-[#68745f]" aria-hidden="true" />
+          <div role="status" className="flex min-h-64 flex-col items-center justify-center gap-3 text-sm text-muted">
+            <LoaderCircle size={28} className="animate-spin text-brand" aria-hidden="true" />
             در حال آماده‌سازی محصولات…
           </div>
         ) : filteredProducts.length > 0 ? (
@@ -824,12 +824,12 @@ const CategoryPage = () => {
             {visibleProducts.map((product) => <ProductCard key={product._id} product={product} />)}
           </motion.div>
         ) : (
-          <section className="flex min-h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-[#d8d4c9] bg-[#fffefa] px-5 py-12 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e9ede4] text-[#68745f]">
+          <section className="flex min-h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-surface px-5 py-12 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
               <Search size={24} aria-hidden="true" />
             </div>
-            <h2 className="text-xl font-semibold text-[#252722]">محصولی پیدا نشد</h2>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-[#77786f]">
+            <h2 className="text-xl font-semibold text-ink">محصولی پیدا نشد</h2>
+            <p className="mt-2 max-w-sm text-sm leading-6 text-muted-soft">
               {activeChips.length > 0
                 ? "فیلترها یا عبارت جست‌وجو را تغییر دهید تا محصولات بیشتری ببینید."
                 : "در حال حاضر محصولی در این دسته‌بندی ثبت نشده است."}
@@ -838,7 +838,7 @@ const CategoryPage = () => {
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#252722] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]"
+                className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-strong px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-strong-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
                 پاک‌کردن فیلترها
               </button>
@@ -846,10 +846,10 @@ const CategoryPage = () => {
           </section>
         )}
         {!loading && resultCount > CATEGORY_PAGE_SIZE && (
-          <nav aria-label="صفحه‌بندی محصولات دسته‌بندی" className="mt-8 flex flex-wrap items-center justify-center gap-3 border-t border-[#e4e0d8] pt-6">
-            <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="min-h-10 rounded-full border border-[#d5d0c5] bg-white px-4 py-2 text-sm disabled:opacity-40">قبلی</button>
-            <span className="text-sm text-[#62645c]">صفحه {new Intl.NumberFormat("fa-IR").format(page)} از {new Intl.NumberFormat("fa-IR").format(pageCount)} · {new Intl.NumberFormat("fa-IR").format(resultCount)} محصول</span>
-            <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="min-h-10 rounded-full border border-[#d5d0c5] bg-white px-4 py-2 text-sm disabled:opacity-40">بعدی</button>
+          <nav aria-label="صفحه‌بندی محصولات دسته‌بندی" className="mt-8 flex flex-wrap items-center justify-center gap-3 border-t border-border pt-6">
+            <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="min-h-10 rounded-full border border-border-strong bg-surface px-4 py-2 text-sm disabled:opacity-40">قبلی</button>
+            <span className="text-sm text-muted">صفحه {new Intl.NumberFormat("fa-IR").format(page)} از {new Intl.NumberFormat("fa-IR").format(pageCount)} · {new Intl.NumberFormat("fa-IR").format(resultCount)} محصول</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="min-h-10 rounded-full border border-border-strong bg-surface px-4 py-2 text-sm disabled:opacity-40">بعدی</button>
           </nav>
         )}
       </div>
@@ -860,26 +860,26 @@ const CategoryPage = () => {
             type="button"
             aria-label="بستن فیلترها"
             onClick={() => setMobileFiltersOpen(false)}
-            className="absolute inset-0 h-full w-full bg-[#252722]/45 backdrop-blur-sm"
+            className="absolute inset-0 h-full w-full bg-strong/45 backdrop-blur-sm"
           />
           <section
             ref={mobileFiltersDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-category-filters-title"
-            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(94vw,30rem)] flex-col border-l border-[#e4e0d8] bg-[#f7f5f0] shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)]"
+            className="absolute inset-y-0 right-0 flex h-[100dvh] w-[min(94vw,30rem)] flex-col border-l border-border bg-canvas shadow-[0_24px_80px_-20px_rgba(37,39,34,0.42)]"
           >
-            <div className="flex items-center justify-between gap-3 border-b border-[#e4e0d8] bg-[#fffefa] px-4 py-4">
+            <div className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-4">
               <div>
-                <h2 id="mobile-category-filters-title" className="text-lg font-semibold text-[#252722]">فیلتر محصولات</h2>
-                <p className="mt-1 text-xs text-[#77786f]">نتیجه فعلی: {new Intl.NumberFormat("fa-IR").format(draftResultCount)} محصول</p>
+                <h2 id="mobile-category-filters-title" className="text-lg font-semibold text-ink">فیلتر محصولات</h2>
+                <p className="mt-1 text-xs text-muted-soft">نتیجه فعلی: {new Intl.NumberFormat("fa-IR").format(draftResultCount)} محصول</p>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
                 aria-label="بستن پنجره فیلترها"
                 data-dialog-initial-focus
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e4e0d8] bg-white text-[#62645c] transition hover:bg-[#f2f0e9] hover:text-[#252722]"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-muted transition hover:bg-surface-raised hover:text-ink"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -887,15 +887,15 @@ const CategoryPage = () => {
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
               {renderFilterFields(draftFilters, (field, value) => updateFilter(setDraftFilters, field, value))}
             </div>
-            <div className="border-t border-[#e4e0d8] bg-[#fffefa] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-              <p aria-live="polite" className="mb-3 text-center text-sm font-semibold text-[#62645c]">
+            <div className="border-t border-border bg-surface px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <p aria-live="polite" className="mb-3 text-center text-sm font-semibold text-muted">
                 {getPriceError(draftFilters) || (new Intl.NumberFormat("fa-IR").format(draftResultCount) + " محصول با این فیلترها")}
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={clearAllFilters}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#d5d0c5] bg-white px-3 py-2.5 text-sm font-semibold text-[#41443b] transition hover:bg-[#f2f0e9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f]"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border-strong bg-surface px-3 py-2.5 text-sm font-semibold text-ink-strong transition hover:bg-surface-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
                 >
                   پاک‌کردن فیلترها
                 </button>
@@ -907,7 +907,7 @@ const CategoryPage = () => {
                     setPage(1);
                     setMobileFiltersOpen(false);
                   }}
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#252722] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#41443b] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#68745f] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-strong px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-strong-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   نمایش {new Intl.NumberFormat("fa-IR").format(draftResultCount)} محصول
                 </button>

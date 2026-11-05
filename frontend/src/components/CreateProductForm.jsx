@@ -167,12 +167,12 @@ const CreateProductForm = () => {
     event.target.value = "";
   };
 
-  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2.5 text-sm text-[var(--ui-text)] shadow-sm focus:border-[#9aa58e] focus:outline-none focus:ring-2 focus:ring-[#68745f]";
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2.5 text-sm text-[var(--ui-text)] shadow-sm focus:border-brand-muted focus:outline-none focus:ring-2 focus:ring-brand";
   const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
 
   return (
     <motion.div dir="rtl" className="mx-auto mb-8 max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 shadow-lg sm:p-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <h2 className="mb-2 text-2xl font-semibold text-[#9aa58e]">ایجاد محصول جدید</h2>
+      <h2 className="mb-2 text-2xl font-semibold text-brand-muted">ایجاد محصول جدید</h2>
       <p className="mb-6 text-sm leading-6 text-[var(--ui-muted)]">اطلاعات پایه، گزینه‌های پوشاک و موجودی هر ترکیب را وارد کنید. محصولات قدیمی بدون گزینه سایز و رنگ هم پشتیبانی می‌شوند.</p>
       <form onSubmit={handleSubmit} className="space-y-5">
         <section className="space-y-4">
@@ -267,7 +267,7 @@ const CreateProductForm = () => {
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Shirt size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">سایز، رنگ و موجودی هر گزینه</h3></div>
+          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Shirt size={17} className="text-brand-muted" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">سایز، رنگ و موجودی هر گزینه</h3></div>
           <label className={labelClass}>سایزها (با ویرگول جدا کنید)
             <input type="text" value={newProduct.sizesText} onChange={(event) => updateField("sizesText", event.target.value)} className={fieldClass} placeholder="مثلاً XS, S, M, L, XL یا 38, 40, 42" />
           </label>
@@ -288,7 +288,7 @@ const CreateProductForm = () => {
                       <span>{[variant.size && "سایز " + variant.size, variant.color].filter(Boolean).join(" / ")}</span>
                     </div>
                     <label className="flex items-center gap-2 text-xs text-[var(--ui-muted)]">موجودی
-                      <input type="number" min="0" step="1" value={variantStocks[variant.key] ?? "0"} onChange={(event) => setVariantStocks((current) => ({ ...current, [variant.key]: event.target.value }))} className="w-24 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-2 py-2 text-sm text-[var(--ui-text)] focus:border-[#9aa58e] focus:outline-none focus:ring-2 focus:ring-[#68745f]" required />
+                      <input type="number" min="0" step="1" value={variantStocks[variant.key] ?? "0"} onChange={(event) => setVariantStocks((current) => ({ ...current, [variant.key]: event.target.value }))} className="w-24 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-2 py-2 text-sm text-[var(--ui-text)] focus:border-brand-muted focus:outline-none focus:ring-2 focus:ring-brand" required />
                     </label>
                   </div>
                 ))}
@@ -299,7 +299,7 @@ const CreateProductForm = () => {
         </section>
 
         <section className="space-y-4">
-          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Shirt size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">راهنمای تن‌خور</h3></div>
+          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Shirt size={17} className="text-brand-muted" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">راهنمای تن‌خور</h3></div>
           <label className={labelClass}>نوع تن‌خور
             <select value={newProduct.fitType} onChange={(event) => updateField("fitType", event.target.value)} className={fieldClass}>
               {fitOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -319,7 +319,7 @@ const CreateProductForm = () => {
         </section>
 
         <section className="space-y-3">
-          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Ruler size={17} className="text-[#9aa58e]" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">جدول اندازه‌گیری (اختیاری)</h3></div>
+          <div className="flex items-center gap-2 border-b border-[var(--ui-border)] pb-2"><Ruler size={17} className="text-brand-muted" aria-hidden="true" /><h3 className="text-sm font-bold text-[var(--ui-text)]">جدول اندازه‌گیری (اختیاری)</h3></div>
           <p className="text-xs leading-5 text-[var(--ui-muted)]">هر خط برای یک سایز و مقادیر به‌ترتیب: سایز، دور سینه، دور کمر، دور باسن، قد لباس. همه اندازه‌ها بر حسب سانتی‌متر هستند؛ مقدار خالی مجاز است.</p>
           <textarea value={newProduct.sizeChartText} onChange={(event) => updateField("sizeChartText", event.target.value)} rows={4} className={fieldClass} placeholder={"S, 92, 76, 96, 65\nM, 98, 82, 102, 68\nL, 104, 88, 108, 71"} />
           <p className="text-[11px] text-[var(--ui-muted)]">برای کالاهای بدون جدول اندازه، این بخش را خالی بگذارید.</p>

@@ -53,7 +53,7 @@ const MyOrdersPage = () => {
           <h1 className="mt-1 text-2xl font-bold text-[var(--ui-text)] sm:text-3xl">سفارش‌های من و رهگیری</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--ui-muted)]">وضعیت پرداخت، نشانی ثبت‌شده و مراحل ارسال سفارش‌های خود را مشاهده کنید.</p>
         </div>
-        <button type="button" onClick={loadOrders} disabled={loading} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] disabled:opacity-50">
+        <button type="button" onClick={loadOrders} disabled={loading} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border-strong)] bg-surface px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] disabled:opacity-50">
           <RefreshCw size={16} aria-hidden="true" />به‌روزرسانی
         </button>
       </div>
@@ -66,7 +66,7 @@ const MyOrdersPage = () => {
           <button type="button" onClick={loadOrders} className="mt-3 font-semibold underline underline-offset-4">تلاش دوباره</button>
         </div>
       ) : orders.length === 0 ? (
-        <section className="rounded-2xl border border-[var(--ui-border)] bg-white p-8 text-center sm:p-12">
+        <section className="rounded-2xl border border-[var(--ui-border)] bg-surface p-8 text-center sm:p-12">
           <ClipboardList size={36} className="mx-auto text-[var(--ui-accent)]" aria-hidden="true" />
           <h2 className="mt-4 text-xl font-bold text-[var(--ui-text)]">هنوز سفارشی ثبت نشده است</h2>
           <p className="mt-2 text-sm text-[var(--ui-muted)]">بعد از ثبت سفارش، وضعیت پرداخت و اطلاعات رهگیری در همین صفحه نمایش داده می‌شود.</p>
@@ -88,7 +88,7 @@ const MyOrdersPage = () => {
                   : "bg-[var(--ui-danger-bg)] text-[var(--ui-danger)]";
 
             return (
-              <article key={order._id} className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-white shadow-sm">
+              <article key={order._id} className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-surface shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 sm:p-5">
                   <div>
                     <p className="text-xs text-[var(--ui-muted)]">شماره سفارش</p>
@@ -162,9 +162,9 @@ const MyOrdersPage = () => {
             );
           })}
           <div className="flex items-center justify-between gap-3">
-            <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="min-h-10 rounded-full border border-[var(--ui-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] disabled:opacity-40">سفارش‌های جدیدتر</button>
+            <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="min-h-10 rounded-full border border-[var(--ui-border-strong)] bg-surface px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] disabled:opacity-40">سفارش‌های جدیدتر</button>
             <p className="text-xs text-[var(--ui-muted)]">صفحه {new Intl.NumberFormat("fa-IR").format(page)} از {new Intl.NumberFormat("fa-IR").format(Math.max(1, pagination.totalPages || 1))}</p>
-            <button type="button" disabled={page >= (pagination.totalPages || 1) || loading} onClick={() => setPage((value) => value + 1)} className="min-h-10 rounded-full border border-[var(--ui-border-strong)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] disabled:opacity-40">سفارش‌های قدیمی‌تر</button>
+            <button type="button" disabled={page >= (pagination.totalPages || 1) || loading} onClick={() => setPage((value) => value + 1)} className="min-h-10 rounded-full border border-[var(--ui-border-strong)] bg-surface px-4 py-2 text-sm font-semibold text-[var(--ui-text-strong)] disabled:opacity-40">سفارش‌های قدیمی‌تر</button>
           </div>
         </div>
       )}

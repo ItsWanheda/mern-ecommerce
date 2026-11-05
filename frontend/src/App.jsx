@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar";
 import StoreFooter from "./components/StoreFooter";
 import LoadingSpinner from "./components/LoadingSpinner";
+import SmoothScroll from "./components/SmoothScroll";
 import PageMeta from "./components/PageMeta";
 import { PRIVATE_ROUTE_META } from "./lib/seo-utils.js";
 import { useUserStore } from "./stores/useUserStore";
@@ -69,6 +70,7 @@ function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
+      <SmoothScroll />
       <div className={`relative z-50 ${isAccountPage ? "pt-0" : "pt-32 md:pt-44 min-[1680px]:pt-32"}`}>
         {!isAccountPage && <Navbar />}
         <Suspense fallback={<RouteLoadingFallback />}>
