@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-gsap.registerPlugin(ScrollTrigger);
 import PageMeta from "../components/PageMeta";
 import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,6 +13,8 @@ import FeaturedProducts from "../components/FeaturedProducts";
 import { formatPrice } from "../lib/commerce";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { getCampaignPath } from "../lib/campaign-url";
+
+gsap.registerPlugin(ScrollTrigger);
 
 const legacyCategoryCards = [
   { href: "/category/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
