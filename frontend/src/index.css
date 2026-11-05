@@ -183,8 +183,7 @@
 }
 
 
-/* Dark theme: ink-black surfaces, crisp whites, graphite borders and champagne-gold accents.
-   Every override is scoped to data-theme="dark"; the light palette above remains unchanged. */
+/* Legacy dark-mode utility adapters. The Volt Green palette and final compatibility overrides live in theme.css. */
 html[data-theme="dark"] {
   color-scheme: dark; background: #090a0c; color: #f5f6f8;
   --ui-canvas: #090a0c; --ui-surface: #111318; --ui-surface-raised: #171a20; --ui-input-bg: #111318;
