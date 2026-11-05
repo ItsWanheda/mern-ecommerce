@@ -141,7 +141,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
   }, [sizes, colors]);
 
   const updateField = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[#d6b779]/20";
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-brand/20";
   const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
 
   const handleImageChange = async (event) => {
@@ -363,7 +363,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
               </section>
               {formError && <p role="alert" className="rounded-xl border border-[var(--ui-danger-border)]/50 bg-[var(--ui-danger-bg)] p-3 text-sm leading-6 text-[var(--ui-danger)]">{formError}</p>}
               <div className="flex flex-wrap gap-2 border-t border-[var(--ui-border)] pt-4">
-                <button type="submit" disabled={saving || imageBusy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#d6b779] px-5 py-2.5 text-sm font-bold text-[#171a20] hover:bg-[#e4c989] disabled:opacity-50">
+                <button type="submit" disabled={saving || imageBusy} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-on-brand hover:bg-brand-hover disabled:opacity-50">
                   {saving ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
                   {saving ? "در حال ذخیره…" : "ذخیره تغییرات"}
                 </button>

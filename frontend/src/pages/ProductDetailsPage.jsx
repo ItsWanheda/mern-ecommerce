@@ -73,7 +73,7 @@ const ProductDetailsPage = () => {
             ? nextProduct.sizes : [...new Set(variants.map((variant) => variant.size).filter(Boolean))];
           const colors = Array.isArray(nextProduct.colors) && nextProduct.colors.length
             ? nextProduct.colors : [...new Set(variants.map((variant) => variant.color).filter(Boolean))]
-                .map((name) => ({ name, hex: "#d5d0c5" }));
+                .map((name) => ({ name, hex: "var(--ui-border-strong)" }));
           setSelectedSize(firstAvailable?.size || sizes[0] || "");
           setSelectedColor(firstAvailable?.color || colors[0]?.name || "");
           setActiveImageIndex(0);
@@ -247,7 +247,7 @@ const ProductDetailsPage = () => {
     : [...new Set(variants.map((variant) => variant.size).filter(Boolean))];
   const colors = product?.colors?.length
     ? product.colors
-    : [...new Set(variants.map((variant) => variant.color).filter(Boolean))].map((name) => ({ name, hex: "#d5d0c5" }));
+    : [...new Set(variants.map((variant) => variant.color).filter(Boolean))].map((name) => ({ name, hex: "var(--ui-border-strong)" }));
   const selectedVariant = hasVariants
     ? variants.find((variant) => (variant.size || "") === selectedSize && (variant.color || "") === selectedColor)
     : null;
@@ -395,7 +395,7 @@ const ProductDetailsPage = () => {
                     const unavailable = hasVariants && !hasAnyStock;
                     return (
                       <button key={color.name} type="button" disabled={unavailable} onClick={() => handleColorSelect(color.name)} aria-label={hasAnyStock && !compatible ? "انتخاب رنگ " + color.name + "؛ سایز سازگار خودکار انتخاب می‌شود" : "انتخاب رنگ " + color.name} aria-pressed={selectedColor === color.name} className={"group flex min-h-12 items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-35 " + (selectedColor === color.name ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text)]" : compatible ? "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] hover:border-[var(--ui-border-strong)]" : "border-dashed border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]")}>
-                        <span className={"relative inline-flex h-6 w-6 items-center justify-center rounded-full border border-black/10 " + (unavailable ? "after:absolute after:h-px after:w-7 after:rotate-45 after:bg-[var(--ui-danger)]" : "")} style={{ backgroundColor: color.hex || "#d5d0c5" }}>
+                        <span className={"relative inline-flex h-6 w-6 items-center justify-center rounded-full border border-black/10 " + (unavailable ? "after:absolute after:h-px after:w-7 after:rotate-45 after:bg-[var(--ui-danger)]" : "")} style={{ backgroundColor: color.hex || "var(--ui-border-strong)" }}>
                           {selectedColor === color.name && <Check size={14} className={["#ffffff", "#fff", "#f9fafb"].includes(String(color.hex).toLowerCase()) ? "text-[var(--ui-text)]" : "text-[var(--ui-inverse-text)] drop-shadow"} aria-hidden="true" />}
                         </span>
                         <span>{color.name}</span>
@@ -551,10 +551,10 @@ const ProductDetailsPage = () => {
 
       {imageViewerOpen && activeGalleryImage && !failedImageUrls.has(activeGalleryImage) && (
         <div data-product-image-dialog role="dialog" aria-modal="true" aria-label={"نمایش بزرگ تصویر " + product.name} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setImageViewerOpen(false); }}>
-          <button ref={imageViewerCloseRef} type="button" onClick={() => setImageViewerOpen(false)} aria-label="بستن تصویر بزرگ" className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:right-5 sm:top-5"><X size={21} aria-hidden="true" /></button>
-          {galleryImages.length > 1 && <button type="button" onClick={showPreviousImage} aria-label="تصویر قبلی" className="absolute right-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 sm:right-6"><ArrowRight size={20} aria-hidden="true" /></button>}
+          <button ref={imageViewerCloseRef} type="button" onClick={() => setImageViewerOpen(false)} aria-label="بستن تصویر بزرگ" className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface/15 text-white transition hover:bg-surface/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:right-5 sm:top-5"><X size={21} aria-hidden="true" /></button>
+          {galleryImages.length > 1 && <button type="button" onClick={showPreviousImage} aria-label="تصویر قبلی" className="absolute right-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface/15 text-white hover:bg-surface/25 sm:right-6"><ArrowRight size={20} aria-hidden="true" /></button>}
           <img src={activeGalleryImage} alt={product.name} onError={() => markGalleryImageFailed(activeGalleryImage)} className="max-h-[88dvh] max-w-[94vw] touch-pinch-zoom object-contain" />
-          {galleryImages.length > 1 && <button type="button" onClick={showNextImage} aria-label="تصویر بعدی" className="absolute left-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 sm:left-6"><ArrowLeft size={20} aria-hidden="true" /></button>}
+          {galleryImages.length > 1 && <button type="button" onClick={showNextImage} aria-label="تصویر بعدی" className="absolute left-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface/15 text-white hover:bg-surface/25 sm:left-6"><ArrowLeft size={20} aria-hidden="true" /></button>}
         </div>
       )}
     </main>

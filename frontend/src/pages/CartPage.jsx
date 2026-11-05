@@ -61,7 +61,7 @@ const EmptyCartUI = () => (
 		<h3 className='text-2xl font-semibold '>سبد خرید شما خالی است</h3>
 		<p className='text-gray-400'>هنوز محصولی به سبد خرید خود اضافه نکرده‌اید.</p>
 		<Link
-			className='mt-4 rounded-md bg-[#68745f] px-6 py-2 text-white transition-colors hover:bg-[#68745f]'
+			className='mt-4 rounded-md bg-brand px-6 py-2 text-white transition-colors hover:bg-brand'
 			to='/'
 		>
 			شروع خرید

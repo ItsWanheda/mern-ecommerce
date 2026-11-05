@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 
 const CategoryItem = ({ category }) => {
 	return (
-		<article className="group relative h-44 w-full overflow-hidden rounded-2xl bg-[#e9e5dc] sm:h-56 xl:h-64">
+		<article className="group relative h-44 w-full overflow-hidden rounded-2xl bg-surface-muted sm:h-56 xl:h-64">
 			<Link
 				to={category.href}
-				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#68745f]"
+				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-brand"
 				aria-label={`مشاهده ${category.name}`}
 			>
 				<img
@@ -22,7 +22,7 @@ const CategoryItem = ({ category }) => {
 						<h3 className="font-serif text-lg font-medium text-white sm:text-2xl">{category.name}</h3>
 						<p className="mt-1 text-sm text-white/80">مشاهده مجموعه</p>
 					</div>
-					<span className="mb-1 inline-flex h-9 w-9 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/60 text-white transition group-hover:border-white group-hover:bg-white group-hover:text-[#252722]">
+					<span className="mb-1 inline-flex h-9 w-9 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/60 text-white transition group-hover:border-white group-hover:bg-surface group-hover:text-ink">
 						<ArrowUpLeft size={19} aria-hidden="true" />
 					</span>
 				</div>

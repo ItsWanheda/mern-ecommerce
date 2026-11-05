@@ -265,7 +265,7 @@ const CategoryManager = () => {
     );
   };
 
-  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-[#9aa58e] focus:ring-2 focus:ring-[#68745f]/30";
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-brand-muted focus:ring-2 focus:ring-brand/30";
   const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
   const hintClass = "mt-1 block text-xs font-normal leading-5 text-[var(--ui-muted)]";
 
@@ -273,7 +273,7 @@ const CategoryManager = () => {
     <section dir="rtl" className="mx-auto max-w-6xl space-y-5 text-[var(--ui-text)]">
       <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
         <div>
-          <h2 className="text-2xl font-semibold text-[#9aa58e]">مدیریت دسته‌بندی‌ها</h2>
+          <h2 className="text-2xl font-semibold text-brand-muted">مدیریت دسته‌بندی‌ها</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-muted)]">درخت دسته‌ها، نام‌های فارسی و انگلیسی، ویژگی‌های محصول و نمایش هر دسته در منوی همبرگری موبایل و دسکتاپ را از این بخش مدیریت کنید.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -334,7 +334,7 @@ const CategoryManager = () => {
       {formOpen && (
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-xl font-semibold text-[#9aa58e]">{editingId ? "ویرایش دسته‌بندی" : "ایجاد دسته‌بندی"}</h3>
+            <h3 className="text-xl font-semibold text-brand-muted">{editingId ? "ویرایش دسته‌بندی" : "ایجاد دسته‌بندی"}</h3>
             <button type="button" onClick={resetForm} aria-label="بستن فرم" className="rounded-lg p-2 text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]"><X size={18} aria-hidden="true" /></button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -452,7 +452,7 @@ const CategoryManager = () => {
       <div className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
           <div><h3 className="font-semibold">درخت دسته‌بندی‌ها</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">{categories.length} دسته ثبت‌شده</p></div>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[#9aa58e]" placeholder="جست‌وجوی نام یا slug…" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-brand-muted" placeholder="جست‌وجوی نام یا slug…" />
         </div>
         {loading && categories.length === 0 ? (
           <div role="status" className="p-8 text-center text-sm text-[var(--ui-muted)]">در حال دریافت دسته‌بندی‌ها…</div>
