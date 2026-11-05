@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 import PageMeta from "../components/PageMeta";
 import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -34,6 +38,7 @@ const benefits = [
 ];
 
 const HomePage = () => {
+  const pageRef = useRef(null);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [bestsellers, setBestsellers] = useState([]);
@@ -145,10 +150,10 @@ const HomePage = () => {
   };
 
   return (
-    <main dir="rtl" className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
+    <main ref={pageRef} dir="rtl" className="min-h-screen overflow-hidden bg-[#f7f5f0] text-[#252722]">
       <PageMeta title="فروشگاه آنلاین پوشاک و اکسسوری" description="تازه‌ترین پوشاک و اکسسوری را در تیک بوتیک ببینید." path="/" />
       <div className="mx-auto max-w-[1920px] px-3 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 2xl:px-12">
-        <section className="relative isolate overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc]">
+        <section data-gsap-hero className="relative isolate overflow-hidden rounded-2xl border border-[#e4e0d8] bg-[#e9e5dc]">
           <div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
             <div className="relative order-1 min-h-[250px] overflow-hidden sm:min-h-[320px] lg:order-2 lg:min-h-[540px]">
               {!heroImageFailed ? (
@@ -225,7 +230,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section id="shop-by-category" className="scroll-mt-28 pt-12 sm:pt-16 lg:pt-20">
+        <section id="shop-by-category" data-gsap-reveal className="scroll-mt-28 pt-12 sm:pt-16 lg:pt-20">
           <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">انتخاب مناسب شما</p>
@@ -292,7 +297,7 @@ const HomePage = () => {
           </section>
         )}
 
-        <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="newest-products-heading">
+        <section data-gsap-reveal className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="newest-products-heading">
           <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
             <div className="min-w-0">
               <p className="mb-1.5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#68745f] sm:mb-2 sm:text-xs sm:tracking-[0.2em]">
@@ -348,7 +353,7 @@ const HomePage = () => {
 
         {featuredProducts.length > 0 && <section className="mt-12 border-t border-[#e4e0d8] pt-8 sm:mt-16 sm:pt-12"><FeaturedProducts featuredProducts={featuredProducts} /></section>}
 
-        <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="collections-heading">
+        <section data-gsap-reveal className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="collections-heading">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#68745f]">انتخاب‌های هماهنگ</p><h2 id="collections-heading" className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">مجموعه‌های پیشنهادی</h2></div>
             <p className="max-w-md text-sm leading-6 text-[#62645c]">ترکیب‌های ساده برای شروع یک انتخاب تازه.</p>
@@ -381,7 +386,7 @@ const HomePage = () => {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6" aria-label="اطلاعات پیش از خرید">
+        <section data-gsap-reveal className="mt-8 grid gap-3 rounded-2xl border border-[#e4e0d8] bg-[#fffefa] p-4 sm:grid-cols-3 sm:gap-5 sm:p-6" aria-label="اطلاعات پیش از خرید">
           {benefits.map(({ icon: Icon, title, text, href }) => (
             <Link key={title} to={href} className="group flex items-start gap-3 rounded-xl px-2 py-2 transition hover:bg-[#f7f5f0] sm:px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68745f]">
               <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#e9e5dc] text-[#68745f]"><Icon size={20} aria-hidden="true" /></span>
