@@ -8,6 +8,7 @@
   --ui-canvas: #F5F5F5;
   --ui-surface: #FFFFFF;
   --ui-surface-raised: #EEEEEE;
+  --ui-surface-secondary: #EEEEEE;
   --ui-input-bg: #FFFFFF;
   --ui-text: #111111;
   --ui-text-strong: #111111;
@@ -44,6 +45,7 @@ html[data-theme="dark"] {
   --ui-canvas: #080808;
   --ui-surface: #141414;
   --ui-surface-raised: #202020;
+  --ui-surface-secondary: #202020;
   --ui-input-bg: #141414;
   --ui-text: #F5F5F5;
   --ui-text-strong: #FFFFFF;
