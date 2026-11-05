@@ -1,0 +1,240 @@
+/* Volt Green storefront theme.
+   * Existing component utility classes are intentionally retained; these tokens
+   * adapt their colors without changing the component structure or product media.
+   */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ui-canvas: #F5F5F5;
+  --ui-surface: #FFFFFF;
+  --ui-surface-raised: #EEEEEE;
+  --ui-input-bg: #FFFFFF;
+  --ui-text: #111111;
+  --ui-text-strong: #111111;
+  --ui-muted: #666666;
+  --ui-border: #E2E2E2;
+  --ui-border-strong: #D0D0D0;
+  --ui-hover: #EAEAEA;
+  --ui-accent: #B6FF00;
+  --ui-accent-hover: #A3E600;
+  --ui-accent-soft: rgba(182, 255, 0, 0.18);
+  --ui-focus: #79A900;
+  --ui-chart-grid: #E2E2E2;
+  --ui-chart-axis: #666666;
+  --ui-overlay: rgba(0, 0, 0, 0.56);
+  --ui-shadow-color: rgba(0, 0, 0, 0.14);
+  --ui-strong-surface: #000000;
+  --ui-strong-hover: #202020;
+  --ui-inverse-text: #FFFFFF;
+  --ui-button-text: #000000;
+  --ui-disabled-bg: #EEEEEE;
+  --ui-disabled-text: #888888;
+  --store-canvas: var(--ui-canvas);
+  --store-surface: var(--ui-surface);
+  --store-ink: var(--ui-text);
+  --store-muted: var(--ui-muted);
+  --brand-primary: var(--ui-accent);
+  --brand-hover: var(--ui-accent-hover);
+  --brand-muted: var(--ui-accent);
+  --brand-soft: var(--ui-hover);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ui-canvas: #080808;
+  --ui-surface: #141414;
+  --ui-surface-raised: #202020;
+  --ui-input-bg: #141414;
+  --ui-text: #F5F5F5;
+  --ui-text-strong: #FFFFFF;
+  --ui-muted: #A3A3A3;
+  --ui-border: #303030;
+  --ui-border-strong: #484848;
+  --ui-hover: #292929;
+  --ui-accent: #B6FF00;
+  --ui-accent-hover: #A3E600;
+  --ui-accent-soft: rgba(182, 255, 0, 0.16);
+  --ui-focus: #B6FF00;
+  --ui-chart-grid: #303030;
+  --ui-chart-axis: #A3A3A3;
+  --ui-overlay: rgba(0, 0, 0, 0.72);
+  --ui-shadow-color: rgba(0, 0, 0, 0.48);
+  --ui-strong-surface: #FFFFFF;
+  --ui-strong-hover: #202020;
+  --ui-inverse-text: #080808;
+  --ui-button-text: #000000;
+  --ui-disabled-bg: #202020;
+  --ui-disabled-text: #777777;
+  --store-canvas: var(--ui-canvas);
+  --store-surface: var(--ui-surface);
+  --store-ink: var(--ui-text);
+  --store-muted: var(--ui-muted);
+  --brand-primary: var(--ui-accent);
+  --brand-hover: var(--ui-accent-hover);
+  --brand-muted: var(--ui-accent);
+  --brand-soft: var(--ui-hover);
+}
+
+html,
+body,
+#root {
+  background-color: var(--ui-canvas);
+  color: var(--ui-text);
+}
+
+/* Legacy background utility aliases -> layered surfaces from the new palette. */
+html[data-theme="light"] [class~="bg-[#f7f5f0]"],
+html[data-theme="dark"] [class~="bg-[#f7f5f0]"],
+html[data-theme="light"] [class~="bg-[#f7f5f0]/95"],
+html[data-theme="dark"] [class~="bg-[#f7f5f0]/95"] {
+  background-color: var(--ui-canvas) !important;
+}
+html[data-theme="light"] [class~="bg-[#fffefa]"],
+html[data-theme="dark"] [class~="bg-[#fffefa]"],
+html[data-theme="light"] [class~="bg-[#fffefa]/95"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/95"],
+html[data-theme="light"] [class~="bg-[#fffefa]/90"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/90"],
+html[data-theme="light"] [class~="bg-[#fffefa]/80"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/80"],
+html[data-theme="light"] [class~="bg-[#fffefa]/70"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/70"],
+html[data-theme="light"] [class~="bg-[#fffefa]/60"],
+html[data-theme="dark"] [class~="bg-[#fffefa]/60"],
+html[data-theme="light"] [class~="bg-white"],
+html[data-theme="dark"] [class~="bg-white"],
+html[data-theme="light"] [class~="bg-white/95"],
+html[data-theme="dark"] [class~="bg-white/95"],
+html[data-theme="light"] [class~="bg-white/90"],
+html[data-theme="dark"] [class~="bg-white/90"],
+html[data-theme="light"] [class~="bg-white/80"],
+html[data-theme="dark"] [class~="bg-white/80"],
+html[data-theme="light"] [class~="bg-white/70"],
+html[data-theme="dark"] [class~="bg-white/70"],
+html[data-theme="light"] [class~="bg-white/60"],
+html[data-theme="dark"] [class~="bg-white/60"],
+html[data-theme="light"] [class~="bg-white/50"],
+html[data-theme="dark"] [class~="bg-white/50"] {
+  background-color: var(--ui-surface) !important;
+}
+html[data-theme="light"] [class~="bg-[#f2f0e9]"],
+html[data-theme="dark"] [class~="bg-[#f2f0e9]"],
+html[data-theme="light"] [class~="bg-[#e9ede4]"],
+html[data-theme="dark"] [class~="bg-[#e9ede4]"],
+html[data-theme="light"] [class~="bg-[#e9e5dc]"],
+html[data-theme="dark"] [class~="bg-[#e9e5dc]"],
+html[data-theme="light"] [class~="bg-[#dce2d4]"],
+html[data-theme="dark"] [class~="bg-[#dce2d4]"],
+html[data-theme="light"] [class~="bg-[#dfe5d6]"],
+html[data-theme="dark"] [class~="bg-[#dfe5d6]"],
+html[data-theme="light"] [class~="bg-[#ebe8df]"],
+html[data-theme="dark"] [class~="bg-[#ebe8df]"],
+html[data-theme="light"] [class~="bg-[#f0eee8]"],
+html[data-theme="dark"] [class~="bg-[#f0eee8]"] {
+  background-color: var(--ui-surface-secondary, var(--ui-surface-raised)) !important;
+}
+html[data-theme="light"] [class~="bg-[#252722]"],
+html[data-theme="dark"] [class~="bg-[#252722]"] {
+  background-color: var(--ui-strong-surface) !important;
+}
+html[data-theme="light"] [class~="bg-[#41443b]"],
+html[data-theme="dark"] [class~="bg-[#41443b]"] {
+  background-color: var(--ui-strong-hover) !important;
+}
+html[data-theme="light"] [class~="bg-[#68745f]"],
+html[data-theme="dark"] [class~="bg-[#68745f]"] {
+  background-color: var(--ui-accent) !important;
+}
+html[data-theme="light"] [class~="hover:bg-[#41443b]"]:hover,
+html[data-theme="dark"] [class~="hover:bg-[#41443b]"]:hover,
+html[data-theme="light"] [class~="hover:bg-[#68745f]"]:hover,
+html[data-theme="dark"] [class~="hover:bg-[#68745f]"]:hover {
+  background-color: var(--ui-accent-hover) !important;
+}
+
+/* Primary actions and sale labels use Volt Green with black foreground. */
+html[data-theme="light"] :is(button, a, [role="button"])[class~="bg-[#252722]"],
+html[data-theme="dark"] :is(button, a, [role="button"])[class~="bg-[#252722]"],
+html[data-theme="light"] :is(button, a, [role="button"])[class~="bg-[#68745f]"],
+html[data-theme="dark"] :is(button, a, [role="button"])[class~="bg-[#68745f]"],
+html[data-theme="light"] [data-sale-badge],
+html[data-theme="dark"] [data-sale-badge] {
+  background-color: var(--ui-accent) !important;
+  color: var(--ui-button-text) !important;
+  border-color: var(--ui-accent) !important;
+}
+html[data-theme="light"] :is(button, a, [role="button"])[class~="hover:bg-[#41443b]"]:hover,
+html[data-theme="dark"] :is(button, a, [role="button"])[class~="hover:bg-[#41443b]"]:hover,
+html[data-theme="light"] :is(button, a, [role="button"])[class~="hover:bg-[#68745f]"]:hover,
+html[data-theme="dark"] :is(button, a, [role="button"])[class~="hover:bg-[#68745f]"]:hover,
+html[data-theme="light"] [data-sale-badge]:hover,
+html[data-theme="dark"] [data-sale-badge]:hover {
+  background-color: var(--ui-accent-hover) !important;
+  color: var(--ui-button-text) !important;
+}
+
+/* Semantic text and border aliases retain readable contrast in both themes. */
+html[data-theme="light"] [class~="text-[#252722]"],
+html[data-theme="dark"] [class~="text-[#252722]"],
+html[data-theme="light"] [class~="text-[#41443b]"],
+html[data-theme="dark"] [class~="text-[#41443b]"] {
+  color: var(--ui-text) !important;
+}
+html[data-theme="light"] [class~="text-[#62645c]"],
+html[data-theme="dark"] [class~="text-[#62645c]"],
+html[data-theme="light"] [class~="text-[#77786f]"],
+html[data-theme="dark"] [class~="text-[#77786f]"],
+html[data-theme="light"] [class~="text-[#85867d]"],
+html[data-theme="dark"] [class~="text-[#85867d]"],
+html[data-theme="light"] [class~="text-[#9a9a90]"],
+html[data-theme="dark"] [class~="text-[#9a9a90]"],
+html[data-theme="light"] [class~="text-[#a0a195]"],
+html[data-theme="dark"] [class~="text-[#a0a195]"] {
+  color: var(--ui-muted) !important;
+}
+html[data-theme="light"] [class~="text-[#68745f]"],
+html[data-theme="dark"] [class~="text-[#68745f]"],
+html[data-theme="light"] [class~="text-[#526149]"],
+html[data-theme="dark"] [class~="text-[#526149]"],
+html[data-theme="light"] [class~="text-[#9aa58e]"],
+html[data-theme="dark"] [class~="text-[#9aa58e]"] {
+  color: var(--ui-text) !important;
+}
+html[data-theme="light"] [class~="border-[#e4e0d8]"],
+html[data-theme="dark"] [class~="border-[#e4e0d8]"],
+html[data-theme="light"] [class~="border-[#eeeae2]"],
+html[data-theme="dark"] [class~="border-[#eeeae2]"],
+html[data-theme="light"] [class~="border-[#eeeae1]"],
+html[data-theme="dark"] [class~="border-[#eeeae1]"],
+html[data-theme="light"] [class~="border-[#dedbd2]"],
+html[data-theme="dark"] [class~="border-[#dedbd2]"],
+html[data-theme="light"] [class~="border-[#d5d0c5]"],
+html[data-theme="dark"] [class~="border-[#d5d0c5]"],
+html[data-theme="light"] [class~="border-[#dcd8ce]"],
+html[data-theme="dark"] [class~="border-[#dcd8ce]"],
+html[data-theme="light"] [class~="border-[#c7c3b9]"],
+html[data-theme="dark"] [class~="border-[#c7c3b9]"] {
+  border-color: var(--ui-border) !important;
+}
+html[data-theme="light"] [class~="border-[#68745f]"],
+html[data-theme="dark"] [class~="border-[#68745f]"] {
+  border-color: var(--ui-accent) !important;
+}
+
+/* Old green-tinted focus rings now use the Volt palette. */
+html[data-theme="light"] :is(a, button, input, select, textarea):focus-visible,
+html[data-theme="dark"] :is(a, button, input, select, textarea):focus-visible {
+  outline-color: var(--ui-focus);
+}
+
+/* Keep imagery untouched by theme changes. */
+html[data-theme] img {
+  filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.lenis,
+  html.lenis body {
+    scroll-behavior: auto !important;
+  }
+}
