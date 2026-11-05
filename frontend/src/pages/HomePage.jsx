@@ -61,7 +61,43 @@ const HomePage = () => {
     featuredProducts,
     fetchNewestProducts,
     newestProducts,
+
   } = useProductStore();
+
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    if (!page || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+    const context = gsap.context(() => {
+      const hero = page.querySelector("[data-gsap-hero]");
+      if (hero) {
+        gsap.fromTo(hero, { autoAlpha: 0, y: 18 }, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "power2.out",
+          clearProps: "opacity,visibility,transform",
+        });
+      }
+
+      page.querySelectorAll("[data-gsap-reveal]").forEach((section) => {
+        gsap.fromTo(section, { autoAlpha: 0, y: 20 }, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          clearProps: "opacity,visibility,transform",
+          scrollTrigger: {
+            trigger: section,
+            start: "top 88%",
+            once: true,
+          },
+        });
+      });
+    }, page);
+
+    return () => context.revert();
+  }, []);
 
   useEffect(() => {
     let active = true;
