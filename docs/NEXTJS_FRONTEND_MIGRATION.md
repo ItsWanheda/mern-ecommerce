@@ -46,6 +46,8 @@ React Router remains active inside the bridge, preserving existing paths and rou
 
 The backend remains unchanged. Axios continues to use `withCredentials: true`, HTTP-only cookies and the existing refresh-token coordinator. The default API base remains `/api`. Vercel rewrites that path to the separate Express API; local development proxies it to `http://localhost:5000`.
 
+The existing frontend Vercel project has a project-level Output Directory override of `frontend/dist`, which is still needed by the current Vite-based `master` branch. This migration branch sets Next.js `distDir` to the same path so its preview build can coexist without changing shared Vercel project settings. The Vite fallback defines `NEXT_PUBLIC_*` aliases from its original `VITE_*` variables.
+
 Use `NEXT_PUBLIC_*` only for browser-visible storefront settings. Backend secrets must never use that prefix. Legacy `VITE_*` values are temporarily mapped to Next.js variable names.
 
 Metadata uses shared SEO helpers and the existing public API. Canonicals remain suppressed until a verified production origin is configured; private and filtered routes remain noindex. Existing robots and sitemap rewrites remain. The old page-shell/share-preview handlers are retained but are no longer used as page rewrites.

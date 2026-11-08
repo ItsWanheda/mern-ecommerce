@@ -1,6 +1,10 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // The existing frontend Vercel project has a shared Output Directory override
+  // of frontend/dist. Match it on this branch so its preview works without
+  // changing the project-level setting used by master/Vite deployments.
+  distDir: "frontend/dist",
   poweredByHeader: false,
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_URL || "/api",
