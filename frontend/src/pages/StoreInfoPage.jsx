@@ -5,7 +5,7 @@ import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
 import PageMeta from "../components/PageMeta";
 
-const supportEmail = import.meta.env.VITE_STORE_SUPPORT_EMAIL || "";
+const supportEmail = process.env.NEXT_PUBLIC_STORE_SUPPORT_EMAIL || "";
 
 const categoryLinks = [
   ["/shipping-policy", "ارسال و تحویل"],

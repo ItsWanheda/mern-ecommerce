@@ -13,7 +13,7 @@ A production-focused MERN storefront with whole-Toman pricing, Zarinpal checkout
   <img src="https://img.shields.io/badge/Payments-Zarinpal-4e7b59?style=flat-square" alt="Zarinpal only" />
 </p>
 <p>
-  <img src="https://img.shields.io/badge/React-Vite-646CFF?style=flat-square&logo=react&logoColor=white" alt="React and Vite" />
+  <img src="https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=react&logoColor=white" alt="Next.js App Router" />
   <img src="https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js and Express" />
   <img src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB and Mongoose" />
   <img src="https://img.shields.io/badge/Redis-ioredis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis" />
@@ -62,7 +62,7 @@ The frontend communicates with an Express API. MongoDB stores users, products, c
 
 ```mermaid
 flowchart TD
-    Customer[Customer / Admin] --> Web[React + Vite RTL storefront]
+    Customer[Customer / Admin] --> Web[Next.js App Router + React RTL storefront]
     Web --> State[Zustand stores]
     State --> Client[Axios API client]
     Client --> API[Express API]
@@ -87,8 +87,8 @@ flowchart TD
 
 | Area | Technologies |
 | --- | --- |
-| Frontend | React, Vite, Tailwind CSS |
-| Routing and state | React Router, Zustand |
+| Frontend | Next.js App Router, React, Tailwind CSS |
+| Routing and state | Next.js App Router (legacy React Router bridge during migration), Zustand |
 | Components and feedback | Lucide React, Framer Motion, React Hot Toast |
 | API | Node.js, Express |
 | Database | MongoDB, Mongoose |
@@ -111,8 +111,12 @@ mern-ecommerce/
 │   ├── tests/               # Currency, search, security, recovery tests
 │   ├── app.js
 │   └── package.json
+├── app/                     # Next.js App Router shell and catch-all route
+├── public/                  # Shared public assets for Next.js and Vite fallback
+├── lib/
+│   └── next-metadata.js     # Server-side route metadata
 ├── frontend/
-│   └── src/
+│   └── src/                # Existing React components, pages, stores and helpers
 │       ├── components/
 │       ├── pages/
 │       ├── stores/
@@ -150,12 +154,11 @@ Run from the repository root:
 
 ```bash
 npm ci
-npm ci --prefix frontend
 ```
 
 ### 2. Configure environment variables
 
-Create a local environment file that is not committed to Git. Use the backend values below, then add `VITE_API_URL` to the frontend environment only when the API is not reachable through the same-origin `/api` path.
+Create a local environment file that is not committed to Git. Use the backend values below. The Next.js storefront uses the same-origin `/api` path by default; use `NEXT_PUBLIC_API_URL` only when the API is hosted on a separate origin.
 
 ```dotenv
 NODE_ENV=development
@@ -171,19 +174,19 @@ ZARINPAL_MERCHANT_ID=your_merchant_id
 ZARINPAL_SANDBOX=true
 IRT_CATALOG_PRICES_CONFIRMED=false
 API_URL=http://localhost:5000
-CLIENT_URL=http://localhost:5173
+CLIENT_URL=http://localhost:3000
 DEFAULT_SHIPPING_FEE=0
 FREE_SHIPPING_THRESHOLD=0
 CRON_SECRET=replace_with_a_long_random_secret
 ```
 
-For a separate frontend/API deployment, set the frontend build variable:
+For a separate frontend/API deployment, set the public Next.js build variable:
 
 ```dotenv
-VITE_API_URL=https://your-api.example/api
+NEXT_PUBLIC_API_URL=https://your-api.example/api
 ```
 
-Never put backend credentials or payment secrets in a variable prefixed with `VITE_`.
+Public storefront configuration may use `NEXT_PUBLIC_*` variables. Never put backend credentials, database/Redis URLs, JWT secrets, Cloudinary secrets, or payment secrets in a public variable. The Next.js configuration temporarily maps legacy `VITE_*` environment names to their `NEXT_PUBLIC_*` equivalents for compatibility.
 
 ### 3. Verify the catalogue before checkout
 
@@ -197,13 +200,13 @@ Terminal 1 — API:
 npm run dev
 ```
 
-Terminal 2 — frontend:
+Terminal 2 — Next.js storefront:
 
 ```bash
-npm run dev --prefix frontend
+npm run dev:frontend
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The API health endpoint is [http://localhost:5000/api/health](http://localhost:5000/api/health); it confirms the application process responds, not that every dependency is healthy.
+Open [http://localhost:3000](http://localhost:3000). The original Vite runner remains available as a temporary fallback with `npm run dev --prefix frontend`; it uses the shared root `public/` directory. The API health endpoint is [http://localhost:5000/api/health](http://localhost:5000/api/health); it confirms the application process responds, not that every dependency is healthy.
 
 ## 🔑 Environment variables
 
@@ -224,12 +227,13 @@ Open [http://localhost:5173](http://localhost:5173). The API health endpoint is 
 | `CORS_ALLOWED_ORIGINS` | Optional comma-separated list of additional exact frontend origins. |
 | `DEFAULT_SHIPPING_FEE`, `FREE_SHIPPING_THRESHOLD` | Whole-Toman shipping settings. |
 | `CRON_SECRET` | Long random secret authorizing payment reconciliation. |
-| `VITE_API_URL` | Optional public frontend build variable for a separately hosted API. Never use it for secrets. |
-| `VITE_STORE_INSTAGRAM_URL`, `VITE_STORE_TELEGRAM_URL`, `VITE_STORE_X_URL` | Optional public profile links shown as social icons in the footer. Use the store's real HTTPS profile URLs. |
-| `VITE_ENAMAD_SEAL_IMAGE_URL` | Public image/embed URL for the eNAMAD seal issued to this specific store. |
-| `VITE_ENAMAD_SEAL_LINK_URL` | Official eNAMAD verification link issued for this store. Do not substitute a generic eNAMAD homepage URL. |
+| `NEXT_PUBLIC_API_URL` | Optional public Next.js build variable for a separately hosted API. Never use it for secrets. |
+| `NEXT_PUBLIC_PUBLIC_SITE_URL` | Verified public storefront origin used for Next.js canonical metadata. |
+| `NEXT_PUBLIC_STORE_INSTAGRAM_URL`, `NEXT_PUBLIC_STORE_TELEGRAM_URL`, `NEXT_PUBLIC_STORE_X_URL` | Optional public profile links shown as social icons in the footer. Use the store's real HTTPS profile URLs. |
+| `NEXT_PUBLIC_ENAMAD_SEAL_IMAGE_URL` | Public image/embed URL for the eNAMAD seal issued to this specific store. |
+| `NEXT_PUBLIC_ENAMAD_SEAL_LINK_URL` | Official eNAMAD verification link issued for this store. Do not substitute a generic eNAMAD homepage URL. |
 
-The footer reads the public variables above at build time. The social icons remain inactive until real profile URLs are configured. Until the shop's own eNAMAD seal image and verification URL are configured, the footer labels the displayed generic mark as unverified; a generic logo is not evidence that this store has an active trust seal. Update the frontend environment and redeploy after changing these values.
+The Next.js storefront reads the public variables above at build time. The temporary Vite fallback supports the existing VITE_ aliases. The social icons remain inactive until real profile URLs are configured. Until the shop's own eNAMAD seal image and verification URL are configured, the footer labels the displayed generic mark as unverified; a generic logo is not evidence that this store has an active trust seal. Update the frontend environment and redeploy after changing these values.
 
 ## 🧱 Data and currency rules
 

@@ -7,6 +7,7 @@ on:
       - main
       - master
       - feat/admin-ux-404-analytics
+      - feat/nextjs-frontend-migration
   workflow_dispatch:
 
 permissions:
@@ -25,15 +26,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            frontend/package-lock.json
+          cache-dependency-path: package-lock.json
+
+      - name: Regenerate the root lockfile for the Next.js frontend
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 
       - name: Install root dependencies
         run: npm ci
-
-      - name: Install frontend dependencies
-        run: npm ci --prefix frontend
 
       - name: Start disposable MongoDB replica set
         run: |
@@ -55,8 +54,8 @@ jobs:
           echo "MongoDB replica set did not become primary."
           exit 1
 
-      - name: Build frontend
-        run: npm run build --prefix frontend
+      - name: Build Next.js storefront
+        run: npm run build:frontend
 
       - name: Check backend source and tests
         run: npm run build --prefix backend

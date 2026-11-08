@@ -1,0 +1,43 @@
+name: Sync Next.js migration lockfile
+
+on:
+  push:
+    branches:
+      - feat/nextjs-frontend-migration
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nextjs-lock-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync-root-lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/nextjs-frontend-migration
+          persist-credentials: true
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Regenerate root lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit the synchronized lockfile when it changes
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "Root lockfile is already synchronized."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore(deps): sync Next.js migration lockfile"
+          git push origin HEAD:feat/nextjs-frontend-migration

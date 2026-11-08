@@ -79,7 +79,7 @@ export default function PageMeta({
 
   useEffect(() => {
     const runtimeSiteUrl = document.head.querySelector('meta[name="public-site-url"]')?.getAttribute("content") || "";
-    const configuredSiteUrl = import.meta.env.VITE_PUBLIC_SITE_URL || runtimeSiteUrl;
+    const configuredSiteUrl = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL || runtimeSiteUrl;
     const isSeoPreview = document.head.querySelector('meta[name="seo-preview"]')?.getAttribute("content") === "true";
     const siteOrigin = isSeoPreview ? "" : canonicalOrigin(window.location.origin, configuredSiteUrl);
     const effectiveRobots = isSeoPreview ? "noindex, nofollow" : robots;
@@ -113,7 +113,7 @@ export default function PageMeta({
     setCanonical(canonicalUrl);
 
     removeJsonLd();
-    buildSiteStructuredData(siteOrigin, { supportEmail: import.meta.env.VITE_STORE_SUPPORT_EMAIL || "" }).forEach((schema, index) => addJsonLd("site-jsonld-" + index, schema));
+    buildSiteStructuredData(siteOrigin, { supportEmail: process.env.NEXT_PUBLIC_STORE_SUPPORT_EMAIL || "" }).forEach((schema, index) => addJsonLd("site-jsonld-" + index, schema));
 
     if (type === "product" && product?.name) {
       addJsonLd("page-jsonld", buildProductStructuredData({

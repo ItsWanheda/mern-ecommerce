@@ -2,7 +2,7 @@
 const semanticColor = (token) => `rgb(var(--color-${token}) / <alpha-value>)`;
 
 export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: ["./app/**/*.{js,ts,jsx,tsx}", "./frontend/index.html", "./frontend/src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {

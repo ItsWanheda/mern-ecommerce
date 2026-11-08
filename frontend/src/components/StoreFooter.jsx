@@ -5,13 +5,13 @@ import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { formatIranianYear } from "../lib/iranian-date";
 
-const supportEmail = import.meta.env.VITE_STORE_SUPPORT_EMAIL || "";
-const enamadImage = import.meta.env.VITE_ENAMAD_SEAL_IMAGE_URL || "https://trustseal.enamad.ir/Content/Images/Star2/81.png";
-const enamadVerificationUrl = import.meta.env.VITE_ENAMAD_SEAL_LINK_URL || "";
+const supportEmail = process.env.NEXT_PUBLIC_STORE_SUPPORT_EMAIL || "";
+const enamadImage = process.env.NEXT_PUBLIC_ENAMAD_SEAL_IMAGE_URL || "https://trustseal.enamad.ir/Content/Images/Star2/81.png";
+const enamadVerificationUrl = process.env.NEXT_PUBLIC_ENAMAD_SEAL_LINK_URL || "";
 const socialProfiles = [
-  { id: "instagram", label: "اینستاگرام", href: import.meta.env.VITE_STORE_INSTAGRAM_URL || "", Icon: Instagram },
-  { id: "telegram", label: "تلگرام", href: import.meta.env.VITE_STORE_TELEGRAM_URL || "", Icon: Send },
-  { id: "x", label: "ایکس (X)", href: import.meta.env.VITE_STORE_X_URL || "", Icon: null },
+  { id: "instagram", label: "اینستاگرام", href: process.env.NEXT_PUBLIC_STORE_INSTAGRAM_URL || "", Icon: Instagram },
+  { id: "telegram", label: "تلگرام", href: process.env.NEXT_PUBLIC_STORE_TELEGRAM_URL || "", Icon: Send },
+  { id: "x", label: "ایکس (X)", href: process.env.NEXT_PUBLIC_STORE_X_URL || "", Icon: null },
 ];
 
 const StoreFooter = () => {
