@@ -248,11 +248,12 @@ html[data-theme="dark"] {
   --color-border: 43 48 58;
   --color-border-strong: 74 81 94;
   --color-hover: 41 46 55;
-  --color-brand: 214 183 121;
-  --color-brand-hover: 228 201 137;
+  /* Use the legacy sage family in dark mode with a lighter tint for contrast. */
+  --color-brand: 154 165 142;
+  --color-brand-hover: 174 185 163;
   --color-brand-soft: 41 46 55;
-  --color-brand-deep: 214 183 121;
-  --color-brand-muted: 214 183 121;
+  --color-brand-deep: 154 165 142;
+  --color-brand-muted: 154 165 142;
   --color-disabled: 113 121 135;
   --color-success: 142 200 160;
   --color-danger: 241 154 145;
