@@ -53,11 +53,11 @@ test("native shopping routes include static discovery and exact dynamic detail p
     assert.equal(isShoppingRoute(route), true, route);
     assert.equal(isAppRouterRoute(route), true, route);
   }
-  for (const route of ["/category/jeans", "/category/outerwear%20for%20winter", "/looks/daily-style", "/campaign/65abc123"]) {
+  for (const route of ["/category/jeans", "/category/outerwear%20for%20winter", "/looks/daily-style", "/campaign/65abc123", "/product/65abc123abcdef1234567890"]) {
     assert.equal(isShoppingRoute(route), true, route);
     assert.equal(isAppRouterRoute(route), true, route);
   }
-  for (const route of ["/category", "/category/jeans/extra", "/looks/a/b", "/campaigns/active", "/campaign/"]) {
+  for (const route of ["/category", "/category/jeans/extra", "/looks/a/b", "/campaigns/active", "/campaign/", "/product", "/product/a/b"]) {
     assert.equal(isShoppingRoute(route), false, route);
     assert.equal(isAppRouterRoute(route), false, route);
   }

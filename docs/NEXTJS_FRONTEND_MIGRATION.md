@@ -26,6 +26,8 @@
 - [x] Preserve authentication guards for Profile and Orders while keeping Wishlist available to guests.
 - [x] Reuse the current customer pages, Navbar/footer, order service-request tools and local-storage wishlist.
 - [x] Migrate Shop, Categories, Category details, Collections, Looks and Campaign routes to the App Router.
+- [x] Migrate Product Details to an explicit App Router route with server-generated product metadata.
+- [x] Preserve the existing product gallery, variant availability, stock-aware cart, wishlist, reviews and related products.
 - [x] Preserve filter/search query strings and pagination during route synchronization.
 - [x] Add dynamic server metadata for category, campaign and named Look pages, including noindex for unknown resources.
 - [ ] Verify browser-level authentication cookies, cart, checkout and visual regression.
@@ -40,7 +42,7 @@ mern-ecommerce/
 ├── app/                      # Next.js App Router
 │   ├── (account)/             # Native login, signup and password-recovery routes
 │   ├── (customer)/            # Native profile, orders and wishlist routes
-│   ├── (shopping)/            # Native shop, category, collection and campaign routes
+│   ├── (shopping)/            # Native shop, category, collection, campaign and product routes
 │   ├── (store-info)/          # Native public policy/help route group
 │   ├── layout.jsx            # Persian RTL document and global metadata
 │   ├── page.jsx              # Home
@@ -127,6 +129,16 @@ The route group reuses the existing storefront shell (Navbar, footer, auth/cart 
 Server metadata now provides titles/descriptions for Categories and Campaigns, resolves category and campaign detail metadata from the API, and supplies metadata for valid named Looks. Unknown category and Look slugs are marked noindex. Shop and category filter URLs continue to use the shared excluded-query noindex rules. Existing client-side PageMeta continues to provide the dynamic product-list and breadcrumb structured data after client data has loaded.
 
 No product, category, campaign, search, inventory, payment or authentication backend code was changed. Live filtering, campaign click tracking, direct-refresh behavior, and category API data still need interactive testing against the protected preview.
+
+## Product details route migration
+
+The product URL now has an explicit App Router page at `app/(shopping)/product/[productId]/page.jsx`. The route passes the decoded ID into the existing ProductDetailsPage client component and uses the server metadata helper to resolve the current product name, description and image. Missing or invalid products receive noindex metadata.
+
+The existing product experience is reused without rewriting its business logic: image gallery and keyboard-accessible zoom dialog, size/color combination availability, stock checks, add-to-cart with selected variant, guest wishlist, recently viewed products, related products, verified-purchase review eligibility and moderated review submission. The route-sync matcher now includes exactly one `/product/{id}` segment so links from legacy ProductCard components enter the native route while deeper or incomplete paths remain unmatched.
+
+The product page stays client-rendered in this compatibility phase because it relies on browser storage, Zustand stores and interactive dialogs. Server-generated metadata is available on the initial route request; the existing PageMeta continues to update product structured data after product data loads in the browser.
+
+No product API, inventory, cart, review or payment backend code was changed. Product API response, add-to-cart and review behavior still require interactive acceptance testing against the protected preview.
 
 ## Validation performed
 

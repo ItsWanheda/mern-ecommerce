@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import PageMeta from "../components/PageMeta";
 import ProductCard from "../components/ProductCard";
@@ -29,8 +31,9 @@ const measurementLabels = [
   ["lengthCm", "قد لباس"],
 ];
 
-const ProductDetailsPage = () => {
-  const { productId } = useParams();
+const ProductDetailsPage = ({ productId: routeProductId }) => {
+  const { productId: matchedProductId } = useParams();
+  const productId = routeProductId || matchedProductId || "";
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

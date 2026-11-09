@@ -65,7 +65,7 @@ export function isProtectedCustomerRoute(pathname) {
 export function isShoppingRoute(pathname) {
   if (typeof pathname !== "string") return false;
   return shoppingRouteSet.has(pathname) ||
-    /^\/(?:category|looks|campaign)\/[^/]+$/.test(pathname);
+    /^\/(?:category|looks|campaign|product)\/[^/]+$/.test(pathname);
 }
 
 export function isAppRouterRoute(pathname) {
