@@ -54,6 +54,9 @@ jobs:
           echo "MongoDB replica set did not become primary."
           exit 1
 
+      - name: Run frontend unit tests
+        run: npm test --prefix frontend
+
       - name: Build Next.js storefront
         run: npm run build:frontend
 
