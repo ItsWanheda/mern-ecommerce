@@ -133,6 +133,26 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
+    const page = pageRef.current;
+    if (!page || typeof ResizeObserver === "undefined") return undefined;
+
+    // Campaigns and product rows arrive asynchronously. Refresh trigger
+    // measurements after real layout changes so reveal animations never fire
+    // at stale offsets and pull the page unexpectedly while scrolling.
+    let refreshFrame = 0;
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(refreshFrame);
+      refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+    });
+    observer.observe(page);
+
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(refreshFrame);
+    };
+  }, []);
+
+  useEffect(() => {
     let active = true;
     fetchFeaturedProducts();
     fetchCategories();
