@@ -28,6 +28,7 @@
 - [x] Migrate Shop, Categories, Category details, Collections, Looks and Campaign routes to the App Router.
 - [x] Migrate Product Details to an explicit App Router route with server-generated product metadata.
 - [x] Migrate Cart and Zarinpal purchase-result routes to the App Router while retaining the existing checkout flow.
+- [x] Migrate the permission-aware admin dashboard to an explicit App Router route with an admin-role gate.
 - [x] Preserve the existing product gallery, variant availability, stock-aware cart, wishlist, reviews and related products.
 - [x] Preserve filter/search query strings and pagination during route synchronization.
 - [x] Add dynamic server metadata for category, campaign and named Look pages, including noindex for unknown resources.
@@ -42,6 +43,7 @@
 mern-ecommerce/
 ├── app/                      # Next.js App Router
 │   ├── (account)/             # Native login, signup and password-recovery routes
+│   ├── (admin)/               # Native admin dashboard route and role gate
 │   ├── (customer)/            # Native profile, orders and wishlist routes
 │   ├── (shopping)/            # Native shop, category, collection, campaign and product routes
 │   ├── (store-info)/          # Native public policy/help route group
@@ -162,3 +164,12 @@ The cart now has an explicit App Router route at `/cart`, and payment return pag
 The existing checkout behavior is preserved: guest-cart persistence and account merge, stock-aware quantity changes, coupon validation, saved shipping addresses, Iranian phone/postal-code normalization, server-calculated shipping, IRT currency checks, Zarinpal checkout creation and HTTPS-only gateway redirect. The success page still verifies the order's payment status with the API before clearing the cart. The cancel page continues to distinguish a confirmed unpaid result from an uncertain callback/verification state and warns customers not to pay again while the result is unresolved.
 
 These are frontend route/component changes only. No cart, shipping, coupon, order, Zarinpal, payment reconciliation or authentication backend code has been changed. Real checkout and payment return behavior must still be tested in a browser against the protected preview API before release.
+
+
+## Admin dashboard route migration
+
+The existing admin dashboard is now mounted at the native App Router URL `/secret-dashboard`. The route group reuses the shared storefront shell, including Navbar, footer, theme, auth/cart initialization, toast notifications and the route synchronization bridge. Its access guard waits for the existing `/auth/profile` check, sends guests to Login with the intended dashboard URL (including the selected tab) preserved as a validated same-origin return path, and sends authenticated non-admin users to the storefront.
+
+The original `AdminPage` is reused as a client component. Its four navigation groups and 15 permission-filtered tabs remain intact, including the responsive mobile selector, keyboard-operable desktop tab navigation, order-packing count, lazy-loaded management panels, and `?tab=` deep links. The existing admin API requests and per-endpoint authorization remain unchanged. The dashboard receives private `noindex, nofollow` metadata from the shared server metadata helper.
+
+No admin API route, controller, permission policy, user model, database code, or backend authorization logic was changed. The client guard is a navigation/UX layer only; protected backend endpoints remain responsible for enforcing authorization. Admin login, permissions, tab deep links, and responsive visual behavior still require browser-level acceptance testing against the protected preview.

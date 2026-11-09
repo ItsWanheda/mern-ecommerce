@@ -31,6 +31,10 @@ export const CHECKOUT_ROUTES = Object.freeze([
   "/purchase-cancel",
 ]);
 
+export const ADMIN_ROUTES = Object.freeze([
+  "/secret-dashboard",
+]);
+
 export const SHOPPING_STATIC_ROUTES = Object.freeze([
   "/shop",
   "/categories",
@@ -46,10 +50,12 @@ const customerRouteSet = new Set(CUSTOMER_ROUTES);
 const protectedCustomerRouteSet = new Set(AUTH_REQUIRED_CUSTOMER_ROUTES);
 const shoppingRouteSet = new Set(SHOPPING_STATIC_ROUTES);
 const checkoutRouteSet = new Set(CHECKOUT_ROUTES);
+const adminRouteSet = new Set(ADMIN_ROUTES);
 const appRouterRouteSet = new Set([
   ...STORE_INFO_ROUTES,
   ...AUTH_ROUTES,
   ...CUSTOMER_ROUTES,
+  ...ADMIN_ROUTES,
   ...SHOPPING_STATIC_ROUTES,
 ]);
 
@@ -67,6 +73,10 @@ export function isCustomerRoute(pathname) {
 
 export function isProtectedCustomerRoute(pathname) {
   return typeof pathname === "string" && protectedCustomerRouteSet.has(pathname);
+}
+
+export function isAdminRoute(pathname) {
+  return typeof pathname === "string" && adminRouteSet.has(pathname);
 }
 
 export function isShoppingRoute(pathname) {

@@ -2,12 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   AUTH_ROUTES,
+  ADMIN_ROUTES,
   AUTH_REQUIRED_CUSTOMER_ROUTES,
   CHECKOUT_ROUTES,
   SHOPPING_STATIC_ROUTES,
   CUSTOMER_ROUTES,
   STORE_INFO_ROUTES,
   isAppRouterRoute,
+  isAdminRoute,
   isAuthRoute,
   isCustomerRoute,
   isProtectedCustomerRoute,
@@ -19,6 +21,16 @@ import {
   getAuthReturnPath,
   withAuthReturnPath,
 } from "../src/lib/auth-route-state.js";
+
+test("the native admin route is exact and remains separate from customer routes", () => {
+  assert.deepEqual(ADMIN_ROUTES, ["/secret-dashboard"]);
+  assert.equal(isAdminRoute("/secret-dashboard"), true);
+  assert.equal(isAppRouterRoute("/secret-dashboard"), true);
+  for (const route of ["/secret-dashboard/settings", "/secret-dashboard/anything", "/secret-dashboard/"]) {
+    assert.equal(isAdminRoute(route), false, route);
+    assert.equal(isAppRouterRoute(route), false, route);
+  }
+});
 
 test("the native store-information route set contains the six approved routes", () => {
   assert.deepEqual(STORE_INFO_ROUTES, [
