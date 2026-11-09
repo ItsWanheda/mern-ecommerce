@@ -39,6 +39,35 @@ const benefits = [
   { icon: ShieldCheck, title: "راهنما و پشتیبانی", text: "پاسخ پرسش‌های خرید و راه ارتباط رسمی فروشگاه.", href: "/support" },
 ];
 
+const CampaignCountdown = ({ endsAt }) => {
+  const [now, setNow] = useState(null);
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    update();
+    const intervalId = window.setInterval(update, 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+  const remaining = now === null ? null : Math.max(0, new Date(endsAt).getTime() - now);
+  const seconds = remaining === null ? 0 : Math.floor(remaining / 1000);
+  const units = [
+    [Math.floor(seconds / 86400), "روز"],
+    [Math.floor((seconds % 86400) / 3600), "ساعت"],
+    [Math.floor((seconds % 3600) / 60), "دقیقه"],
+    [seconds % 60, "ثانیه"],
+  ];
+  const number = (value) => new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2, useGrouping: false }).format(value);
+  return (
+    <div dir="rtl" aria-label="زمان باقی‌مانده تا پایان پیشنهاد" className="flex flex-wrap items-center gap-2">
+      {units.map(([value, label]) => (
+        <span key={label} className="inline-flex min-w-[3.6rem] flex-col items-center rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2 py-1.5">
+          <strong className="text-base tabular-nums text-[var(--ui-text)]">{remaining === null ? "—" : number(value)}</strong>
+          <span className="text-[10px] text-[var(--ui-muted)]">{label}</span>
+        </span>
+      ))}
+    </div>
+  );
+};
+
 const HomePage = () => {
   const pageRef = useRef(null);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
@@ -159,6 +188,15 @@ const HomePage = () => {
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
   );
+  const campaignProductIds = new Set(campaigns.flatMap((campaign) =>
+    Array.isArray(campaign.productIds)
+      ? campaign.productIds.map((item) => String(item?._id || item))
+      : []
+  ));
+  const campaignProducts = catalogProducts.filter((product) => campaignProductIds.has(String(product._id)));
+  const closestEndingCampaign = campaigns
+    .filter((campaign) => Number.isFinite(new Date(campaign.endsAt).getTime()))
+    .sort((left, right) => new Date(left.endsAt).getTime() - new Date(right.endsAt).getTime())[0];
 
   const retryBestsellers = async () => {
     setBestsellersLoaded(false);
@@ -309,12 +347,26 @@ const HomePage = () => {
           </div>
         </section>
 
-        {secondaryCampaigns.length > 0 && (
+        {(secondaryCampaigns.length > 0 || campaignProducts.length > 0 || campaigns.length > 0) && (
 <section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
             <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
               <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">شگفت‌انگیزها و پیشنهادهای ویژه</h2></div>
               <Link to="/campaigns" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-border-strong px-3 text-xs font-semibold text-brand transition hover:border-ink hover:text-ink sm:border-0 sm:px-0 sm:text-sm">همه پیشنهادها<ArrowLeft size={15} aria-hidden="true" /></Link>
             </div>
+            {closestEndingCampaign && (
+              <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div>
+                  <p className="text-xs font-semibold text-[var(--ui-accent)]">فرصت باقی‌مانده</p>
+                  <p className="mt-1 text-sm font-semibold text-[var(--ui-text)]">{closestEndingCampaign.title}</p>
+                </div>
+                <CampaignCountdown endsAt={closestEndingCampaign.endsAt} />
+              </div>
+            )}
+            {campaignProducts.length > 0 && (
+              <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4" aria-label="محصولات منتخب کمپین‌ها">
+                {campaignProducts.map((product) => <ProductCard key={product._id} product={product} />)}
+              </div>
+            )}
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
               {secondaryCampaigns.map((campaign) => (
                 <Link to={getCampaignPath(campaign)} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-border bg-surface-muted p-5 transition hover:border-border-strong sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
