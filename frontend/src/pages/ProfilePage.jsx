@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, ChevronLeft, Home, MapPin, Pencil, Plus, Save, Trash2, UserRound, X } from "lucide-react";

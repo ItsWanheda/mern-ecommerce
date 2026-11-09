@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ClipboardList, LoaderCircle, RefreshCw, Truck } from "lucide-react";

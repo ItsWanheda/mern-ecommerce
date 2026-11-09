@@ -1,3 +1,5 @@
+"use client";
+
 import { Heart, ShoppingBag, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";

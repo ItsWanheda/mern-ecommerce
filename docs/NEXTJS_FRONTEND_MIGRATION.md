@@ -22,6 +22,9 @@
 - [x] Migrate Login, Signup, Forgot Password and Reset Password to explicit App Router routes.
 - [x] Preserve post-login destinations across the route bridge using validated same-origin `next` paths.
 - [x] Retain the existing auth store, API calls, password policy and account-page presentation.
+- [x] Migrate Profile, Orders and Wishlist to native App Router customer routes.
+- [x] Preserve authentication guards for Profile and Orders while keeping Wishlist available to guests.
+- [x] Reuse the current customer pages, Navbar/footer, order service-request tools and local-storage wishlist.
 - [ ] Verify browser-level authentication cookies, cart, checkout and visual regression.
 - [ ] Verify live login, signup, password-recovery email and reset-token flows against the preview API.
 - [ ] Verify Vercel preview, proxy/cookies, social previews, robots and sitemap endpoints.
@@ -33,6 +36,7 @@
 mern-ecommerce/
 ├── app/                      # Next.js App Router
 │   ├── (account)/             # Native login, signup and password-recovery routes
+│   ├── (customer)/            # Native profile, orders and wishlist routes
 │   ├── (store-info)/          # Native public policy/help route group
 │   ├── layout.jsx            # Persian RTL document and global metadata
 │   ├── page.jsx              # Home
@@ -94,6 +98,14 @@ The four authentication URLs now have explicit App Router page modules under `ap
 The existing Login and Signup forms remain the source of truth for their UI and client-side validation. Forgot Password and Reset Password continue to call the same API endpoints, and reset-token query strings are preserved. The route bridge carries a protected page's intended destination into a validated same-origin `next` query parameter so it is not lost when Next.js takes over navigation. Authenticated users are redirected away from Login/Signup to that destination or the home page, matching the previous guard behavior.
 
 No authentication controllers, middleware, database models, JWT handling, refresh-token coordination, cookies, environment variables or payment code were changed. Live login, signup, recovery-email delivery, reset-token acceptance and cookie behavior still require browser/API acceptance testing.
+
+## Customer account route migration
+
+Profile, Orders and Wishlist now have explicit App Router page files under `app/(customer)/`. The customer route group reuses the existing storefront chrome: Navbar, footer, theme, SmoothScroll, toast notifications, auth initialization, and cart-session initialization/merge. Existing customer page components are reused as client components; their data requests, forms, address management, order history, support/return request flow, and product cards have not been rewritten.
+
+Access behavior is deliberate: Profile and Orders require an authenticated user and redirect guests to Login with the intended route preserved in a validated same-origin `next` parameter. Wishlist remains guest-accessible, matching the previous React app, and continues to use the existing browser local-storage wishlist store. All three routes retain their existing private/noindex metadata.
+
+No backend routes, controllers, data models, payment logic or authentication endpoints were changed. Real account-data and browser-navigation behavior remain acceptance tests against the protected preview environment.
 
 ## Validation performed
 

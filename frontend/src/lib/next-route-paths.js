@@ -14,9 +14,22 @@ export const AUTH_ROUTES = Object.freeze([
   "/reset-password",
 ]);
 
+export const CUSTOMER_ROUTES = Object.freeze([
+  "/profile",
+  "/orders",
+  "/wishlist",
+]);
+
+export const AUTH_REQUIRED_CUSTOMER_ROUTES = Object.freeze([
+  "/profile",
+  "/orders",
+]);
+
 const storeInfoRouteSet = new Set(STORE_INFO_ROUTES);
 const authRouteSet = new Set(AUTH_ROUTES);
-const appRouterRouteSet = new Set([...STORE_INFO_ROUTES, ...AUTH_ROUTES]);
+const customerRouteSet = new Set(CUSTOMER_ROUTES);
+const protectedCustomerRouteSet = new Set(AUTH_REQUIRED_CUSTOMER_ROUTES);
+const appRouterRouteSet = new Set([...STORE_INFO_ROUTES, ...AUTH_ROUTES, ...CUSTOMER_ROUTES]);
 
 export function isStoreInfoRoute(pathname) {
   return typeof pathname === "string" && storeInfoRouteSet.has(pathname);
@@ -24,6 +37,14 @@ export function isStoreInfoRoute(pathname) {
 
 export function isAuthRoute(pathname) {
   return typeof pathname === "string" && authRouteSet.has(pathname);
+}
+
+export function isCustomerRoute(pathname) {
+  return typeof pathname === "string" && customerRouteSet.has(pathname);
+}
+
+export function isProtectedCustomerRoute(pathname) {
+  return typeof pathname === "string" && protectedCustomerRouteSet.has(pathname);
 }
 
 export function isAppRouterRoute(pathname) {
