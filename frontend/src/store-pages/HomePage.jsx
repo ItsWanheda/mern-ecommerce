@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowLeft, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
+import { attachCampaignProducts, getCampaignProductIds } from "../lib/campaign-products.js";
 import CategoryItem from "../components/CategoryItem";
 import ProductCard from "../components/ProductCard";
 import { useProductStore } from "../stores/useProductStore";
@@ -138,9 +139,29 @@ const HomePage = () => {
     Promise.resolve(fetchNewestProducts())
       .then((succeeded) => { if (active) setNewestError(succeeded === false); })
       .finally(() => { if (active) setNewestLoaded(true); });
-    axios.get("/campaigns?includeProducts=1")
-      .then(({ data }) => { if (active) setCampaigns(Array.isArray(data.campaigns) ? data.campaigns : []); })
-      .catch((error) => console.error("Could not load campaigns:", error.message));
+    const loadCampaigns = async () => {
+      // The currently deployed API returns campaign product IDs. Resolve a
+      // small, deduplicated set through its existing public product endpoint
+      // instead of relying on the newer includeProducts query enhancement.
+      const { data } = await axios.get("/campaigns");
+      const campaignList = Array.isArray(data.campaigns) ? data.campaigns : [];
+      const productIds = getCampaignProductIds(campaignList);
+      const productResults = await Promise.allSettled(
+        productIds.map((productId) => axios.get(`/products/${productId}`))
+      );
+      const productsById = new Map();
+
+      productResults.forEach((result, index) => {
+        if (result.status !== "fulfilled") return;
+        const product = result.value?.data;
+        if (product?._id && String(product._id) === productIds[index] && product.isActive !== false) {
+          productsById.set(productIds[index], product);
+        }
+      });
+
+      if (active) setCampaigns(attachCampaignProducts(campaignList, productsById));
+    };
+    loadCampaigns().catch((error) => console.error("Could not load campaigns:", error.message));
     axios.get("/products/bestsellers?limit=8")
       .then(({ data }) => {
         if (!active) return;
