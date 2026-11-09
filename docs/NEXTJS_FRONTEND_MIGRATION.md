@@ -26,7 +26,7 @@
 - [x] Preserve authentication guards for Profile and Orders while keeping Wishlist available to guests.
 - [x] Reuse the current customer pages, Navbar/footer, order service-request tools and local-storage wishlist.
 - [x] Migrate Shop, Categories, Category details, Collections, Looks and Campaign routes to the App Router.
-- [x] Migrate Product Details to an explicit App Router route with server-generated product metadata.\n- [x] Migrate Cart and Zarinpal purchase-result routes to the App Router while retaining the existing checkout flow.
+- [x] Migrate Product Details to an explicit App Router route with server-generated product metadata.
 - [x] Preserve the existing product gallery, variant availability, stock-aware cart, wishlist, reviews and related products.
 - [x] Preserve filter/search query strings and pagination during route synchronization.
 - [x] Add dynamic server metadata for category, campaign and named Look pages, including noindex for unknown resources.
@@ -153,11 +153,3 @@ Build and unit tests do not prove live API connectivity, authentication cookies,
 ## Backend invariants
 
 No files under `backend/`, database models, API routes, controllers, middleware, MongoDB/Redis configuration, Zarinpal payment logic, reconciliation or backend environment variables should change as part of this frontend migration.
-
-## Cart and checkout route migration
-
-The cart now has an explicit App Router route at `/cart`, and payment return pages are native routes at `/purchase-success` and `/purchase-cancel`. They reuse the existing client components and the shared shopping shell; the cart page still contains the current checkout form and order summary rather than introducing a second checkout implementation.
-
-The existing checkout behavior is preserved: guest-cart persistence and account merge, stock-aware quantity changes, coupon validation, saved shipping addresses, Iranian phone/postal-code normalization, server-calculated shipping, IRT currency checks, Zarinpal checkout creation and HTTPS-only gateway redirect. The success page still verifies the order's payment status with the API before clearing the cart. The cancel page continues to distinguish a confirmed unpaid result from an uncertain callback/verification state and warns customers not to pay again while the result is unresolved.
-
-These are frontend route/component changes only. No cart, shipping, coupon, order, Zarinpal, payment reconciliation or authentication backend code has been changed. Real checkout and payment return behavior must still be tested in a browser against the protected preview API before release.

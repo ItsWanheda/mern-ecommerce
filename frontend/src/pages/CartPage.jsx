@@ -1,5 +1,3 @@
-"use client";
-
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import { useUserStore } from "../stores/useUserStore";

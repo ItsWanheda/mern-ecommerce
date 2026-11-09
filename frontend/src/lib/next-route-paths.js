@@ -25,12 +25,6 @@ export const AUTH_REQUIRED_CUSTOMER_ROUTES = Object.freeze([
   "/orders",
 ]);
 
-export const CHECKOUT_ROUTES = Object.freeze([
-  "/cart",
-  "/purchase-success",
-  "/purchase-cancel",
-]);
-
 export const SHOPPING_STATIC_ROUTES = Object.freeze([
   "/shop",
   "/categories",
@@ -45,7 +39,6 @@ const authRouteSet = new Set(AUTH_ROUTES);
 const customerRouteSet = new Set(CUSTOMER_ROUTES);
 const protectedCustomerRouteSet = new Set(AUTH_REQUIRED_CUSTOMER_ROUTES);
 const shoppingRouteSet = new Set(SHOPPING_STATIC_ROUTES);
-const checkoutRouteSet = new Set(CHECKOUT_ROUTES);
 const appRouterRouteSet = new Set([
   ...STORE_INFO_ROUTES,
   ...AUTH_ROUTES,
@@ -71,7 +64,7 @@ export function isProtectedCustomerRoute(pathname) {
 
 export function isShoppingRoute(pathname) {
   if (typeof pathname !== "string") return false;
-  return shoppingRouteSet.has(pathname) || checkoutRouteSet.has(pathname) ||
+  return shoppingRouteSet.has(pathname) ||
     /^\/(?:category|looks|campaign|product)\/[^/]+$/.test(pathname);
 }
 

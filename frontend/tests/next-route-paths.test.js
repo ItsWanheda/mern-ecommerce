@@ -69,7 +69,7 @@ test("native route matching is exact and does not capture unrelated legacy route
     assert.equal(isStoreInfoRoute(route), true, route);
     assert.equal(isAppRouterRoute(route), true, route);
   }
-  for (const route of ["/", "/cart", "/newsletter-unsubscribe", "/support/contact", "support", "/login/extra", "/profiles", "/orders/archive"]) {
+  for (const route of ["/", "/newsletter-unsubscribe", "/support/contact", "support", "/login/extra", "/profiles", "/orders/archive"]) {
     assert.equal(isAppRouterRoute(route), false, route);
   }
 });

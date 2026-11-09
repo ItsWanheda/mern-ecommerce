@@ -1,5 +1,3 @@
-"use client";
-
 import { XCircle, ArrowLeft, Clock3 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
