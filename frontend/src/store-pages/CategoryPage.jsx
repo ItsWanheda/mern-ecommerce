@@ -14,6 +14,7 @@ import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import { normalizeDigits, normalizePersianText as normalizePersian } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
+import { decodeCategoryRoute, resolveCategoryRoute } from "../lib/category-route.js";
 
 const categoryLabels = {
   jeans: "شلوار جین",
@@ -136,15 +137,6 @@ const getPriceError = (filters) => {
   return "";
 };
 
-const decodeCategoryRoute = (value) => {
-  let decoded = String(value || "");
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    if (!/%[0-9a-f]{2}/i.test(decoded)) break;
-    try { decoded = decodeURIComponent(decoded); } catch { break; }
-  }
-  return decoded.trim();
-};
-
 const CategoryPage = ({ slug: routeSlug }) => {
   const { slug: matchedSlug } = useParams();
   const category = decodeCategoryRoute(routeSlug || matchedSlug || "");
@@ -154,10 +146,9 @@ const CategoryPage = ({ slug: routeSlug }) => {
   const urlChangedRef = useRef(false);
   const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination, categoryFacets } = useProductStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
-  const selectedCategory = dynamicCategories.find((item) =>
-    item.slug === category || item.name?.fa === category || item.name?.en === category
-  );
-  const categorySlug = selectedCategory?.slug || category;
+  const categoryRoute = resolveCategoryRoute(category, dynamicCategories);
+  const selectedCategory = categoryRoute.category;
+  const categorySlug = categoryRoute.slug;
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   useEffect(() => {
