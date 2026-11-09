@@ -1,4 +1,4 @@
-const OBJECT_ID_PATTERN = /^[a-f\\d]{24}$/i;
+const OBJECT_ID_PATTERN = /^[a-f0-9]{24}$/i;
 
 export const getCampaignProductIds = (campaigns, limit = 8) => {
   const ids = [];
