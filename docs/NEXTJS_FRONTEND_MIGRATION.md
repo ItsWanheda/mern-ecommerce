@@ -25,6 +25,9 @@
 - [x] Migrate Profile, Orders and Wishlist to native App Router customer routes.
 - [x] Preserve authentication guards for Profile and Orders while keeping Wishlist available to guests.
 - [x] Reuse the current customer pages, Navbar/footer, order service-request tools and local-storage wishlist.
+- [x] Migrate Shop, Categories, Category details, Collections, Looks and Campaign routes to the App Router.
+- [x] Preserve filter/search query strings and pagination during route synchronization.
+- [x] Add dynamic server metadata for category, campaign and named Look pages, including noindex for unknown resources.
 - [ ] Verify browser-level authentication cookies, cart, checkout and visual regression.
 - [ ] Verify live login, signup, password-recovery email and reset-token flows against the preview API.
 - [ ] Verify Vercel preview, proxy/cookies, social previews, robots and sitemap endpoints.
@@ -37,6 +40,7 @@ mern-ecommerce/
 ├── app/                      # Next.js App Router
 │   ├── (account)/             # Native login, signup and password-recovery routes
 │   ├── (customer)/            # Native profile, orders and wishlist routes
+│   ├── (shopping)/            # Native shop, category, collection and campaign routes
 │   ├── (store-info)/          # Native public policy/help route group
 │   ├── layout.jsx            # Persian RTL document and global metadata
 │   ├── page.jsx              # Home
@@ -106,6 +110,23 @@ Profile, Orders and Wishlist now have explicit App Router page files under `app/
 Access behavior is deliberate: Profile and Orders require an authenticated user and redirect guests to Login with the intended route preserved in a validated same-origin `next` parameter. Wishlist remains guest-accessible, matching the previous React app, and continues to use the existing browser local-storage wishlist store. All three routes retain their existing private/noindex metadata.
 
 No backend routes, controllers, data models, payment logic or authentication endpoints were changed. Real account-data and browser-navigation behavior remain acceptance tests against the protected preview environment.
+
+## Shopping route migration
+
+The shopping discovery URLs now have explicit App Router page modules under `app/(shopping)/`:
+
+- `/shop` — product search, filters, sorting and pagination.
+- `/categories` — category hierarchy and category navigation.
+- `/category/[slug]` — category products and the existing advanced filter experience.
+- `/new-arrivals`, `/bestsellers`, `/featured-products` — curated product collections.
+- `/looks/[slug]` — the three existing named Looks.
+- `/campaigns` and `/campaign/[campaignId]` — campaign listing and campaign detail pages.
+
+The route group reuses the existing storefront shell (Navbar, footer, auth/cart initialization, theme, SmoothScroll and toast notifications). Existing shopping pages remain client components and keep their product/category stores, API calls, ProductCard UI, and React Router search-param handling. The route-sync matcher now recognizes both the fixed shopping URLs and the three exact dynamic route shapes, allowing Next.js to own direct requests and route rendering without breaking in-page filter and navigation behavior.
+
+Server metadata now provides titles/descriptions for Categories and Campaigns, resolves category and campaign detail metadata from the API, and supplies metadata for valid named Looks. Unknown category and Look slugs are marked noindex. Shop and category filter URLs continue to use the shared excluded-query noindex rules. Existing client-side PageMeta continues to provide the dynamic product-list and breadcrumb structured data after client data has loaded.
+
+No product, category, campaign, search, inventory, payment or authentication backend code was changed. Live filtering, campaign click tracking, direct-refresh behavior, and category API data still need interactive testing against the protected preview.
 
 ## Validation performed
 

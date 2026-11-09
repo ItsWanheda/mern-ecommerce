@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import PageMeta from "../components/PageMeta";
 import { Link, useParams } from "react-router-dom";
@@ -6,8 +8,9 @@ import axios from "../lib/axios";
 import ProductCard from "../components/ProductCard";
 import { formatIranianDateTime } from "../lib/iranian-date";
 
-const CampaignPage = () => {
-  const { campaignId } = useParams();
+const CampaignPage = ({ campaignId: routeCampaignId }) => {
+  const { campaignId: matchedCampaignId } = useParams();
+  const campaignId = routeCampaignId || matchedCampaignId || "";
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

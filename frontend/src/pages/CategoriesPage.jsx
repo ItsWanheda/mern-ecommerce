@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpLeft, FolderTree, RefreshCw, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";

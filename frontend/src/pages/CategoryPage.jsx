@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useDialogAccessibility } from "../lib/useDialogAccessibility.js";
@@ -134,8 +136,9 @@ const getPriceError = (filters) => {
   return "";
 };
 
-const CategoryPage = () => {
-  const { slug: category = "" } = useParams();
+const CategoryPage = ({ slug: routeSlug }) => {
+  const { slug: matchedSlug } = useParams();
+  const category = routeSlug || matchedSlug || "";
   const [searchParams, setSearchParams] = useSearchParams();
   const lastAppliedUrlRef = useRef(searchParams.toString());
   const urlChangedRef = useRef(false);

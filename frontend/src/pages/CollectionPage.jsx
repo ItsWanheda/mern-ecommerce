@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, LoaderCircle, PackageSearch, RefreshCw } from "lucide-react";
@@ -47,8 +49,9 @@ const modes = {
   },
 };
 
-const CollectionPage = ({ type = "newest" }) => {
-  const { slug } = useParams();
+const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
+  const { slug: matchedSlug } = useParams();
+  const slug = routeSlug || matchedSlug;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

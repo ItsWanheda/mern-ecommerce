@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import PageMeta from "../components/PageMeta";
 import { Link } from "react-router-dom";

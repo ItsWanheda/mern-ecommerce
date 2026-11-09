@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import {
   AUTH_ROUTES,
   AUTH_REQUIRED_CUSTOMER_ROUTES,
+  SHOPPING_STATIC_ROUTES,
   CUSTOMER_ROUTES,
   STORE_INFO_ROUTES,
   isAppRouterRoute,
   isAuthRoute,
   isCustomerRoute,
   isProtectedCustomerRoute,
+  isShoppingRoute,
   isStoreInfoRoute,
 } from "../src/lib/next-route-paths.js";
 import {
@@ -41,6 +43,24 @@ test("the native customer route set preserves the guest wishlist and protected p
   assert.equal(isProtectedCustomerRoute("/profile"), true);
   assert.equal(isProtectedCustomerRoute("/orders"), true);
   assert.equal(isProtectedCustomerRoute("/wishlist"), false);
+});
+
+test("native shopping routes include static discovery and exact dynamic detail paths", () => {
+  assert.deepEqual(SHOPPING_STATIC_ROUTES, [
+    "/shop", "/categories", "/new-arrivals", "/bestsellers", "/featured-products", "/campaigns",
+  ]);
+  for (const route of SHOPPING_STATIC_ROUTES) {
+    assert.equal(isShoppingRoute(route), true, route);
+    assert.equal(isAppRouterRoute(route), true, route);
+  }
+  for (const route of ["/category/jeans", "/category/outerwear%20for%20winter", "/looks/daily-style", "/campaign/65abc123"]) {
+    assert.equal(isShoppingRoute(route), true, route);
+    assert.equal(isAppRouterRoute(route), true, route);
+  }
+  for (const route of ["/category", "/category/jeans/extra", "/looks/a/b", "/campaigns/active", "/campaign/"]) {
+    assert.equal(isShoppingRoute(route), false, route);
+    assert.equal(isAppRouterRoute(route), false, route);
+  }
 });
 
 test("native route matching is exact and does not capture unrelated legacy routes", () => {

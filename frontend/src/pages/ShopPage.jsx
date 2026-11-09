@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import PageMeta from "../components/PageMeta";
 import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
