@@ -1,9 +1,10 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Clock3, CreditCard, Mail, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import axios from "../lib/axios";
 import { formatPrice } from "../lib/commerce";
-import PageMeta from "../components/PageMeta";
 
 const supportEmail = process.env.NEXT_PUBLIC_STORE_SUPPORT_EMAIL || "";
 
@@ -16,11 +17,9 @@ const categoryLinks = [
   ["/terms-of-use", "شرایط استفاده"],
 ];
 
-const PageLayout = ({ eyebrow, title, intro, children }) => {
-  const { pathname } = useLocation();
+const PageLayout = ({ eyebrow, title, intro, pathname, children }) => {
   return (
     <main dir="rtl" className="min-h-[60vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
-      <PageMeta title={title} description={intro || (title + " | راهنمای فروشگاه تیک بوتیک.")} path={pathname} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: title, path: pathname }]} />
       <div className="mx-auto max-w-5xl">
         <p className="mb-2 text-xs font-semibold tracking-wide text-brand">{eyebrow}</p>
         <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
@@ -49,8 +48,7 @@ const InfoCard = ({ title, children, icon: Icon = CheckCircle2 }) => (
   </section>
 );
 
-const StoreInfoPage = () => {
-  const { pathname } = useLocation();
+const StoreInfoPage = ({ pathname }) => {
   const [shipping, setShipping] = useState({ loading: true, error: false, flatRate: 0, freeShippingThreshold: 0, currency: "IRT" });
 
   useEffect(() => {
@@ -67,7 +65,7 @@ const StoreInfoPage = () => {
 
   if (pathname === "/shipping-policy") {
     return (
-      <PageLayout eyebrow="راهنمای خرید" title="ارسال و تحویل" intro="هزینه ارسال طبق تنظیمات فعلی فروشگاه محاسبه می‌شود و مبلغ نهایی پیش از پرداخت در سبد خرید نمایش داده می‌شود.">
+      <PageLayout pathname={pathname} eyebrow="راهنمای خرید" title="ارسال و تحویل" intro="هزینه ارسال طبق تنظیمات فعلی فروشگاه محاسبه می‌شود و مبلغ نهایی پیش از پرداخت در سبد خرید نمایش داده می‌شود.">
         <InfoCard title="هزینه ارسال" icon={Truck}>
           {shipping.loading ? <p>در حال دریافت قوانین ارسال…</p> : shipping.error ? <p>دریافت تنظیمات ارسال موقتاً امکان‌پذیر نیست. مبلغ نهایی را پیش از پرداخت در سبد خرید بررسی کنید.</p> : <>
             <p>هزینه ثابت فعلی: <strong className="font-semibold text-ink">{formatPrice(shipping.flatRate, shipping.currency)}</strong></p>
@@ -89,7 +87,7 @@ const StoreInfoPage = () => {
 
   if (pathname === "/returns-policy") {
     return (
-      <PageLayout eyebrow="راهنمای خرید" title="مرجوعی و تعویض" intro="این صفحه برای روشن‌بودن شرایط خرید تهیه شده است؛ سیاست نهایی مرجوعی باید از طرف فروشگاه تأیید شود.">
+      <PageLayout pathname={pathname} eyebrow="راهنمای خرید" title="مرجوعی و تعویض" intro="این صفحه برای روشن‌بودن شرایط خرید تهیه شده است؛ سیاست نهایی مرجوعی باید از طرف فروشگاه تأیید شود.">
         <InfoCard title="وضعیت سیاست مرجوعی" icon={PackageCheck}>
           <p>در حال حاضر بازه زمانی رسمی مرجوعی، شرایط بسته‌بندی، هزینه برگشت و استثناهای مربوط به کالاها در تنظیمات فروشگاه ثبت نشده‌اند. برای جلوگیری از ارائه قول نادرست، این صفحه بازه یا تضمین مرجوعی مشخصی اعلام نمی‌کند.</p>
           <p>پیش از ثبت سفارش، درباره امکان مرجوعی یا تعویض کالای موردنظر با پشتیبانی هماهنگ کنید و پاسخ را نگه دارید.</p>
@@ -103,11 +101,11 @@ const StoreInfoPage = () => {
 
   if (pathname === "/support") {
     return (
-      <PageLayout eyebrow="در کنار شما" title="پشتیبانی و تماس" intro="برای پرسش درباره سفارش، هزینه ارسال، موجودی یا شرایط کالا، جزئیات سفارش را آماده داشته باشید.">
+      <PageLayout pathname={pathname} eyebrow="در کنار شما" title="پشتیبانی و تماس" intro="برای پرسش درباره سفارش، هزینه ارسال، موجودی یا شرایط کالا، جزئیات سفارش را آماده داشته باشید.">
         <InfoCard title="راه ارتباطی فروشگاه" icon={Mail}>
           {supportEmail
             ? <p>ایمیل پشتیبانی: <a href={`mailto:${supportEmail}`} className="font-semibold text-ink underline underline-offset-2" dir="ltr">{supportEmail}</a></p>
-            : <p>نشانی ایمیل یا شماره تماس رسمی هنوز در تنظیمات فروشگاه ثبت نشده است؛ برای فعال‌شدن این بخش، مقدار VITE_STORE_SUPPORT_EMAIL باید در تنظیمات فرانت‌اند ثبت شود.</p>}
+            : <p>نشانی ایمیل یا شماره تماس رسمی هنوز در تنظیمات فروشگاه ثبت نشده است؛ برای فعال‌شدن این بخش، مقدار NEXT_PUBLIC_STORE_SUPPORT_EMAIL باید در تنظیمات عمومی فرانت‌اند ثبت شود.</p>}
           <p>در پیام خود شناسه سفارش (در صورت وجود)، ایمیل حساب و توضیح کوتاه مشکل را ذکر کنید؛ هرگز رمز عبور یا اطلاعات کامل کارت بانکی را ارسال نکنید.</p>
         </InfoCard>
         <InfoCard title="پاسخ‌های سریع" icon={CheckCircle2}>
@@ -119,7 +117,7 @@ const StoreInfoPage = () => {
 
   if (pathname === "/faq") {
     return (
-      <PageLayout eyebrow="راهنما" title="سؤالات متداول" intro="پاسخ‌ها بر اساس قابلیت‌های فعلی فروشگاه نوشته شده‌اند.">
+      <PageLayout pathname={pathname} eyebrow="راهنما" title="سؤالات متداول" intro="پاسخ‌ها بر اساس قابلیت‌های فعلی فروشگاه نوشته شده‌اند.">
         <InfoCard title="چطور از موجودی و سایز مطمئن شوم؟" icon={PackageCheck}><p>در صفحه جزئیات هر محصول، سایزها و رنگ‌های ثبت‌شده و وضعیت موجودی گزینه‌ها را بررسی کنید. موجودی در زمان سفارش نیز سمت سرور کنترل می‌شود.</p></InfoCard>
         <InfoCard title="هزینه ارسال را کجا می‌بینم؟" icon={Truck}><p>هزینه فعلی و شرط ارسال رایگان در <Link to="/shipping-policy" className="font-semibold text-brand-deep underline underline-offset-2">صفحه ارسال</Link> قابل مشاهده است و هزینه نهایی پیش از پرداخت در سبد خرید نمایش داده می‌شود.</p></InfoCard>
         <InfoCard title="می‌توانم بدون ورود محصول اضافه کنم؟" icon={PackageCheck}><p>بله، می‌توانید به‌عنوان مهمان سبد خرید را بسازید و بعداً وارد حساب شوید. برای ثبت سفارش و پرداخت، ورود به حساب لازم است.</p></InfoCard>
@@ -132,7 +130,7 @@ const StoreInfoPage = () => {
 
   if (pathname === "/privacy-policy") {
     return (
-      <PageLayout eyebrow="اطلاعات فروشگاه" title="حریم خصوصی" intro="این توضیحات نشان می‌دهد قابلیت‌های فعلی فروشگاه چه اطلاعاتی را برای کارکرد خود نگه می‌دارند.">
+      <PageLayout pathname={pathname} eyebrow="اطلاعات فروشگاه" title="حریم خصوصی" intro="این توضیحات نشان می‌دهد قابلیت‌های فعلی فروشگاه چه اطلاعاتی را برای کارکرد خود نگه می‌دارند.">
         <InfoCard title="اطلاعات حساب و سفارش" icon={ShieldCheck}><p>برای حساب کاربری، نشانی ایمیل و نام حساب ذخیره می‌شود. سبد خرید حساب، گزینه‌های کالا و اطلاعات سفارش برای اجرای خرید و نمایش وضعیت آن در پایگاه داده نگهداری می‌شود.</p></InfoCard>
         <InfoCard title="ذخیره‌سازی در مرورگر" icon={CheckCircle2}><p>سبد مهمان و فهرست علاقه‌مندی‌ها در حافظه محلی مرورگر ذخیره می‌شوند. با پاک‌کردن داده‌های سایت یا استفاده از دستگاه/مرورگر دیگر، این اطلاعات محلی ممکن است در دسترس نباشند.</p></InfoCard>
         <InfoCard title="خبرنامه" icon={Mail}><p>اگر فرم خبرنامه را ارسال کنید، ایمیل و وضعیت رضایت/لغو عضویت در پایگاه داده ذخیره می‌شوند. تا زمان اتصال سرویس ارسال ایمیل، پیام تبلیغاتی از این فرم ارسال نمی‌شود.</p></InfoCard>
@@ -142,7 +140,7 @@ const StoreInfoPage = () => {
   }
 
   return (
-    <PageLayout eyebrow="اطلاعات فروشگاه" title="شرایط استفاده" intro="با استفاده از فروشگاه، هنگام خرید باید جزئیات محصول، قیمت، گزینه‌ها، شرایط ارسال و وضعیت نهایی سفارش را بررسی کنید.">
+    <PageLayout pathname={pathname} eyebrow="اطلاعات فروشگاه" title="شرایط استفاده" intro="با استفاده از فروشگاه، هنگام خرید باید جزئیات محصول، قیمت، گزینه‌ها، شرایط ارسال و وضعیت نهایی سفارش را بررسی کنید.">
       <InfoCard title="قیمت و موجودی" icon={PackageCheck}><p>اطلاعات قیمت، تصاویر و مشخصات از کاتالوگ فروشگاه می‌آیند و ممکن است به‌روزرسانی شوند. موجودی نهایی و مبلغ سفارش پیش از پرداخت در سمت سرور دوباره بررسی می‌شوند.</p></InfoCard>
       <InfoCard title="ثبت سفارش و پرداخت" icon={CreditCard}><p>افزودن محصول به سبد خرید، به‌تنهایی به معنی تکمیل سفارش نیست. سفارش پس از طی مراحل پرداخت و تأیید سمت سرور نهایی می‌شود.</p></InfoCard>
       <InfoCard title="ارسال و مرجوعی" icon={Truck}><p>هزینه ارسال بر اساس تنظیمات فعلی در سبد خرید نمایش داده می‌شود. چون بازه و شرایط رسمی مرجوعی هنوز در فروشگاه ثبت نشده، قبل از خرید برای روشن‌شدن شرایط از پشتیبانی سؤال کنید.</p></InfoCard>

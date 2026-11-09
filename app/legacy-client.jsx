@@ -3,6 +3,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { BrowserRouter } from "react-router-dom";
 import App from "../frontend/src/App.jsx";
+import NextRouteSync from "../frontend/src/components/NextRouteSync.jsx";
 
 export default function LegacyClient() {
   const [mounted, setMounted] = useState(false);
@@ -28,6 +29,7 @@ export default function LegacyClient() {
   return (
     <StrictMode>
       <BrowserRouter>
+        <NextRouteSync mode="native-store-info" />
         <App />
       </BrowserRouter>
     </StrictMode>

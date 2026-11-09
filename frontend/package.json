@@ -8,7 +8,7 @@
     "build": "npm test && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test tests/refresh-flow.test.js tests/user-error-message.test.js tests/seo-utils.test.js tests/seo-handlers.test.js tests/dialog-accessibility.test.js",
+    "test": "node --test tests/refresh-flow.test.js tests/user-error-message.test.js tests/seo-utils.test.js tests/seo-handlers.test.js tests/dialog-accessibility.test.js tests/next-route-paths.test.js",
     "dev:next": "next dev ..",
     "build:next": "next build .."
   },
