@@ -43,11 +43,14 @@ test("auth return paths preserve only safe same-origin pathnames", () => {
   assert.equal(getAuthReturnPath({ search: "?next=https%3A%2F%2Fevil.example" }), "");
   assert.equal(getAuthReturnPath({ search: "?next=%2F%2Fevil.example" }), "");
   assert.equal(getAuthReturnPath({ search: "?next=%5C%5Cevil.example" }), "");
+  assert.equal(getAuthReturnPath({ search: "?next=%2Flogin" }), "");
+  assert.equal(getAuthReturnPath({ search: "?next=%2Fsignup" }), "");
 });
 
 test("auth links keep the intended destination when switching between login and signup", () => {
   assert.equal(buildAuthPagePath("/signup", "/profile"), "/signup?next=%2Fprofile");
   assert.equal(buildAuthPagePath("/login", "//evil.example"), "/login");
   assert.equal(withAuthReturnPath({ pathname: "/login", search: "", hash: "", state: { from: { pathname: "/orders" } } }), "/login?next=%2Forders");
+  assert.equal(withAuthReturnPath({ pathname: "/login", search: "?next=%2Forders", hash: "", state: { from: { pathname: "/profile" } } }), "/login?next=%2Fprofile");
   assert.equal(withAuthReturnPath({ pathname: "/reset-password", search: "?token=abc", hash: "" }), "/reset-password?token=abc");
 });
