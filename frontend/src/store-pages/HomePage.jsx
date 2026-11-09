@@ -388,7 +388,7 @@ const HomePage = () => {
                 {campaignProducts.map((product) => <ProductCard key={product._id} product={product} />)}
               </div>
             )}
-            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
+            <div className="desktop-product-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-4 scroll-smooth sm:gap-4">
               {secondaryCampaigns.map((campaign) => (
                 <Link to={getCampaignPath(campaign)} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-border bg-surface-muted p-5 transition hover:border-border-strong sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
                   {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
