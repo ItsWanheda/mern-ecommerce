@@ -49,10 +49,10 @@ function StoreInfoChrome({ children }) {
   if (checkingAuth || requiresAuthentication) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
+    <div className={"min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)] " + (hideMobileBottomNavigation ? "" : "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0")}>
       <NextRouteSync mode="all" />
       <SmoothScroll />
-      <div className={"relative z-50 pt-20 sm:pt-32 md:pt-44 min-[1680px]:pt-32 " + (hideMobileBottomNavigation ? "" : "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0")}>
+      <div className="relative z-50 pt-20 sm:pt-32 md:pt-44 min-[1680px]:pt-32">
         <Navbar />
         {children}
         {!hideMobileBottomNavigation && <MobileBottomNavigation />}
