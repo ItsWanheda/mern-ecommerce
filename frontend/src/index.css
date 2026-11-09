@@ -444,3 +444,58 @@ html[data-theme="dark"] ::selection {
   outline-color: var(--ui-focus);
   outline-offset: 2px;
 }
+
+
+/* Desktop product carousels use the browser's native scroll position so the
+   visible scrollbar, pointer dragging, wheel input and cards can never drift
+   out of sync. Mobile keeps its native swipe gesture without a visible bar. */
+.desktop-product-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-strong) var(--ui-surface-raised);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.desktop-product-scrollbar::-webkit-scrollbar {
+  height: 9px;
+}
+
+.desktop-product-scrollbar::-webkit-scrollbar-track {
+  border-radius: 9999px;
+  background: var(--ui-surface-raised);
+}
+
+.desktop-product-scrollbar::-webkit-scrollbar-thumb {
+  min-width: 36px;
+  border: 2px solid var(--ui-surface-raised);
+  border-radius: 9999px;
+  background: var(--ui-border-strong);
+}
+
+.desktop-product-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--ui-accent);
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .desktop-product-scrollbar {
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+  }
+
+  .desktop-product-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-product-scrollbar {
+    scroll-behavior: auto;
+  }
+}
