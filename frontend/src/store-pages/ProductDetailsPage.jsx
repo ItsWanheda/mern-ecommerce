@@ -33,15 +33,32 @@ const measurementLabels = [
   ["lengthCm", "قد لباس"],
 ];
 
-const ProductDetailsPage = ({ productId: routeProductId }) => {
+const getInitialProductSelection = (candidate) => {
+  const variants = Array.isArray(candidate?.variants) ? candidate.variants : [];
+  const firstAvailable = variants.find((variant) => Number(variant?.stock) > 0) || variants[0];
+  const sizes = Array.isArray(candidate?.sizes) && candidate.sizes.length
+    ? candidate.sizes
+    : [...new Set(variants.map((variant) => variant?.size).filter(Boolean))];
+  const colors = Array.isArray(candidate?.colors) && candidate.colors.length
+    ? candidate.colors
+    : [...new Set(variants.map((variant) => variant?.color).filter(Boolean))];
+  return {
+    size: firstAvailable?.size || sizes[0] || "",
+    color: firstAvailable?.color || colors[0]?.name || "",
+  };
+};
+
+const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }) => {
   const { productId: matchedProductId } = useParams();
   const productId = routeProductId || matchedProductId || "";
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const initialProductMatches = Boolean(initialProduct?._id && String(initialProduct._id) === String(productId));
+  const initialSelection = getInitialProductSelection(initialProductMatches ? initialProduct : null);
+  const [product, setProduct] = useState(initialProductMatches ? initialProduct : null);
+  const [loading, setLoading] = useState(!initialProductMatches);
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState(initialSelection.size);
+  const [selectedColor, setSelectedColor] = useState(initialSelection.color);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
@@ -77,6 +94,21 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
   useEffect(() => {
     let active = true;
     const fetchProduct = async () => {
+      if (initialProductMatches && retryCount === 0) {
+        setProduct(initialProduct);
+        setError("");
+        setLoading(false);
+        setFailedImageUrls(new Set());
+        setImageViewerOpen(false);
+        setRelatedProducts([]);
+        const selection = getInitialProductSelection(initialProduct);
+        setSelectedSize(selection.size);
+        setSelectedColor(selection.color);
+        setActiveImageIndex(0);
+        setSizeGuideOpen(false);
+        return;
+      }
+
       setLoading(true); setError(""); setProduct(null);
       setFailedImageUrls(new Set());
       setImageViewerOpen(false);
@@ -86,15 +118,9 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
         if (active) {
           const nextProduct = response.data;
           setProduct(nextProduct);
-          const variants = Array.isArray(nextProduct.variants) ? nextProduct.variants : [];
-          const firstAvailable = variants.find((variant) => variant.stock > 0) || variants[0];
-          const sizes = Array.isArray(nextProduct.sizes) && nextProduct.sizes.length
-            ? nextProduct.sizes : [...new Set(variants.map((variant) => variant.size).filter(Boolean))];
-          const colors = Array.isArray(nextProduct.colors) && nextProduct.colors.length
-            ? nextProduct.colors : [...new Set(variants.map((variant) => variant.color).filter(Boolean))]
-                .map((name) => ({ name, hex: "var(--ui-border-strong)" }));
-          setSelectedSize(firstAvailable?.size || sizes[0] || "");
-          setSelectedColor(firstAvailable?.color || colors[0]?.name || "");
+          const selection = getInitialProductSelection(nextProduct);
+          setSelectedSize(selection.size);
+          setSelectedColor(selection.color);
           setActiveImageIndex(0);
           setSizeGuideOpen(false);
         }
@@ -115,7 +141,7 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
     };
     fetchProduct();
     return () => { active = false; };
-  }, [productId, retryCount]);
+  }, [productId, retryCount, initialProduct, initialProductMatches]);
 
   const galleryImages = useMemo(() => {
     if (!product) return [];
@@ -345,9 +371,13 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
   if (loading) return <main dir="rtl" className="flex min-h-[60vh] items-center justify-center bg-[var(--ui-canvas)] px-4 text-[var(--ui-text)]"><div className="flex items-center gap-3 text-sm text-[var(--ui-muted)]" role="status"><LoaderCircle className="animate-spin" size={20} aria-hidden="true" />در حال بارگذاری جزئیات محصول…</div></main>;
   if (error || !product) return <main dir="rtl" className="min-h-[60vh] bg-[var(--ui-canvas)] px-4 py-16 text-[var(--ui-text)] sm:px-6"><PageMeta title="محصول در دسترس نیست" description="ممکن است شناسه محصول نادرست باشد یا محصول دیگر در دسترس نباشد." robots="noindex, nofollow" canonical={false} /><div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-6 py-12 text-center"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--ui-accent)]">محصول در دسترس نیست</p><h1 className="mt-3 font-serif text-3xl">محصول موردنظر پیدا نشد.</h1><p role="status" className="mt-3 text-sm leading-6 text-[var(--ui-muted)]">{error || "ممکن است این محصول حذف شده باشد."}</p><div className="mt-7 flex flex-col justify-center gap-2 sm:flex-row"><button type="button" onClick={() => setRetryCount(count => count + 1)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--ui-border)] px-5 py-3 text-sm font-semibold text-[var(--ui-text)] transition hover:bg-[var(--ui-surface-raised)]"><RefreshCw size={16} aria-hidden="true" />دوباره تلاش کنید</button><Link to="/" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-5 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)]"><ArrowLeft size={16} aria-hidden="true" />بازگشت به مجموعه</Link></div></div></main>;
 
+  const productPath = typeof window !== "undefined"
+    ? window.location.pathname
+    : "/product/" + encodeURIComponent(productId);
+
   return (
     <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 sm:pb-28 lg:px-8 lg:pb-10">
-      <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={window.location.pathname} type="product" product={product || undefined} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(productCategorySlug ? [{ name: productCategoryName, path: "/category/" + encodeURIComponent(productCategorySlug) }] : []), { name: product?.name || "محصول", path: window.location.pathname }]} />
+      <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={productPath} type="product" product={product || undefined} structuredData={false} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(productCategorySlug ? [{ name: productCategoryName, path: "/category/" + encodeURIComponent(productCategorySlug) }] : []), { name: product?.name || "محصول", path: productPath }]} />
       <div className="mx-auto max-w-[1600px]">
         <Link to={productCategorySlug ? "/category/" + encodeURIComponent(productCategorySlug) : "/categories"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {productCategoryName}</Link>
 

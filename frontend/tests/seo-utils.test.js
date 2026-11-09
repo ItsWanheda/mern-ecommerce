@@ -113,6 +113,9 @@ test("tracked stock is reflected in Product Offer availability", () => {
       name: "پیراهن",
       price: 125000,
       stock: 0,
+      sku: "TB-123",
+      brand: "تیک بوتیک",
+      category: "پوشاک",
       sizes: ["M", "L"],
       colors: [{ name: "آبی" }],
     },
@@ -124,6 +127,11 @@ test("tracked stock is reflected in Product Offer availability", () => {
   assert.equal(schema.offers.priceCurrency, "IRR");
   assert.equal(schema.offers.price, 1250000);
   assert.equal(schema.offers.availability, "https://schema.org/OutOfStock");
+  assert.equal(schema.sku, "TB-123");
+  assert.deepEqual(schema.brand, { "@type": "Brand", name: "تیک بوتیک" });
+  assert.equal(schema.category, "پوشاک");
+  assert.equal(schema.url, "https://shop.example/product/abc123");
+  assert.equal(schema.mainEntityOfPage["@id"], "https://shop.example/product/abc123");
   assert.deepEqual(schema.additionalProperty, [
     { "@type": "PropertyValue", name: "سایز", value: "M" },
     { "@type": "PropertyValue", name: "سایز", value: "L" },

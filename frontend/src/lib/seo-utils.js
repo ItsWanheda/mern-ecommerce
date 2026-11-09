@@ -243,13 +243,24 @@ export function buildProductStructuredData({ product, title, description, image,
   const priceToman = Number(product.price);
   const hasValidPrice = Number.isFinite(priceToman) && priceToman >= 0;
   const availability = getSchemaAvailability(product);
+  const rawBrand = typeof product.brand === "string" ? product.brand : product.brand?.name;
+  const brandName = normalizeSeoText(rawBrand, "", 120);
+  const rawCategory = typeof product.category === "string"
+    ? product.category
+    : product.category?.name?.fa || product.category?.name?.en || product.category?.name;
+  const categoryName = normalizeSeoText(rawCategory, "", 120);
   const result = {
     "@context": "https://schema.org",
     "@type": "Product",
+    ...(canonical ? { "@id": canonical + "#product" } : {}),
     name: String(title),
     description: normalizeSeoText(product.description || description, description, 1000),
     image: images.length ? images : undefined,
-    sku: product._id ? String(product._id) : undefined,
+    sku: product.sku ? String(product.sku) : product._id ? String(product._id) : undefined,
+    brand: brandName ? { "@type": "Brand", name: brandName } : undefined,
+    category: categoryName || undefined,
+    url: canonical || undefined,
+    mainEntityOfPage: canonical ? { "@type": "WebPage", "@id": canonical } : undefined,
     additionalProperty: additionalProperty.length ? additionalProperty : undefined,
     offers: hasValidPrice && availability ? {
       "@type": "Offer",

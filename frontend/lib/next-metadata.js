@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import {
   STATIC_PAGE_META,
@@ -96,6 +97,23 @@ async function getApiJson(apiBase, endpoint) {
   }
 }
 
+const getProductForApi = cache(async (apiBase, productId) => {
+  const response = await getApiJson(apiBase, "products/" + encodeURIComponent(String(productId)));
+  const product = response?.product || response;
+  return product && typeof product === "object" && product.name ? product : null;
+});
+
+export async function getStorefrontSeoContext() {
+  const requestHeaders = await headers();
+  return getRequestOrigins(requestHeaders);
+}
+
+export async function getStorefrontProduct(productId) {
+  const { requestOrigin } = await getStorefrontSeoContext();
+  const apiBase = await getApiBase(requestOrigin);
+  return getProductForApi(apiBase, productId);
+}
+
 function createMetadata({ title, description, image, path, query, canonicalOriginValue, privateRoute, missingResource }) {
   const safeTitle = normalizeSeoText(title, DEFAULT_SEO_TITLE, 160);
   const safeDescription = normalizeSeoText(description, DEFAULT_SEO_DESCRIPTION, 300);
@@ -135,8 +153,7 @@ function createMetadata({ title, description, image, path, query, canonicalOrigi
 }
 
 export async function generateStoreMetadata(path, query = {}) {
-  const requestHeaders = await headers();
-  const { requestOrigin, canonical: canonicalOriginValue } = getRequestOrigins(requestHeaders);
+  const { requestOrigin, canonical: canonicalOriginValue } = await getStorefrontSeoContext();
   const privateMeta = PRIVATE_ROUTE_META[path];
   const staticMeta = STATIC_PAGE_META[path];
 
@@ -149,8 +166,7 @@ export async function generateStoreMetadata(path, query = {}) {
   const segments = path.split("/").filter(Boolean);
 
   if (segments[0] === "product" && segments[1]) {
-    const response = await getApiJson(apiBase, "products/" + encodeURIComponent(segments[1]));
-    const product = response?.product || response;
+    const product = await getProductForApi(apiBase, segments[1]);
     if (product && typeof product === "object" && product.name) {
       title = product.name;
       description = product.description || description;

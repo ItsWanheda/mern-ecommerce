@@ -1,7 +1,8 @@
 import "@/src/index.css";
 import "lenis/dist/lenis.css";
 
-import { DEFAULT_SEO_DESCRIPTION, DEFAULT_SEO_TITLE, SITE_NAME } from "@/src/lib/seo-utils.js";
+import { DEFAULT_SEO_DESCRIPTION, DEFAULT_SEO_TITLE, SITE_NAME, buildSiteStructuredData, safeJson } from "@/src/lib/seo-utils.js";
+import { getStorefrontSeoContext } from "@/lib/next-metadata.js";
 
 const themeInitialization = `try {
   const savedTheme = localStorage.getItem("tik-boutique-theme");
@@ -34,12 +35,27 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const { canonical } = await getStorefrontSeoContext();
+  const siteStructuredData = canonical
+    ? buildSiteStructuredData(canonical, {
+        supportEmail: process.env.NEXT_PUBLIC_STORE_SUPPORT_EMAIL || "",
+      })
+    : [];
+
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#f7f5f0" />
         <script dangerouslySetInnerHTML={{ __html: themeInitialization }} />
+        {siteStructuredData.map((schema, index) => (
+          <script
+            key={schema["@type"]}
+            id={"storefront-schema-" + index}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: safeJson(schema) }}
+          />
+        ))}
       </head>
       <body>{children}</body>
     </html>

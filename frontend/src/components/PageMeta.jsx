@@ -4,7 +4,6 @@ import {
   buildBreadcrumbStructuredData,
   buildCollectionStructuredData,
   buildProductStructuredData,
-  buildSiteStructuredData,
   canonicalOrigin,
   canonicalUrlFor,
   canonicalUrlForQuery,
@@ -72,6 +71,7 @@ export default function PageMeta({
   breadcrumbs = [],
   robots = "index, follow, max-image-preview:large",
   canonical = true,
+  structuredData = true,
 }) {
   const breadcrumbsKey = JSON.stringify(Array.isArray(breadcrumbs) ? breadcrumbs : []);
   const itemListKey = JSON.stringify(Array.isArray(itemList) ? itemList : []);
@@ -113,9 +113,8 @@ export default function PageMeta({
     setCanonical(canonicalUrl);
 
     removeJsonLd();
-    buildSiteStructuredData(siteOrigin, { supportEmail: process.env.NEXT_PUBLIC_STORE_SUPPORT_EMAIL || "" }).forEach((schema, index) => addJsonLd("site-jsonld-" + index, schema));
 
-    if (type === "product" && product?.name) {
+    if (structuredData && type === "product" && product?.name) {
       addJsonLd("page-jsonld", buildProductStructuredData({
         product,
         title: product.name || safeTitle,
@@ -124,7 +123,7 @@ export default function PageMeta({
         canonical: canonicalUrl,
         origin: siteOrigin,
       }));
-    } else if (["category", "collection", "campaign"].includes(type)) {
+    } else if (structuredData && ["category", "collection", "campaign"].includes(type)) {
       addJsonLd("page-jsonld", buildCollectionStructuredData({
         title: safeTitle,
         description: safeDescription,
@@ -134,7 +133,7 @@ export default function PageMeta({
         origin: siteOrigin,
       }));
     }
-    if (parsedBreadcrumbs.length) {
+    if (structuredData && parsedBreadcrumbs.length) {
       addJsonLd("page-breadcrumb-jsonld", buildBreadcrumbStructuredData(parsedBreadcrumbs, siteOrigin));
     }
 
@@ -158,7 +157,7 @@ export default function PageMeta({
       setMeta('meta[name="twitter:description"]', "name", "twitter:description", DEFAULT_SEO_DESCRIPTION);
       setMeta('meta[name="twitter:image"]', "name", "twitter:image", "");
     };
-  }, [title, description, image, path, type, product, robots, canonical, breadcrumbsKey, itemListKey, locationSearch]);
+  }, [title, description, image, path, type, product, robots, canonical, structuredData, breadcrumbsKey, itemListKey, locationSearch]);
 
   return null;
 }
