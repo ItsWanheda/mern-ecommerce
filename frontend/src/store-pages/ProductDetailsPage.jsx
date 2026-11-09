@@ -573,7 +573,7 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
             <p className="truncate text-xs text-[var(--ui-muted)]">{product.name}</p>
             <p className="mt-0.5 text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>
           </div>
-          <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 min-w-[58%] shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]>
+          <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 min-w-[58%] shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]">
             <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
           </button>
         </div>
