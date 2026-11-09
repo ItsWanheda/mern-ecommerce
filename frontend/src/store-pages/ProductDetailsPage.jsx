@@ -6,7 +6,7 @@ import ProductCard from "../components/ProductCard";
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
-  X, Shirt, ZoomIn, RefreshCw, Star,
+  X, Shirt, ZoomIn, RefreshCw, Star, Share2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
@@ -293,6 +293,29 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
     toggleSaved({ ...product, image: product.image || galleryImages[0] || "" });
   };
 
+  const handleShareProduct = async () => {
+    if (!product || typeof window === "undefined") return;
+    const url = new URL(window.location.pathname, window.location.origin).toString();
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({
+          title: product.name,
+          text: product.description || "مشاهده جزئیات محصول در تیک بوتیک",
+          url,
+        });
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        toast.success("لینک اختصاصی محصول کپی شد.");
+        return;
+      }
+      toast.error("امکان اشتراک‌گذاری در این مرورگر فراهم نیست: " + url);
+    } catch (shareError) {
+      if (shareError?.name !== "AbortError") toast.error("اشتراک‌گذاری انجام نشد؛ دوباره تلاش کنید.");
+    }
+  };
+
   const showPreviousImage = () => {
     if (galleryImages.length < 2) return;
     setActiveImageIndex((index) => (index - 1 + galleryImages.length) % galleryImages.length);
@@ -351,6 +374,10 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
                 ))}
               </div>
             )}
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <button type="button" onClick={handleShareProduct} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2.5 text-xs font-semibold text-[var(--ui-text)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><Share2 size={17} aria-hidden="true" />اشتراک‌گذاری محصول</button>
+              <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex h-11 w-11 items-center justify-center rounded-xl border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] hover:border-[var(--ui-accent)] hover:text-[var(--ui-accent)]")}><Heart size={18} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" /></button>
+            </div>
           </section>
 
           <section className="min-w-0 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-7 shadow-[0_18px_55px_-42px_var(--ui-shadow-color)] sm:px-8 sm:py-10 lg:px-10">
@@ -475,8 +502,8 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
 
 
 
-            <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
-              <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-4 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
+            <div className="mt-7 hidden flex-col gap-2.5 sm:flex sm:flex-row">
+              <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
               <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:flex-1 " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-hover)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)]")}>
                 <Heart size={17} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" />
                 {isWishlisted ? "ذخیره‌شده در علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
@@ -508,7 +535,7 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
               <div><div className="flex items-center gap-2"><Star size={22} className="fill-current text-[var(--ui-accent)]"/><strong className="text-3xl tabular-nums">{reviewSummary.count?reviewSummary.average.toFixed(1):"—"}</strong><span className="text-sm text-[var(--ui-muted)]">از ۵</span></div><p className="mt-1 text-xs text-[var(--ui-muted)]">{new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه تأییدشده</p></div>
             </div>
             {reviewSummary.count>0&&<div className="mt-6 grid gap-2 sm:max-w-xl">{[5,4,3,2,1].map(star=><div key={star} className="flex items-center gap-3 text-xs"><span className="w-12 text-[var(--ui-muted)]">{star} ستاره</span><div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--ui-canvas)]"><div className="h-full rounded-full bg-[var(--ui-accent)]" style={{width:((reviewSummary.distribution?.[star]||0)/reviewSummary.count*100)+"%"}}/></div><span>{reviewSummary.distribution?.[star]||0}</span></div>)}</div>}
-            <div className="mt-8 space-y-5">{reviews.length?reviews.map(review=><article key={review._id} className="border-b border-[var(--ui-border)] pb-6 last:border-0"><div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">{review.displayName||"خریدار تأییدشده"}</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">خریدار تأییدشده</p></div><div className="flex gap-1">{[1,2,3,4,5].map(n=><Star key={n} size={15} className={n<=review.rating?"fill-current text-[var(--ui-accent)]":"text-[var(--ui-border-strong)]"}/>)}</div></div>{review.comment&&<p className="mt-4 whitespace-pre-line text-sm leading-8 text-[var(--ui-muted)]">{review.comment}</p>}</article>):<p className="py-8 text-center text-sm leading-8 text-[var(--ui-muted)]">هنوز دیدگاهی برای این محصول ثبت نشده است.</p>}</div>
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">{reviews.length?reviews.map(review=><article key={review._id} className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] p-4 sm:p-5"><div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">{review.displayName||"خریدار تأییدشده"}</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">خریدار تأییدشده</p></div><div className="flex gap-1">{[1,2,3,4,5].map(n=><Star key={n} size={15} className={n<=review.rating?"fill-current text-[var(--ui-accent)]":"text-[var(--ui-border-strong)]"}/>)}</div></div>{review.comment&&<p className="mt-4 whitespace-pre-line text-sm leading-8 text-[var(--ui-muted)]">{review.comment}</p>}</article>):<p className="py-8 text-center text-sm leading-8 text-[var(--ui-muted)]">هنوز دیدگاهی برای این محصول ثبت نشده است.</p>}</div>
             <div className="mt-8 rounded-2xl bg-[var(--ui-canvas)] p-5 sm:p-7"><h3 className="text-lg font-semibold">تجربه‌تان را به اشتراک بگذارید</h3>
               {reviewEligibility.loading?<p className="mt-3 text-sm text-[var(--ui-muted)]">در حال بررسی شرایط ثبت دیدگاه…</p>:reviewEligibility.eligible?<form onSubmit={handleSubmitReview} className="mt-5 space-y-5"><fieldset><legend className="mb-3 text-sm font-medium">امتیاز شما</legend><div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>setReviewRating(n)} aria-label={n+" ستاره"} aria-pressed={reviewRating===n} className="rounded-lg p-1"><Star size={27} className={n<=reviewRating?"fill-current text-[var(--ui-accent)]":"text-[var(--ui-border-strong)]"}/></button>)}</div></fieldset><label htmlFor="product-review-comment" className="block text-sm font-medium">نظر شما (اختیاری)<textarea id="product-review-comment" value={reviewComment} onChange={e=>setReviewComment(e.target.value.slice(0,1500))} rows={5} className="mt-2 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 text-sm leading-8 outline-none focus:border-[var(--ui-focus)]" placeholder="از تجربه خرید و کیفیت محصول بنویسید…"/></label><button disabled={reviewSubmitting} className="min-h-11 rounded-full bg-[var(--ui-strong-surface)] px-6 py-3 text-sm font-semibold text-[var(--ui-inverse-text)] disabled:opacity-50">{reviewSubmitting?"در حال ثبت…":"ارسال برای بررسی"}</button></form>:<p className="mt-3 text-sm leading-8 text-[var(--ui-muted)]">{reviewEligibility.reason||"برای ثبت دیدگاه باید سفارش پرداخت‌شده این محصول به شما تحویل شده باشد."}</p>}
             </div>
@@ -540,13 +567,13 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-12px_35px_-24px_rgba(0,0,0,0.3)] backdrop-blur lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/96 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-24px_var(--ui-shadow-color)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-[var(--ui-muted)]">{product.name}</p>
             <p className="mt-0.5 text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>
           </div>
-          <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--ui-strong-surface)] px-4 py-2.5 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]">
+          <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 min-w-[58%] shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]>
             <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
           </button>
         </div>

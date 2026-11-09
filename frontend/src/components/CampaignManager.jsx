@@ -147,7 +147,7 @@ const CampaignManager = () => {
           <Megaphone className="h-6 w-6 text-[var(--brand-primary)]" aria-hidden="true" />
           <div>
             <h2 className="text-xl font-semibold text-[var(--ui-text)]">{editingId ? "ویرایش کمپین فروشگاهی" : "ایجاد کمپین فروشگاهی"}</h2>
-            <p className="mt-1 text-sm text-[var(--ui-muted)]">زمان‌ها براساس ساعت ایران (Asia/Tehran) ذخیره می‌شوند. مراجعه و کلیک دکمه اصلی در فهرست کمپین‌ها ثبت می‌شود.</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">زمان‌ها براساس ساعت ایران (Asia/Tehran) ذخیره می‌شوند. کمپین‌های فعال و دارای تصویر به‌ترتیب «ترتیب نمایش» در اسلایدر ابتدای صفحه خانه می‌چرخند و در بخش شگفت‌انگیزها نیز نمایش داده می‌شوند. زمان شروع و پایان، وضعیت فعال‌بودن و تصویر هر کمپین را از همین بخش کنترل کنید.</p>
           </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">

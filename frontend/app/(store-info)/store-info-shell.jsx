@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 
 import Navbar from "@/src/components/Navbar.jsx";
+import MobileBottomNavigation from "@/src/components/MobileBottomNavigation.jsx";
 import StoreFooter from "@/src/components/StoreFooter.jsx";
 import SmoothScroll from "@/src/components/SmoothScroll.jsx";
 import LoadingSpinner from "@/src/components/LoadingSpinner.jsx";
@@ -20,6 +21,9 @@ function StoreInfoChrome({ children }) {
   const router = useRouter();
   const { user, checkAuth, checkingAuth } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
+  const hideMobileBottomNavigation = /^\/product\//.test(location.pathname) ||
+    location.pathname.startsWith("/secret-dashboard") ||
+    ["/login", "/signup", "/forgot-password", "/reset-password", "/purchase-success", "/purchase-cancel"].includes(location.pathname);
 
   useEffect(() => {
     checkAuth();
@@ -48,9 +52,10 @@ function StoreInfoChrome({ children }) {
     <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
       <NextRouteSync mode="all" />
       <SmoothScroll />
-      <div className="relative z-50 pt-32 md:pt-44 min-[1680px]:pt-32">
+      <div className={"relative z-50 pt-20 sm:pt-32 md:pt-44 min-[1680px]:pt-32 " + (hideMobileBottomNavigation ? "" : "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0")}>
         <Navbar />
         {children}
+        {!hideMobileBottomNavigation && <MobileBottomNavigation />}
       </div>
       <StoreFooter />
       <Toaster />

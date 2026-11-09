@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import CategoryItem from "../components/CategoryItem";
@@ -43,6 +43,7 @@ const HomePage = () => {
   const pageRef = useRef(null);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [bestsellers, setBestsellers] = useState([]);
   const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
   const [bestsellersError, setBestsellersError] = useState(false);
@@ -129,14 +130,25 @@ const HomePage = () => {
   const catalogProducts = [...featuredProducts, ...bestsellers, ...newestProducts]
     .filter((product, index, products) => product?._id && products.findIndex((item) => item?._id === product._id) === index);
 
-  // Campaigns are already time-filtered by the API. Only promote one in the hero
-  // when its image and local destination are both ready to use.
-  const heroCampaign = campaigns.find((campaign) => {
+  // Active campaigns with an image and local destination rotate through the
+  // leading home banner. The existing campaign manager controls their order.
+  const heroCampaigns = campaigns.filter((campaign) => {
     const hasTitle = typeof campaign?.title === "string" && campaign.title.trim();
     const hasImage = typeof campaign?.image === "string" && campaign.image.trim();
     const href = campaign?.href;
     return hasTitle && hasImage && typeof href === "string" && href.startsWith("/") && !href.startsWith("//");
   });
+  const heroCampaign = heroCampaigns.length ? heroCampaigns[heroSlideIndex % heroCampaigns.length] : undefined;
+  useEffect(() => {
+    if (heroCampaigns.length < 2) return undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const intervalId = window.setInterval(() => {
+      setHeroSlideIndex((index) => (index + 1) % heroCampaigns.length);
+    }, 6200);
+    return () => window.clearInterval(intervalId);
+  }, [heroCampaigns.length]);
+  const showPreviousCampaign = () => setHeroSlideIndex((index) => (index - 1 + heroCampaigns.length) % heroCampaigns.length);
+  const showNextCampaign = () => setHeroSlideIndex((index) => (index + 1) % heroCampaigns.length);
   const heroProduct = catalogProducts.find((product) =>
     typeof product?.image === "string" &&
     product.image.trim() &&
@@ -230,6 +242,17 @@ const HomePage = () => {
                   سادگی با جلوه‌ای خاص
                 </div>
               )}
+              {heroCampaigns.length > 1 && (
+                <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 rounded-full border border-white/30 bg-[var(--ui-strong-surface)]/75 px-2.5 py-2 text-white shadow-lg backdrop-blur-md" aria-label="اسلایدر پیشنهادهای ویژه">
+                  <button type="button" onClick={showPreviousCampaign} aria-label="پیشنهاد قبلی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronRight size={17} aria-hidden="true" /></button>
+                  <div className="flex items-center gap-1.5">
+                    {heroCampaigns.map((campaign, index) => (
+                      <button key={campaign._id || index} type="button" onClick={() => setHeroSlideIndex(index)} aria-label={"نمایش پیشنهاد " + (index + 1)} aria-pressed={heroSlideIndex === index} className={"h-2 rounded-full transition-all " + (heroSlideIndex === index ? "w-7 bg-white" : "w-2 bg-white/55 hover:bg-white/80")} />
+                    ))}
+                  </div>
+                  <button type="button" onClick={showNextCampaign} aria-label="پیشنهاد بعدی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronLeft size={17} aria-hidden="true" /></button>
+                </div>
+              )}
             </div>
             <div className="relative z-10 order-2 min-w-0 px-5 py-8 sm:px-10 sm:py-12 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
               <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand sm:mb-5 sm:text-xs sm:tracking-[0.22em]">
@@ -289,7 +312,7 @@ const HomePage = () => {
         {secondaryCampaigns.length > 0 && (
 <section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
             <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
-              <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">پیشنهادهای ویژه</h2></div>
+              <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">شگفت‌انگیزها و پیشنهادهای ویژه</h2></div>
               <Link to="/campaigns" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-border-strong px-3 text-xs font-semibold text-brand transition hover:border-ink hover:text-ink sm:border-0 sm:px-0 sm:text-sm">همه پیشنهادها<ArrowLeft size={15} aria-hidden="true" /></Link>
             </div>
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">

@@ -764,7 +764,7 @@ const Navbar = () => {
         dir="rtl"
         className="fixed inset-x-0 top-0 z-40 w-full border-b border-[var(--ui-border)] bg-canvas/95 text-[var(--ui-text)] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
       >
-        <div className="bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)]">
+        <div className="hidden bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)] sm:block">
           <div className="mx-auto flex min-h-9 max-w-[1920px] items-center justify-center gap-2 px-3 py-2 text-center sm:justify-between sm:px-6 lg:px-8 min-[1680px]:px-12">
             <p className="flex min-w-0 items-center justify-center gap-2 text-[11px] font-medium leading-5 sm:justify-start sm:text-xs">
               <Truck size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
@@ -799,7 +799,7 @@ const Navbar = () => {
                 aria-expanded={mobileMenuOpen}
                 aria-controls="store-menu-panel"
                 onClick={() => setMobileMenuOpen((open) => !open)}
-                className="order-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:hidden"
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
               >
                 {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
               </button>
@@ -820,7 +820,7 @@ const Navbar = () => {
               <Link
                 to="/cart"
                 aria-label={cart.length > 0 ? `سبد خرید، ${new Intl.NumberFormat("fa-IR").format(cart.length)} کالا` : "سبد خرید"}
-                className="order-2 relative inline-flex h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:px-3 lg:order-1"
+                className="hidden relative h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:px-3 lg:order-1 lg:inline-flex"
               >
                 <ShoppingCart size={18} aria-hidden="true" />
                 <span className="hidden lg:inline">سبد خرید</span>

@@ -649,11 +649,30 @@ const CategoryPage = ({ slug: routeSlug }) => {
     ? (selectedCategory.ancestors || []).map((ancestorId) => dynamicCategories.find((item) => String(item._id) === String(ancestorId))).filter(Boolean)
     : [];
   const priceError = getPriceError(filters);
+  const pageBreadcrumbs = [
+    { name: "صفحه اصلی", path: "/" },
+    { name: "دسته‌بندی‌ها", path: "/categories" },
+    ...categoryAncestors.map((item) => ({ name: item.name?.fa || item.name?.en || item.slug, path: "/category/" + encodeURIComponent(item.slug) })),
+    { name: pageTitle, path: "/category/" + encodeURIComponent(category) },
+  ];
 
   return (
     <main dir="rtl" className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: pageTitle, path: "/category/" + category }]} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={pageBreadcrumbs} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
       <div className="mx-auto max-w-[1920px]">
+        <nav aria-label="مسیر دسته‌بندی" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-muted-soft sm:mb-5">
+          <Link to="/" className="transition hover:text-ink">خانه</Link>
+          <span aria-hidden="true">/</span>
+          <Link to="/categories" className="transition hover:text-ink">دسته‌بندی‌ها</Link>
+          {categoryAncestors.map((ancestor) => (
+            <span key={ancestor._id} className="inline-flex items-center gap-2">
+              <span aria-hidden="true">/</span>
+              <Link to={"/category/" + encodeURIComponent(ancestor.slug)} className="transition hover:text-ink">{ancestor.name?.fa || ancestor.name?.en || ancestor.slug}</Link>
+            </span>
+          ))}
+          <span aria-hidden="true">/</span>
+          <span aria-current="page" className="font-semibold text-[var(--ui-text)]">{pageTitle}</span>
+        </nav>
         <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand">
