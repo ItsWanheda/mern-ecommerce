@@ -57,6 +57,7 @@ const checkoutRouteSet = new Set(CHECKOUT_ROUTES);
 const newsletterRoutesSet = new Set(NEWSLETTER_ROUTES);
 const adminRouteSet = new Set(ADMIN_ROUTES);
 const appRouterRouteSet = new Set([
+  "/",
   ...STORE_INFO_ROUTES,
   ...AUTH_ROUTES,
   ...CUSTOMER_ROUTES,

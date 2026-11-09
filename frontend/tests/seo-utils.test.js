@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   absoluteUrlFor,
+  STATIC_PAGE_META,
+  PRIVATE_ROUTE_META,
   buildProductStructuredData,
   buildSiteStructuredData,
   canonicalUrlFor,
@@ -12,6 +14,12 @@ import {
   hasIndexExcludedQuery,
 } from "../src/lib/seo-utils.js";
 import { getCanonicalOrigin, renderHtmlShell } from "../../seo/server-utils.js";
+
+test("static and private metadata contain the expected canonical route entries", () => {
+  assert.equal(STATIC_PAGE_META["/campaigns"].title, "پیشنهادهای ویژه و کمپین‌های فروش");
+  assert.equal(PRIVATE_ROUTE_META["/newsletter-unsubscribe"].title, "لغو عضویت خبرنامه");
+  assert.equal(PRIVATE_ROUTE_META["/secret-dashboard"].title, "پنل مدیریت");
+});
 
 test("SEO text collapses whitespace without damaging Persian text", () => {
   assert.equal(normalizeSeoText("  پیراهن\n\n   آبی  ", "fallback", 100), "پیراهن آبی");

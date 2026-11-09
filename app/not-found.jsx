@@ -1,7 +1,10 @@
-import LegacyClient from "./legacy-client.jsx";
+import NotFoundClient from "./not-found-client.jsx";
+
+export const metadata = {
+  title: "صفحه پیدا نشد",
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
-  // Let the existing React Router wildcard render Tik Boutique's Persian 404 UI
-  // while Next.js still returns the correct HTTP 404 status.
-  return <LegacyClient />;
+  return <NotFoundClient />;
 }
