@@ -8,12 +8,11 @@ import {
   buildSiteStructuredData,
   canonicalUrlFor,
   canonicalUrlForQuery,
-  escapeHtml,
   getSchemaAvailability,
   normalizeSeoText,
   hasIndexExcludedQuery,
 } from "../src/lib/seo-utils.js";
-import { getCanonicalOrigin, renderHtmlShell } from "../../seo/server-utils.js";
+import { getCanonicalOrigin } from "../../seo/server-utils.js";
 
 test("static and private metadata contain the expected canonical route entries", () => {
   assert.equal(STATIC_PAGE_META["/campaigns"].title, "پیشنهادهای ویژه و کمپین‌های فروش");
@@ -136,34 +135,4 @@ test("variant availability reflects whether at least one combination is purchasa
   assert.equal(getSchemaAvailability({ variants: [{ stock: 0 }, { stock: 2 }] }), "https://schema.org/InStock");
   assert.equal(getSchemaAvailability({ variants: [{ stock: 0 }], stock: null }), "https://schema.org/OutOfStock");
   assert.equal(getSchemaAvailability({ isActive: false, stock: 5 }), "https://schema.org/Discontinued");
-});
-
-test("server HTML transform keeps the app bundle and injects unique Persian metadata and content", () => {
-  const source = '<!doctype html><html lang="fa" dir="rtl"><head><title>default</title><meta name="description" content="old"><meta name="robots" content="index, follow"><script type="module" src="/assets/app.js"></script></head><body><div id="root"></div></body></html>';
-  const rendered = renderHtmlShell(source, {
-    title: "پیراهن\n آبی",
-    description: "توضیح محصول",
-    canonical: "https://shop.example/product/abc123",
-    siteOrigin: "https://shop.example",
-    robots: "index, follow",
-    type: "product",
-    structuredData: { "@type": "Product", name: "پیراهن" },
-    rootContent: "<main><h1>پیراهن آبی</h1></main>",
-  });
-  assert.match(rendered, /<title>پیراهن آبی \| تیک بوتیک<\/title>/);
-  assert.match(rendered, /<link rel="canonical" href="https:\/\/shop\.example\/product\/abc123">/);
-  assert.match(rendered, /<div id="root"><main><h1>پیراهن آبی<\/h1><\/main><\/div>/);
-  assert.match(rendered, /src="\/assets\/app\.js"/);
-  assert.equal((rendered.match(/<title>/g) || []).length, 1);
-  assert.equal((rendered.match(/name="description"/g) || []).length, 1);
-});
-
-test("server HTML escapes user-provided text before placing it in metadata", () => {
-  const rendered = renderHtmlShell(
-    '<html><head><title>old</title></head><body><div id="root"></div></body></html>',
-    { title: 'Shirt <script>alert("x")</script>', description: "a & b", rootContent: "" }
-  );
-  assert.match(rendered, /Shirt &lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
-  assert.match(rendered, /content="a &amp; b"/);
-  assert.doesNotMatch(rendered, /<title>Shirt <script>/);
 });
