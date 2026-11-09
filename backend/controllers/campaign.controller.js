@@ -57,11 +57,21 @@ export const getActiveCampaigns = async (req, res) => {
     const parsedLimit = Number.parseInt(req.query.limit, 10);
     const limit = Number.isInteger(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 8;
     const now = new Date();
-    const campaigns = await Campaign.find({
+    let campaignQuery = Campaign.find({
       isActive: true,
       startsAt: { $lte: now },
       endsAt: { $gt: now },
-    }).sort({ sortOrder: 1, createdAt: -1 }).limit(limit).lean();
+    }).sort({ sortOrder: 1, createdAt: -1 }).limit(limit);
+    // Keep the lightweight ID-only response by default. The homepage opts in
+    // so admin-linked campaign products can be rendered without another lookup.
+    if (req.query.includeProducts === "1") {
+      campaignQuery = campaignQuery.populate({
+        path: "productIds",
+        match: { isActive: { $ne: false } },
+        select: "name description price image images category sizes colors variants fit stock isFeatured isActive createdAt",
+      });
+    }
+    const campaigns = await campaignQuery.lean();
     return res.json({ campaigns });
   } catch (error) {
     console.error("Error loading active campaigns", error.message);

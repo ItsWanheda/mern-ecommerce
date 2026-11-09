@@ -138,7 +138,7 @@ const HomePage = () => {
     Promise.resolve(fetchNewestProducts())
       .then((succeeded) => { if (active) setNewestError(succeeded === false); })
       .finally(() => { if (active) setNewestLoaded(true); });
-    axios.get("/campaigns")
+    axios.get("/campaigns?includeProducts=1")
       .then(({ data }) => { if (active) setCampaigns(Array.isArray(data.campaigns) ? data.campaigns : []); })
       .catch((error) => console.error("Could not load campaigns:", error.message));
     axios.get("/products/bestsellers?limit=8")
@@ -188,12 +188,12 @@ const HomePage = () => {
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
   );
-  const campaignProductIds = new Set(campaigns.flatMap((campaign) =>
-    Array.isArray(campaign.productIds)
-      ? campaign.productIds.map((item) => String(item?._id || item))
-      : []
-  ));
-  const campaignProducts = catalogProducts.filter((product) => campaignProductIds.has(String(product._id)));
+  const campaignProducts = campaigns
+    .flatMap((campaign) => Array.isArray(campaign.productIds) ? campaign.productIds : [])
+    .filter((product) => product && typeof product === "object" && product._id && product.isActive !== false)
+    .filter((product, index, products) =>
+      products.findIndex((item) => String(item._id) === String(product._id)) === index
+    );
   const closestEndingCampaign = campaigns
     .filter((campaign) => Number.isFinite(new Date(campaign.endsAt).getTime()))
     .sort((left, right) => new Date(left.endsAt).getTime() - new Date(right.endsAt).getTime())[0];
