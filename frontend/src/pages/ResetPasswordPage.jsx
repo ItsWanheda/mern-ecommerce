@@ -1,8 +1,9 @@
+"use client";
+
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, LockKeyhole, LoaderCircle, CheckCircle2 } from "lucide-react";
 import axios from "../lib/axios";
-import PageMeta from "../components/PageMeta";
 import { getPasswordPolicyError } from "../lib/password-policy";
 
 const ResetPasswordPage = () => {
@@ -32,7 +33,6 @@ const ResetPasswordPage = () => {
   };
   const field = "mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10";
   return <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10 text-ink">
-    <PageMeta title="تنظیم رمز عبور جدید" description="یک رمز عبور جدید و امن برای حساب تیک بوتیک تعیین کنید." path="/reset-password" robots="noindex, nofollow" />
     <section dir="rtl" className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-xl sm:p-9">
       <Link to="/" className="font-serif text-2xl font-semibold">تیک بوتیک</Link>
       <h1 className="mt-8 text-2xl font-bold">تنظیم رمز عبور جدید</h1>

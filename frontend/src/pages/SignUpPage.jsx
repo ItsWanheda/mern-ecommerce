@@ -1,12 +1,16 @@
+"use client";
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
 import { getPasswordPolicyError } from "../lib/password-policy";
+import { buildAuthPagePath, getAuthReturnPath } from "../lib/auth-route-state.js";
 
 const SignUpPage = () => {
 	const location = useLocation();
+	const returnPath = getAuthReturnPath(location);
 	const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
 	const [showPassword, setShowPassword] = useState(false);
 	const [passwordError, setPasswordError] = useState("");
@@ -105,7 +109,7 @@ const SignUpPage = () => {
 							<ShieldCheck size={16} className="shrink-0 text-brand" aria-hidden="true" />
 							اطلاعات شما خصوصی و محافظت‌شده باقی می‌ماند.
 						</div>
-						<p className="mt-6 text-center text-sm text-muted-soft">از قبل حساب کاربری دارید؟{" "}<Link to="/login" state={location.state?.from ? { from: location.state.from } : undefined} className="font-semibold text-brand underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-ink-strong">ورود</Link></p>
+						<p className="mt-6 text-center text-sm text-muted-soft">از قبل حساب کاربری دارید؟{" "}<Link to={buildAuthPagePath("/login", returnPath)} className="font-semibold text-brand underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-ink-strong">ورود</Link></p>
 					</div>
 				</motion.section>
 			</div>

@@ -19,7 +19,11 @@
 - [x] Move the six public store-information routes into explicit App Router page files.
 - [x] Keep the existing shared store shell, Navbar, footer, theme, auth initialization and guest-cart initialization during the transition.
 - [x] Mirror legacy React Router navigation into native App Router routes while the rest of the storefront is being migrated.
+- [x] Migrate Login, Signup, Forgot Password and Reset Password to explicit App Router routes.
+- [x] Preserve post-login destinations across the route bridge using validated same-origin `next` paths.
+- [x] Retain the existing auth store, API calls, password policy and account-page presentation.
 - [ ] Verify browser-level authentication cookies, cart, checkout and visual regression.
+- [ ] Verify live login, signup, password-recovery email and reset-token flows against the preview API.
 - [ ] Verify Vercel preview, proxy/cookies, social previews, robots and sitemap endpoints.
 - [ ] Remove the Vite fallback only after all acceptance gates pass.
 
@@ -28,6 +32,7 @@
 ```text
 mern-ecommerce/
 ├── app/                      # Next.js App Router
+│   ├── (account)/             # Native login, signup and password-recovery routes
 │   ├── (store-info)/          # Native public policy/help route group
 │   ├── layout.jsx            # Persian RTL document and global metadata
 │   ├── page.jsx              # Home
@@ -82,10 +87,18 @@ The six public guidance routes now have explicit App Router page files and use t
 
 A small route-sync component bridges React Router navigation from not-yet-migrated pages into the new App Router pages. It is intentionally temporary: as more route groups are migrated, the bridge will be narrowed and then removed. Direct page refreshes and links between the six information routes resolve through explicit App Router page modules. The shared information-page content remains a client component for this phase (it still reads shipping settings from the existing API); Next.js owns the route matching and server-generated metadata. Converting this content to server components is a later optimization.
 
+## Authentication route migration
+
+The four authentication URLs now have explicit App Router page modules under `app/(account)/`. The account shell intentionally keeps the existing account-page presentation (no store Navbar or footer) while retaining the Zustand user/cart stores, auth-state check, guest-cart initialization/merge, toast layer and smooth scrolling.
+
+The existing Login and Signup forms remain the source of truth for their UI and client-side validation. Forgot Password and Reset Password continue to call the same API endpoints, and reset-token query strings are preserved. The route bridge carries a protected page's intended destination into a validated same-origin `next` query parameter so it is not lost when Next.js takes over navigation. Authenticated users are redirected away from Login/Signup to that destination or the home page, matching the previous guard behavior.
+
+No authentication controllers, middleware, database models, JWT handling, refresh-token coordination, cookies, environment variables or payment code were changed. Live login, signup, recovery-email delivery, reset-token acceptance and cookie behavior still require browser/API acceptance testing.
+
 ## Validation performed
 
 - Next.js 16.4.5 production build: passed.
-- Frontend unit tests: 28 passed.
+- Frontend unit tests: passed, including exact route matching and auth return-path safety tests.
 - Backend syntax/build checks and unit tests: 47 passed.
 - Production smoke test: home, signup, shop, category and product paths returned HTTP 200; unsupported paths returned HTTP 404; favicon returned HTTP 200; signup metadata included `noindex, nofollow`.
 - Next.js reports React 18 support is deprecated in version 16 and will be removed in Next.js 17. React has not been upgraded in this compatibility phase to avoid combining two major migrations.

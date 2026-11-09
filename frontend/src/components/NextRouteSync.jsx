@@ -3,9 +3,10 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLocation } from "react-router-dom";
-import { isStoreInfoRoute } from "../lib/next-route-paths.js";
+import { isAppRouterRoute } from "../lib/next-route-paths.js";
+import { withAuthReturnPath } from "../lib/auth-route-state.js";
 
-export default function NextRouteSync({ mode = "native-store-info" }) {
+export default function NextRouteSync({ mode = "native-app-router" }) {
   const location = useLocation();
   const router = useRouter();
   const previousKey = useRef(location.key);
@@ -30,9 +31,9 @@ export default function NextRouteSync({ mode = "native-store-info" }) {
       return;
     }
 
-    if (mode !== "all" && !isStoreInfoRoute(location.pathname)) return;
+    if (mode !== "all" && !isAppRouterRoute(location.pathname)) return;
 
-    const destination = location.pathname + location.search + location.hash;
+    const destination = withAuthReturnPath(location);
     router.push(destination);
   }, [location.key, location.pathname, location.search, location.hash, mode, router]);
 

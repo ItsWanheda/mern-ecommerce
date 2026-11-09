@@ -29,7 +29,7 @@ export default function LegacyClient() {
   return (
     <StrictMode>
       <BrowserRouter>
-        <NextRouteSync mode="native-store-info" />
+        <NextRouteSync mode="native-app-router" />
         <App />
       </BrowserRouter>
     </StrictMode>

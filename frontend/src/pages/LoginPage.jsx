@@ -1,11 +1,15 @@
+"use client";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
+import { buildAuthPagePath, getAuthReturnPath } from "../lib/auth-route-state.js";
 
 const LoginPage = () => {
 	const location = useLocation();
+	const returnPath = getAuthReturnPath(location);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -73,7 +77,7 @@ const LoginPage = () => {
 							<ShieldCheck size={16} className="shrink-0 text-brand" aria-hidden="true" />
 							اطلاعات حساب شما به‌صورت امن نگهداری می‌شود.
 						</div>
-						<p className="mt-8 text-center text-sm text-muted-soft">تازه به ما پیوسته‌اید؟{" "}<Link to="/signup" state={location.state?.from ? { from: location.state.from } : undefined} className="font-semibold text-brand underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-ink-strong">ایجاد حساب کاربری</Link></p>
+						<p className="mt-8 text-center text-sm text-muted-soft">تازه به ما پیوسته‌اید؟{" "}<Link to={buildAuthPagePath("/signup", returnPath)} className="font-semibold text-brand underline decoration-[#68745f]/30 underline-offset-4 transition hover:text-ink-strong">ایجاد حساب کاربری</Link></p>
 					</div>
 				</motion.section>
 </div>
