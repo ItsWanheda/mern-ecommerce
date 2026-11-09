@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   AUTH_ROUTES,
   AUTH_REQUIRED_CUSTOMER_ROUTES,
+  CHECKOUT_ROUTES,
   SHOPPING_STATIC_ROUTES,
   CUSTOMER_ROUTES,
   STORE_INFO_ROUTES,
@@ -89,4 +90,17 @@ test("auth links keep the intended destination when switching between login and 
   assert.equal(withAuthReturnPath({ pathname: "/login", search: "", hash: "", state: { from: { pathname: "/orders" } } }), "/login?next=%2Forders");
   assert.equal(withAuthReturnPath({ pathname: "/login", search: "?next=%2Forders", hash: "", state: { from: { pathname: "/profile" } } }), "/login?next=%2Fprofile");
   assert.equal(withAuthReturnPath({ pathname: "/reset-password", search: "?token=abc", hash: "" }), "/reset-password?token=abc");
+});
+
+
+test("native checkout routes include cart and verified payment result pages", () => {
+  assert.deepEqual(CHECKOUT_ROUTES, ["/cart", "/purchase-success", "/purchase-cancel"]);
+  for (const route of CHECKOUT_ROUTES) {
+    assert.equal(isShoppingRoute(route), true, route);
+    assert.equal(isAppRouterRoute(route), true, route);
+  }
+  for (const route of ["/purchase", "/purchase-success/extra", "/cart/items"]) {
+    assert.equal(isShoppingRoute(route), false, route);
+    assert.equal(isAppRouterRoute(route), false, route);
+  }
 });
