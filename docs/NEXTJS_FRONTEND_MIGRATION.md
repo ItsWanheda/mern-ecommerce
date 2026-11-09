@@ -7,10 +7,10 @@
 ## Implementation status
 
 - [x] Add Next.js App Router at the repository root.
-- [x] Reuse the existing React storefront through a client-only compatibility bridge.
+- [x] Reuse the existing React storefront components inside native App Router pages and route-group layouts.
 - [x] Preserve existing pages, components, Zustand stores, theme tokens, CSS and responsive UI.
-- [x] Move shared public assets to root `public/`; retain Vite as a temporary fallback.
-- [x] Map Vite public variables to Next.js `NEXT_PUBLIC_*` variables.
+- [x] Move shared public assets to root `public/` for Next.js.
+- [x] Use Next.js `NEXT_PUBLIC_*` variables for public storefront configuration.
 - [x] Preserve same-origin `/api` and add a local Next.js API proxy.
 - [x] Add server metadata for static pages, products, categories, campaigns and collections.
 - [x] Preserve private-route noindex and canonical URL rules.
@@ -36,7 +36,7 @@
 - [ ] Verify browser-level authentication cookies, cart, checkout and visual regression.
 - [ ] Verify live login, signup, password-recovery email and reset-token flows against the preview API.
 - [ ] Verify Vercel preview, proxy/cookies, social previews, robots and sitemap endpoints.
-- [ ] Remove the Vite fallback only after all browser/API/visual acceptance gates pass.
+- [x] Remove the Vite runtime, Vite entrypoint/configuration, nested frontend package manifest and old React SPA route table.
 
 ## Current structure
 
@@ -61,15 +61,15 @@ mern-ecommerce/
 
 ## Compatibility decisions
 
-The first migration step intentionally keeps the current UI intact. The App Router shell loads the existing stylesheet and assets, then mounts the React application after hydration. This prevents components that directly read browser APIs during render from being evaluated on the server. This is a compatibility bridge, not the final Server Component conversion.
+The migration keeps the existing UI intact. App Router page modules import the existing interactive components as client components, while Next.js owns URL matching, route layouts, server metadata and HTTP status codes. This avoids rewriting the storefront UI or its commerce logic as part of the routing migration.
 
-React Router remains active inside the bridge, preserving existing paths and route-state redirects. Individual route groups can move to native App Router pages after browser-level acceptance tests.
+Next.js App Router is the only route matcher. React Router remains temporarily as a client-navigation adapter because existing interactive components still consume its `Link`, `NavLink`, `useNavigate`, `useLocation` and `useSearchParams` APIs. The route-scoped `BrowserRouter` provider and `NextRouteSync` hand client-side navigation back to Next.js. The old `Routes`/`Route` SPA table and catch-all mount have been removed; converting these remaining component APIs is a separate cleanup, not a second route system.
 
 The backend remains unchanged. Axios continues to use `withCredentials: true`, HTTP-only cookies and the existing refresh-token coordinator. The default API base remains `/api`. Vercel rewrites that path to the separate Express API; local development proxies it to `http://localhost:5000`.
 
-The existing frontend Vercel project has a project-level Output Directory override of `frontend/dist`, which is still needed by the current Vite-based `master` branch. This migration branch sets Next.js `distDir` to the same path so its preview build can coexist without changing shared Vercel project settings. The Vite fallback defines `NEXT_PUBLIC_*` aliases from its original `VITE_*` variables.
+The existing frontend Vercel project has a project-level Output Directory override of `frontend/dist`. It is shared with the untouched `master` branch, so this migration branch keeps Next.js `distDir` set to the same path without changing project-level Vercel settings. The source now reads only Next.js public environment variables; stale Vite-specific project variables are not deleted because they may still be used by `master` until this branch is merged.
 
-Use `NEXT_PUBLIC_*` only for browser-visible storefront settings. Backend secrets must never use that prefix. Legacy `VITE_*` values are temporarily mapped to Next.js variable names.
+Use `NEXT_PUBLIC_*` only for browser-visible storefront settings. Backend secrets must never use that prefix. The Next.js branch does not read `VITE_*` aliases.
 
 Metadata uses shared SEO helpers and the existing public API. Canonicals remain suppressed until a verified production origin is configured; private and filtered routes remain noindex. Existing robots and sitemap rewrites remain. The old page-shell/share-preview handlers are retained but are no longer used as page rewrites.
 
@@ -91,13 +91,13 @@ Terminal 2 — Next.js storefront:
 npm run dev:frontend
 ```
 
-Open `http://localhost:3000`. The old Vite runner remains temporarily available with `npm run dev --prefix frontend`.
+Open `http://localhost:3000`. The Next.js App Router is the only frontend runner; there is no nested frontend package or alternate Vite command.
 
 ## Store-information route migration
 
 The six public guidance routes now have explicit App Router page files and use the existing shared `StoreInfoPage` UI component. The route-specific page modules call the server metadata helper, so title, description, robots and canonical behavior are generated by Next.js. The existing Navbar, StoreFooter, SmoothScroll, toast layer, auth initialization and guest-cart initialization are retained in the shared route-group shell.
 
-A small route-sync component bridges React Router navigation from not-yet-migrated pages into the new App Router pages. It is intentionally temporary: as more route groups are migrated, the bridge will be narrowed and then removed. Direct page refreshes and links between the six information routes resolve through explicit App Router page modules. The shared information-page content remains a client component for this phase (it still reads shipping settings from the existing API); Next.js owns the route matching and server-generated metadata. Converting this content to server components is a later optimization.
+The route-scoped React Router provider supports existing shared UI links and navigation hooks, while `NextRouteSync` transfers client-side history changes to the native App Router. Direct page refreshes and links between information routes resolve through explicit App Router page modules. The shared information-page content remains a client component for this phase (it still reads shipping settings from the existing API); Next.js owns the route matching and server-generated metadata. Converting this content to server components is a later optimization.
 
 ## Authentication route migration
 
@@ -136,7 +136,7 @@ No product, category, campaign, search, inventory, payment or authentication bac
 
 The product URL now has an explicit App Router page at `app/(shopping)/product/[productId]/page.jsx`. The route passes the decoded ID into the existing ProductDetailsPage client component and uses the server metadata helper to resolve the current product name, description and image. Missing or invalid products receive noindex metadata.
 
-The existing product experience is reused without rewriting its business logic: image gallery and keyboard-accessible zoom dialog, size/color combination availability, stock checks, add-to-cart with selected variant, guest wishlist, recently viewed products, related products, verified-purchase review eligibility and moderated review submission. The route-sync matcher now includes exactly one `/product/{id}` segment so links from legacy ProductCard components enter the native route while deeper or incomplete paths remain unmatched.
+The existing product experience is reused without rewriting its business logic: image gallery and keyboard-accessible zoom dialog, size/color combination availability, stock checks, add-to-cart with selected variant, guest wishlist, recently viewed products, related products, verified-purchase review eligibility and moderated review submission. The route-sync matcher now includes exactly one `/product/{id}` segment so existing ProductCard links enter the native route while deeper or incomplete paths remain unmatched.
 
 The product page stays client-rendered in this compatibility phase because it relies on browser storage, Zustand stores and interactive dialogs. Server-generated metadata is available on the initial route request; the existing PageMeta continues to update product structured data after product data loads in the browser.
 
@@ -195,9 +195,9 @@ The Persian 404 page is now rendered directly by the App Router not-found bounda
 
 The homepage metadata is server-generated by Next.js. Private routes (including the admin dashboard, checkout/customer pages and newsletter unsubscribe) remain noindex. Product/category/campaign/look details keep their resource metadata behavior, and unknown dynamic resources continue to receive noindex metadata. Duplicate `/campaigns` static metadata was removed so there is one unambiguous title/description entry. A regression test protects the intended campaign metadata and private-route entries.
 
-### Vite fallback decision
+### Framework cleanup
 
-The Vite entry point, configuration and dependencies are intentionally retained as a temporary recovery/development fallback. The Next.js build and unit tests are passing, but they do not establish visual parity, cookie behavior, authenticated admin access, live Zarinpal return verification, newsletter submission, or Vercel rewrite/proxy behavior in a real browser. Removing Vite now would remove the known fallback before those release gates have been completed. No Vercel project-level build/output settings were changed.
+The redundant catch-all and legacy SPA entry were removed in Step 8. Step 9 removes the remaining Vite runtime, Vite entry HTML/configuration, nested frontend package manifest, Vite dependencies and Vite-only logo. The shared `frontend/src` folder remains the source location for existing React components and tests. The root package is the only Node package manifest used to install, test, build and run the Next.js storefront.
 
 ### Release gates still open
 
@@ -207,6 +207,17 @@ The Vite entry point, configuration and dependencies are intentionally retained 
 - Test admin and non-admin roles, permission-filtered tabs, keyboard navigation and mobile admin navigation.
 - Test homepage, catalogue, product detail, policy pages and newsletter unsubscribe visually at mobile and desktop breakpoints.
 - Test canonical/robots metadata, social previews, robots.txt, sitemap routes and the same-origin API proxy on an accessible preview.
-- Only after these pass should the Vite fallback, duplicate SPA route table and React Router bridge be considered for removal.
+- The Vite runtime and duplicate SPA route table are removed. The React Router component adapter remains only until all shared components have been converted to Next.js navigation APIs.
 
 The audit does not change the Express API, database, authentication/payment controllers, Vercel environment variables, project settings or branch protection.
+
+
+## Step 9 — Next.js-only frontend cutover
+
+The frontend now has one package manifest at the repository root and one build/runtime: Next.js App Router. Removed files include the Vite HTML entrypoint, Vite config, nested frontend package manifest, Vite React plugin and Vite package dependencies, the old `frontend/src/main.jsx` and `frontend/src/App.jsx` SPA entry/route table, and the unused Vite logo. Frontend tests are invoked by the root `npm run test:frontend` script; `npm run build` runs those tests, the Next.js production build and backend checks.
+
+The Vite-era `/api/share-preview` and `/api/page-shell` HTML shell handlers have also been removed. They fetched `/index.html` and wrote server-rendered content into a Vite `#root`; Next.js now supplies page HTML, metadata, canonical URLs, robots directives and HTTP 404 responses directly through App Router route modules. Their HTML-shell-only helper code and tests were removed. The robots and XML sitemap handlers remain and now use Next.js-compatible environment variables only.
+
+The existing React components still use React Router navigation APIs. The route-group BrowserRouter provider and `NextRouteSync` are intentionally retained as a narrow client-navigation adapter; they do not define routes or mount a legacy SPA. Removing this final adapter requires converting those component imports to `next/link` and `next/navigation`, which is beyond removing Vite and the old SPA entrypoint. Backend APIs, data models, payment/authentication logic, shared Vercel project settings and the untouched `master` branch were not changed.
+
+The preview deployment and automated build verify that Next.js produces the site independently of Vite. Live visual, cookie, admin, newsletter and Zarinpal browser tests remain a release gate because the Vercel preview is access-protected in this session.

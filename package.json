@@ -6,12 +6,13 @@
   "scripts": {
     "dev": "nodemon backend/server.js",
     "start": "node backend/server.js",
-    "build": "npm test --prefix frontend && npm run build:frontend && npm run build --prefix backend && node --check api/share-preview.js && node --check api/page-shell.js && node --check api/robots.js && node --check api/sitemap.js && node --check api/sitemap-static.js && node --check api/sitemap-products.js && node --check seo/server-utils.js && node --check frontend/src/lib/seo-utils.js",
+    "build": "npm run test:frontend && npm run build:frontend && npm run build --prefix backend && node --check api/robots.js && node --check api/sitemap.js && node --check api/sitemap-static.js && node --check api/sitemap-products.js && node --check seo/server-utils.js && node --check frontend/src/lib/seo-utils.js",
     "test": "npm test --prefix backend",
     "audit:inventory": "node scripts/audit-untracked-inventory.mjs",
     "dev:frontend": "next dev",
     "start:frontend": "next start",
-    "build:frontend": "next build"
+    "build:frontend": "next build",
+    "test:frontend": "node --test frontend/tests/refresh-flow.test.js frontend/tests/user-error-message.test.js frontend/tests/seo-utils.test.js frontend/tests/seo-handlers.test.js frontend/tests/dialog-accessibility.test.js frontend/tests/next-route-paths.test.js"
   },
   "keywords": [],
   "author": "",
@@ -42,10 +43,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.4",
-    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.41",
-    "tailwindcss": "^3.4.10",
-    "vite": "^5.4.1"
+    "tailwindcss": "^3.4.10"
   }
 }

@@ -55,7 +55,7 @@ jobs:
           exit 1
 
       - name: Run frontend unit tests
-        run: npm test --prefix frontend
+        run: npm run test:frontend
 
       - name: Build Next.js storefront
         run: npm run build:frontend
