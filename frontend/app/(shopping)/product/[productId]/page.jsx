@@ -1,4 +1,4 @@
-import ProductDetailsPage from "@/src/pages/ProductDetailsPage.jsx";
+import ProductDetailsPage from "@/src/store-pages/ProductDetailsPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

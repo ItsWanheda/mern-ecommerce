@@ -13,6 +13,6 @@
     "test:frontend": "npm test --prefix frontend",
     "test": "npm test --prefix backend",
     "build": "npm run test:frontend && npm run build:frontend && npm run build --prefix backend && node --check frontend/api/robots.js && node --check frontend/api/sitemap.js && node --check frontend/api/sitemap-static.js && node --check frontend/api/sitemap-products.js && node --check frontend/lib/seo-server-utils.js && node --check frontend/src/lib/seo-utils.js",
-    "audit:inventory": "node scripts/audit-untracked-inventory.mjs"
+    "audit:inventory": "npm run audit:inventory --prefix backend"
   }
 }

@@ -5,7 +5,7 @@ This directory is the **standalone Next.js application root**.
 ## Layout
 
 - `app/` — Next.js App Router pages, route groups, and layouts.
-- `src/components/`, `src/pages/`, `src/stores/`, `src/lib/` — existing storefront UI and client-side business state.
+- `src/components/`, `src/store-pages/`, `src/stores/`, `src/lib/` — existing storefront UI and client-side business state.
 - `api/` — Vercel serverless handlers for robots.txt and the XML sitemap endpoints.
 - `lib/` — Next.js server metadata and SEO handler helpers.
 - `public/` — static assets served from the site root.

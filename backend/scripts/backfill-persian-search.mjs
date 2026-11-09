@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Product from "../backend/models/product.model.js";
-import { buildNormalizedProductSearchText } from "../backend/lib/persian-search.js";
+import Product from "../models/product.model.js";
+import { buildNormalizedProductSearchText } from "../lib/persian-search.js";
 
 dotenv.config();
 

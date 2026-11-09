@@ -99,43 +99,40 @@ flowchart TD
 
 ## 🗂️ Project structure
 
+The repository is a two-application monorepo. The frontend and backend each have their own package manifest and lockfile; the root package provides convenience scripts.
+
 ```text
 mern-ecommerce/
 ├── backend/
-│   ├── api/                 # Serverless API entry point
-│   ├── controllers/         # Auth, products, cart, checkout, orders, admin
-│   ├── lib/                 # Database, Redis, shipping, search, audit
-│   ├── middleware/          # Auth, rate limiting, security/CORS
-│   ├── models/              # User, product, order, campaign, audit, settings
-│   ├── routes/              # Express API route modules
-│   ├── tests/               # Currency, search, security, recovery tests
-│   ├── app.js
-│   └── package.json
-├── app/                     # Explicit Next.js App Router pages and layouts
-├── public/                  # Shared public assets served by Next.js
-├── lib/
-│   └── next-metadata.js     # Server-side route metadata
+│   ├── api/                 # Express serverless entry point
+│   ├── controllers/
+│   ├── lib/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── tests/
+│   ├── scripts/             # Database migrations and operational scripts
+│   ├── package.json
+│   ├── package-lock.json
+│   └── server.js
 ├── frontend/
-│   └── src/                # Existing React components, pages, stores and helpers
-│       ├── components/
-│       ├── pages/
-│       ├── stores/
-│       └── lib/             # API and commerce helpers
+│   ├── app/                 # Next.js App Router pages and layouts
+│   ├── api/                 # Vercel robots.txt and XML sitemap functions
+│   ├── lib/                 # Next.js metadata and SEO server helpers
+│   ├── public/              # Next.js public assets
+│   ├── src/
+│   │   ├── components/
+│   │   ├── store-pages/
+│   │   ├── stores/
+│   │   └── lib/
+│   ├── tests/
+│   ├── next.config.js
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vercel.json
+├── .github/
 ├── docs/
-│   ├── PERSIAN_COMMERCE_OVERVIEW.md
-│   ├── PERSIAN_COMMERCE_SETUP.md
-│   ├── admin-expansion-requirements.md
-│   ├── password-recovery.md
-│   └── seo-share-previews.md
-├── scripts/
-│   ├── audit-untracked-inventory.mjs
-│   ├── backfill-persian-search.mjs
-│   ├── migrate-categories.mjs
-│   ├── migrate-coupons.mjs
-│   ├── migrate-orders-to-zarinpal-only.mjs
-│   └── reconcile-pending-payments.mjs
-├── package.json
-└── package-lock.json
+└── package.json             # Root development/build command runner
 ```
 
 ## 🚀 Getting started
@@ -150,15 +147,16 @@ mern-ecommerce/
 
 ### 1. Install dependencies
 
-Run from the repository root:
+Run from the repository root to install each application independently:
 
 ```bash
-npm ci
+npm ci --prefix backend
+npm ci --prefix frontend
 ```
 
 ### 2. Configure environment variables
 
-Create a local environment file that is not committed to Git. Use the backend values below. The Next.js storefront uses the same-origin `/api` path by default; use `NEXT_PUBLIC_API_URL` only when the API is hosted on a separate origin.
+Create `backend/.env` for the Express API values below. The Next.js app has its own `frontend/.env.local` file; the same-origin `/api` path is the default, and `NEXT_PUBLIC_API_URL` is only needed when the API is hosted on a separate origin.
 
 ```dotenv
 NODE_ENV=development
@@ -180,7 +178,7 @@ FREE_SHIPPING_THRESHOLD=0
 CRON_SECRET=replace_with_a_long_random_secret
 ```
 
-For a separate frontend/API deployment, set the public Next.js build variable:
+For a separate frontend/API deployment, add this public Next.js build variable to `frontend/.env.local` (or use the other documented values in `frontend/.env.example`):
 
 ```dotenv
 NEXT_PUBLIC_API_URL=https://your-api.example/api
@@ -287,8 +285,8 @@ The complete route definitions and request validation are in `backend/routes/` a
 
 ### Before production
 
-1. Set the frontend Vercel project's Root Directory to `frontend` and Output Directory to `dist`; keep the backend project rooted at `backend`. The shared frontend project settings are intentionally not changed by this feature branch while `master` still uses the old layout.
-2. Back up the database and verify you can restore it.
+1. After merge, set the frontend Vercel project's Root Directory to `frontend` and Output Directory to `dist`; keep the backend project rooted at `backend`. These shared project settings are intentionally not changed on the feature branch while `master` uses the old layout.
+3. Back up the database and verify you can restore it.
 3. Update product prices, shipping settings, and thresholds to approved whole-Toman amounts.
 4. Run the order-metadata/index migration against the intended database after checking `MONGO_URI`.
 5. Configure production secrets in the host's secret manager; do not store secrets in Git.
@@ -301,7 +299,7 @@ The complete route definitions and request validation are in `backend/routes/` a
 
 ### Payment reconciliation
 
-The callback may be delayed or the provider/network response may be ambiguous. Production reconciliation must run about every five minutes using `GET /api/payments/reconcile-pending` with the `Authorization: Bearer <CRON_SECRET>` header. The repository includes `.github/workflows/reconcile-payments.yml`; configure the repository Actions secrets `PAYMENTS_API_URL` (public API origin without `/api`) and `CRON_SECRET` (same value as the backend secret). Vercel Cron is intentionally not configured in `backend/vercel.json` because Hobby plans do not support the required interval. Self-hosted deployments can use `scripts/reconcile-pending-payments.mjs` and the Linux cron example in [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md). Configure only one routine scheduler.
+The callback may be delayed or the provider/network response may be ambiguous. Production reconciliation must run about every five minutes using `GET /api/payments/reconcile-pending` with the `Authorization: Bearer <CRON_SECRET>` header. The repository includes `.github/workflows/reconcile-payments.yml`; configure the repository Actions secrets `PAYMENTS_API_URL` (public API origin without `/api`) and `CRON_SECRET` (same value as the backend secret). Vercel Cron is intentionally not configured in `backend/vercel.json` because Hobby plans do not support the required interval. Self-hosted deployments can use `backend/scripts/reconcile-pending-payments.mjs` and the Linux cron example in [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md). Configure only one routine scheduler.
 
 ## 🧪 Testing and migrations
 
@@ -318,7 +316,7 @@ The backend suite covers IRT/Zarinpal policy, Persian search normalization, secu
 To backfill normalized search text for existing products:
 
 ```bash
-node scripts/backfill-persian-search.mjs
+npm run backfill:persian-search --prefix backend
 ```
 
 For existing order collections, take a verified backup and follow the guarded migration procedure in [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md).

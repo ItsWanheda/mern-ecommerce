@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import LoadingSpinner from "@/src/components/LoadingSpinner.jsx";
 import NextRouteSync from "@/src/components/NextRouteSync.jsx";
-import NotFoundPage from "@/src/pages/NotFoundPage.jsx";
+import NotFoundPage from "@/src/store-pages/NotFoundPage.jsx";
 
 export default function NotFoundClient() {
   const [mounted, setMounted] = useState(false);

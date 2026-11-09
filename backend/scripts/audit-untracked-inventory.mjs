@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import Product from "../backend/models/product.model.js";
-import { hasConfiguredInventory } from "../backend/lib/inventory-stock.js";
+import Product from "../models/product.model.js";
+import { hasConfiguredInventory } from "../lib/inventory-stock.js";
 
 dotenv.config();
 

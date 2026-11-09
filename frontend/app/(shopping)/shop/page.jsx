@@ -1,4 +1,4 @@
-import ShopPage from "@/src/pages/ShopPage.jsx";
+import ShopPage from "@/src/store-pages/ShopPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

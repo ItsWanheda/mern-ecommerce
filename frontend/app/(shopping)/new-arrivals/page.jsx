@@ -1,4 +1,4 @@
-import CollectionPage from "@/src/pages/CollectionPage.jsx";
+import CollectionPage from "@/src/store-pages/CollectionPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

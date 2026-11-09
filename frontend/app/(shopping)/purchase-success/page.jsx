@@ -1,4 +1,4 @@
-import PurchaseSuccessPage from "@/src/pages/PurchaseSuccessPage.jsx";
+import PurchaseSuccessPage from "@/src/store-pages/PurchaseSuccessPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

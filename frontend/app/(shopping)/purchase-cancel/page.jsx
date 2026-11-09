@@ -1,4 +1,4 @@
-import PurchaseCancelPage from "@/src/pages/PurchaseCancelPage.jsx";
+import PurchaseCancelPage from "@/src/store-pages/PurchaseCancelPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

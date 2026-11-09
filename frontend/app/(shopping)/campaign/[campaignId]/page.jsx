@@ -1,4 +1,4 @@
-import CampaignPage from "@/src/pages/CampaignPage.jsx";
+import CampaignPage from "@/src/store-pages/CampaignPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

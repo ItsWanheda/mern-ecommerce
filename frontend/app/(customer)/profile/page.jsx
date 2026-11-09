@@ -1,4 +1,4 @@
-import ProfilePage from "@/src/pages/ProfilePage.jsx";
+import ProfilePage from "@/src/store-pages/ProfilePage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

@@ -1,4 +1,4 @@
-import NewsletterUnsubscribePage from "@/src/pages/NewsletterUnsubscribePage.jsx";
+import NewsletterUnsubscribePage from "@/src/store-pages/NewsletterUnsubscribePage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

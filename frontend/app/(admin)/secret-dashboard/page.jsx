@@ -1,4 +1,4 @@
-import AdminPage from "@/src/pages/AdminPage.jsx";
+import AdminPage from "@/src/store-pages/AdminPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

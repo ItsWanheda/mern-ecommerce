@@ -98,7 +98,7 @@ Do not put `CRON_SECRET` into repository files, workflow text, query parameters,
 
 For an Iranian VPS or another host, use a Linux cron job, systemd timer, or hosting-provider scheduler instead. If using this option, disable the GitHub Actions schedule to avoid duplicate routine invocations. A five-minute interval is the starting target; verify runtime, volume, and backlog behavior before production.
 
-The repository includes `scripts/reconcile-pending-payments.mjs`. Put these values in a root-owned environment file such as `/etc/mern-ecommerce/reconcile.env`, readable only by the service administrator:
+The repository includes `backend/scripts/reconcile-pending-payments.mjs`. Put these values in a root-owned environment file such as `/etc/mern-ecommerce/reconcile.env`, readable only by the service administrator:
 
 ```dotenv
 API_URL=https://api.example.ir
@@ -108,7 +108,7 @@ CRON_SECRET=the_same_long_random_secret_configured_for_the_backend
 Then add a cron entry after replacing paths for your server:
 
 ```cron
-*/5 * * * * set -a; . /etc/mern-ecommerce/reconcile.env; set +a; /usr/bin/node /var/www/mern-ecommerce/scripts/reconcile-pending-payments.mjs >> /var/log/mern-ecommerce-reconciliation.log 2>&1
+*/5 * * * * set -a; . /etc/mern-ecommerce/reconcile.env; set +a; /usr/bin/node /var/www/mern-ecommerce/backend/scripts/reconcile-pending-payments.mjs >> /var/log/mern-ecommerce-reconciliation.log 2>&1
 ```
 
 Secure the environment file (for example, owner root and mode `0600`), rotate the log with suitable permissions, and monitor non-zero job exits and unresolved orders. The scheduler is not embedded in the Express process; deploying the API alone does not start a self-hosted scheduler.
@@ -122,7 +122,7 @@ On a database used by an earlier checkout implementation, the orders collection 
 **Take a verified backup first.** Review the target database name and `MONGO_URI`, then run the guarded migration from the repository root:
 
 ```bash
-node scripts/migrate-orders-to-zarinpal-only.mjs
+npm run migrate:orders-to-zarinpal --prefix backend
 ```
 
 The migration inspects indexes that reference the obsolete checkout-session field. It removes only the expected single-field index; it aborts if it encounters an unexpected index definition so that it does not guess at schema changes. It clears stale checkout-session/provider/currency metadata but preserves order documents, item snapshots, statuses, and numeric amount fields. It does not perform a currency conversion.
@@ -149,7 +149,7 @@ The backend normalizes Persian/Arabic ya and kaf variants, Arabic/Persian digits
 Before deploying this schema change to an existing catalogue, take a database backup and run the one-time backfill from the repository root:
 
 ```bash
-node scripts/backfill-persian-search.mjs
+npm run backfill:persian-search --prefix backend
 ```
 
 The migration works in batches. It only populates the derived search field and does not alter displayed product names, descriptions, categories, prices, or inventory. Re-run it after importing legacy catalogue data if those products were inserted outside the application.

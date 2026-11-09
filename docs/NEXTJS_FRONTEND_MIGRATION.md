@@ -50,6 +50,7 @@ mern-ecommerce/
 │   ├── models/
 │   ├── routes/
 │   ├── tests/
+│   ├── scripts/               # Database migrations and operational commands
 │   ├── package.json
 │   └── package-lock.json
 ├── frontend/                 # Standalone Next.js application root
@@ -165,7 +166,7 @@ Build and unit tests do not prove live API connectivity, authentication cookies,
 
 ## Backend invariants
 
-No files under `backend/`, database models, API routes, controllers, middleware, MongoDB/Redis configuration, Zarinpal payment logic, reconciliation or backend environment variables should change as part of this frontend migration.
+The backend's runtime and commerce behavior must remain unchanged: API handlers, controllers, database models, middleware, routes, MongoDB/Redis configuration, Zarinpal payment logic, authentication and order processing are not part of this frontend migration. Only the operational script location and corresponding npm script paths were adjusted for the two-workspace layout.
 
 ## Cart and checkout route migration
 
@@ -240,6 +241,6 @@ The Next.js application now lives entirely under `frontend/`: `frontend/app/`, `
 
 All App Router imports that previously reached outside the frontend directory now use the `@/*` path alias, rooted at `frontend/`. The alias is configured in `frontend/jsconfig.json`. Tailwind content globs now scan `frontend/app/` and `frontend/src/`, and Next.js loads `frontend/next.config.js` with `distDir: "dist"`.
 
-The backend package and its source files remain unchanged. Root scripts delegate to the two applications; frontend and backend dependencies are installed and locked independently. Robots and sitemap Vercel functions moved with the frontend, so the frontend deployment no longer needs source files outside its application root.
+The Express application source (API entry point, controllers, models, middleware, routes, database integrations and payment logic) remains unchanged. Backend-specific database migrations and operational scripts now live under `backend/scripts/`, with their package commands updated to use paths relative to the backend workspace. The root package delegates convenience commands to the two applications; frontend and backend dependencies are installed and locked independently. Robots and sitemap Vercel functions moved with the frontend, so the frontend deployment no longer needs source files outside its application root.
 
 **Deployment handoff:** after merge, configure the frontend Vercel project's Root Directory as `frontend` and Output Directory as `dist`. This project-level setting is intentionally not changed on the feature branch because it is shared with the existing `master` deployment. The backend project remains rooted at `backend`. Preview build readiness on the old frontend Vercel project is not a substitute for this post-merge settings change.

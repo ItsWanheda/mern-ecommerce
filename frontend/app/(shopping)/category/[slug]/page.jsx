@@ -1,4 +1,4 @@
-import CategoryPage from "@/src/pages/CategoryPage.jsx";
+import CategoryPage from "@/src/store-pages/CategoryPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

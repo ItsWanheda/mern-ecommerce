@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+
+dotenv.config();
+
 const apiOrigin = (process.env.API_URL || "").replace(/\/+$/, "");
 const cronSecret = process.env.CRON_SECRET || "";
 

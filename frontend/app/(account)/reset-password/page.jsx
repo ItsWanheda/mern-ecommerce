@@ -1,4 +1,4 @@
-import ResetPasswordPage from "@/src/pages/ResetPasswordPage.jsx";
+import ResetPasswordPage from "@/src/store-pages/ResetPasswordPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";

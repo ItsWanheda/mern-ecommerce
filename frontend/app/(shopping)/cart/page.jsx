@@ -1,4 +1,4 @@
-import CartPage from "@/src/pages/CartPage.jsx";
+import CartPage from "@/src/store-pages/CartPage.jsx";
 import { generateStoreMetadata } from "@/lib/next-metadata.js";
 
 export const dynamic = "force-dynamic";
