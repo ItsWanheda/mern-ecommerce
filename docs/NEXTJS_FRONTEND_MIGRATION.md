@@ -29,6 +29,7 @@
 - [x] Migrate Product Details to an explicit App Router route with server-generated product metadata.
 - [x] Migrate Cart and Zarinpal purchase-result routes to the App Router while retaining the existing checkout flow.
 - [x] Migrate the permission-aware admin dashboard to an explicit App Router route with an admin-role gate.
+- [x] Migrate the storefront home page and newsletter-unsubscribe page to explicit App Router routes.
 - [x] Preserve the existing product gallery, variant availability, stock-aware cart, wishlist, reviews and related products.
 - [x] Preserve filter/search query strings and pagination during route synchronization.
 - [x] Add dynamic server metadata for category, campaign and named Look pages, including noindex for unknown resources.
@@ -46,9 +47,9 @@ mern-ecommerce/
 │   ├── (admin)/               # Native admin dashboard route and role gate
 │   ├── (customer)/            # Native profile, orders and wishlist routes
 │   ├── (shopping)/            # Native shop, category, collection, campaign and product routes
-│   ├── (store-info)/          # Native public policy/help route group
+│   ├── (store-info)/          # Native public policy/help and newsletter routes
 │   ├── layout.jsx            # Persian RTL document and global metadata
-│   ├── page.jsx              # Home
+│   ├── page.jsx              # Native storefront home page
 │   ├── [...slug]/page.jsx    # Existing URL compatibility route
 │   ├── not-found.jsx         # Existing Persian 404 UI with HTTP 404
 │   └── legacy-client.jsx     # Existing React app mounted in the browser
@@ -173,3 +174,12 @@ The existing admin dashboard is now mounted at the native App Router URL `/secre
 The original `AdminPage` is reused as a client component. Its four navigation groups and 16 permission-filtered tabs remain intact, including the responsive mobile selector, keyboard-operable desktop tab navigation, order-packing count, lazy-loaded management panels, and `?tab=` deep links. The existing admin API requests and per-endpoint authorization remain unchanged. The dashboard receives private `noindex, nofollow` metadata from the shared server metadata helper.
 
 No admin API route, controller, permission policy, user model, database code, or backend authorization logic was changed. The client guard is a navigation/UX layer only; protected backend endpoints remain responsible for enforcing authorization. Admin login, permissions, tab deep links, and responsive visual behavior still require browser-level acceptance testing against the protected preview.
+
+
+## Storefront home and newsletter unsubscribe routes
+
+The root storefront URL `/` now renders the existing `HomePage` component inside the shared storefront shell. This keeps the current hero, dynamically loaded campaigns, category cards, curated products, animations, mobile behavior, navigation, guest-cart setup, theme and footer. The component remains client-rendered because its product/category stores, animation setup and current links depend on browser-side React state. Its former client-managed `PageMeta` node has been removed; the App Router now generates the page metadata on the server.
+
+The `/newsletter-unsubscribe` URL now has an explicit App Router page under the store-information route group. The existing email form, validation, inline success/error feedback and `POST /newsletter/unsubscribe` API call are reused unchanged. The server metadata helper marks this route private/noindex, and the route matcher recognizes only the exact URL.
+
+No campaign, product, category, newsletter API, backend controller, database, or authentication behavior was changed. Home content loading and newsletter-unsubscribe submission still require browser-level verification against the protected preview API.

@@ -24,7 +24,6 @@ const STATIC_ROUTES = new Set([
   "faq",
   "privacy-policy",
   "terms-of-use",
-  "newsletter-unsubscribe",
   "purchase-success",
   "purchase-cancel",
 ]);

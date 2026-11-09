@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   AUTH_ROUTES,
   ADMIN_ROUTES,
+  NEWSLETTER_ROUTES,
   AUTH_REQUIRED_CUSTOMER_ROUTES,
   CHECKOUT_ROUTES,
   SHOPPING_STATIC_ROUTES,
@@ -10,6 +11,7 @@ import {
   STORE_INFO_ROUTES,
   isAppRouterRoute,
   isAdminRoute,
+  isNewsletterRoute,
   isAuthRoute,
   isCustomerRoute,
   isProtectedCustomerRoute,
@@ -21,6 +23,16 @@ import {
   getAuthReturnPath,
   withAuthReturnPath,
 } from "../src/lib/auth-route-state.js";
+
+test("the native newsletter unsubscribe route is exact", () => {
+  assert.deepEqual(NEWSLETTER_ROUTES, ["/newsletter-unsubscribe"]);
+  assert.equal(isNewsletterRoute("/newsletter-unsubscribe"), true);
+  assert.equal(isAppRouterRoute("/newsletter-unsubscribe"), true);
+  for (const route of ["/newsletter-unsubscribe/extra", "/newsletter", "/newsletter-unsubscribe/"]) {
+    assert.equal(isNewsletterRoute(route), false, route);
+    assert.equal(isAppRouterRoute(route), false, route);
+  }
+});
 
 test("the native admin route is exact and remains separate from customer routes", () => {
   assert.deepEqual(ADMIN_ROUTES, ["/secret-dashboard"]);

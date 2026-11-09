@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";

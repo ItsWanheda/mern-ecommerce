@@ -31,6 +31,10 @@ export const CHECKOUT_ROUTES = Object.freeze([
   "/purchase-cancel",
 ]);
 
+export const NEWSLETTER_ROUTES = Object.freeze([
+  "/newsletter-unsubscribe",
+]);
+
 export const ADMIN_ROUTES = Object.freeze([
   "/secret-dashboard",
 ]);
@@ -50,12 +54,14 @@ const customerRouteSet = new Set(CUSTOMER_ROUTES);
 const protectedCustomerRouteSet = new Set(AUTH_REQUIRED_CUSTOMER_ROUTES);
 const shoppingRouteSet = new Set(SHOPPING_STATIC_ROUTES);
 const checkoutRouteSet = new Set(CHECKOUT_ROUTES);
+const newsletterRoutesSet = new Set(NEWSLETTER_ROUTES);
 const adminRouteSet = new Set(ADMIN_ROUTES);
 const appRouterRouteSet = new Set([
   ...STORE_INFO_ROUTES,
   ...AUTH_ROUTES,
   ...CUSTOMER_ROUTES,
   ...ADMIN_ROUTES,
+  ...NEWSLETTER_ROUTES,
   ...SHOPPING_STATIC_ROUTES,
 ]);
 
@@ -77,6 +83,10 @@ export function isProtectedCustomerRoute(pathname) {
 
 export function isAdminRoute(pathname) {
   return typeof pathname === "string" && adminRouteSet.has(pathname);
+}
+
+export function isNewsletterRoute(pathname) {
+  return typeof pathname === "string" && newsletterRoutesSet.has(pathname);
 }
 
 export function isShoppingRoute(pathname) {

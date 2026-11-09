@@ -1,8 +1,9 @@
+"use client";
+
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import PageMeta from "../components/PageMeta";
 import { ArrowLeft, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
@@ -188,7 +189,7 @@ const HomePage = () => {
 
   return (
     <main ref={pageRef} dir="rtl" className="min-h-screen overflow-hidden bg-canvas text-ink">
-      <PageMeta title="فروشگاه آنلاین پوشاک و اکسسوری" description="تازه‌ترین پوشاک و اکسسوری را در تیک بوتیک ببینید." path="/" />
+      
       <div className="mx-auto max-w-[1920px] px-3 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 2xl:px-12">
         <section data-gsap-hero className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface-muted">
           <div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
