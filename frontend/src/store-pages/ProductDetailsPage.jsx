@@ -13,6 +13,8 @@ import axios from "../lib/axios";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { useUserStore } from "../stores/useUserStore";
+import { useCategoryStore } from "../stores/useCategoryStore";
+import { getProductAttributeRows } from "../lib/product-attributes";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
 const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
@@ -50,6 +52,8 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
   const user = useUserStore((state) => state.user);
+  const { categories: productCategories, fetchCategories: fetchProductCategories } = useCategoryStore();
+  const productAttributeRows = useMemo(() => getProductAttributeRows(product, productCategories), [product, productCategories]);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0, distribution: {} });
   const [reviewEligibility, setReviewEligibility] = useState({ loading: true, eligible: false, reason: "" });
@@ -57,6 +61,10 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const isWishlisted = Boolean(product && isSaved(product._id));
+
+  useEffect(() => {
+    if (productCategories.length === 0) void fetchProductCategories();
+  }, [fetchProductCategories, productCategories.length]);
 
   useEffect(() => {
     let active = true;
@@ -523,8 +531,20 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
           <div className="mx-auto max-w-4xl">
             <p className="text-xs font-semibold text-[var(--ui-accent)]">نگاهی نزدیک‌تر</p>
             <h2 id="product-description-heading" className="mt-3 text-2xl font-semibold leading-relaxed sm:text-3xl">درباره این محصول</h2>
-            <p className="mt-6 whitespace-pre-line text-[15px] leading-9 text-[var(--ui-muted)] sm:text-base sm:leading-10">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
-            {product.attributes && Object.entries(product.attributes).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="").length>0 && <div className="mt-10 border-t border-[var(--ui-border)] pt-8"><h3 className="text-lg font-semibold">مشخصات محصول</h3><dl className="mt-5 grid gap-x-10 gap-y-5 sm:grid-cols-2">{Object.entries(product.attributes).filter(([,value])=>value!==null&&value!==undefined&&String(value).trim()!=="").map(([key,value])=><div key={key} className="flex items-start justify-between gap-4 border-b border-[var(--ui-border)]/70 pb-3"><dt className="text-sm text-[var(--ui-muted)]">{key}</dt><dd className="text-sm font-medium text-[var(--ui-text)]">{Array.isArray(value)?value.join("، "):String(value)}</dd></div>)}</dl></div>}
+            <p className="mt-6 break-words whitespace-pre-line text-[15px] leading-9 text-[var(--ui-muted)] sm:text-base sm:leading-10">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
+            {productAttributeRows.length > 0 && (
+              <div className="mt-8 border-t border-[var(--ui-border)] pt-6 sm:mt-10 sm:pt-8">
+                <h3 className="text-lg font-semibold sm:text-xl">مشخصات محصول</h3>
+                <dl className="mt-4 grid grid-cols-1 gap-2 sm:mt-5 sm:grid-cols-2 sm:gap-3">
+                  {productAttributeRows.map((attribute) => (
+                    <div key={attribute.key} className="grid min-w-0 grid-cols-1 gap-1 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] px-3 py-3 sm:px-4 sm:py-3.5">
+                      <dt className="min-w-0 break-words text-xs leading-5 text-[var(--ui-muted)]">{attribute.label}</dt>
+                      <dd className="min-w-0 break-words text-sm font-semibold leading-6 text-[var(--ui-text)] sm:text-[15px]">{attribute.value}{attribute.unit && <span className="mr-1 font-normal text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
           </div>
         </section>
 

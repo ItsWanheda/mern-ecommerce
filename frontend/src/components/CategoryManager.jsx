@@ -44,6 +44,7 @@ const getPath = (category, categories) => {
 const normalizeAttribute = (attribute, index) => ({
   key: attribute.key || "",
   name: { fa: attribute.name?.fa || "", en: attribute.name?.en || "" },
+  unit: { fa: attribute.unit?.fa || "", en: attribute.unit?.en || "" },
   type: attribute.type || "select",
   optionsText: (attribute.options || []).map((option) =>
     [option.value, option.name?.fa, option.name?.en].join("|")
@@ -52,6 +53,7 @@ const normalizeAttribute = (attribute, index) => ({
   filterable: attribute.filterable !== false,
   searchable: attribute.searchable !== false,
   inherited: attribute.inherited !== false,
+  showInProductDetails: attribute.showInProductDetails !== false,
   sortOrder: String(attribute.sortOrder ?? index),
 });
 
@@ -181,12 +183,14 @@ const CategoryManager = () => {
     const attributes = form.attributes.map((attribute, index) => ({
       key: attribute.key.trim(),
       name: { fa: attribute.name.fa.trim(), en: attribute.name.en.trim() },
+      unit: { fa: attribute.unit.fa.trim(), en: attribute.unit.en.trim() },
       type: attribute.type,
       options: ["select", "multi-select"].includes(attribute.type) ? parseAttributeOptions(attribute.optionsText) : [],
       required: Boolean(attribute.required),
       filterable: Boolean(attribute.filterable),
       searchable: Boolean(attribute.searchable),
       inherited: Boolean(attribute.inherited),
+      showInProductDetails: Boolean(attribute.showInProductDetails),
       sortOrder: Number(attribute.sortOrder || index),
     }));
     const payload = {
@@ -392,7 +396,7 @@ const CategoryManager = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h4 className="font-semibold text-[var(--ui-text)]">ویژگی‌های این دسته</h4>
-                <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">این ویژگی‌ها در فرم ثبت یا ویرایش محصول به کار می‌روند. کلید فنی باید یکتا و انگلیسی باشد؛ نوع ویژگی مشخص می‌کند مدیر محصول چه نوع مقداری وارد می‌کند.</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">این تنظیمات مشخص می‌کنند مدیر هنگام ثبت محصول چه مقداری وارد کند و خریدار در بخش «مشخصات محصول» چه برچسب، مقدار و واحدی ببیند. تنظیمات این بخش در محصول جدید و ویرایش محصول اعمال می‌شوند.</p>
               </div>
               <button type="button" onClick={() => setForm((current) => ({ ...current, attributes: [...current.attributes, normalizeAttribute({ key: "", type: "select", options: [], inherited: true }, current.attributes.length)] }))} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><Plus size={14} aria-hidden="true" /> ویژگی جدید</button>
             </div>
@@ -423,6 +427,17 @@ const CategoryManager = () => {
                     <span className={hintClass}>یک گزینه = انتخاب تکی؛ چند گزینه = انتخاب هم‌زمان؛ بله/خیر = چک‌باکس؛ عدد و متن = ورود مقدار توسط مدیر محصول.</span>
                   </label>
                 </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className={labelClass}>واحد فارسی (اختیاری)
+                    <input className={fieldClass} maxLength={24} value={attribute.unit.fa} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, fa: event.target.value })} placeholder="سانتی‌متر، گرم، درصد" />
+                  </label>
+                  <label className={labelClass}>English unit (optional)
+                    <input className={fieldClass} maxLength={24} dir="ltr" value={attribute.unit.en} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, en: event.target.value })} placeholder="cm, g, %" />
+                  </label>
+                </div>
+                <label className={labelClass + " max-w-xs"}>ترتیب نمایش در مشخصات محصول
+                  <input type="number" min="0" max="100000" step="1" className={fieldClass} value={attribute.sortOrder} onChange={(event) => updateAttribute(index, "sortOrder", event.target.value)} />
+                </label>
                 {["select", "multi-select"].includes(attribute.type) && (
                   <label className={labelClass}>گزینه‌ها (هر خط: value|نام فارسی|English label)
                     <textarea className={fieldClass} rows={3} dir="ltr" placeholder={"baggy|بگ|Baggy\nstraight|راسته|Straight"} value={attribute.optionsText} onChange={(event) => updateAttribute(index, "optionsText", event.target.value)} required />
@@ -434,9 +449,10 @@ const CategoryManager = () => {
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.filterable} onChange={(event) => updateAttribute(index, "filterable", event.target.checked)} /> قابل فیلتر</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.searchable} onChange={(event) => updateAttribute(index, "searchable", event.target.checked)} /> قابل جست‌وجو</label>
                   <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.inherited} onChange={(event) => updateAttribute(index, "inherited", event.target.checked)} /> ارث‌بری برای زیر‌دسته‌ها</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={attribute.showInProductDetails} onChange={(event) => updateAttribute(index, "showInProductDetails", event.target.checked)} /> نمایش در مشخصات محصول</label>
                 </div>
                 <p className={hintClass}>
-                  اجباری: هنگام ذخیره محصول باید مقدار وارد شود. قابل فیلتر: این ویژگی در فیلتر صفحه دسته ظاهر می‌شود. ارث‌بری: ویژگی را از والد به زیر‌دسته منتقل می‌کند. قابل جست‌وجو: در نسخه فعلی فقط ذخیره می‌شود و هنوز بر جست‌وجوی محصولات اثر ندارد.
+                  اجباری: هنگام ذخیره محصول باید مقدار وارد شود. قابل فیلتر: در فیلتر صفحه دسته ظاهر می‌شود. ارث‌بری: به زیر‌دسته‌ها منتقل می‌شود. نمایش در مشخصات محصول: مقدار را در صفحه عمومی کالا نشان می‌دهد. واحد و ترتیب نمایش نیز در همان بخش اعمال می‌شوند. قابل جست‌وجو فعلاً ذخیره می‌شود اما در جست‌وجوی محصول استفاده نمی‌شود.
                 </p>
               </div>
             ))}

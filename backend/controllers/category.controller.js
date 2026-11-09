@@ -78,6 +78,20 @@ const validateCategoryInput = (body, previous = null) => {
     if (!["select", "multi-select", "boolean", "number", "text"].includes(attribute.type)) {
       return { error: "نوع یکی از ویژگی‌ها معتبر نیست." };
     }
+    if (attribute.showInProductDetails !== undefined && typeof attribute.showInProductDetails !== "boolean") {
+      return { error: "وضعیت نمایش ویژگی در مشخصات محصول معتبر نیست." };
+    }
+    if (attribute.unit !== undefined && attribute.unit !== null) {
+      if (typeof attribute.unit !== "object" || Array.isArray(attribute.unit)) {
+        return { error: "واحد ویژگی باید شامل متن فارسی و انگلیسی باشد." };
+      }
+      for (const locale of ["fa", "en"]) {
+        const unitValue = attribute.unit[locale];
+        if (unitValue !== undefined && (typeof unitValue !== "string" || unitValue.trim().length > 24)) {
+          return { error: "واحد ویژگی حداکثر می‌تواند ۲۴ نویسه باشد." };
+        }
+      }
+    }
     if (["select", "multi-select"].includes(attribute.type) &&
         (!Array.isArray(attribute.options) || attribute.options.length === 0 ||
         attribute.options.some((option) =>

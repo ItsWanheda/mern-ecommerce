@@ -24,7 +24,7 @@ const InventoryAlerts = lazy(() => import("../components/InventoryAlerts"));
 const ProductReviewModeration = lazy(() => import("../components/ProductReviewModeration"));
 
 const groups = [
- { id:"catalogue", label:"کاتالوگ", items:[{id:"create",label:"ایجاد محصول",icon:PlusCircle},{id:"products",label:"محصولات و موجودی",icon:ShoppingBasket},{id:"reviews",label:"دیدگاه‌های محصولات",icon:Star},{id:"categories",label:"مدیریت دسته‌بندی‌ها",icon:FolderTree}] },
+ { id:"catalogue", label:"کاتالوگ", items:[{id:"create",label:"ایجاد محصول",icon:PlusCircle},{id:"products",label:"محصولات و موجودی",icon:ShoppingBasket},{id:"reviews",label:"دیدگاه‌های محصولات",icon:Star},{id:"categories",label:"دسته‌بندی و مشخصات محصول",icon:FolderTree}] },
  { id:"orders-group", label:"سفارش‌ها و پشتیبانی", items:[{id:"orders",label:"صف سفارش‌ها",icon:Truck},{id:"service-cases",label:"پشتیبانی و مرجوعی",icon:LifeBuoy},{id:"customers",label:"مشتریان و دسترسی‌ها",icon:Users},{id:"inventory",label:"هشدار موجودی",icon:Boxes},{id:"shipping",label:"تنظیمات ارسال",icon:Truck}] },
  { id:"marketing", label:"صفحه خانه و بازاریابی", items:[{id:"campaigns",label:"بنرها و پیشنهادهای صفحه خانه",icon:Megaphone},{id:"coupons",label:"کدهای تخفیف",icon:TicketPercent},{id:"newsletter",label:"خبرنامه",icon:Mail}] },
  { id:"reports-system", label:"گزارش‌ها و سامانه", items:[{id:"dashboard",label:"نمای کلی",icon:Activity},{id:"analytics",label:"آمار و تحلیل",icon:BarChart},{id:"audit",label:"تاریخچه اقدامات",icon:ScrollText},{id:"operations",label:"وضعیت سامانه",icon:Activity}] },

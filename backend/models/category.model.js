@@ -16,6 +16,14 @@ const attributeOptionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const attributeUnitSchema = new mongoose.Schema(
+  {
+    fa: { type: String, trim: true, maxlength: 24, default: "" },
+    en: { type: String, trim: true, maxlength: 24, default: "" },
+  },
+  { _id: false }
+);
+
 const categoryAttributeSchema = new mongoose.Schema(
   {
     key: {
@@ -34,7 +42,8 @@ const categoryAttributeSchema = new mongoose.Schema(
     filterable: { type: Boolean, default: true },
     searchable: { type: Boolean, default: true },
     inherited: { type: Boolean, default: true },
-    unit: { type: localizedSchema, default: undefined },
+    showInProductDetails: { type: Boolean, default: true },
+    unit: { type: attributeUnitSchema, default: undefined },
     sortOrder: { type: Number, default: 0 },
   },
   { _id: false }

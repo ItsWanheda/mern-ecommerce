@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ChevronLeft, Home, MapPin, Pencil, Plus, Save, Trash2, UserRound, X } from "lucide-react";
+import { Check, ChevronLeft, Home, LayoutDashboard, MapPin, Pencil, Plus, Save, Trash2, UserRound, X } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { useUserStore } from "../stores/useUserStore";
@@ -37,6 +37,7 @@ const ProfilePage = () => {
   const user = useUserStore(state => state.user);
   const updateProfile = useUserStore(state => state.updateProfile);
   const [profile, setProfile] = useState({ name: "", email: "", savedShippingAddresses: [] });
+  const isAdmin = user?.role === "admin" || profile?.role === "admin";
   const [name, setName] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileNameError, setProfileNameError] = useState("");
@@ -267,6 +268,7 @@ const ProfilePage = () => {
             <Link to="/orders" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)]">سفارش‌ها <ChevronLeft size={16} aria-hidden="true" /></Link>
             <a href="#saved-addresses" className="inline-flex min-h-10 items-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)]">نشانی‌ها</a>
             <Link to="/wishlist" className="inline-flex min-h-10 items-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)]">علاقه‌مندی‌ها</Link>
+            {isAdmin && <Link to="/secret-dashboard" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-hover)]"><LayoutDashboard size={16} aria-hidden="true" />پنل مدیریت</Link>}
           </nav>
         </header>
 
