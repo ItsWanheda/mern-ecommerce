@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useDialogAccessibility } from "../lib/useDialogAccessibility.js";
 import { Filter, LoaderCircle, Search, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
 import PageMeta from "../components/PageMeta";
 import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
@@ -136,15 +136,35 @@ const getPriceError = (filters) => {
   return "";
 };
 
+const decodeCategoryRoute = (value) => {
+  let decoded = String(value || "");
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (!/%[0-9a-f]{2}/i.test(decoded)) break;
+    try { decoded = decodeURIComponent(decoded); } catch { break; }
+  }
+  return decoded.trim();
+};
+
 const CategoryPage = ({ slug: routeSlug }) => {
   const { slug: matchedSlug } = useParams();
-  const category = routeSlug || matchedSlug || "";
+  const category = decodeCategoryRoute(routeSlug || matchedSlug || "");
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const lastAppliedUrlRef = useRef(searchParams.toString());
   const urlChangedRef = useRef(false);
   const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination, categoryFacets } = useProductStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
+  const selectedCategory = dynamicCategories.find((item) =>
+    item.slug === category || item.name?.fa === category || item.name?.en === category
+  );
+  const categorySlug = selectedCategory?.slug || category;
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
+
+  useEffect(() => {
+    if (!selectedCategory || selectedCategory.slug === category) return;
+    const nextPath = "/category/" + encodeURIComponent(selectedCategory.slug) + window.location.search;
+    navigate(nextPath, { replace: true });
+  }, [category, navigate, selectedCategory]);
   const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
   const [draftFilters, setDraftFilters] = useState(() => filtersFromParams(searchParams));
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -194,8 +214,8 @@ const CategoryPage = ({ slug: routeSlug }) => {
     const query = paramsFromFilters(filters);
     query.set("page", String(page));
     query.set("limit", String(CATEGORY_PAGE_SIZE));
-    fetchProductsByCategory(category, query.toString());
-  }, [fetchProductsByCategory, category, filters, page]);
+    fetchProductsByCategory(categorySlug, query.toString());
+  }, [fetchProductsByCategory, categorySlug, filters, page]);
 
   const catalog = Array.isArray(products) ? products : [];
   const priceBounds = useMemo(() => {
@@ -259,7 +279,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
       query.set("limit", "1");
       query.set("countOnly", "1");
       try {
-        const response = await axios.get(`/products/category/${encodeURIComponent(category)}?${query.toString()}`);
+        const response = await axios.get(`/products/category/${encodeURIComponent(categorySlug)}?${query.toString()}`);
         if (!cancelled) setDraftResultCount(Number(response.data.pagination?.total || 0));
       } catch {
         if (!cancelled) setDraftResultCount(0);
@@ -269,7 +289,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [category, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters]);
+  }, [categorySlug, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters]);
 
   const sizeOptions = useMemo(
     () => uniqueByNormalizedName(categoryFacets?.sizes || []),
@@ -292,7 +312,6 @@ const CategoryPage = ({ slug: routeSlug }) => {
     [categoryFacets],
   );
 
-  const selectedCategory = dynamicCategories.find((item) => item.slug === category);
   const categoryAttributeDefinitions = useMemo(() => {
     if (!selectedCategory) return [];
     const byId = new Map(dynamicCategories.map((item) => [String(item._id), item]));
@@ -325,6 +344,9 @@ const CategoryPage = ({ slug: routeSlug }) => {
 
   const clearAllFilters = () => {
     const empty = makeEmptyFilters();
+    lastAppliedUrlRef.current = "";
+    urlChangedRef.current = false;
+    setSearchParams(new URLSearchParams(), { replace: true });
     setFilters(empty);
     setDraftFilters(empty);
     setMobileFiltersOpen(false);
@@ -653,12 +675,12 @@ const CategoryPage = ({ slug: routeSlug }) => {
     { name: "صفحه اصلی", path: "/" },
     { name: "دسته‌بندی‌ها", path: "/categories" },
     ...categoryAncestors.map((item) => ({ name: item.name?.fa || item.name?.en || item.slug, path: "/category/" + encodeURIComponent(item.slug) })),
-    { name: pageTitle, path: "/category/" + encodeURIComponent(category) },
+    { name: pageTitle, path: "/category/" + encodeURIComponent(categorySlug) },
   ];
 
   return (
     <main dir="rtl" className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + category} type="category" itemList={products} breadcrumbs={pageBreadcrumbs} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + categorySlug} type="category" itemList={products} breadcrumbs={pageBreadcrumbs} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
       <div className="mx-auto max-w-[1920px]">
         <nav aria-label="مسیر دسته‌بندی" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-muted-soft sm:mb-5">
           <Link to="/" className="transition hover:text-ink">خانه</Link>
@@ -758,7 +780,8 @@ const CategoryPage = ({ slug: routeSlug }) => {
             <Search size={19} className="shrink-0 text-brand" aria-hidden="true" />
             <input
               id="category-product-search"
-              type="search"
+              type="text"
+              inputMode="search"
               value={filters.q}
               onChange={(event) => { setFilters((current) => ({ ...current, q: event.target.value })); setPage(1); }}
               placeholder="مثلاً تی‌شرت مشکی، سایز بزرگ، شلوار جین…"
