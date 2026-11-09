@@ -53,6 +53,14 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
   const { isSaved, toggleSaved } = useWishlistStore();
   const user = useUserStore((state) => state.user);
   const { categories: productCategories, fetchCategories: fetchProductCategories } = useCategoryStore();
+  const productCategory = productCategories.find((category) =>
+    String(category._id) === String(product?.categoryId || "") ||
+    category.slug === product?.category ||
+    category.name?.fa === product?.category ||
+    category.name?.en === product?.category
+  );
+  const productCategorySlug = productCategory?.slug || (categoryLabels[product?.category] ? product.category : "");
+  const productCategoryName = productCategory?.name?.fa || categoryLabels[product?.category] || product?.category || "مجموعه";
   const productAttributeRows = useMemo(() => getProductAttributeRows(product, productCategories), [product, productCategories]);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0, distribution: {} });
@@ -126,10 +134,10 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
   };
 
   useEffect(() => {
-    if (!product?._id || !product?.category) return undefined;
+    if (!product?._id || !productCategorySlug) return undefined;
     const controller = new AbortController();
     setRelatedProducts([]);
-    axios.get(`/products/category/${encodeURIComponent(product.category)}?page=1&limit=8`, { signal: controller.signal })
+    axios.get(`/products/category/${encodeURIComponent(productCategorySlug)}?page=1&limit=8`, { signal: controller.signal })
       .then(({ data }) => {
         if (controller.signal.aborted) return;
         const candidates = Array.isArray(data.products) ? data.products : [];
@@ -146,7 +154,7 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
         if (!controller.signal.aborted && error.code !== "ERR_CANCELED") setRelatedProducts([]);
       });
     return () => controller.abort();
-  }, [product?._id, product?.category]);
+  }, [product?._id, productCategorySlug]);
 
   useEffect(() => {
     let active = true;
@@ -339,9 +347,9 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 sm:pb-28 lg:px-8 lg:pb-10">
-      <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={window.location.pathname} type="product" product={product || undefined} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(product?.category ? [{ name: categoryLabels[product.category] || product.category, path: "/category/" + encodeURIComponent(product.category) }] : []), { name: product?.name || "محصول", path: window.location.pathname }]} />
+      <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={window.location.pathname} type="product" product={product || undefined} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(productCategorySlug ? [{ name: productCategoryName, path: "/category/" + encodeURIComponent(productCategorySlug) }] : []), { name: product?.name || "محصول", path: window.location.pathname }]} />
       <div className="mx-auto max-w-[1600px]">
-        <Link to={product.category ? "/category/" + encodeURIComponent(product.category) : "/"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {categoryLabels[product.category] || product.category || "مجموعه"}</Link>
+        <Link to={productCategorySlug ? "/category/" + encodeURIComponent(productCategorySlug) : "/categories"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {productCategoryName}</Link>
 
         <div className="mt-7 grid items-start gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-12">
           <section aria-label="تصاویر محصول" className="min-w-0">
@@ -389,7 +397,7 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
           </section>
 
           <section className="min-w-0 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-7 shadow-[0_18px_55px_-42px_var(--ui-shadow-color)] sm:px-8 sm:py-10 lg:px-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{categoryLabels[product.category] || product.category || "مجموعه تیک بوتیک"}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{productCategoryName || "مجموعه تیک بوتیک"}</p>
             <h1 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <p className="mt-5 text-2xl font-semibold tabular-nums">{formatPrice(product.price)}</p>
             <div className="my-6 h-px bg-[var(--ui-border)]" />
@@ -568,7 +576,7 @@ const ProductDetailsPage = ({ productId: routeProductId }) => {
               <div className="mb-10">
                 <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                   <div><p className="text-xs font-semibold text-[var(--ui-accent)]">انتخاب‌های مشابه</p><h2 className="mt-1 text-xl font-bold sm:text-2xl">محصولات مشابه</h2></div>
-                  {product.category && <Link to={"/category/" + encodeURIComponent(product.category)} className="inline-flex min-h-9 items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">مشاهده دسته‌بندی <ArrowLeft size={14} aria-hidden="true" /></Link>}
+                  {productCategorySlug && <Link to={"/category/" + encodeURIComponent(productCategorySlug)} className="inline-flex min-h-9 items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">مشاهده دسته‌بندی <ArrowLeft size={14} aria-hidden="true" /></Link>}
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
                   {relatedProducts.map(item => <ProductCard key={item._id} product={item} />)}
