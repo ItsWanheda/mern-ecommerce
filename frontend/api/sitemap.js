@@ -4,7 +4,7 @@ import {
   getRequestOrigin,
   resolveApiBase,
 } from "../lib/seo-server-utils.js";
-import { xmlEscape } from "../seo/server-utils.js";
+import { xmlEscape } from "../lib/seo-server-utils.js";
 
 const PAGE_SIZE = 48;
 

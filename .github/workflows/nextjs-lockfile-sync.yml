@@ -36,7 +36,7 @@ jobs:
 
       - name: Commit synchronized lockfiles when they change
         run: |
-          if git diff --quiet -- frontend/package-lock.json backend/package-lock.json; then
+          if [ -z "$(git status --porcelain -- frontend/package-lock.json backend/package-lock.json)" ]; then
             echo "Application lockfiles are already synchronized."
             exit 0
           fi
