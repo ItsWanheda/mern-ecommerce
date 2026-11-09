@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import robotsHandler from "../../api/robots.js";
-import sitemapHandler from "../../api/sitemap.js";
-import sitemapProductsHandler from "../../api/sitemap-products.js";
-import sitemapStaticHandler from "../../api/sitemap-static.js";
+import robotsHandler from "../api/robots.js";
+import sitemapHandler from "../api/sitemap.js";
+import sitemapProductsHandler from "../api/sitemap-products.js";
+import sitemapStaticHandler from "../api/sitemap-static.js";
 
 const SHOP_ORIGIN = "https://shop.example";
 const API_ORIGIN = "https://api.example";

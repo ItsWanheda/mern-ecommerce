@@ -1,4 +1,4 @@
-name: Sync Next.js migration lockfile
+name: Sync independent application lockfiles
 
 on:
   push:
@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 concurrency:
-  group: nextjs-lock-sync-${{ github.ref }}
+  group: app-lockfile-sync-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  sync-root-lockfile:
+  sync-app-lockfiles:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -22,22 +22,30 @@ jobs:
         with:
           ref: feat/nextjs-frontend-migration
           persist-credentials: true
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Regenerate root lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Commit the synchronized lockfile when it changes
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Regenerate frontend lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix frontend
+
+      - name: Regenerate backend lockfile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix backend
+
+      - name: Commit synchronized lockfiles when they change
         run: |
-          if git diff --quiet -- package-lock.json; then
-            echo "Root lockfile is already synchronized."
+          if git diff --quiet -- frontend/package-lock.json backend/package-lock.json; then
+            echo "Application lockfiles are already synchronized."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "chore(deps): sync Next.js migration lockfile"
+          git add frontend/package-lock.json backend/package-lock.json
+          git commit -m "chore(deps): sync frontend and backend lockfiles"
           git push origin HEAD:feat/nextjs-frontend-migration

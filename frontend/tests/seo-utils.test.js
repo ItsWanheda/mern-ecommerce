@@ -12,7 +12,7 @@ import {
   normalizeSeoText,
   hasIndexExcludedQuery,
 } from "../src/lib/seo-utils.js";
-import { getCanonicalOrigin } from "../../seo/server-utils.js";
+import { getCanonicalOrigin } from "../lib/seo-server-utils.js";
 
 test("static and private metadata contain the expected canonical route entries", () => {
   assert.equal(STATIC_PAGE_META["/campaigns"].title, "پیشنهادهای ویژه و کمپین‌های فروش");

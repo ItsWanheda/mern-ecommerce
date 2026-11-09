@@ -287,16 +287,17 @@ The complete route definitions and request validation are in `backend/routes/` a
 
 ### Before production
 
-1. Back up the database and verify you can restore it.
-2. Update product prices, shipping settings, and thresholds to approved whole-Toman amounts.
-3. Run the order-metadata/index migration against the intended database after checking `MONGO_URI`.
-4. Configure production secrets in the host's secret manager; do not store secrets in Git.
-5. Set exact `CLIENT_URL` and `CORS_ALLOWED_ORIGINS` values. Avoid wildcard credentialed CORS.
-6. Use HTTPS and configure the trusted reverse proxy to forward the original scheme.
-7. Use a MongoDB replica set or transaction-capable managed deployment for atomic inventory recovery.
-8. Validate Zarinpal sandbox request, redirect, callback, failed request, timeout, duplicate callback, and reconciliation flows.
-9. Configure the reconciliation scheduler and alert on repeated failures.
-10. Enable `IRT_CATALOG_PRICES_CONFIRMED=true` only after catalogue verification.
+1. Set the frontend Vercel project's Root Directory to `frontend` and Output Directory to `dist`; keep the backend project rooted at `backend`. The shared frontend project settings are intentionally not changed by this feature branch while `master` still uses the old layout.
+2. Back up the database and verify you can restore it.
+3. Update product prices, shipping settings, and thresholds to approved whole-Toman amounts.
+4. Run the order-metadata/index migration against the intended database after checking `MONGO_URI`.
+5. Configure production secrets in the host's secret manager; do not store secrets in Git.
+6. Set exact `CLIENT_URL` and `CORS_ALLOWED_ORIGINS` values. Avoid wildcard credentialed CORS.
+7. Use HTTPS and configure the trusted reverse proxy to forward the original scheme.
+8. Use a MongoDB replica set or transaction-capable managed deployment for atomic inventory recovery.
+9. Validate Zarinpal sandbox request, redirect, callback, failed request, timeout, duplicate callback, and reconciliation flows.
+10. Configure the reconciliation scheduler and alert on repeated failures.
+11. Enable `IRT_CATALOG_PRICES_CONFIRMED=true` only after catalogue verification.
 
 ### Payment reconciliation
 

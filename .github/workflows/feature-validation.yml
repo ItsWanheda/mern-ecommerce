@@ -16,7 +16,7 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -26,13 +26,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
 
-      - name: Regenerate the root lockfile for the Next.js frontend
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Prepare application lockfiles
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix frontend
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix backend
 
-      - name: Install root dependencies
-        run: npm ci
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund --prefix frontend
+
+      - name: Install backend dependencies
+        run: npm ci --no-audit --no-fund --prefix backend
 
       - name: Start disposable MongoDB replica set
         run: |

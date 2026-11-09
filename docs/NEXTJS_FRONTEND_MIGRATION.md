@@ -6,10 +6,10 @@
 
 ## Implementation status
 
-- [x] Add Next.js App Router at the repository root.
+- [x] Add Next.js App Router inside the standalone `frontend/` application directory.
 - [x] Reuse the existing React storefront components inside native App Router pages and route-group layouts.
 - [x] Preserve existing pages, components, Zustand stores, theme tokens, CSS and responsive UI.
-- [x] Move shared public assets to root `public/` for Next.js.
+- [x] Move shared public assets to `frontend/public/` for Next.js.
 - [x] Use Next.js `NEXT_PUBLIC_*` variables for public storefront configuration.
 - [x] Preserve same-origin `/api` and add a local Next.js API proxy.
 - [x] Add server metadata for static pages, products, categories, campaigns and collections.
@@ -42,21 +42,31 @@
 
 ```text
 mern-ecommerce/
-├── app/                      # Next.js App Router
-│   ├── (account)/             # Native login, signup and password-recovery routes
-│   ├── (admin)/               # Native admin dashboard route and role gate
-│   ├── (customer)/            # Native profile, orders and wishlist routes
-│   ├── (shopping)/            # Native shop, category, collection, campaign and product routes
-│   ├── (store-info)/          # Native public policy/help and newsletter routes
-│   ├── layout.jsx            # Persian RTL document and global metadata
-│   ├── page.jsx              # Native storefront home page
-│   ├── not-found.jsx         # Persian 404 UI with HTTP 404
-├── lib/next-metadata.js      # Server-side route metadata and canonical rules
-├── public/                   # Shared static assets
-├── frontend/src/             # Existing React pages, components and stores
-├── backend/                  # Existing Express API — unchanged
-├── api/                      # Existing robots, sitemap and legacy preview handlers
-└── seo/                      # Existing SEO helpers
+├── backend/                  # Independent Express API package
+│   ├── api/
+│   ├── controllers/
+│   ├── lib/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── tests/
+│   ├── package.json
+│   └── package-lock.json
+├── frontend/                 # Standalone Next.js application root
+│   ├── app/                  # Native App Router route groups and pages
+│   ├── api/                  # Vercel robots and sitemap functions
+│   ├── lib/                  # Next metadata and SEO server helpers
+│   ├── public/               # Static storefront assets
+│   ├── src/                  # Existing React components, pages, stores and helpers
+│   ├── tests/
+│   ├── next.config.js
+│   ├── package.json
+│   ├── package-lock.json
+│   └── vercel.json
+├── docs/
+├── scripts/
+├── .github/
+└── package.json              # Root command runner; no app dependencies
 ```
 
 ## Compatibility decisions
@@ -67,16 +77,17 @@ Next.js App Router is the only route matcher. React Router remains temporarily a
 
 The backend remains unchanged. Axios continues to use `withCredentials: true`, HTTP-only cookies and the existing refresh-token coordinator. The default API base remains `/api`. Vercel rewrites that path to the separate Express API; local development proxies it to `http://localhost:5000`.
 
-The existing frontend Vercel project has a project-level Output Directory override of `frontend/dist`. It is shared with the untouched `master` branch, so this migration branch keeps Next.js `distDir` set to the same path without changing project-level Vercel settings. The source now reads only Next.js public environment variables; stale Vite-specific project variables are not deleted because they may still be used by `master` until this branch is merged.
+The existing frontend Vercel project still has its current repository-root settings and an Output Directory override of `frontend/dist`. This branch does not change shared project settings while `master` still uses the old layout. The Next.js project root is now `frontend/` and its local build directory is `frontend/dist` (`dist` relative to the app root). After this branch is merged, set the frontend Vercel project's Root Directory to `frontend` and its Output Directory to `dist`. The backend Vercel project should continue to use `backend/` as its independent root. The source reads only Next.js public environment variables; stale Vite-specific project variables are not deleted because they may still be used by `master` until merge.
 
 Use `NEXT_PUBLIC_*` only for browser-visible storefront settings. Backend secrets must never use that prefix. The Next.js branch does not read `VITE_*` aliases.
 
-Metadata uses shared SEO helpers and the existing public API. Canonicals remain suppressed until a verified production origin is configured; private and filtered routes remain noindex. Existing robots and sitemap rewrites remain. The old page-shell/share-preview handlers are retained but are no longer used as page rewrites.
+Metadata uses shared SEO helpers and the existing public API. Canonicals remain suppressed until a verified production origin is configured; private and filtered routes remain noindex. The robots and sitemap Vercel functions now live inside `frontend/api/` and their rewrites are defined in `frontend/vercel.json`. The obsolete Vite HTML shell handlers were removed during Step 9.
 
 ## Development
 
 ```bash
-npm ci
+npm ci --prefix backend
+npm ci --prefix frontend
 ```
 
 Terminal 1 — Express API:
@@ -101,7 +112,7 @@ The route-scoped React Router provider supports existing shared UI links and nav
 
 ## Authentication route migration
 
-The four authentication URLs now have explicit App Router page modules under `app/(account)/`. The account shell intentionally keeps the existing account-page presentation (no store Navbar or footer) while retaining the Zustand user/cart stores, auth-state check, guest-cart initialization/merge, toast layer and smooth scrolling.
+The four authentication URLs now have explicit App Router page modules under `frontend/app/(account)/`. The account shell intentionally keeps the existing account-page presentation (no store Navbar or footer) while retaining the Zustand user/cart stores, auth-state check, guest-cart initialization/merge, toast layer and smooth scrolling.
 
 The existing Login and Signup forms remain the source of truth for their UI and client-side validation. Forgot Password and Reset Password continue to call the same API endpoints, and reset-token query strings are preserved. The route bridge carries a protected page's intended destination into a validated same-origin `next` query parameter so it is not lost when Next.js takes over navigation. Authenticated users are redirected away from Login/Signup to that destination or the home page, matching the previous guard behavior.
 
@@ -109,7 +120,7 @@ No authentication controllers, middleware, database models, JWT handling, refres
 
 ## Customer account route migration
 
-Profile, Orders and Wishlist now have explicit App Router page files under `app/(customer)/`. The customer route group reuses the existing storefront chrome: Navbar, footer, theme, SmoothScroll, toast notifications, auth initialization, and cart-session initialization/merge. Existing customer page components are reused as client components; their data requests, forms, address management, order history, support/return request flow, and product cards have not been rewritten.
+Profile, Orders and Wishlist now have explicit App Router page files under `frontend/app/(customer)/`. The customer route group reuses the existing storefront chrome: Navbar, footer, theme, SmoothScroll, toast notifications, auth initialization, and cart-session initialization/merge. Existing customer page components are reused as client components; their data requests, forms, address management, order history, support/return request flow, and product cards have not been rewritten.
 
 Access behavior is deliberate: Profile and Orders require an authenticated user and redirect guests to Login with the intended route preserved in a validated same-origin `next` parameter. Wishlist remains guest-accessible, matching the previous React app, and continues to use the existing browser local-storage wishlist store. All three routes retain their existing private/noindex metadata.
 
@@ -117,7 +128,7 @@ No backend routes, controllers, data models, payment logic or authentication end
 
 ## Shopping route migration
 
-The shopping discovery URLs now have explicit App Router page modules under `app/(shopping)/`:
+The shopping discovery URLs now have explicit App Router page modules under `frontend/app/(shopping)/`:
 
 - `/shop` — product search, filters, sorting and pagination.
 - `/categories` — category hierarchy and category navigation.
@@ -134,7 +145,7 @@ No product, category, campaign, search, inventory, payment or authentication bac
 
 ## Product details route migration
 
-The product URL now has an explicit App Router page at `app/(shopping)/product/[productId]/page.jsx`. The route passes the decoded ID into the existing ProductDetailsPage client component and uses the server metadata helper to resolve the current product name, description and image. Missing or invalid products receive noindex metadata.
+The product URL now has an explicit App Router page at `frontend/app/(shopping)/product/[productId]/page.jsx`. The route passes the decoded ID into the existing ProductDetailsPage client component and uses the server metadata helper to resolve the current product name, description and image. Missing or invalid products receive noindex metadata.
 
 The existing product experience is reused without rewriting its business logic: image gallery and keyboard-accessible zoom dialog, size/color combination availability, stock checks, add-to-cart with selected variant, guest wishlist, recently viewed products, related products, verified-purchase review eligibility and moderated review submission. The route-sync matcher now includes exactly one `/product/{id}` segment so existing ProductCard links enter the native route while deeper or incomplete paths remain unmatched.
 
@@ -197,7 +208,7 @@ The homepage metadata is server-generated by Next.js. Private routes (including 
 
 ### Framework cleanup
 
-The redundant catch-all and legacy SPA entry were removed in Step 8. Step 9 removes the remaining Vite runtime, Vite entry HTML/configuration, nested frontend package manifest, Vite dependencies and Vite-only logo. The shared `frontend/src` folder remains the source location for existing React components and tests. The root package is the only Node package manifest used to install, test, build and run the Next.js storefront.
+The redundant catch-all and legacy SPA entry were removed in Step 8. Step 9 removes the remaining Vite runtime, Vite entry HTML/configuration, nested frontend package manifest, Vite dependencies and Vite-only logo. The shared `frontend/src` folder remains the source location for existing React components and tests. The backend and frontend now each have an independent package manifest and lockfile. The root `package.json` is only a convenience command runner; it has no application dependencies.
 
 ### Release gates still open
 
@@ -214,10 +225,21 @@ The audit does not change the Express API, database, authentication/payment cont
 
 ## Step 9 — Next.js-only frontend cutover
 
-The frontend now has one package manifest at the repository root and one build/runtime: Next.js App Router. Removed files include the Vite HTML entrypoint, Vite config, nested frontend package manifest, Vite React plugin and Vite package dependencies, the old `frontend/src/main.jsx` and `frontend/src/App.jsx` SPA entry/route table, and the unused Vite logo. Frontend tests are invoked by the root `npm run test:frontend` script; `npm run build` runs those tests, the Next.js production build and backend checks.
+The frontend now has one build/runtime: Next.js App Router. Removed files include the Vite HTML entrypoint, Vite config, Vite React plugin and Vite package dependencies, the old `frontend/src/main.jsx` and `frontend/src/App.jsx` SPA entry/route table, and the unused Vite logo. Frontend tests are run by the frontend package; root scripts expose `npm run test:frontend` and `npm run build` for convenience.
 
 The Vite-era `/api/share-preview` and `/api/page-shell` HTML shell handlers have also been removed. They fetched `/index.html` and wrote server-rendered content into a Vite `#root`; Next.js now supplies page HTML, metadata, canonical URLs, robots directives and HTTP 404 responses directly through App Router route modules. Their HTML-shell-only helper code and tests were removed. The robots and XML sitemap handlers remain and now use Next.js-compatible environment variables only.
 
 The existing React components still use React Router navigation APIs. The route-group BrowserRouter provider and `NextRouteSync` are intentionally retained as a narrow client-navigation adapter; they do not define routes or mount a legacy SPA. Removing this final adapter requires converting those component imports to `next/link` and `next/navigation`, which is beyond removing Vite and the old SPA entrypoint. Backend APIs, data models, payment/authentication logic, shared Vercel project settings and the untouched `master` branch were not changed.
 
-The preview deployment and automated build verify that Next.js produces the site independently of Vite. Live visual, cookie, admin, newsletter and Zarinpal browser tests remain a release gate because the Vercel preview is access-protected in this session.
+GitHub Actions validates the Next.js application independently of the previous repository-root layout. The existing Vercel preview project still has its old Root Directory setting, so its deployment is not an acceptance signal for this new layout. After merge, set the frontend Vercel project's Root Directory to `frontend` and Output Directory to `dist`. Live visual, cookie, admin, newsletter and Zarinpal browser tests remain a release gate; preview access remains protected.
+
+
+## Step 10 — Frontend workspace consolidation
+
+The Next.js application now lives entirely under `frontend/`: `frontend/app/`, `frontend/public/`, `frontend/api/`, `frontend/lib/`, its Next/PostCSS/Tailwind configuration, its package manifest, tests, and environment template. Existing UI code remains in `frontend/src/` without a redesign or rewrite.
+
+All App Router imports that previously reached outside the frontend directory now use the `@/*` path alias, rooted at `frontend/`. The alias is configured in `frontend/jsconfig.json`. Tailwind content globs now scan `frontend/app/` and `frontend/src/`, and Next.js loads `frontend/next.config.js` with `distDir: "dist"`.
+
+The backend package and its source files remain unchanged. Root scripts delegate to the two applications; frontend and backend dependencies are installed and locked independently. Robots and sitemap Vercel functions moved with the frontend, so the frontend deployment no longer needs source files outside its application root.
+
+**Deployment handoff:** after merge, configure the frontend Vercel project's Root Directory as `frontend` and Output Directory as `dist`. This project-level setting is intentionally not changed on the feature branch because it is shared with the existing `master` deployment. The backend project remains rooted at `backend`. Preview build readiness on the old frontend Vercel project is not a substitute for this post-merge settings change.

@@ -16,21 +16,33 @@ concurrency:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
-      - name: Regenerate the root lockfile for the Next.js frontend
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Install root dependencies
-        run: npm ci
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Regenerate application lockfiles
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix frontend
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --prefix backend
+
+      - name: Install frontend dependencies
+        run: npm ci --no-audit --no-fund --prefix frontend
+
+      - name: Install backend dependencies
+        run: npm ci --no-audit --no-fund --prefix backend
+
       - name: Run the complete backend test suite
-        run: npm test
+        run: npm test --prefix backend
+
       - name: Build frontend and backend
         run: npm run build
