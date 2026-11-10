@@ -462,6 +462,22 @@ Compare all applicable public storefront, account, checkout and admin pages agai
 - [ ] Keyboard, focus, reduced-motion and contrast checks completed.
 - [ ] Before/after screenshots and regression evidence attached to the implementation PR.
 
+### 8.6 Initial reference supplied: EXO PC category
+
+**Reference URL:** https://exo.ir/category/pc
+
+The user explicitly does **not** want the complete storefront copied or the whole product visually redesigned to look like EXO. EXO is a source of selected layout/interaction patterns only. The user has specifically called out retaining a **button bar**; its exact location, behavior and contents still need confirmation before implementation. Do not assume it means a sticky bottom action bar, product action row, category toolbar or another component.
+
+The reference URL returned HTTP 403 to the available page reader during this review. Search-indexed descriptions identify EXO as a gaming/computer-products retailer, but they do not reliably expose the current page's full DOM, exact visual hierarchy or interactive behavior. Therefore, do not claim a complete page-by-page visual audit has been completed from this URL alone. Use a user-provided screenshot or accessible browser session to verify the button bar and any additional elements the user selects.
+
+#### Reference-use boundaries
+
+- **Approved to investigate:** the PC category page's category/product discovery patterns and the specifically requested button bar.
+- **Approved to retain:** the user's existing Next.js route structure, current brand direction and all six technical implementation steps.
+- **Not approved yet:** copying EXO's complete visual identity, colors, typography, page composition, product cards, filters, header, footer, checkout or account UI.
+- **Needs discussion before implementation:** any other EXO-inspired component or page-level redesign.
+- **Implementation rule:** propose a short list of observed patterns with screenshots/notes and ask the user which ones to adopt before making broad UI changes.
+
 ## 9. API contracts and compatibility
 
 - Preserve the existing `/api` prefix and current route behavior during incremental module extraction.
