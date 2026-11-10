@@ -21,7 +21,7 @@ const AUTH_ENTRY_ROUTES = new Set(["/login", "/signup"]);
 function AccountRuntime({ children }) {
   const location = useLocation();
   const router = useRouter();
-  const { user, checkAuth, checkingAuth } = useUserStore();
+  const { user, checkAuth, checkingAuth, authChecked } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
 
   useEffect(() => {
@@ -45,7 +45,8 @@ function AccountRuntime({ children }) {
     router.replace(getAuthReturnPath(location) || "/");
   }, [location, router, shouldRedirectAuthenticatedUser]);
 
-  if (checkingAuth || shouldRedirectAuthenticatedUser) return <LoadingSpinner />;
+  // Revalidating a session in the background should not cover the current page.
+  if ((!authChecked && checkingAuth) || shouldRedirectAuthenticatedUser) return <LoadingSpinner />;
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
