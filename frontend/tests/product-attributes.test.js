@@ -28,7 +28,7 @@ test("product specs use localized category labels, option names, and units", () 
 
 test("admin visibility and inheritance settings are respected", () => {
   const product = { category: "desktop-cpus", attributes: { manufacturer: "intel", base_clock: 3.5, internal_note: "private" } };
-  assert.deepEqual(getProductAttributeRows(product, categories).map((row) => row.key), ["length", "material"]);
+  assert.deepEqual(getProductAttributeRows(product, categories).map((row) => row.key), ["base_clock", "manufacturer"]);
   const definitions = getCategoryAttributeDefinitions(product, categories);
   assert.equal(definitions.has("manufacturer"), true);
   assert.equal(definitions.has("internal_note"), true);
@@ -40,8 +40,8 @@ test("child category definitions override inherited parent definitions", () => {
   assert.equal(rows[0].label, "سازنده پردازنده");
 });
 
-test("legacy products without category metadata keep readable fallback values", () => {
-  const rows = getProductAttributeRows({ attributes: { fabric_type: "cotton", available: false } }, []);
-  assert.deepEqual(rows.map((row) => row.label), ["available", "fabric type"]);
+test("products without category metadata keep readable fallback values", () => {
+  const rows = getProductAttributeRows({ attributes: { supported_standards: "pcie-5", available: false } }, []);
+  assert.deepEqual(rows.map((row) => row.label), ["available", "supported standards"]);
   assert.equal(rows[0].value, "خیر");
 });
