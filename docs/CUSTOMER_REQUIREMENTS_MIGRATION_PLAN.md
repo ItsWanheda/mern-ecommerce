@@ -405,6 +405,63 @@ The current SEO metadata, static page descriptions, product detail page and foot
 - Review product JSON-LD and offer availability using actual product, price, currency and stock data; do not emit unsupported compatibility, rating, warranty or availability claims.
 - Revisit FAQ, returns, warranty, shipping and support wording with the customer. Hardware warranties and compatibility/return conditions differ from apparel policies and must not be fabricated.
 
+### 8.5 Reference-led UI/UX audit and implementation (additional workstream)
+
+The customer/reference website URL has not yet been supplied. Once it is provided, inspect the publicly accessible pages and interactions before selecting implementation details. Do not assume the reference has every page or behavior the customer needs, and do not copy its brand assets, proprietary text or exact visual identity. Extract reusable interaction patterns and translate them into the customer's hardware-store brand and requirements.
+
+#### Required reference review
+
+Create a page-by-page reference inventory covering, where available:
+- Homepage, global header/navigation, mega-menu, footer and announcement areas.
+- Search, autocomplete, results, sorting, filters and pagination.
+- Category landing pages and nested category navigation.
+- Product listing cards, comparison affordances and quick actions.
+- Product detail, technical specifications, SKU/variant selection, stock, warranty, compatibility and related products.
+- Cart, shipping/checkout steps, payment handoff, success/cancel/pending states.
+- Login, registration, password recovery and account/profile pages.
+- Order history, order detail, delivery tracking, support/return/refund flows.
+- Admin overview, product/category management, stock, order/payment operations, pricing, accounting, reports, users/roles and audit history.
+- Responsive mobile/tablet variants, navigation drawers, dialogs, tables, empty/loading/error states and keyboard behavior.
+
+For each reference page, record its URL/route, screenshots or visual notes, viewport tested, key interaction, design pattern, accessibility implications and whether it is relevant to this store.
+
+#### Compare against our current Next.js branch
+
+Create a route coverage matrix with four outcomes:
+1. **Exists and adequate:** retain and regression-test.
+2. **Exists but needs UX improvement:** refactor the existing component/page without replacing its business behavior.
+3. **Missing:** add a route/page only when it is required by the customer or provides an essential user journey.
+4. **Reference-only / not in scope:** document it but do not implement without customer approval.
+
+Compare all applicable public storefront, account, checkout and admin pages against the current App Router tree. Track missing states as well as missing routes; a page that exists but has no meaningful loading, empty, error, success or permission-denied state is not complete.
+
+#### Implementation principles
+
+- Preserve the current six technical implementation steps and their order. UI/UX work is a parallel workstream integrated into those steps, not a replacement roadmap or a new delivery commitment.
+- Preserve current Next.js App Router ownership, backend API contracts, server-side validation, auth/session rules, payment state machine, inventory constraints and permission enforcement.
+- Keep the Persian RTL experience and accessibility requirements.
+- Adapt the reference's information architecture and interaction patterns to computer hardware: brand/model/SKU, technical specs, compatibility, warranty, stock and comparison are more important than fashion-specific size/fit patterns.
+- Establish reusable design tokens and components for typography, spacing, surfaces, borders, buttons, inputs, cards, tables, drawers, dialogs, alerts and feedback states. Reuse existing semantic theme tokens where they remain suitable; avoid scattered hard-coded colors.
+- Do not perform a broad redesign based on screenshots alone. Verify the actual responsive interaction, route semantics, content density and keyboard behavior.
+- Keep desktop, tablet and mobile behavior explicit. Test at 320, 360, 390, 768, 1024, 1280 and 1440 CSS pixels.
+- Preserve or improve accessibility: semantic landmarks, heading hierarchy, focus visibility, keyboard operation, accessible names, dialog focus management, reduced motion and sufficient contrast.
+- Use realistic Persian and hardware catalogue content in visual checks, including long product names, technical values, SKU strings, large prices, missing images and zero/unknown stock.
+- Do not add decorative animation or interaction that harms performance, reduced-motion users or clarity.
+- Capture before/after screenshots for the relevant page states and run route-level/browser regression tests. A passing build alone does not prove visual or interaction correctness.
+
+#### UI/UX completion gate
+
+- [ ] Reference URL and publicly accessible page inventory recorded.
+- [ ] Current Next.js route inventory compared against relevant reference/customer journeys.
+- [ ] Missing routes, missing states and UX defects prioritized with explicit rationale.
+- [ ] Approved design direction and reusable component/token rules documented.
+- [ ] Hardware-specific homepage, discovery, listing, product-detail and comparison journeys reviewed.
+- [ ] Cart, checkout, payment-result and account journeys reviewed without changing payment authority.
+- [ ] Admin dashboard and high-density management workflows reviewed.
+- [ ] Desktop, tablet and mobile visual/interaction checks completed.
+- [ ] Keyboard, focus, reduced-motion and contrast checks completed.
+- [ ] Before/after screenshots and regression evidence attached to the implementation PR.
+
 ## 9. API contracts and compatibility
 
 - Preserve the existing `/api` prefix and current route behavior during incremental module extraction.
@@ -544,16 +601,16 @@ The sequence is designed to keep the existing storefront usable while the backen
 
 | Week | Phase | Deliverables and exit gate |
 |---|---|---|
-| 1 | Baseline and requirements lock | Route/API/data inventory, acceptance criteria, traffic definitions, accounting/refund questions, current CI/build baseline, release risk register. |
-| 2 | Architecture and data design | Module boundaries, OpenAPI contract baseline, PostgreSQL ERD, Mongo-to-Postgres mapping, infrastructure and rollback design approved. |
+| 1 | Baseline, reference review and requirements lock | Route/API/data inventory, reference-site page/interaction audit once URL is supplied, current-vs-reference coverage matrix, traffic definitions, accounting/refund questions, current CI/build baseline, release risk register. |
+| 2 | Architecture, UX direction and data design | Module boundaries, approved UI/UX direction and component/token rules, OpenAPI contract baseline, PostgreSQL ERD, Mongo-to-Postgres mapping, infrastructure and rollback design approved. |
 | 3 | Platform foundation | TypeScript adoption foundation, environment validation, logging/metrics/request IDs, Prisma/PostgreSQL development environment, Redis/BullMQ worker foundation. |
 | 4 | Data migration rehearsal | Repeatable ETL, dry-run report, data reconciliation, legacy-ID mapping, test/rollback rehearsal. No production cutover without signed acceptance. |
-| 5 | Core domain refactor | Auth/users/access, catalogue/categories, API repositories and contract tests; compatibility with Next.js route flows maintained. |
-| 6 | Inventory and order correctness | Variant inventory, reservation/release, stock movements, order lifecycle and concurrency regression tests. |
+| 5 | Core domain refactor and UX implementation | Auth/users/access, catalogue/categories, API repositories and contract tests; implement prioritized shared navigation, catalogue and account UX improvements while maintaining Next.js route compatibility. |
+| 6 | Inventory/order correctness and product discovery UX | Variant inventory, reservation/release, stock movements, order lifecycle, technical-specification/compatibility display and concurrency regression tests. |
 | 7 | Payment hardening | Zarinpal attempt/transaction state machine, idempotent callbacks, reconciliation, payment/order integration tests. |
-| 8 | Pricing and admin operations | Filtered bulk price preview/jobs, audit trail, cancellation/retry and compensating rollback; admin UI integrated without redesign. |
+| 8 | Pricing, admin operations and admin UX | Filtered bulk price preview/jobs, audit trail, cancellation/retry and compensating rollback; implement approved reference-led admin workflow improvements within the existing design system. |
 | 9 | Accounting and reporting | Chart of accounts, double-entry postings, financial reconciliation, trial balance and agreed sales/refund reports. |
-| 10 | Frontend integration and feature completion | App Router bridge cleanup where safe, route/SEO/auth/cart/checkout/admin integration, responsive/accessibility regressions. |
+| 10 | Frontend integration and UX completion | App Router bridge cleanup where safe, route/SEO/auth/cart/checkout/admin integration, approved reference-led page improvements, responsive/accessibility regressions and before/after evidence. |
 | 11 | Performance, security and defect correction | Mixed workload/load tests, query/index tuning, security review, recovery/backup restore exercise, bug fixes. |
 | 12 | Release and handover | Production deployment rehearsal, acceptance evidence, runbooks, source/API/DB documentation, training and handover. |
 
@@ -634,7 +691,7 @@ These are not implementation assumptions; they require customer confirmation.
 
 ## 17. Immediate next actions
 
-1. Complete the detailed current-state audit of routes, models, indexes, env variables, tests and the remaining Next.js migration checklist.
+1. Obtain the reference website URL; inventory its relevant public pages and interactions, then complete the current-vs-reference Next.js route coverage matrix. In parallel, complete the detailed audit of models, indexes, environment variables, tests and the remaining Next.js migration checklist.
 2. Add the agreed traffic/accounting/refund assumptions to an Architecture Decision Record.
 3. Build the PostgreSQL ERD and source-to-target Mongo mapping before changing persistence code.
 4. Establish a reproducible local/staging environment and baseline CI.
