@@ -12,7 +12,7 @@ import { useUserStore } from "@/src/stores/useUserStore.js";
 function AdminAccessGuard({ children }) {
   const location = useLocation();
   const router = useRouter();
-  const { user, checkingAuth } = useUserStore();
+  const { user, checkingAuth, authChecked } = useUserStore();
 
   const requiresLogin = !checkingAuth && !user;
   const lacksAdminRole = !checkingAuth && Boolean(user) && user.role !== "admin";
@@ -27,7 +27,7 @@ function AdminAccessGuard({ children }) {
     if (lacksAdminRole) router.replace("/");
   }, [lacksAdminRole, location.hash, location.pathname, location.search, requiresLogin, router]);
 
-  if (checkingAuth || requiresLogin || lacksAdminRole) return <LoadingSpinner />;
+  if ((!authChecked && checkingAuth) || requiresLogin || lacksAdminRole) return <LoadingSpinner />;
 
   return children;
 }
