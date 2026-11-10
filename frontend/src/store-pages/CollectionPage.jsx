@@ -7,31 +7,10 @@ import axios from "../lib/axios";
 import ProductCard from "../components/ProductCard";
 import PageMeta from "../components/PageMeta";
 
-const looks = {
-  "daily-style": {
-    title: "استایل روزمره",
-    description: "پایه‌های راحت برای ترکیب روزانه؛ از شلوار جین تا تی‌شرت و کفش.",
-    image: "/jeans.jpg",
-    categories: ["jeans", "t-shirts", "shoes"],
-  },
-  layers: {
-    title: "لایه‌های ماندگار",
-    description: "ترکیب کت و شلوار برای روزهای خنک و انتخاب‌های چندفصلی.",
-    image: "/jackets.jpg",
-    categories: ["jackets", "jeans", "t-shirts"],
-  },
-  details: {
-    title: "جزئیات تکمیل‌کننده",
-    description: "اکسسوری‌ها و انتخاب‌های ساده برای کامل‌کردن ظاهر.",
-    image: "/bags.jpg",
-    categories: ["bags", "glasses", "shoes"],
-  },
-};
-
 const modes = {
   newest: {
     title: "تازه‌واردها",
-    description: "جدیدترین محصولات اضافه‌شده به تیک بوتیک، در یک صفحه مستقل.",
+    description: "جدیدترین قطعات و تجهیزات اضافه‌شده به فروشگاه، در یک صفحه مستقل.",
     load: async () => (await axios.get("/products/newest?limit=24")).data.products || [],
   },
   bestsellers: {
@@ -55,8 +34,7 @@ const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const look = type === "look" ? looks[slug] : null;
-  const config = type === "look" ? look : modes[type];
+  const config = type === "look" ? null : modes[type];
 
   const loadCollection = useCallback(async () => {
     if (!config) {
@@ -68,11 +46,7 @@ const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
     setLoading(true);
     setError("");
     try {
-      let loaded = await config.load?.();
-      if (type === "look") {
-        const groups = await Promise.all(config.categories.map((category) => axios.get("/products/category/" + encodeURIComponent(category))));
-        loaded = groups.flatMap((response) => Array.isArray(response.data.products) ? response.data.products : []);
-      }
+      const loaded = await config.load?.();
       const unique = (loaded || []).filter((product, index, all) =>
         product?._id && product.isActive !== false && all.findIndex((item) => item?._id === product._id) === index
       );
@@ -90,25 +64,14 @@ const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
-      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.description || "این مجموعه در تیک بوتیک در دسترس نیست."} image={config?.image} path={type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products" }] : []} />
+      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.description || "این مجموعه در فروشگاه سخت‌افزار در دسترس نیست."} image={config?.image} path={type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products" }] : []} />
       <div className="mx-auto max-w-[1920px]">
         <nav aria-label="مسیر صفحه" className="mb-5 flex items-center gap-2 text-xs text-muted-soft">
           <Link to="/" className="hover:text-brand">صفحه اصلی</Link><span aria-hidden="true">/</span><Link to="/shop" className="hover:text-brand">فروشگاه</Link><span aria-hidden="true">/</span><span className="font-semibold text-ink-strong">{config?.title || "مجموعه"}</span>
         </nav>
-        {config?.image && type === "look" && (
-          <section className="relative mb-8 flex min-h-56 items-end overflow-hidden rounded-3xl bg-surface-muted p-6 sm:min-h-80 sm:p-10">
-            <img src={config.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="relative max-w-2xl text-white">
-              <p className="text-xs font-semibold">انتخاب‌های هماهنگ</p>
-              <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{config.title}</h1>
-              <p className="mt-3 text-sm leading-7 text-white/85">{config.description}</p>
-            </div>
-          </section>
-        )}
         {type !== "look" && (
           <header className="mb-8 border-b border-border pb-5">
-            <p className="text-xs font-semibold tracking-wide text-brand">مجموعه تیک بوتیک</p>
+            <p className="text-xs font-semibold tracking-wide text-brand">فروشگاه سخت‌افزار کامپیوتر</p>
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{config?.title || "مجموعه"}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">{config?.description}</p>
           </header>

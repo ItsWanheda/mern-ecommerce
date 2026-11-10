@@ -7,7 +7,6 @@ import ProductEditForm from "./ProductEditForm";
 
 const PAGE_SIZE = 12;
 const numberFa = (value) => new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
-const labels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
 const stockLabel = (product) => {
   if ((product.variants || []).length) {
     const total = product.variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
@@ -20,7 +19,7 @@ const stockLabel = (product) => {
 const ProductsList = () => {
   const {
     products, loading, error, fetchAllProducts, deleteProduct,
-    toggleFeaturedProduct, updateProductStock, updateProductVariantStock, setProductActive,
+    toggleFeaturedProduct, updateProductStock, setProductActive,
   } = useProductStore();
   const { adminCategories, fetchAdminCategories } = useCategoryStore();
   const [search, setSearch] = useState("");
@@ -33,7 +32,6 @@ const ProductsList = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingProduct, setEditingProduct] = useState(null);
   const [stockDrafts, setStockDrafts] = useState({});
-  const [variantDrafts, setVariantDrafts] = useState({});
 
   useEffect(() => { fetchAdminCategories(); }, [fetchAdminCategories]);
   useEffect(() => {
@@ -72,16 +70,7 @@ const ProductsList = () => {
     }
   };
 
-  const saveVariantStock = async (product, variant) => {
-    const key = product._id + "::" + (variant.size || "") + "::" + (variant.color || "");
-    const raw = variantDrafts[key] ?? String(variant.stock);
-    if (raw === "" || !Number.isInteger(Number(raw)) || Number(raw) < 0) return;
-    const saved = await updateProductVariantStock(product._id, variant.size || "", variant.color || "", Number(raw));
-    if (saved) {
-      setVariantDrafts((current) => ({ ...current, [key]: String(raw) }));
-      reload();
-    }
-  };
+
 
   const toggleArchive = async (product) => {
     const next = product.isActive === false;
@@ -98,8 +87,8 @@ const ProductsList = () => {
   };
 
   const categoryName = (product) => adminCategories.find((category) =>
-    String(category._id) === String(product.categoryId)
-  )?.name?.fa || labels[product.category] || product.category || "—";
+    String(category._id) === String(product.categoryId) || category.slug === product.category
+  )?.name?.fa || product.category || "—";
 
   return (
     <section dir="rtl" className="mx-auto max-w-7xl space-y-5">
@@ -172,7 +161,7 @@ const ProductsList = () => {
                     <tr key={product._id} className="align-top transition hover:bg-[var(--ui-hover)]">
                       <td className="px-4 py-4">
                         <div className="flex max-w-sm items-start gap-3">
-                          {product.image ? <img src={product.image} alt="" loading="lazy" className="h-14 w-12 shrink-0 rounded-lg bg-[var(--ui-surface-raised)] object-cover" /> : <span className="h-14 w-12 shrink-0 rounded-lg bg-[var(--ui-surface-raised)]" />}
+                          {product.image ? <img src={product.image} alt="" loading="lazy" className="h-14 w-12 shrink-0 rounded-lg bg-white object-contain p-1" /> : <span className="h-14 w-12 shrink-0 rounded-lg bg-[var(--ui-surface-raised)]" />}
                           <div className="min-w-0">
                             <p className="font-semibold text-[var(--ui-text)]">{product.name}</p>
                             <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--ui-muted)]">{product.description || "بدون توضیحات"}</p>
@@ -189,20 +178,8 @@ const ProductsList = () => {
                       <td className="min-w-56 px-4 py-4">
                         {(product.variants || []).length > 0 ? (
                           <div className="space-y-2">
-                            <p className="text-xs text-[var(--ui-muted)]">مجموع: {stockLabel(product)}</p>
-                            <div className="max-h-44 space-y-2 overflow-y-auto rounded-lg border border-[var(--ui-border)] p-2">
-                              {product.variants.map((variant) => {
-                                const key = product._id + "::" + (variant.size || "") + "::" + (variant.color || "");
-                                const option = [variant.size && "سایز " + variant.size, variant.color].filter(Boolean).join(" / ") || "پیش‌فرض";
-                                return <div key={key} className="flex items-center justify-between gap-2">
-                                  <span className="max-w-28 text-xs text-[var(--ui-muted)]">{option}</span>
-                                  <div className="flex shrink-0 items-center gap-1">
-                                    <input type="number" min="0" step="1" aria-label={"موجودی " + product.name + " " + option} value={variantDrafts[key] ?? String(variant.stock)} onChange={(event) => setVariantDrafts((current) => ({ ...current, [key]: event.target.value }))} className="w-16 rounded-md border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-2 py-1.5 text-sm text-[var(--ui-text)]" />
-                                    <button type="button" onClick={() => saveVariantStock(product, variant)} aria-label={"ذخیره موجودی " + option} className="rounded-md p-1.5 text-[var(--ui-accent)] hover:bg-[var(--ui-hover)]"><Save size={15} aria-hidden="true" /></button>
-                                  </div>
-                                </div>;
-                              })}
-                            </div>
+                            <p className="text-xs font-semibold text-[var(--ui-warning)]">ساختار گزینه‌های قدیمی · مجموع: {stockLabel(product)}</p>
+                            <p className="max-w-xs text-[11px] leading-5 text-[var(--ui-muted)]">برای انتقال این کالا به کاتالوگ سخت‌افزار، آن را ویرایش کنید، دسته فعال و ویژگی‌های فنی را ثبت و موجودی کلی را ذخیره کنید.</p>
                           </div>
                         ) : (
                           <div className="space-y-2">

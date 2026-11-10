@@ -34,24 +34,6 @@ function getRequestOrigins(requestHeaders) {
   return { requestOrigin, canonical };
 }
 
-const LOOK_METADATA = {
-  "daily-style": {
-    title: "استایل روزمره",
-    description: "پایه‌های راحت برای ترکیب روزانه؛ از شلوار جین تا تی‌شرت و کفش.",
-    image: "/jeans.jpg",
-  },
-  layers: {
-    title: "لایه‌های ماندگار",
-    description: "ترکیب کت و شلوار برای روزهای خنک و انتخاب‌های چندفصلی.",
-    image: "/jackets.jpg",
-  },
-  details: {
-    title: "جزئیات تکمیل‌کننده",
-    description: "اکسسوری‌ها و انتخاب‌های ساده برای کامل‌کردن ظاهر.",
-    image: "/bags.jpg",
-  },
-};
-
 function decodePathSegment(value) {
   try {
     return decodeURIComponent(value);
@@ -187,7 +169,7 @@ export async function generateStoreMetadata(path, query = {}) {
       image = category.image || "";
     } else {
       title = "دسته‌بندی " + slug.replace(/-/g, " ");
-      description = "محصولات این دسته‌بندی را در تیک بوتیک مشاهده کنید.";
+      description = "محصولات این دسته‌بندی را در فروشگاه سخت‌افزار مشاهده کنید.";
       missingResource = true;
     }
   } else if (segments[0] === "campaign" && segments[1]) {
@@ -204,17 +186,9 @@ export async function generateStoreMetadata(path, query = {}) {
       missingResource = true;
     }
   } else if (segments[0] === "looks" && segments[1]) {
-    const slug = decodePathSegment(segments[1]);
-    const look = LOOK_METADATA[slug];
-    if (look) {
-      title = look.title;
-      description = look.description;
-      image = look.image;
-    } else {
-      title = "مجموعه موردنظر در دسترس نیست";
-      description = "این مجموعه در حال حاضر در تیک بوتیک در دسترس نیست.";
-      missingResource = true;
-    }
+    title = "این مسیر دیگر در فروشگاه فعال نیست";
+    description = "برای مرور محصولات، دسته‌بندی‌های فعال فروشگاه سخت‌افزار را مشاهده کنید.";
+    missingResource = true;
   }
 
   return createMetadata({

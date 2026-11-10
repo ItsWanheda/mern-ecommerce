@@ -14,9 +14,6 @@ const staticPaths = [
   "/bestsellers",
   "/featured-products",
   "/campaigns",
-  "/looks/daily-style",
-  "/looks/layers",
-  "/looks/details",
   "/shipping-policy",
   "/returns-policy",
   "/support",
@@ -66,21 +63,6 @@ export default async function handler(req, res) {
       const lastmod = validLastmod(category.updatedAt || category.createdAt);
       urls.push(makeUrl(siteOrigin, "/category/" + encodeURIComponent(slug), lastmod));
     }
-
-    // Keep still-public legacy category URLs discoverable during the catalogue
-    // migration. Only include these slugs when the public API confirms products
-    // exist; no fabricated category record or lastmod is added to the sitemap.
-    const legacyCategorySlugs = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits", "bags"];
-    await Promise.all(legacyCategorySlugs.filter((slug) => !activeCategorySlugs.has(slug)).map(async (slug) => {
-      try {
-        const catalog = await getApiJson(apiBase, "products/category/" + encodeURIComponent(slug) + "?page=1&limit=1");
-        const visibleProduct = Array.isArray(catalog?.products) &&
-          catalog.products.some((product) => product && product._id && product.isActive !== false);
-        if (visibleProduct) urls.push(makeUrl(siteOrigin, "/category/" + encodeURIComponent(slug), ""));
-      } catch {
-        // Sitemap generation should continue if a legacy-category probe fails.
-      }
-    }));
 
     const campaigns = Array.isArray(campaignPayload?.campaigns) ? campaignPayload.campaigns : [];
     for (const campaign of campaigns) {
