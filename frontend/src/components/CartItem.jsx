@@ -1,10 +1,11 @@
 import { Minus, Plus, Trash } from "lucide-react";
 import { useCartStore } from "../stores/useCartStore";
 import { formatPrice } from "../lib/commerce";
+import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const CartItem = ({ item }) => {
   const { removeFromCart, updateQuantity } = useCartStore();
-  const requiresCatalogUpdate = Array.isArray(item.variants) && item.variants.length > 0;
+  const requiresCatalogUpdate = requiresCatalogMigration(item);
   const selectedVariant = (item.variants || []).find((variant) =>
     (variant.size || "") === (item.selectedSize || "") && (variant.color || "") === (item.selectedColor || "")
   );
@@ -31,12 +32,17 @@ const CartItem = ({ item }) => {
           </div>
           <div className="text-end md:order-4 md:w-36">
             <p dir="ltr" className="text-base font-bold text-[var(--ui-accent)]">{formatPrice(item.price)}</p>
-            {hasTrackedStock && <p className="mt-1 text-xs text-[var(--ui-muted)]">موجودی این گزینه: {new Intl.NumberFormat("fa-IR").format(trackedStock)}</p>}
+            {hasTrackedStock && !requiresCatalogUpdate && <p className="mt-1 text-xs text-[var(--ui-muted)]">موجودی این گزینه: {new Intl.NumberFormat("fa-IR").format(trackedStock)}</p>}
           </div>
         </div>
         <div className="w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md">
           <p className="text-base font-medium text-[var(--ui-text)]">{item.name}</p>
-          {item.guestOnly && (
+          {requiresCatalogUpdate && (
+            <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-6 text-[var(--ui-warning)]">
+              این کالا هنوز با ساختار گزینه‌های نسخه قبلی ثبت شده است. برای جلوگیری از سفارش با مشخصات اشتباه، تغییر تعداد و پرداخت غیرفعال است. می‌توانید کالا را از سبد حذف کنید تا مدیر آن را با مشخصات فنی جدید ثبت کند.
+            </p>
+          )}
+          {item.guestOnly && !requiresCatalogUpdate && (
             <p role="status" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-5 text-[var(--ui-warning)]">
               این گزینه هنوز به حساب شما منتقل نشده؛ موجودی آن را بررسی یا از سبد حذف کنید.
             </p>
@@ -47,7 +53,7 @@ const CartItem = ({ item }) => {
             </p>
           )}
           <p className="text-sm text-[var(--ui-muted)]">{item.description}</p>
-          {(item.selectedSize || item.selectedColor) && (
+          {!requiresCatalogUpdate && (item.selectedSize || item.selectedColor) && (
             <p className="text-sm text-[var(--ui-muted)]">
               گزینه انتخاب‌شده: {[item.selectedSize, item.selectedColor].filter(Boolean).join(" · ")}
             </p>

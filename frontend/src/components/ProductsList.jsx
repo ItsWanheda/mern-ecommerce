@@ -4,6 +4,7 @@ import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { formatPrice, isStockTracked } from "../lib/commerce";
 import ProductEditForm from "./ProductEditForm";
+import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const PAGE_SIZE = 12;
 const numberFa = (value) => new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
@@ -176,9 +177,9 @@ const ProductsList = () => {
                       <td className="whitespace-nowrap px-4 py-4 text-sm text-[var(--ui-text)]"><span dir="ltr">{formatPrice(product.price)}</span></td>
                       <td className="max-w-48 px-4 py-4 text-sm text-[var(--ui-muted)]">{categoryName(product)}</td>
                       <td className="min-w-56 px-4 py-4">
-                        {(product.variants || []).length > 0 ? (
+                        {requiresCatalogMigration(product) ? (
                           <div className="space-y-2">
-                            <p className="text-xs font-semibold text-[var(--ui-warning)]">ساختار گزینه‌های قدیمی · مجموع: {stockLabel(product)}</p>
+                            <p className="text-xs font-semibold text-[var(--ui-warning)]">اطلاعات ساختار قدیمی · مجموع: {stockLabel(product)}</p>
                             <p className="max-w-xs text-[11px] leading-5 text-[var(--ui-muted)]">برای انتقال این کالا به کاتالوگ سخت‌افزار، آن را ویرایش کنید، دسته فعال و ویژگی‌های فنی را ثبت و موجودی کلی را ذخیره کنید.</p>
                           </div>
                         ) : (

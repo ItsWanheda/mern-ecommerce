@@ -5,13 +5,14 @@ import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
+import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [product.image]);
-  const requiresCatalogUpdate = Array.isArray(product.variants) && product.variants.length > 0;
+  const requiresCatalogUpdate = requiresCatalogMigration(product);
   const outOfStock = requiresCatalogUpdate || isOutOfStock(product);
   const saved = isSaved(product._id);
   const lowStock = !requiresCatalogUpdate && isStockTracked(product) && product.stock > 0 && product.stock <= 3;

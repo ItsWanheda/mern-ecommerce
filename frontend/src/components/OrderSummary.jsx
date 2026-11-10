@@ -7,6 +7,7 @@ import { useCartStore } from "../stores/useCartStore";
 import { useUserStore } from "../stores/useUserStore";
 import axios from "../lib/axios";
 import { formatPrice, STORE_CURRENCY } from "../lib/commerce";
+import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 import GiftCouponCard from "./GiftCouponCard";
 
 const provinces = [
@@ -49,7 +50,7 @@ const OrderSummary = () => {
   const { user } = useUserStore();
   const navigate = useNavigate();
   const hasUnmergedItems = cart.some((item) => item.guestOnly);
-  const hasLegacyVariantItems = cart.some((item) => Array.isArray(item.variants) && item.variants.length > 0);
+  const hasLegacyVariantItems = cart.some(requiresCatalogMigration);
   const [paymentConfig, setPaymentConfig] = useState({
     provider: "zarinpal",
     currency: STORE_CURRENCY,
@@ -168,7 +169,7 @@ const OrderSummary = () => {
       return;
     }
     if (hasLegacyVariantItems) {
-      return toast.error("کالاهای دارای گزینه‌های ساختار قدیمی را از سبد حذف کنید؛ ابتدا باید توسط مدیریت به کاتالوگ جدید منتقل شوند.");
+      return toast.error("کالاهای دارای اطلاعات ساختار قدیمی را از سبد حذف کنید؛ ابتدا باید توسط مدیریت به کاتالوگ جدید منتقل شوند.");
     }
     if (hasUnmergedItems) {
       return toast.error("ابتدا گزینه‌های موجودی‌نامشخص را از سبد حذف کنید");
@@ -272,7 +273,7 @@ const OrderSummary = () => {
       )}
       {hasLegacyVariantItems && (
         <p role="alert" className="rounded-xl border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-xs leading-6 text-[var(--ui-warning)]">
-          یک یا چند کالا با ساختار گزینه‌های قدیمی در سبد وجود دارد. تا زمانی که مدیر آن کالاها را به دسته‌بندی و مشخصات فنی جدید منتقل نکند، پرداخت فعال نخواهد شد. کالاهای نشان‌دار را حذف کنید یا پس از مهاجرت دوباره به سبد اضافه کنید.
+          یک یا چند کالا با ساختار گزینه‌های قدیمی در سبد وجود دارد. تا زمانی که مدیر آن کالاها را به دسته‌بندی و مشخصات فنی جدید منتقل نکند، پرداخت فعال نخواهد شد. کالاهای نشان‌دار را از سبد حذف کنید یا پس از مهاجرت دوباره اضافه کنید.
         </p>
       )}
       {hasUnmergedItems && (

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
+import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const GUEST_CART_KEY = "computer-hardware-guest-cart";
 const LEGACY_GUEST_CART_KEY = "tik-boutique-guest-cart";
@@ -148,9 +149,13 @@ export const useCartStore = create((set, get) => ({
       return;
     }
     set({ isMergingGuestCart: true });
-    const guestItems = readGuestCart().filter((item) => !item.guestOnly);
+    const storedItems = readGuestCart();
+    const guestItems = storedItems.filter((item) => !item.guestOnly && !requiresCatalogMigration(item));
+    const legacyItems = storedItems
+      .filter((item) => !item.guestOnly && requiresCatalogMigration(item))
+      .map((item) => ({ ...item, guestOnly: true }));
     try {
-      let skippedItems = readGuestCart().filter((item) => item.guestOnly);
+      let skippedItems = [...storedItems.filter((item) => item.guestOnly), ...legacyItems];
       if (guestItems.length) {
         const response = await axios.post("/cart/merge", {
           items: guestItems.map((item) => ({
@@ -173,6 +178,10 @@ export const useCartStore = create((set, get) => ({
         }
       }
 
+      writeGuestCart(skippedItems);
+      if (legacyItems.length) {
+        toast.error("کالاهای دارای اطلاعات نسخه قدیمی در حساب ادغام نشدند؛ آن‌ها را حذف کنید یا پس از مهاجرت دوباره اضافه کنید.");
+      }
       const response = await axios.get("/cart");
       if (!Array.isArray(response.data)) throw new Error("پاسخ سبد خرید نامعتبر است");
       const accountCart = response.data.map((item) => ({
@@ -206,6 +215,10 @@ export const useCartStore = create((set, get) => ({
   },
 
   addToCart: async (product, selection = {}) => {
+    if (requiresCatalogMigration(product)) {
+      toast.error("این کالا هنوز به ساختار مشخصات فنی جدید منتقل نشده است.");
+      return false;
+    }
     const size = selection.size || "";
     const color = selection.color || "";
     const key = cartItemKey({ _id: product._id, selectedSize: size, selectedColor: color });
@@ -287,6 +300,10 @@ export const useCartStore = create((set, get) => ({
     if (!existingItem) return;
     if (quantity === 0) {
       await get().removeFromCart(existingItem);
+      return;
+    }
+    if (requiresCatalogMigration(existingItem)) {
+      toast.error("تغییر تعداد این کالا تا زمان مهاجرت به مشخصات فنی جدید غیرفعال است.");
       return;
     }
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
