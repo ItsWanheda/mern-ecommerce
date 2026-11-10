@@ -4,7 +4,8 @@ import { PlusCircle, Upload, Loader, X, Cpu } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
-import CategoryAttributeFields, { validateCategoryAttributeValues } from "./CategoryAttributeFields";
+import CategoryAttributeFields from "./CategoryAttributeFields";
+import { resolveCategoryAttributeDefinitions, validateCategoryAttributeValues } from "../lib/category-attributes.js";
 
 const categoryPath = (category, categories) => {
   const byId = new Map(categories.map((item) => [String(item._id), item]));
@@ -44,21 +45,10 @@ const CreateProductForm = () => {
     [availableCategories],
   );
   const selectedCategory = categoryChoices.find((category) => String(category._id) === String(newProduct.categoryId));
-  const selectedCategoryAttributes = useMemo(() => {
-    if (!selectedCategory) return [];
-    const byId = new Map(availableCategories.map((category) => [String(category._id), category]));
-    const ancestors = (selectedCategory.ancestors || []).map((id) => byId.get(String(id))).filter(Boolean);
-    const chain = [...ancestors, selectedCategory].sort((a, b) => (a.ancestors || []).length - (b.ancestors || []).length);
-    const definitions = new Map();
-    for (const category of chain) {
-      for (const attribute of category.attributes || []) {
-        if (String(category._id) === String(selectedCategory._id) || attribute.inherited !== false) {
-          definitions.set(attribute.key, attribute);
-        }
-      }
-    }
-    return [...definitions.values()].sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
-  }, [availableCategories, selectedCategory]);
+  const selectedCategoryAttributes = useMemo(
+    () => resolveCategoryAttributeDefinitions(selectedCategory, availableCategories),
+    [availableCategories, selectedCategory],
+  );
 
   const updateField = (field, value) => setNewProduct((current) => ({ ...current, [field]: value }));
 

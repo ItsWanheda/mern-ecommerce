@@ -3,7 +3,8 @@ import { ExternalLink, ImagePlus, LoaderCircle, Save, X } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
-import CategoryAttributeFields, { validateCategoryAttributeValues } from "./CategoryAttributeFields";
+import CategoryAttributeFields from "./CategoryAttributeFields";
+import { resolveCategoryAttributeDefinitions, validateCategoryAttributeValues } from "../lib/category-attributes.js";
 
 const currencyLabel = getCurrencyLabel(STORE_CURRENCY);
 const categoryPath = (category, categories) => {
@@ -60,19 +61,10 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
   const selectedCategory = categoryChoices.find((category) =>
     String(category._id) === String(form.categoryId) || category.slug === form.category
   );
-  const attributeDefinitions = useMemo(() => {
-    if (!selectedCategory) return [];
-    const byId = new Map(adminCategories.map((category) => [String(category._id), category]));
-    const ancestors = (selectedCategory.ancestors || []).map((id) => byId.get(String(id))).filter(Boolean);
-    const chain = [...ancestors, selectedCategory].sort((a, b) => (a.ancestors || []).length - (b.ancestors || []).length);
-    const definitions = new Map();
-    for (const category of chain) {
-      for (const attribute of category.attributes || []) {
-        if (String(category._id) === String(selectedCategory._id) || attribute.inherited !== false) definitions.set(attribute.key, attribute);
-      }
-    }
-    return [...definitions.values()].sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
-  }, [adminCategories, selectedCategory]);
+  const attributeDefinitions = useMemo(
+    () => resolveCategoryAttributeDefinitions(selectedCategory, adminCategories),
+    [adminCategories, selectedCategory],
+  );
 
   useEffect(() => {
     if (form.categoryId || !form.category || !categoryChoices.length) return;

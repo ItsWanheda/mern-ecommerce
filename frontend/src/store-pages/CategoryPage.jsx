@@ -15,6 +15,7 @@ import { normalizeDigits } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { decodeCategoryRoute, resolveCategoryRoute } from "../lib/category-route.js";
+import { resolveCategoryAttributeDefinitions } from "../lib/category-attributes.js";
 
 const sortOptions = [
   ["newest", "جدیدترین"],
@@ -237,19 +238,10 @@ const CategoryPage = ({ slug: routeSlug }) => {
     };
   }, [categorySlug, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters]);
 
-  const categoryAttributeDefinitions = useMemo(() => {
-    if (!selectedCategory) return [];
-    const byId = new Map(dynamicCategories.map((item) => [String(item._id), item]));
-    const ancestors = (selectedCategory.ancestors || []).map((id) => byId.get(String(id))).filter(Boolean);
-    const chain = [...ancestors, selectedCategory].sort((a, b) => (a.ancestors || []).length - (b.ancestors || []).length);
-    const definitions = new Map();
-    for (const currentCategory of chain) {
-      for (const attribute of currentCategory.attributes || []) {
-        if (String(currentCategory._id) === String(selectedCategory._id) || attribute.inherited !== false) definitions.set(attribute.key, attribute);
-      }
-    }
-    return [...definitions.values()].filter((attribute) => attribute.filterable).sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
-  }, [dynamicCategories, selectedCategory]);
+  const categoryAttributeDefinitions = useMemo(
+    () => resolveCategoryAttributeDefinitions(selectedCategory, dynamicCategories, { filterableOnly: true }),
+    [dynamicCategories, selectedCategory],
+  );
 
   const updateFilter = (setter, field, value) => {
     setter((current) => ({ ...current, [field]: value }));

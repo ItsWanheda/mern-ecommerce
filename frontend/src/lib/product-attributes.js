@@ -1,3 +1,5 @@
+import { resolveCategoryAttributeDefinitions } from "./category-attributes.js";
+
 const toAttributeEntries = (attributes) => {
   if (attributes instanceof Map) return [...attributes.entries()];
   if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return [];
@@ -18,20 +20,7 @@ export function getCategoryAttributeDefinitions(product, categories = []) {
   );
   if (!selectedCategory) return new Map();
 
-  const byId = new Map(categories.map((category) => [String(category._id), category]));
-  const ancestors = (selectedCategory.ancestors || []).map((id) => byId.get(String(id))).filter(Boolean);
-  const chain = [...ancestors, selectedCategory].sort((left, right) =>
-    (left.ancestors || []).length - (right.ancestors || []).length
-  );
-  const definitions = new Map();
-  for (const category of chain) {
-    for (const attribute of category.attributes || []) {
-      if (String(category._id) === String(selectedCategory._id) || attribute.inherited !== false) {
-        definitions.set(attribute.key, attribute);
-      }
-    }
-  }
-  return definitions;
+  return new Map(resolveCategoryAttributeDefinitions(selectedCategory, categories).map((attribute) => [attribute.key, attribute]));
 }
 
 const formatAttributeEntry = (value, definition) => {

@@ -1,16 +1,7 @@
-export const validateCategoryAttributeValues = (definitions, values) => {
-  for (const attribute of definitions || []) {
-    const value = values?.[attribute.key];
-    const missing = value === undefined || value === null || value === "" ||
-      (Array.isArray(value) && value.length === 0);
-    const label = attribute.name?.fa || attribute.name?.en || attribute.key;
-    if (attribute.required && missing) return "تکمیل ویژگی «" + label + "» الزامی است.";
-    if (!missing && attribute.type === "number" && !Number.isFinite(Number(value))) {
-      return "مقدار ویژگی «" + label + "» باید عددی باشد.";
-    }
-  }
-  return "";
-};
+import { validateCategoryAttributeValues } from "../lib/category-attributes.js";
+
+export { validateCategoryAttributeValues };
+
 
 const CategoryAttributeFields = ({ definitions = [], values = {}, onChange, fieldClass, labelClass, emptyMessage = true }) => {
   if (!definitions.length) {
