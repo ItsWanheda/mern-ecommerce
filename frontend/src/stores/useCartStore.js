@@ -2,7 +2,8 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 
-const GUEST_CART_KEY = "tik-boutique-guest-cart";
+const GUEST_CART_KEY = "computer-hardware-guest-cart";
+const LEGACY_GUEST_CART_KEY = "tik-boutique-guest-cart";
 const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
   error.response?.data?.message || error.message || fallback;
 
@@ -12,10 +13,11 @@ export const cartItemKey = (item) => item.cartItemId ||
 
 const readGuestCart = () => {
   try {
-    const raw = window.localStorage.getItem(GUEST_CART_KEY);
+    const currentRaw = window.localStorage.getItem(GUEST_CART_KEY);
+    const raw = currentRaw ?? window.localStorage.getItem(LEGACY_GUEST_CART_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item) => item && typeof item._id === "string" && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0)
+    const normalized = parsed.filter((item) => item && typeof item._id === "string" && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0)
       .map((item) => ({
         ...item,
         quantity: Number(item.quantity),
@@ -24,6 +26,11 @@ const readGuestCart = () => {
         guestOnly: Boolean(item.guestOnly),
         cartItemId: cartItemKey(item),
       }));
+    if (currentRaw === null && raw !== null) {
+      window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(normalized));
+      window.localStorage.removeItem(LEGACY_GUEST_CART_KEY);
+    }
+    return normalized;
   } catch {
     return [];
   }
@@ -208,7 +215,7 @@ export const useCartStore = create((set, get) => ({
     const variant = findVariant(product, size, color);
     const trackedStock = variant ? variant.stock : product.stock;
     if (Array.isArray(product.variants) && product.variants.length && !variant) {
-      toast.error("لطفاً سایز و رنگ معتبر محصول را انتخاب کنید");
+      toast.error("لطفاً گزینه معتبر این محصول را انتخاب کنید");
       return false;
     }
     if (typeof trackedStock === "number" && nextQuantity > trackedStock) {

@@ -225,21 +225,17 @@ export function buildProductStructuredData({ product, title, description, image,
     image,
   ].filter((value) => typeof value === "string" && value.trim());
   const images = [...new Set(imageValues.map((value) => absoluteUrlFor(value, origin)).filter(Boolean))];
-  const sizes = [...new Set([
-    ...(Array.isArray(product.sizes) ? product.sizes : []),
-    ...(Array.isArray(product.variants) ? product.variants.map((variant) => variant?.size) : []),
-  ].filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim()))];
-  const colors = [...new Set([
-    ...(Array.isArray(product.colors) ? product.colors.map((color) => color?.name) : []),
-    ...(Array.isArray(product.variants) ? product.variants.map((variant) => variant?.color) : []),
-  ].filter((value) => typeof value === "string" && value.trim()).map((value) => value.trim()))];
-  const additionalProperty = [
-    ...sizes.map((size) => ({ "@type": "PropertyValue", name: "سایز", value: size })),
-    ...colors.map((color) => ({ "@type": "PropertyValue", name: "رنگ", value: color })),
-    ...(typeof product.fit?.description === "string" && product.fit.description.trim()
-      ? [{ "@type": "PropertyValue", name: "توضیحات تن‌خور", value: normalizeSeoText(product.fit.description, "", 500) }]
-      : []),
-  ];
+  const rawAttributes = product.attributes instanceof Map
+    ? Object.fromEntries(product.attributes)
+    : (product.attributes && typeof product.attributes === "object" && !Array.isArray(product.attributes) ? product.attributes : {});
+  const additionalProperty = Object.entries(rawAttributes)
+    .filter(([key, value]) => /^[a-z][a-z0-9_]{0,63}$/i.test(key) && value !== null && value !== undefined && value !== "")
+    .slice(0, 50)
+    .map(([key, value]) => ({
+      "@type": "PropertyValue",
+      name: key.replace(/_/g, " "),
+      value: Array.isArray(value) ? value.map(String).join(", ") : String(value),
+    }));
   const priceToman = Number(product.price);
   const hasValidPrice = Number.isFinite(priceToman) && priceToman >= 0;
   const availability = getSchemaAvailability(product);

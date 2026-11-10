@@ -15,7 +15,7 @@ const CartItem = ({ item }) => {
     <div dir="rtl" className="rounded-lg border p-4 shadow-sm border-[var(--ui-border)] bg-[var(--ui-surface)] md:p-6">
       <div className="space-y-4 md:flex md:items-center md:justify-between md:gap-6 md:space-y-0">
         <div className="shrink-0 md:order-1">
-          <img className="h-20 rounded object-cover md:h-32" src={item.image} alt={item.name} />
+          <img className="h-20 w-20 rounded bg-white object-contain p-1 md:h-32 md:w-32 md:p-2" src={item.image} alt={item.name} />
         </div>
         <div className="flex items-center justify-between md:order-3 md:justify-end">
           <div className="flex items-center gap-2">
@@ -42,9 +42,7 @@ const CartItem = ({ item }) => {
           <p className="text-sm text-[var(--ui-muted)]">{item.description}</p>
           {(item.selectedSize || item.selectedColor) && (
             <p className="text-sm text-[var(--ui-muted)]">
-              {item.selectedSize && <span>سایز: {item.selectedSize}</span>}
-              {item.selectedSize && item.selectedColor && <span className="mx-2 text-[var(--ui-muted)]">•</span>}
-              {item.selectedColor && <span>رنگ: {item.selectedColor}</span>}
+              گزینه انتخاب‌شده: {[item.selectedSize, item.selectedColor].filter(Boolean).join(" · ")}
             </p>
           )}
           <div className="flex items-center gap-4">

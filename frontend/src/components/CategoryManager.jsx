@@ -302,12 +302,13 @@ const CategoryManager = () => {
             <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
               برای ساخت دسته اصلی، والد را روی «بدون والد» بگذارید. برای ساخت زیر‌دسته، والد مناسب را انتخاب کنید. صفحه دسته والد، محصولات زیر‌دسته‌های فعال آن را هم در نتایج خود لحاظ می‌کند.
             </p>
-            <pre dir="rtl" className="mt-2 overflow-x-auto rounded-xl bg-[var(--ui-surface-raised)] p-3 text-xs leading-6 text-[var(--ui-text)]">پوشاک
-├── زنانه
-│   ├── مانتو
-│   └── شلوار
-└── مردانه
-    └── پیراهن</pre>
+            <pre dir="rtl" className="mt-2 overflow-x-auto rounded-xl bg-[var(--ui-surface-raised)] p-3 text-xs leading-6 text-[var(--ui-text)]">قطعات کامپیوتر
+├── پردازنده
+│   ├── Intel
+│   └── AMD
+└── حافظه
+    ├── RAM
+    └── SSD</pre>
           </section>
           <section className="min-w-0">
             <h4 className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]">
@@ -409,12 +410,12 @@ const CategoryManager = () => {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <label className={labelClass}>کلید داخلی
-                    <input className={fieldClass} required pattern="[a-z][a-z0-9_]*" dir="ltr" placeholder="leg_cut" value={attribute.key} onChange={(event) => updateAttribute(index, "key", event.target.value.toLowerCase())} />
+                    <input className={fieldClass} required pattern="[a-z][a-z0-9_]*" dir="ltr" placeholder="socket_type" value={attribute.key} onChange={(event) => updateAttribute(index, "key", event.target.value.toLowerCase())} />
                     <span className={hintClass}>شناسه فنی ذخیره مقدار در محصول است؛ با حرف کوچک انگلیسی شروع شود و فقط حروف، عدد و زیرخط داشته باشد. برای ویژگی‌های همین دسته تکراری نباشد.</span>
                   </label>
                   <label className={labelClass}>نام فارسی
                     <input className={fieldClass} required value={attribute.name.fa} onChange={(event) => updateAttribute(index, "name", { ...attribute.name, fa: event.target.value })} />
-                    <span className={hintClass}>برچسبی که مدیر هنگام ثبت محصول و مشتری در فیلتر دسته می‌بیند؛ مثل «مدل برش».</span>
+                    <span className={hintClass}>برچسبی که مدیر هنگام ثبت محصول و مشتری در فیلتر دسته می‌بیند؛ مثل «نوع سوکت» یا «فرکانس بوست».</span>
                   </label>
                   <label className={labelClass}>English label
                     <input className={fieldClass} required dir="ltr" value={attribute.name.en} onChange={(event) => updateAttribute(index, "name", { ...attribute.name, en: event.target.value })} />
@@ -429,7 +430,7 @@ const CategoryManager = () => {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className={labelClass}>واحد فارسی (اختیاری)
-                    <input className={fieldClass} maxLength={24} value={attribute.unit.fa} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, fa: event.target.value })} placeholder="سانتی‌متر، گرم، درصد" />
+                    <input className={fieldClass} maxLength={24} value={attribute.unit.fa} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, fa: event.target.value })} placeholder="گیگاهرتز، وات، مگاهرتز" />
                   </label>
                   <label className={labelClass}>English unit (optional)
                     <input className={fieldClass} maxLength={24} dir="ltr" value={attribute.unit.en} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, en: event.target.value })} placeholder="cm, g, %" />
@@ -440,7 +441,7 @@ const CategoryManager = () => {
                 </label>
                 {["select", "multi-select"].includes(attribute.type) && (
                   <label className={labelClass}>گزینه‌ها (هر خط: value|نام فارسی|English label)
-                    <textarea className={fieldClass} rows={3} dir="ltr" placeholder={"baggy|بگ|Baggy\nstraight|راسته|Straight"} value={attribute.optionsText} onChange={(event) => updateAttribute(index, "optionsText", event.target.value)} required />
+                    <textarea className={fieldClass} rows={3} dir="ltr" placeholder={"am5|AM5|AM5\nlga1700|LGA1700|LGA 1700"} value={attribute.optionsText} onChange={(event) => updateAttribute(index, "optionsText", event.target.value)} required />
                     <span className={hintClass}>برای هر گزینه یک خط وارد کنید. بخش اول value فنی ذخیره‌شده و دو بخش بعدی نام فارسی و انگلیسی هستند؛ بین بخش‌ها از | استفاده کنید.</span>
                   </label>
                 )}

@@ -1,4 +1,4 @@
-# Tik Boutique — Frontend
+# Computer Hardware — Frontend
 
 This directory is the **standalone Next.js application root**.
 
