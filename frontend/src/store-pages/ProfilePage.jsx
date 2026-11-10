@@ -256,9 +256,9 @@ const ProfilePage = () => {
   );
 
   return (
-    <main dir="rtl" className="min-h-[70vh] bg-[var(--ui-canvas)] px-4 py-8 text-[var(--ui-text)] sm:px-6 sm:py-12">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <main dir="rtl" className="storefront-page min-h-[70vh] bg-[var(--ui-canvas)] px-3 py-8 text-[var(--ui-text)] sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-[1200px]">
+        <header className="mb-6 flex flex-col justify-between gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:flex-row sm:items-end sm:p-7">
           <div>
             <p className="text-xs font-semibold tracking-[0.15em] text-[var(--ui-accent)]">حساب کاربری Computer Hardware</p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">پروفایل من</h1>

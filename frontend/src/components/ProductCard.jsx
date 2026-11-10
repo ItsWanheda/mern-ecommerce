@@ -1,21 +1,33 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ArrowUpLeft, Heart, ShoppingCart } from "lucide-react";
+import { ArrowUpLeft, Heart, ShoppingCart, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
+import { useReviewSummaryStore } from "../stores/useReviewSummaryStore.js";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
+
+const persianNumber = (value) => new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
+  const reviewSummary = useReviewSummaryStore((state) => state.summaries[String(product?._id || "")]);
+  const requestReviewSummary = useReviewSummaryStore((state) => state.requestSummary);
   const [imageFailed, setImageFailed] = useState(false);
-  useEffect(() => setImageFailed(false), [product.image]);
+  const productImage = product.image || product.images?.[0] || "";
+  useEffect(() => setImageFailed(false), [productImage]);
+  useEffect(() => {
+    if (product?._id) requestReviewSummary(product._id);
+  }, [product?._id, requestReviewSummary]);
+
   const requiresCatalogUpdate = requiresCatalogMigration(product);
   const outOfStock = requiresCatalogUpdate || isOutOfStock(product);
   const saved = isSaved(product._id);
   const lowStock = !requiresCatalogUpdate && isStockTracked(product) && product.stock > 0 && product.stock <= 3;
+  const rating = Number(reviewSummary?.average || 0);
+  const reviewCount = Number(reviewSummary?.count || 0);
 
   const handleAddToCart = () => {
     if (requiresCatalogUpdate) return toast.error("این کالا هنوز به ساختار مشخصات فنی و موجودی جدید منتقل نشده است.");
@@ -24,65 +36,94 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <article dir="rtl" className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface transition duration-300 hover:-translate-y-1 hover:border-border-strong hover:shadow-[0_18px_45px_-24px_rgba(37,39,34,0.28)]">
+    <article dir="rtl" className="product-card group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--ui-border-strong)] hover:shadow-[0_16px_36px_-26px_var(--ui-shadow-color)]">
       <div className="relative">
-        <Link to={`/product/${product._id}`} aria-label={`مشاهده جزئیات ${product.name}`} className="relative block overflow-hidden bg-surface-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand">
-          <div className="aspect-square overflow-hidden">
-            {product.image && !imageFailed ? (
+        <Link
+          to={`/product/${product._id}`}
+          aria-label={`مشاهده جزئیات ${product.name}`}
+          className="product-card__image-link relative block overflow-hidden bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]"
+        >
+          <div className="product-card__image-frame aspect-square w-full overflow-hidden bg-white">
+            {productImage && !imageFailed ? (
               <img
-                src={product.image}
+                src={productImage}
                 alt={product.name}
                 loading="lazy"
                 decoding="async"
                 onError={() => setImageFailed(true)}
-                className={`h-full w-full bg-white object-contain object-center transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none ${outOfStock ? "grayscale-[0.3]" : ""}`}
+                className={`h-full w-full bg-white object-contain object-center p-3 transition-transform duration-300 ease-out group-hover:scale-[1.035] sm:p-4 motion-reduce:transition-none ${outOfStock ? "grayscale-[0.25]" : ""}`}
               />
             ) : (
-              <div role="img" aria-label={"تصویر " + product.name + " در دسترس نیست"} className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-soft">
-                <span aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full border border-border-strong text-lg">◇</span>
-                <span>تصویر محصول به‌زودی اضافه می‌شود</span>
+              <div role="img" aria-label={"تصویر " + product.name + " در دسترس نیست"} className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-xs leading-5 text-[var(--ui-muted)]">
+                <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--ui-border-strong)] text-xl">◇</span>
+                <span>تصویر محصول موجود نیست</span>
               </div>
             )}
           </div>
         </Link>
 
-        <span className="pointer-events-none absolute left-3 top-3 max-w-[55%] truncate whitespace-nowrap rounded-full border border-white/70 bg-surface/90 px-3 py-1.5 text-[10px] font-semibold tracking-wide text-muted backdrop-blur-sm">{product.categoryName?.fa || product.categoryName || String(product.category || "سخت‌افزار").replace(/-/g, " ")}</span>
+        <span className="pointer-events-none absolute start-3 top-3 max-w-[62%] truncate whitespace-nowrap rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--ui-muted)] shadow-sm backdrop-blur-sm">
+          <bdi dir="auto">{product.categoryName?.fa || product.categoryName || String(product.category || "سخت‌افزار").replace(/-/g, " ")}</bdi>
+        </span>
 
         <button
           type="button"
           onClick={() => toggleSaved(product)}
           aria-label={saved ? `حذف ${product.name} از علاقه‌مندی‌ها` : `ذخیره ${product.name} در علاقه‌مندی‌ها`}
           aria-pressed={saved}
-          className={`absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${saved ? "border-brand bg-brand-soft text-brand-deep" : "border-white/70 bg-surface/95 text-ink-strong hover:border-border-strong hover:bg-surface"}`}
+          className={`absolute end-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] ${saved ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)]/95 text-[var(--ui-text-strong)] hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface)]"}`}
         >
-          <Heart size={18} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
+          <Heart size={17} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
         </button>
 
         {requiresCatalogUpdate ? (
-          <span className="pointer-events-none absolute bottom-3 left-3 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-sm">نیازمند به‌روزرسانی</span>
+          <span className="pointer-events-none absolute bottom-3 start-3 rounded-full border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-2.5 py-1 text-[10px] font-semibold text-[var(--ui-warning)] shadow-sm">نیازمند به‌روزرسانی</span>
         ) : outOfStock ? (
-          <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-strong/95 px-3 py-1.5 text-xs font-semibold text-white shadow-sm">ناموجود</span>
+          <span className="pointer-events-none absolute bottom-3 start-3 rounded-full bg-[var(--ui-strong-surface)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--ui-inverse-text)] shadow-sm">ناموجود</span>
+        ) : lowStock ? (
+          <span className="pointer-events-none absolute bottom-3 start-3 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-2.5 py-1 text-[10px] font-semibold text-[var(--ui-accent)] shadow-sm">موجودی محدود</span>
         ) : null}
-        {lowStock && (
-          <span className="pointer-events-none absolute bottom-3 left-3 rounded-full border border-white/70 bg-surface/95 px-3 py-1.5 text-[10px] font-semibold text-brand shadow-sm backdrop-blur-sm">موجودی محدود</span>
-        )}
-        <span className="pointer-events-none absolute bottom-3 right-3 inline-flex h-10 w-10 translate-y-1 items-center justify-center rounded-full bg-surface/95 text-ink opacity-0 shadow-sm transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"><ArrowUpLeft size={18} aria-hidden="true" /></span>
+
+        <span className="pointer-events-none absolute bottom-3 end-3 inline-flex h-8 w-8 translate-y-1 items-center justify-center rounded-full bg-[var(--ui-surface)]/95 text-[var(--ui-text)] opacity-0 shadow-sm transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+          <ArrowUpLeft size={16} aria-hidden="true" />
+        </span>
       </div>
 
-      <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <div className="flex-1">
-          <Link to={`/product/${product._id}`} className="block min-h-12 rounded-sm text-sm font-medium leading-6 text-ink transition hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:text-base">
-            <span className="line-clamp-2">{product.name}</span>
-          </Link>
+      <div className="flex min-h-0 flex-1 flex-col p-3 sm:p-3.5">
+        <Link
+          to={`/product/${product._id}`}
+          className="product-card__title block min-h-[2.8rem] text-right text-[13px] font-semibold leading-6 text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:min-h-[3rem] sm:text-sm"
+        >
+          <bdi dir="auto" className="line-clamp-2">{product.name}</bdi>
+        </Link>
 
-          <div className="mt-2.5 min-h-6"><span className="text-[10px] text-muted-soft">مشاهده مشخصات فنی و سازگاری محصول</span></div>
-
-          <p className="mt-3 text-lg font-semibold tabular-nums tracking-tight text-ink">{formatPrice(product.price)}</p>
+        <div className="mt-2 flex min-h-5 items-center justify-between gap-2">
+          {reviewCount > 0 ? (
+            <span className="inline-flex min-w-0 items-center gap-1 text-[10px] text-[var(--ui-muted)] sm:text-[11px]" aria-label={`امتیاز ${rating.toFixed(1)} از ۵ بر اساس ${reviewCount} دیدگاه`}>
+              <Star size={13} className="shrink-0 fill-current text-[#c29b4d]" aria-hidden="true" />
+              <strong className="font-semibold tabular-nums text-[var(--ui-text-strong)]">{rating.toFixed(1)}</strong>
+              <span className="truncate">({persianNumber(reviewCount)})</span>
+            </span>
+          ) : (
+            <span className="text-[10px] text-[var(--ui-muted)]">هنوز امتیازی ثبت نشده</span>
+          )}
+          {Number(product.soldQuantity) > 0 && (
+            <span className="truncate text-[10px] text-[var(--ui-muted)]">{persianNumber(product.soldQuantity)} فروش</span>
+          )}
         </div>
 
-        <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-strong px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-strong-hover sm:px-4 sm:text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-border-strong disabled:text-muted-soft">
-          <ShoppingCart size={16} aria-hidden="true" />{requiresCatalogUpdate ? "نیازمند به‌روزرسانی" : outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
-        </button>
+        <div className="mt-auto pt-3">
+          <p className="text-base font-bold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-lg">{formatPrice(product.price)}</p>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={outOfStock}
+            className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--ui-accent)] px-2.5 py-2 text-[11px] font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:min-h-11 sm:px-3 sm:text-xs"
+          >
+            <ShoppingCart size={15} aria-hidden="true" />
+            {requiresCatalogUpdate ? "نیازمند به‌روزرسانی" : outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
+          </button>
+        </div>
       </div>
     </article>
   );

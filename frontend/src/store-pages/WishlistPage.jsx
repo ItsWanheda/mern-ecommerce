@@ -9,9 +9,9 @@ const WishlistPage = () => {
   const { items, clearSaved } = useWishlistStore();
 
   return (
-    <main dir="rtl" className="min-h-screen bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
-      <div className="mx-auto max-w-[1920px]">
-        <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5 sm:mb-9 sm:pb-6">
+    <main dir="rtl" className="storefront-page min-h-screen bg-[var(--ui-canvas)] px-3 py-8 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
+      <div className="mx-auto max-w-[1440px]">
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:mb-8 sm:p-7">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand">
               <Heart size={15} aria-hidden="true" />

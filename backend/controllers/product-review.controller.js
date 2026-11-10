@@ -23,6 +23,32 @@ export const getProductReviews=async(req,res)=>{
   return res.json({reviews,summary:{count,average:count?Number((sum/count).toFixed(2)):0,distribution}});
  }catch(error){console.error("Unable to load product reviews",error.message);return res.status(500).json({message:"دریافت دیدگاه‌ها انجام نشد."});}
 };
+export const getProductReviewSummaries = async (req, res) => {
+  const rawIds = typeof req.query.ids === "string" ? req.query.ids.split(",").filter(Boolean) : [];
+  const ids = [...new Set(rawIds)].slice(0, 48);
+  if (rawIds.length > 48 || ids.some((id) => !mongoose.isValidObjectId(id))) {
+    return res.status(400).json({ message: "شناسه محصولات برای دریافت امتیاز معتبر نیست." });
+  }
+  if (!ids.length) return res.json({ summaries: {} });
+  try {
+    const groups = await ProductReview.aggregate([
+      { $match: { product: { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) }, status: "approved" } },
+      { $group: { _id: "$product", average: { $avg: "$rating" }, count: { $sum: 1 } } },
+    ]).option({ maxTimeMS: 1500 });
+    const summaries = Object.fromEntries(ids.map((id) => [id, { average: 0, count: 0 }]));
+    for (const group of groups) {
+      summaries[String(group._id)] = {
+        average: Number((group.average || 0).toFixed(1)),
+        count: Number(group.count || 0),
+      };
+    }
+    return res.json({ summaries });
+  } catch (error) {
+    console.error("Unable to load product review summaries", error.message);
+    return res.status(500).json({ message: "دریافت امتیاز محصولات انجام نشد." });
+  }
+};
+
 export const getReviewEligibility=async(req,res)=>{
  if(!mongoose.isValidObjectId(req.params.productId))return res.status(400).json({message:"شناسه محصول معتبر نیست."});
  try{const result=await eligibility(req.user._id,req.params.productId);return res.json({eligible:result.eligible,reason:result.reason});}

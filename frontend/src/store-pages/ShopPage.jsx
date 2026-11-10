@@ -102,17 +102,17 @@ const ShopPage = () => {
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8"
+      className="storefront-page min-h-screen bg-[var(--ui-canvas)] px-3 py-7 text-[var(--ui-text)] sm:px-6 sm:py-9 lg:px-8"
     >
       <PageMeta title="فروشگاه قطعات کامپیوتر" description="جست‌وجو، فیلتر و خرید قطعات و تجهیزات کامپیوتر با مشخصات فنی روشن." path="/shop" type="collection" itemList={products} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) ? "noindex, follow" : "index, follow, max-image-preview:large"} />
-      <div className="mx-auto max-w-[1920px]">
-        <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
+      <div className="mx-auto max-w-[1440px]">
+        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div className="min-w-0">
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand">
               <Sparkles size={15} aria-hidden="true" />
               مجموعه فروشگاه
             </p>
-            <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
               {query ? "نتایج جست‌وجو" : "محصولات منتخب"}
               <span className="text-brand">.</span>
             </h1>
@@ -196,15 +196,17 @@ const ShopPage = () => {
 
         {loading ? (
           <div
-            className="flex min-h-64 flex-col items-center justify-center gap-3 text-sm text-muted"
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4"
             role="status"
+            aria-label="در حال دریافت محصولات"
+            aria-busy="true"
           >
-            <LoaderCircle
-              size={26}
-              className="animate-spin text-brand"
-              aria-hidden="true"
-            />
-            در حال آماده‌سازی محصولات…
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+                <div className="aspect-square animate-pulse bg-[var(--ui-surface-raised)]" />
+                <div className="space-y-3 p-3"><div className="h-3 w-4/5 animate-pulse rounded-full bg-[var(--ui-surface-raised)]" /><div className="h-10 animate-pulse rounded-xl bg-[var(--ui-surface-raised)]" /></div>
+              </div>
+            ))}
           </div>
         ) : products.length ? (
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">

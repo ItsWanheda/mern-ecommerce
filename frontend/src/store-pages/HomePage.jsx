@@ -1,159 +1,125 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-import { ArrowLeft, ChevronLeft, ChevronRight, Cpu, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Cpu,
+  PackageCheck,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+  Truck,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import { attachCampaignProducts, getCampaignProductIds } from "../lib/campaign-products.js";
 import CategoryItem from "../components/CategoryItem";
 import ProductCard from "../components/ProductCard";
-import { useProductStore } from "../stores/useProductStore";
 import FeaturedProducts from "../components/FeaturedProducts";
-import { formatPrice } from "../lib/commerce";
+import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { getCampaignPath } from "../lib/campaign-url";
 
-gsap.registerPlugin(ScrollTrigger);
-
 const benefits = [
-  { icon: Truck, title: "ارسال و تحویل", text: "هزینه و روش ارسال پیش از پرداخت به‌صورت شفاف نمایش داده می‌شود.", href: "/shipping-policy" },
-  { icon: PackageCheck, title: "مرجوعی و تعویض", text: "شرایط بازگشت کالا و مسیر پیگیری سفارش را پیش از خرید بررسی کنید.", href: "/returns-policy" },
-  { icon: ShieldCheck, title: "راهنما و پشتیبانی", text: "برای پرسش‌های فنی، سفارش‌ها و پیگیری خرید با پشتیبانی در ارتباط باشید.", href: "/support" },
+  { icon: Truck, title: "ارسال شفاف", text: "هزینه ارسال پیش از پرداخت مشخص است." },
+  { icon: ShieldCheck, title: "پرداخت امن", text: "پرداخت از مسیر رسمی و امن انجام می‌شود." },
+  { icon: PackageCheck, title: "اطلاعات دقیق", text: "مشخصات فنی و موجودی را پیش از خرید ببینید." },
+  { icon: RefreshCw, title: "پشتیبانی خرید", text: "برای انتخاب و پیگیری سفارش همراهتان هستیم." },
 ];
 
-const CampaignCountdown = ({ endsAt }) => {
-  const [now, setNow] = useState(null);
-  useEffect(() => {
-    const update = () => setNow(Date.now());
-    update();
-    const intervalId = window.setInterval(update, 1000);
-    return () => window.clearInterval(intervalId);
-  }, []);
-  const remaining = now === null ? null : Math.max(0, new Date(endsAt).getTime() - now);
-  const seconds = remaining === null ? 0 : Math.floor(remaining / 1000);
-  const units = [
-    [Math.floor(seconds / 86400), "روز"],
-    [Math.floor((seconds % 86400) / 3600), "ساعت"],
-    [Math.floor((seconds % 3600) / 60), "دقیقه"],
-    [seconds % 60, "ثانیه"],
-  ];
-  const number = (value) => new Intl.NumberFormat("fa-IR", { minimumIntegerDigits: 2, useGrouping: false }).format(value);
-  return (
-    <div dir="rtl" aria-label="زمان باقی‌مانده تا پایان پیشنهاد" className="flex flex-wrap items-center gap-2">
-      {units.map(([value, label]) => (
-        <span key={label} className="inline-flex min-w-[3.6rem] flex-col items-center rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-2 py-1.5">
-          <strong className="text-base tabular-nums text-[var(--ui-text)]">{remaining === null ? "—" : number(value)}</strong>
-          <span className="text-[10px] text-[var(--ui-muted)]">{label}</span>
-        </span>
-      ))}
+const SectionHeading = ({ eyebrow, title, description, href, linkLabel = "مشاهده همه" }) => (
+  <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="min-w-0">
+      {eyebrow && <p className="mb-1.5 text-[11px] font-bold text-[var(--ui-accent)] sm:text-xs">{eyebrow}</p>}
+      <h2 className="text-xl font-bold tracking-tight text-[var(--ui-text)] sm:text-2xl">{title}</h2>
+      {description && <p className="mt-1.5 max-w-2xl text-xs leading-6 text-[var(--ui-muted)] sm:text-sm">{description}</p>}
     </div>
-  );
-};
+    {href && (
+      <Link to={href} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-accent-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:self-auto sm:text-sm">
+        {linkLabel}<ArrowLeft size={15} aria-hidden="true" />
+      </Link>
+    )}
+  </div>
+);
+
+const ProductGridSkeleton = ({ count = 4 }) => (
+  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+    {Array.from({ length: count }).map((_, index) => (
+      <div key={index} aria-hidden="true" className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+        <div className="aspect-square animate-pulse bg-[var(--ui-surface-raised)]" />
+        <div className="space-y-3 p-3 sm:p-4">
+          <div className="h-3 w-4/5 animate-pulse rounded-full bg-[var(--ui-surface-raised)]" />
+          <div className="h-3 w-1/2 animate-pulse rounded-full bg-[var(--ui-surface-raised)]" />
+          <div className="h-10 animate-pulse rounded-xl bg-[var(--ui-surface-raised)]" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const EmptyCollection = ({ title, text, href = "/shop", action = "مشاهده محصولات" }) => (
+  <div className="rounded-2xl border border-dashed border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-5 py-8 text-center sm:py-10">
+    <Cpu size={27} className="mx-auto text-[var(--ui-accent)]" aria-hidden="true" />
+    <h3 className="mt-3 text-sm font-bold text-[var(--ui-text)]">{title}</h3>
+    <p className="mt-1 text-xs leading-6 text-[var(--ui-muted)]">{text}</p>
+    <Link to={href} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)]">
+      {action}<ArrowLeft size={14} aria-hidden="true" />
+    </Link>
+  </div>
+);
 
 const HomePage = () => {
-  const pageRef = useRef(null);
-  const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [campaigns, setCampaigns] = useState([]);
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
+  const [heroPaused, setHeroPaused] = useState(false);
   const [bestsellers, setBestsellers] = useState([]);
   const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
   const [bestsellersError, setBestsellersError] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
-  const { categories: storeCategories, categoriesLoaded, categoriesError, fetchCategories } = useCategoryStore();
-  const categories = storeCategories
-    .filter((category) => !category.parentId && category.isActive !== false && category.showInNavigation !== false)
-    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
-    .map((category) => ({
-      href: "/category/" + category.slug,
-      name: category.name?.fa || category.name?.en || category.slug,
-      imageUrl: category.image || "/hardware-category-placeholder.svg",
-    }));
+
   const {
     fetchFeaturedProducts,
     featuredProducts,
     fetchNewestProducts,
     newestProducts,
-
   } = useProductStore();
+  const {
+    categories: storeCategories,
+    categoriesLoaded,
+    categoriesError,
+    fetchCategories,
+  } = useCategoryStore();
 
-  useLayoutEffect(() => {
-    const page = pageRef.current;
-    if (!page || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-
-    const context = gsap.context(() => {
-      const hero = page.querySelector("[data-gsap-hero]");
-      if (hero) {
-        gsap.fromTo(hero, { autoAlpha: 0, y: 18 }, {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.7,
-          ease: "power2.out",
-          clearProps: "opacity,visibility,transform",
-        });
-      }
-
-      page.querySelectorAll("[data-gsap-reveal]").forEach((section) => {
-        gsap.fromTo(section, { autoAlpha: 0, y: 20 }, {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power2.out",
-          clearProps: "opacity,visibility,transform",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 88%",
-            once: true,
-          },
-        });
-      });
-    }, page);
-
-    return () => context.revert();
-  }, []);
-
-  useEffect(() => {
-    const page = pageRef.current;
-    if (!page || typeof ResizeObserver === "undefined") return undefined;
-
-    // Campaigns and product rows arrive asynchronously. Refresh trigger
-    // measurements after real layout changes so reveal animations never fire
-    // at stale offsets and pull the page unexpectedly while scrolling.
-    let refreshFrame = 0;
-    const observer = new ResizeObserver(() => {
-      window.cancelAnimationFrame(refreshFrame);
-      refreshFrame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
-    });
-    observer.observe(page);
-
-    return () => {
-      observer.disconnect();
-      window.cancelAnimationFrame(refreshFrame);
-    };
-  }, []);
+  const categories = useMemo(() => storeCategories
+    .filter((category) => !category.parentId && category.isActive !== false && category.showInNavigation !== false)
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+    .map((category) => ({
+      href: "/category/" + encodeURIComponent(category.slug),
+      name: category.name?.fa || category.name?.en || category.slug,
+      imageUrl: category.image || "/hardware-category-placeholder.svg",
+    })), [storeCategories]);
 
   useEffect(() => {
     let active = true;
     fetchFeaturedProducts();
     fetchCategories();
+
     Promise.resolve(fetchNewestProducts())
       .then((succeeded) => { if (active) setNewestError(succeeded === false); })
       .finally(() => { if (active) setNewestLoaded(true); });
+
     const loadCampaigns = async () => {
-      // The currently deployed API returns campaign product IDs. Resolve a
-      // small, deduplicated set through its existing public product endpoint
-      // instead of relying on the newer includeProducts query enhancement.
       const { data } = await axios.get("/campaigns");
       const campaignList = Array.isArray(data.campaigns) ? data.campaigns : [];
       const productIds = getCampaignProductIds(campaignList);
       const productResults = await Promise.allSettled(
-        productIds.map((productId) => axios.get(`/products/${productId}`))
+        productIds.map((productId) => axios.get("/products/" + productId))
       );
       const productsById = new Map();
-
       productResults.forEach((result, index) => {
         if (result.status !== "fulfilled") return;
         const product = result.value?.data;
@@ -161,9 +127,9 @@ const HomePage = () => {
           productsById.set(productIds[index], product);
         }
       });
-
       if (active) setCampaigns(attachCampaignProducts(campaignList, productsById));
     };
+
     loadCampaigns().catch((error) => console.error("Could not load campaigns:", error.message));
     axios.get("/products/bestsellers?limit=8")
       .then(({ data }) => {
@@ -177,50 +143,55 @@ const HomePage = () => {
         console.error("Could not load bestsellers:", error.message);
       })
       .finally(() => { if (active) setBestsellersLoaded(true); });
+
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts, fetchCategories]);
 
-  const catalogProducts = [...featuredProducts, ...bestsellers, ...newestProducts]
-    .filter((product, index, products) => product?._id && products.findIndex((item) => item?._id === product._id) === index);
+  const catalogProducts = useMemo(() => [...featuredProducts, ...bestsellers, ...newestProducts]
+    .filter((product, index, all) => product?._id && all.findIndex((item) => item?._id === product._id) === index),
+  [featuredProducts, bestsellers, newestProducts]);
 
-  // Active campaigns with an image and local destination rotate through the
-  // leading home banner. The existing campaign manager controls their order.
+  // The existing campaign manager supplies the hero slides. Admins can publish
+  // several active campaigns with images to create a multi-image home carousel.
   const heroCampaigns = campaigns.filter((campaign) => {
     const hasTitle = typeof campaign?.title === "string" && campaign.title.trim();
     const hasImage = typeof campaign?.image === "string" && campaign.image.trim();
     const href = campaign?.href;
     return hasTitle && hasImage && typeof href === "string" && href.startsWith("/") && !href.startsWith("//");
   });
-  const heroCampaign = heroCampaigns.length ? heroCampaigns[heroSlideIndex % heroCampaigns.length] : undefined;
-  useEffect(() => {
-    if (heroCampaigns.length < 2) return undefined;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-    const intervalId = window.setInterval(() => {
-      setHeroSlideIndex((index) => (index + 1) % heroCampaigns.length);
-    }, 6200);
-    return () => window.clearInterval(intervalId);
-  }, [heroCampaigns.length]);
-  const showPreviousCampaign = () => setHeroSlideIndex((index) => (index - 1 + heroCampaigns.length) % heroCampaigns.length);
-  const showNextCampaign = () => setHeroSlideIndex((index) => (index + 1) % heroCampaigns.length);
+  const heroCampaign = heroCampaigns.length
+    ? heroCampaigns[heroSlideIndex % heroCampaigns.length]
+    : null;
   const heroProduct = catalogProducts.find((product) =>
-    typeof product?.image === "string" &&
-    product.image.trim() &&
+    typeof product?.image === "string" && product.image.trim() &&
     !(typeof product.stock === "number" && product.stock <= 0)
   );
   const heroImage = heroCampaign?.image || heroProduct?.image || "/hardware-category-placeholder.svg";
+  const heroHref = heroCampaign ? getCampaignPath(heroCampaign) : "/shop";
+
   useEffect(() => setHeroImageFailed(false), [heroImage]);
+  useEffect(() => {
+    if (heroCampaigns.length < 2 || heroPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const intervalId = window.setInterval(() => {
+      setHeroSlideIndex((index) => (index + 1) % heroCampaigns.length);
+    }, 6500);
+    return () => window.clearInterval(intervalId);
+  }, [heroCampaigns.length, heroPaused]);
+
+  const showPreviousCampaign = () => setHeroSlideIndex((index) =>
+    (index - 1 + heroCampaigns.length) % heroCampaigns.length
+  );
+  const showNextCampaign = () => setHeroSlideIndex((index) =>
+    (index + 1) % heroCampaigns.length
+  );
+
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
   );
   const campaignProducts = campaigns
     .flatMap((campaign) => Array.isArray(campaign.productIds) ? campaign.productIds : [])
     .filter((product) => product && typeof product === "object" && product._id && product.isActive !== false)
-    .filter((product, index, products) =>
-      products.findIndex((item) => String(item._id) === String(product._id)) === index
-    );
-  const closestEndingCampaign = campaigns
-    .filter((campaign) => Number.isFinite(new Date(campaign.endsAt).getTime()))
-    .sort((left, right) => new Date(left.endsAt).getTime() - new Date(right.endsAt).getTime())[0];
+    .filter((product, index, all) => all.findIndex((item) => String(item._id) === String(product._id)) === index);
 
   const retryBestsellers = async () => {
     setBestsellersLoaded(false);
@@ -240,8 +211,7 @@ const HomePage = () => {
     setNewestLoaded(false);
     setNewestError(false);
     try {
-      const succeeded = await fetchNewestProducts();
-      setNewestError(succeeded === false);
+      setNewestError((await fetchNewestProducts()) === false);
     } catch {
       setNewestError(true);
     } finally {
@@ -250,258 +220,207 @@ const HomePage = () => {
   };
 
   return (
-    <main ref={pageRef} dir="rtl" className="min-h-screen overflow-hidden bg-canvas text-ink">
-      
-      <div className="mx-auto max-w-[1920px] px-3 pb-12 pt-4 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 2xl:px-12">
-        <section data-gsap-hero className="relative isolate overflow-hidden rounded-2xl border border-border bg-surface-muted">
-          <div className="grid grid-cols-1 items-stretch lg:min-h-[540px] lg:grid-cols-2">
-            <div className="relative order-1 min-h-[250px] overflow-hidden sm:min-h-[320px] lg:order-2 lg:min-h-[540px]">
-              {!heroImageFailed ? (
+    <main dir="rtl" className="storefront-page storefront-home min-h-screen bg-[var(--ui-canvas)] text-[var(--ui-text)]">
+      <div className="mx-auto max-w-[1440px] space-y-8 px-3 pb-12 pt-5 sm:space-y-10 sm:px-6 sm:pb-16 sm:pt-7 lg:px-8">
+        <section
+          aria-label="پیشنهاد اصلی فروشگاه"
+          className="storefront-hero overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_18px_45px_-38px_var(--ui-shadow-color)]"
+          onMouseEnter={() => setHeroPaused(true)}
+          onMouseLeave={() => setHeroPaused(false)}
+          onFocusCapture={() => setHeroPaused(true)}
+          onBlurCapture={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setHeroPaused(false);
+          }}
+        >
+          <div className="grid min-w-0 items-stretch lg:min-h-[430px] lg:grid-cols-[0.94fr_1.06fr]">
+            <div className="order-1 flex min-w-0 flex-col justify-center px-5 py-7 sm:px-8 sm:py-9 lg:px-10 xl:px-12">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-1.5 text-[11px] font-bold text-[var(--ui-accent)]">
+                <Sparkles size={14} aria-hidden="true" />
+                {heroCampaign ? "پیشنهاد ویژه فروشگاه" : "فروشگاه تخصصی قطعات کامپیوتر"}
+              </span>
+              <h1 className="mt-5 max-w-xl text-2xl font-extrabold leading-[1.55] tracking-tight text-[var(--ui-text)] sm:text-3xl sm:leading-[1.5] lg:text-4xl xl:text-[2.7rem]">
+                {heroCampaign ? <bdi dir="auto">{heroCampaign.title}</bdi> : <>سیستم دلخواهت را با <span className="text-[var(--ui-accent)]">انتخابی هوشمند</span> بساز.</>}
+              </h1>
+              <p className="mt-3 max-w-lg text-sm leading-7 text-[var(--ui-muted)] sm:mt-4 sm:text-base sm:leading-8">
+                {heroCampaign
+                  ? heroCampaign.description || "این پیشنهاد را ببین و قطعات مناسب سیستم خودت را انتخاب کن."
+                  : "قطعات را بر اساس بودجه، مشخصات فنی و سازگاری بررسی کن؛ بعد با خیال راحت انتخاب کن."}
+              </p>
+              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
+                <Link to={heroHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-2.5 text-sm font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
+                  {heroCampaign ? "مشاهده پیشنهاد" : "مشاهده محصولات"}<ArrowLeft size={16} aria-hidden="true" />
+                </Link>
+                <Link to="/categories" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
+                  خرید بر اساس دسته‌بندی
+                </Link>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--ui-border)] pt-4 text-[11px] font-medium text-[var(--ui-muted)] sm:text-xs">
+                <span className="inline-flex items-center gap-2"><Cpu size={15} className="text-[var(--ui-accent)]" aria-hidden="true" />انتخاب بر اساس نیاز</span>
+                <span className="inline-flex items-center gap-2"><PackageCheck size={15} className="text-[var(--ui-accent)]" aria-hidden="true" />مشخصات قابل بررسی</span>
+              </div>
+            </div>
+
+            <div className="relative order-2 min-h-[230px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[310px] lg:min-h-[430px]">
+              {heroImageFailed ? (
+                <div role="img" aria-label="تصویر محصولات در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ui-surface-raised)] p-8 text-center text-[var(--ui-muted)]">
+                  <Cpu size={42} className="text-[var(--ui-accent)]" aria-hidden="true" />
+                  <p className="max-w-xs text-sm leading-7">قطعات و تجهیزات کامپیوتر را از دسته‌بندی‌های فروشگاه مرور کنید.</p>
+                </div>
+              ) : (
                 <img
                   src={heroImage}
-                  alt={heroCampaign ? heroCampaign.title : heroProduct?.name || "محصولات سخت‌افزاری فروشگاه"}
-                  className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center p-6 sm:p-8 lg:p-10"}`}
+                  alt={heroCampaign?.title || heroProduct?.name || "قطعات کامپیوتر"}
                   fetchPriority="high"
                   onError={() => setHeroImageFailed(true)}
+                  className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center bg-white p-5 sm:p-8 lg:p-10"}`}
                 />
-              ) : (
-                <div role="img" aria-label="تصویر پیشنهادی در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-border via-surface-raised to-surface-raised p-8 text-center text-muted">
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full border border-border-strong bg-surface/45 text-brand" aria-hidden="true"><Cpu size={38} /></span>
-                  <span className="max-w-xs text-sm font-medium leading-6">قطعات و تجهیزات کامپیوتر را بر اساس دسته‌بندی مرور کنید.</span>
-                </div>
               )}
-              <div className={`absolute inset-0 ${heroCampaign ? "bg-gradient-to-l from-strong/30 via-transparent to-transparent" : "bg-gradient-to-t from-surface-muted/20 via-transparent to-transparent"}`} />
-              {heroCampaign ? (
-                <div className="absolute bottom-5 right-5 inline-flex items-center gap-2 rounded-full border border-white/60 bg-surface/80 px-4 py-2 text-xs font-semibold text-ink shadow-sm backdrop-blur-sm">
-                  <Sparkles size={14} aria-hidden="true" />
-                  پیشنهاد فعال فروشگاه
-                </div>
-              ) : heroProduct ? (
-                <Link
-                  to={`/product/${heroProduct._id}`}
-                  className="absolute bottom-4 right-4 flex max-w-[calc(100%-2rem)] items-center gap-3 rounded-2xl border border-white/70 bg-surface/90 p-3 text-ink shadow-lg backdrop-blur-md transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:bottom-5 sm:right-5 sm:p-4"
-                >
-                  <span className="min-w-0">
-                    <span className="block text-[10px] font-medium text-brand sm:text-xs">از محصولات فروشگاه</span>
-                    <span className="mt-1 block line-clamp-1 text-xs font-semibold sm:text-sm">{heroProduct.name}</span>
-                  </span>
-                  <span className="shrink-0 text-xs font-bold tabular-nums text-ink sm:text-sm">{formatPrice(heroProduct.price)}</span>
-                </Link>
-              ) : (
-                <div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-surface/75 px-4 py-2 text-xs font-medium text-ink backdrop-blur-sm">
-                  انتخاب دقیق، خرید مطمئن
-                </div>
-              )}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--ui-strong-surface)]/10 via-transparent to-transparent" />
               {heroCampaigns.length > 1 && (
-                <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 rounded-full border border-white/30 bg-[var(--ui-strong-surface)]/75 px-2.5 py-2 text-white shadow-lg backdrop-blur-md" aria-label="اسلایدر پیشنهادهای ویژه">
-                  <button type="button" onClick={showPreviousCampaign} aria-label="پیشنهاد قبلی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronRight size={17} aria-hidden="true" /></button>
-                  <div className="flex items-center gap-1.5">
-                    {heroCampaigns.map((campaign, index) => (
-                      <button key={campaign._id || index} type="button" onClick={() => setHeroSlideIndex(index)} aria-label={"نمایش پیشنهاد " + (index + 1)} aria-pressed={heroSlideIndex === index} className={"h-2 rounded-full transition-all " + (heroSlideIndex === index ? "w-7 bg-white" : "w-2 bg-white/55 hover:bg-white/80")} />
-                    ))}
+                <div className="absolute inset-x-0 bottom-4 flex items-center justify-center px-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-[var(--ui-surface)]/90 px-2 py-1.5 text-[var(--ui-text)] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.35)] backdrop-blur-md" aria-label="انتخاب تصویر پیشنهادها">
+                    <button type="button" onClick={showPreviousCampaign} aria-label="تصویر قبلی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
+                      <ChevronRight size={17} aria-hidden="true" />
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {heroCampaigns.map((campaign, index) => (
+                        <button key={campaign._id || index} type="button" onClick={() => setHeroSlideIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={heroSlideIndex === index} className={"h-1.5 rounded-full transition-all " + (heroSlideIndex === index ? "w-5 bg-[var(--ui-accent)]" : "w-1.5 bg-[var(--ui-border-strong)] hover:bg-[var(--ui-accent)]")} />
+                      ))}
+                    </div>
+                    <button type="button" onClick={showNextCampaign} aria-label="تصویر بعدی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
+                      <ChevronLeft size={17} aria-hidden="true" />
+                    </button>
                   </div>
-                  <button type="button" onClick={showNextCampaign} aria-label="پیشنهاد بعدی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"><ChevronLeft size={17} aria-hidden="true" /></button>
                 </div>
               )}
             </div>
-            <div className="relative z-10 order-2 min-w-0 px-5 py-8 sm:px-10 sm:py-12 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
-              <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand sm:mb-5 sm:text-xs sm:tracking-[0.22em]">
-                <Sparkles size={15} aria-hidden="true" />
-                {heroCampaign ? "پیشنهاد ویژه فروشگاه سخت‌افزار" : "قطعات مناسب برای سیستم شما"}
-              </p>
-              <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-ink sm:text-5xl sm:leading-[1.08] xl:text-6xl">
-                {heroCampaign ? heroCampaign.title : (
-                  <>سیستم بعدی‌ات را با <br className="hidden sm:block" /><span className="italic text-brand">انتخاب درست بساز.</span></>
-                )}
-              </h1>
-              <p className="mt-4 max-w-md text-sm leading-6 text-muted sm:mt-6 sm:text-lg sm:leading-7">
-                {heroCampaign
-                  ? heroCampaign.description || "این پیشنهاد را ببینید و محصولات مرتبط را انتخاب کنید."
-                  : "مشخصات فنی را بررسی کن و قطعه‌ای متناسب با نیاز، بودجه و سازگاری سیستم خودت پیدا کن."}
-              </p>
-              <div className="mt-6 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-                {heroCampaign ? (
-                  <Link to={getCampaignPath(heroCampaign)} className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-strong px-6 py-3 text-sm font-semibold text-white transition hover:bg-strong-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto">
-                    مشاهده پیشنهاد<ArrowLeft size={17} aria-hidden="true" />
-                  </Link>
-                ) : (
-                  <Link to="/shop" className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-strong px-6 py-3 text-sm font-semibold text-white transition hover:bg-strong-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto">
-                    مشاهده محصولات<ArrowLeft size={17} aria-hidden="true" />
-                  </Link>
-                )}
-                <a href="#shop-by-category" className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-border-strong px-6 py-3 text-sm font-semibold text-ink transition hover:border-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto">
-                  {heroCampaign ? "خرید بر اساس دسته‌بندی" : "دسته‌بندی‌ها"}
-                </a>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-border-strong pt-4 text-[11px] text-muted sm:mt-8 sm:gap-x-6 sm:gap-y-3 sm:pt-5 sm:text-sm">
-                <span className="inline-flex items-center gap-2"><Cpu size={16} aria-hidden="true" />مشخصات فنی کاربردی</span>
-                <span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" />اطلاعات روشن محصول</span>
-              </div>
-            </div>
           </div>
         </section>
 
-        <section id="shop-by-category" data-gsap-reveal className="scroll-mt-28 pt-12 sm:pt-16 lg:pt-20">
-          <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">کالای موردنیاز شما</p>
-              <h2 className="font-serif text-2xl font-medium tracking-tight text-ink sm:text-4xl">خرید بر اساس دسته‌بندی</h2>
-              <p className="mt-2 max-w-md text-xs leading-5 text-muted sm:text-sm sm:leading-6">دسته‌های فعال را مدیر فروشگاه ایجاد و مرتب می‌کند.</p>
+        <section aria-label="مزایای خرید از فروشگاه" className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 sm:grid-cols-4 sm:gap-3 sm:p-4">
+          {benefits.map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex min-w-0 items-center gap-2.5 rounded-xl px-2 py-2 sm:gap-3 sm:px-3">
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--ui-accent-soft)] text-[var(--ui-accent)] sm:h-10 sm:w-10"><Icon size={18} aria-hidden="true" /></span>
+              <span className="min-w-0">
+                <strong className="block truncate text-xs font-bold text-[var(--ui-text)] sm:text-sm">{title}</strong>
+                <span className="mt-0.5 block text-[10px] leading-4 text-[var(--ui-muted)] sm:text-[11px]">{text}</span>
+              </span>
             </div>
-          </div>
-          <div
-            aria-label="دسته‌بندی‌های فروشگاه"
-            className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-5"
-          >
-            {!categoriesLoaded ? (
-              Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} aria-hidden="true" className="h-44 animate-pulse rounded-2xl bg-surface-muted sm:h-56 xl:h-64" />
-              ))
-            ) : categoriesError && categories.length === 0 ? (
-              <div role="alert" className="col-span-full rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center text-red-800">
-                <p className="text-sm font-semibold">دریافت دسته‌بندی‌های فروشگاه ناموفق بود.</p>
-                <p className="mt-1 text-xs leading-6">{categoriesError}</p>
-                <button type="button" onClick={() => fetchCategories()} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full border border-red-300 px-4 text-sm font-semibold">تلاش دوباره</button>
-              </div>
-            ) : categories.length ? categories.map((category) => (
-              <CategoryItem key={category.href} category={category} />
-            )) : (
-              <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface px-5 py-8 text-center">
-                <Cpu size={26} className="mx-auto text-brand" aria-hidden="true" />
-                <p className="mt-3 text-sm font-semibold text-ink-strong">هنوز دسته‌بندی فعالی ایجاد نشده است.</p>
-                <p className="mt-1 text-xs leading-6 text-muted">مدیر فروشگاه می‌تواند از پنل مدیریت، دسته‌ها و زیردسته‌های دلخواه را ایجاد کند.</p>
-              </div>
-            )}
-          </div>
+          ))}
         </section>
 
-        {(secondaryCampaigns.length > 0 || campaignProducts.length > 0 || campaigns.length > 0) && (
-<section id="special-offers" aria-labelledby="campaigns-heading" className="pt-9 sm:pt-12">
-            <div className="mb-5 flex items-end justify-between gap-3 sm:mb-6 sm:gap-4">
-              <div><p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">ویژه و محدود</p><h2 id="campaigns-heading" className="font-serif text-2xl font-medium sm:text-3xl">شگفت‌انگیزها و پیشنهادهای ویژه</h2></div>
-              <Link to="/campaigns" className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full border border-border-strong px-3 text-xs font-semibold text-brand transition hover:border-ink hover:text-ink sm:border-0 sm:px-0 sm:text-sm">همه پیشنهادها<ArrowLeft size={15} aria-hidden="true" /></Link>
+        <section id="shop-by-category" aria-labelledby="shop-by-category-heading" className="scroll-mt-28">
+          <SectionHeading
+            eyebrow="دسته‌بندی‌های فروشگاه"
+            title="محصول موردنیازت را پیدا کن"
+            description="از دسته‌های اصلی شروع کن و برای دیدن محصولات هر گروه وارد همان مجموعه شو."
+            href="/categories"
+          />
+          {!categoriesLoaded ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, index) => <div key={index} className="aspect-[1.3/1] animate-pulse rounded-2xl bg-[var(--ui-surface-raised)]" />)}
             </div>
-            {closestEndingCampaign && (
-              <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                <div>
-                  <p className="text-xs font-semibold text-[var(--ui-accent)]">فرصت باقی‌مانده</p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--ui-text)]">{closestEndingCampaign.title}</p>
-                </div>
-                <CampaignCountdown endsAt={closestEndingCampaign.endsAt} />
-              </div>
-            )}
-            {campaignProducts.length > 0 && (
-              <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4" aria-label="محصولات منتخب کمپین‌ها">
-                {campaignProducts.map((product) => <ProductCard key={product._id} product={product} />)}
-              </div>
-            )}
-            <div className="desktop-product-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-4 scroll-smooth sm:gap-4">
-              {secondaryCampaigns.map((campaign) => (
-                <Link to={getCampaignPath(campaign)} key={campaign._id} className="group relative isolate flex min-h-[210px] min-w-[88%] snap-center overflow-hidden rounded-2xl border border-border bg-surface-muted p-5 transition hover:border-border-strong sm:min-h-[230px] sm:min-w-[48%] sm:p-6 xl:min-w-[32%]">
-                  {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-l from-strong/85 via-strong/55 to-transparent" />
-                  <div className="my-auto max-w-[80%] text-white">
-                    <p className="text-xs font-semibold tracking-[0.16em] text-white/75">پیشنهاد ویژه</p>
-                    <h3 className="mt-3 font-serif text-2xl font-medium">{campaign.title}</h3>
-                    {campaign.description && <p className="mt-2 text-sm leading-6 text-white/85">{campaign.description}</p>}
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده پیشنهاد<ArrowLeft size={16} aria-hidden="true" /></span>
-                  </div>
-                </Link>
-              ))}
+          ) : categoriesError && categories.length === 0 ? (
+            <div role="alert" className="rounded-2xl border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] px-5 py-7 text-center text-sm text-[var(--ui-danger)]">
+              <p className="font-semibold">دریافت دسته‌بندی‌های فروشگاه ناموفق بود.</p>
+              <p className="mt-1 text-xs leading-6">{categoriesError}</p>
+              <button type="button" onClick={() => fetchCategories()} className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-[var(--ui-danger-border)] px-4 text-xs font-semibold">تلاش دوباره</button>
             </div>
-          </section>
-        )}
-
-        {bestsellersLoaded && (bestsellers.length > 0 || bestsellersError) && (
-          <section className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="bestsellers-heading">
-            <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-              <div>
-                <p className="mb-1.5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]"><Sparkles size={14} aria-hidden="true" />محبوب بر اساس سفارش‌های تکمیل‌شده</p>
-                <h2 id="bestsellers-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">پرفروش‌های فروشگاه</h2>
-                <p className="mt-2 text-xs leading-5 text-muted sm:text-sm sm:leading-6">بر اساس تعداد کالا در سفارش‌هایی که پرداختشان تأیید شده است.</p>
-              </div>
-              <Link to="/bestsellers" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-border-strong px-4 py-2 text-xs font-semibold text-ink transition hover:border-ink sm:self-auto sm:text-sm">
-                مشاهده همه محصولات<ArrowLeft size={15} aria-hidden="true" />
-              </Link>
-            </div>
-            {bestsellersError ? (
-              <div role="alert" className="rounded-2xl border border-border bg-surface px-5 py-8 text-center sm:py-10">
-                <p className="text-sm font-semibold text-ink-strong">پرفروش‌ها بارگذاری نشدند.</p>
-                <p className="mt-1 text-xs leading-5 text-muted-soft">اتصال را بررسی کنید و دوباره تلاش کنید.</p>
-                <button type="button" onClick={retryBestsellers} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-strong px-4 py-2 text-sm font-semibold text-white transition hover:bg-strong-hover">تلاش دوباره</button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                {bestsellers.slice(0, 8).map((product) => <ProductCard key={product._id} product={product} />)}
-              </div>
-            )}
-          </section>
-        )}
-
-        <section data-gsap-reveal className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="newest-products-heading">
-          <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-            <div className="min-w-0">
-              <p className="mb-1.5 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">
-                <Sparkles size={14} aria-hidden="true" />
-                تازه به فروشگاه اضافه شده
-              </p>
-              <h2 id="newest-products-heading" className="font-serif text-2xl font-medium tracking-tight sm:text-4xl">تازه‌واردها</h2>
-              <p className="mt-2 text-xs leading-5 text-muted sm:text-sm sm:leading-6">محصولات جدید را با کشیدن به چپ و راست مرور کنید.</p>
-            </div>
-            <Link to="/new-arrivals" className="inline-flex min-h-10 shrink-0 items-center gap-2 self-start rounded-full border border-border-strong px-4 py-2 text-xs font-semibold text-ink transition hover:border-ink sm:self-auto sm:text-sm">
-              مشاهده همه
-              <ArrowLeft size={15} aria-hidden="true" />
-            </Link>
-          </div>
-
-          {!newestLoaded ? (
-            <div aria-label="در حال بارگذاری محصولات تازه" className="flex gap-3 overflow-hidden sm:gap-4">
-              {[0, 1, 2].map((item) => (
-                <div key={item} className="min-w-[68%] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-border bg-surface sm:min-w-[36%] lg:min-w-[24%]">
-                  <div className="aspect-square bg-surface-muted" />
-                  <div className="space-y-3 p-4">
-                    <div className="h-4 w-3/4 rounded-full bg-surface-muted" />
-                    <div className="h-4 w-1/2 rounded-full bg-surface-muted" />
-                    <div className="h-10 rounded-full bg-surface-muted" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : newestError ? (
-            <div role="alert" className="rounded-2xl border border-border bg-surface px-5 py-8 text-center sm:py-10">
-              <PackageCheck size={24} className="mx-auto text-brand" aria-hidden="true" />
-              <p className="mt-3 text-sm font-semibold text-ink-strong">تازه‌واردها بارگذاری نشدند.</p>
-              <p className="mt-1 text-xs leading-5 text-muted-soft">برای دریافت تازه‌ترین محصولات دوباره تلاش کنید.</p>
-              <button type="button" onClick={retryNewest} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-strong px-4 py-2 text-sm font-semibold text-white transition hover:bg-strong-hover">تلاش دوباره</button>
-            </div>
-          ) : newestProducts.length > 0 ? (
-            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
-              {newestProducts.slice(0, 8).map((product) => (
-                <div key={product._id} className="w-[min(68%,17rem)] min-w-0 shrink-0 snap-start sm:w-[min(36%,18rem)] lg:w-[min(24%,19rem)]">
-                  <ProductCard product={product} />
-                </div>
-              ))}
+          ) : categories.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
+              {categories.map((category) => <CategoryItem key={category.href} category={category} />)}
             </div>
           ) : (
-            <div className="rounded-2xl border border-border bg-surface px-5 py-8 text-center sm:py-10">
-              <PackageCheck size={24} className="mx-auto text-brand" aria-hidden="true" />
-              <p className="mt-3 text-sm font-semibold text-ink-strong">محصول تازه‌ای برای نمایش نیست.</p>
-              <p className="mt-1 text-xs text-muted-soft">بعداً دوباره سر بزنید یا محصولات فروشگاه را ببینید.</p>
-              <Link to="/shop" className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-strong px-4 py-2 text-sm font-semibold text-white transition hover:bg-strong-hover">رفتن به فروشگاه</Link>
-            </div>
+            <EmptyCollection title="هنوز دسته‌بندی فعالی ثبت نشده است" text="دسته‌بندی‌های فعال پس از ثبت توسط مدیریت فروشگاه اینجا نمایش داده می‌شوند." href="/shop" />
           )}
         </section>
 
-        {featuredProducts.length > 0 && <section className="mt-12 border-t border-border pt-8 sm:mt-16 sm:pt-12"><FeaturedProducts featuredProducts={featuredProducts} /></section>}
+        {secondaryCampaigns.length > 0 && (
+          <section aria-labelledby="special-offers-heading">
+            <SectionHeading eyebrow="فرصت‌های ویژه" title="پیشنهادهای فروشگاه" description="پیشنهادهای فعال را ببین و محصولات هر مجموعه را بررسی کن." href="/campaigns" />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+              {secondaryCampaigns.slice(0, 2).map((campaign) => (
+                <Link key={campaign._id} to={getCampaignPath(campaign)} className="group relative isolate flex min-h-[190px] items-end overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5 sm:min-h-[220px] sm:p-6">
+                  {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />}
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                  <div className="max-w-lg text-white">
+                    <span className="text-[11px] font-semibold text-white/80">پیشنهاد فعال</span>
+                    <h3 className="mt-2 text-xl font-bold leading-8 sm:text-2xl"><bdi dir="auto">{campaign.title}</bdi></h3>
+                    {campaign.description && <p className="mt-1 line-clamp-2 text-xs leading-6 text-white/85">{campaign.description}</p>}
+                    <span className="mt-3 inline-flex items-center gap-2 text-xs font-bold">مشاهده پیشنهاد<ArrowLeft size={14} aria-hidden="true" /></span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section data-gsap-reveal className="mt-8 grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:grid-cols-3 sm:gap-5 sm:p-6" aria-label="اطلاعات پیش از خرید">
-          {benefits.map(({ icon: Icon, title, text, href }) => (
-            <Link key={title} to={href} className="group flex items-start gap-3 rounded-xl px-2 py-2 transition hover:bg-canvas sm:px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-muted text-brand"><Icon size={20} aria-hidden="true" /></span>
-              <div className="min-w-0"><h2 className="text-sm font-semibold text-ink">{title}</h2><p className="mt-1 text-xs leading-5 text-muted-soft">{text}</p><span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand">بیشتر بدانید<ArrowLeft size={13} aria-hidden="true" /></span></div>
-            </Link>
-          ))}
+        {campaignProducts.length > 0 && (
+          <section aria-labelledby="campaign-products-heading">
+            <SectionHeading eyebrow="منتخب پیشنهادها" title="محصولات داخل پیشنهادها" href="/campaigns" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+              {campaignProducts.slice(0, 4).map((product) => <ProductCard key={product._id} product={product} />)}
+            </div>
+          </section>
+        )}
+
+        <section aria-labelledby="bestsellers-heading">
+          <SectionHeading
+            eyebrow="محبوب خریداران"
+            title="پرفروش‌های فروشگاه"
+            description="محصولاتی که بر اساس سفارش‌های پرداخت‌شده بیشتر انتخاب شده‌اند."
+            href="/bestsellers"
+          />
+          {!bestsellersLoaded ? (
+            <ProductGridSkeleton />
+          ) : bestsellersError ? (
+            <div role="alert" className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-8 text-center">
+              <p className="text-sm font-semibold text-[var(--ui-text)]">پرفروش‌ها بارگذاری نشدند.</p>
+              <p className="mt-1 text-xs text-[var(--ui-muted)]">اتصال را بررسی کن و دوباره تلاش کن.</p>
+              <button type="button" onClick={retryBestsellers} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)]">
+                <RefreshCw size={14} aria-hidden="true" />تلاش دوباره
+              </button>
+            </div>
+          ) : bestsellers.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+              {bestsellers.slice(0, 4).map((product) => <ProductCard key={product._id} product={product} />)}
+            </div>
+          ) : (
+            <EmptyCollection title="هنوز محصول پرفروشی برای نمایش وجود ندارد" text="پس از ثبت سفارش‌های پرداخت‌شده، محصولات محبوب اینجا نمایش داده می‌شوند." href="/shop" />
+          )}
         </section>
+
+        <section aria-labelledby="newest-products-heading">
+          <SectionHeading
+            eyebrow="تازه به فروشگاه اضافه شده"
+            title="تازه‌واردها"
+            description="محصولات جدید را در یک نگاه بررسی کن."
+            href="/new-arrivals"
+          />
+          {!newestLoaded ? (
+            <ProductGridSkeleton />
+          ) : newestError ? (
+            <div role="alert" className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-8 text-center">
+              <p className="text-sm font-semibold text-[var(--ui-text)]">تازه‌واردها بارگذاری نشدند.</p>
+              <p className="mt-1 text-xs text-[var(--ui-muted)]">برای دریافت آخرین محصولات دوباره تلاش کن.</p>
+              <button type="button" onClick={retryNewest} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)]">
+                <RefreshCw size={14} aria-hidden="true" />تلاش دوباره
+              </button>
+            </div>
+          ) : newestProducts.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+              {newestProducts.slice(0, 4).map((product) => <ProductCard key={product._id} product={product} />)}
+            </div>
+          ) : (
+            <EmptyCollection title="محصول تازه‌ای برای نمایش وجود ندارد" text="محصولات جدید پس از ثبت در فروشگاه اینجا نمایش داده می‌شوند." href="/shop" />
+          )}
+        </section>
+
+        {featuredProducts.length > 0 && (
+          <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 sm:px-5">
+            <FeaturedProducts featuredProducts={featuredProducts.slice(0, 12)} />
+          </section>
+        )}
       </div>
     </main>
   );

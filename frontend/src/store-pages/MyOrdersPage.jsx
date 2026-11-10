@@ -48,8 +48,8 @@ const MyOrdersPage = () => {
   useEffect(() => { loadOrders(); }, [loadOrders]);
 
   return (
-    <main dir="rtl" className="mx-auto min-h-[65vh] max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <main dir="rtl" className="storefront-page mx-auto min-h-[65vh] max-w-[1440px] px-3 py-8 text-[var(--ui-text)] sm:px-6 lg:px-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
         <div>
           <p className="text-sm font-semibold text-[var(--ui-accent)]">حساب کاربری</p>
           <h1 className="mt-1 text-2xl font-bold text-[var(--ui-text)] sm:text-3xl">سفارش‌های من و رهگیری</h1>

@@ -733,9 +733,9 @@ const Navbar = () => {
     <>
       <header
         dir="rtl"
-        className="fixed inset-x-0 top-0 z-40 w-full border-b border-[var(--ui-border)] bg-canvas/95 text-[var(--ui-text)] shadow-[0_8px_24px_-22px_rgba(37,39,34,0.45)] backdrop-blur-xl"
+        className="storefront-header fixed inset-x-0 top-0 z-40 w-full border-b border-[var(--ui-border)] bg-[var(--ui-canvas)]/95 text-[var(--ui-text)] shadow-[0_8px_24px_-22px_var(--ui-shadow-color)] backdrop-blur-xl"
       >
-        <div className="hidden bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)] sm:block">
+        <div className="hidden border-b border-[var(--ui-border)] bg-[var(--ui-surface-raised)] text-[var(--ui-text-strong)] sm:block">
           <div className="mx-auto flex min-h-9 max-w-[1920px] items-center justify-center gap-2 px-3 py-2 text-center sm:justify-between sm:px-6 lg:px-8 min-[1680px]:px-12">
             <p className="flex min-w-0 items-center justify-center gap-2 text-[11px] font-medium leading-5 sm:justify-start sm:text-xs">
               <Truck size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
@@ -751,7 +751,7 @@ const Navbar = () => {
             </p>
             <Link
               to="/shop"
-              className="hidden shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold text-[var(--ui-accent)] transition hover:bg-surface/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:inline-flex"
+              className="hidden shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-[var(--ui-accent)] transition hover:bg-[var(--ui-accent-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:inline-flex"
             >
               مشاهده محصولات
               <ChevronLeft size={14} aria-hidden="true" />
@@ -881,7 +881,7 @@ const Navbar = () => {
             <Link
               to="/"
               aria-label="صفحه اصلی Computer Hardware"
-              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
+              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap text-xl font-extrabold tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
             >
               Computer Hardware
             </Link>
@@ -903,6 +903,9 @@ const Navbar = () => {
                 </button>
                 <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
                 <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
+                <NavLink to="/categories" className={linkClass}>دسته‌بندی‌ها</NavLink>
+                <NavLink to="/bestsellers" className={linkClass}>پرفروش‌ها</NavLink>
+                <NavLink to="/new-arrivals" className={linkClass}>تازه‌واردها</NavLink>
                 <NavLink to="/wishlist" className={linkClass}><Heart size={15} aria-hidden="true" />علاقه‌مندی‌ها{savedProducts.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ui-accent)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-button-text)]">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}</NavLink>
               </nav>
 
@@ -1062,7 +1065,7 @@ const Navbar = () => {
               ) : (
                 <section className="rounded-2xl bg-[var(--ui-strong-surface)] p-4 text-[var(--ui-inverse-text)]">
                   <p className="text-xs font-semibold tracking-wide text-[var(--ui-accent)]">به Computer Hardware خوش آمدید</p>
-                  <h2 className="mt-2 font-serif text-xl font-medium">استایل دلخواهتان را پیدا کنید.</h2>
+                  <h2 className="mt-2 font-serif text-xl font-medium">سیستم دلخواهتان را هوشمندانه بسازید.</h2>
                   <p className="mt-2 text-xs leading-5 text-white/70">وارد حساب شوید یا برای تجربه خرید شخصی‌تر ثبت‌نام کنید.</p>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
@@ -1208,7 +1211,7 @@ const Navbar = () => {
               )}
             </div>
             <div className="border-t border-[var(--ui-border)] bg-surface/70 px-5 py-3 text-center text-[11px] text-[var(--ui-muted)]">
-              خرید آسان، استایل ماندگار
+              انتخاب هوشمند، خرید مطمئن
             </div>
           </aside>
         </div>

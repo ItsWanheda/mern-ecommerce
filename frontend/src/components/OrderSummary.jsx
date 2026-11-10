@@ -258,7 +258,7 @@ const OrderSummary = () => {
   return (
     <motion.div
       dir="rtl"
-      className="space-y-4 rounded-lg border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-sm sm:p-6"
+      className="store-order-summary space-y-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 shadow-[0_16px_40px_-34px_var(--ui-shadow-color)] sm:p-5"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

@@ -499,3 +499,232 @@ input[type="search"]::-webkit-search-decoration {
     scroll-behavior: auto;
   }
 }
+
+
+/* -------------------------------------------------------------------------
+   Storefront visual system — premium hardware retail (C direction).
+   These rules intentionally scope to customer-facing surfaces; the admin
+   workspace keeps its existing structure and component styling.
+   ------------------------------------------------------------------------- */
+:root {
+  --store-content-width: 90rem;
+  --store-radius-card: 1rem;
+  --store-radius-panel: 1.25rem;
+  --store-section-gap: clamp(1.75rem, 3.5vw, 2.75rem);
+}
+
+.storefront-page {
+  min-width: 0;
+  color: var(--ui-text);
+  background: var(--ui-canvas);
+  overflow-wrap: anywhere;
+}
+
+.storefront-page :where(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+.storefront-page :where(button, a, input, select, textarea) {
+  -webkit-tap-highlight-color: var(--ui-accent-soft);
+}
+
+.storefront-page :where(bdi, [dir="auto"]) {
+  unicode-bidi: plaintext;
+}
+
+.storefront-page :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  border-radius: 0.75rem;
+  border-color: var(--ui-border-strong);
+  background-color: var(--ui-input-bg);
+  color: var(--ui-text);
+}
+
+.storefront-page :where(input, select, textarea)::placeholder {
+  color: var(--ui-muted);
+  opacity: 1;
+}
+
+.storefront-page :where(a, button):focus-visible {
+  outline-color: var(--ui-focus);
+  outline-offset: 2px;
+}
+
+.storefront-header {
+  box-shadow: 0 8px 28px -26px var(--ui-shadow-color);
+}
+
+.storefront-header > div:first-child {
+  background: var(--ui-surface-raised);
+  color: var(--ui-text-strong);
+}
+
+.storefront-header form[role="search"] {
+  border-radius: 0.875rem;
+  box-shadow: none;
+}
+
+.storefront-header nav a[aria-current="page"] {
+  color: var(--ui-accent);
+  background: var(--ui-accent-soft);
+}
+
+.storefront-home {
+  padding-bottom: 1rem;
+}
+
+.storefront-hero {
+  isolation: isolate;
+}
+
+.storefront-hero img {
+  max-width: 100%;
+}
+
+.product-card {
+  box-shadow: 0 10px 28px -27px var(--ui-shadow-color);
+}
+
+.product-card__image-frame,
+.product-card__image-link {
+  background: #fff;
+}
+
+.product-card__title {
+  direction: rtl;
+  unicode-bidi: plaintext;
+  overflow-wrap: anywhere;
+}
+
+.product-card__title bdi {
+  unicode-bidi: plaintext;
+}
+
+.category-tile img,
+.product-gallery img {
+  max-width: 100%;
+}
+
+.product-info-panel {
+  align-self: start;
+}
+
+.product-mobile-buybar {
+  bottom: 0;
+}
+
+.store-order-summary,
+.cart-item {
+  box-shadow: 0 14px 36px -32px var(--ui-shadow-color);
+}
+
+.storefront-footer {
+  overflow: hidden;
+}
+
+.storefront-footer a {
+  text-underline-offset: 3px;
+}
+
+.storefront-footer :where(input, button) {
+  min-width: 0;
+}
+
+/* Shared polish for account, campaign, and purchase-confirmation surfaces. */
+.storefront-account-page {
+  isolation: isolate;
+}
+
+.storefront-account-page > div,
+.storefront-account-page > section {
+  min-width: 0;
+}
+
+.storefront-account-page :where(h1, h2) {
+  text-wrap: balance;
+  line-height: 1.35;
+}
+
+.storefront-account-page :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  max-width: 100%;
+  border-color: var(--ui-border-strong);
+  border-radius: 0.75rem;
+  background: var(--ui-input-bg);
+  color: var(--ui-text);
+}
+
+.storefront-account-page :where(input, select, textarea)::placeholder {
+  color: var(--ui-muted);
+  opacity: 1;
+}
+
+.storefront-account-page :where(button, a):focus-visible {
+  outline-color: var(--ui-focus);
+  outline-offset: 2px;
+}
+
+.storefront-footer {
+  scroll-margin-top: 6rem;
+}
+
+@media (max-width: 767px) {
+  .product-mobile-buybar {
+    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+  }
+
+  .storefront-home {
+    padding-bottom: 0.5rem;
+  }
+
+  .product-card {
+    border-radius: 0.875rem;
+  }
+
+  .product-card__image-frame {
+    min-width: 0;
+  }
+
+  .storefront-page {
+    overflow-x: clip;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .product-mobile-buybar {
+    bottom: 0;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .storefront-header nav[aria-label="پیمایش اصلی"] a[href="/bestsellers"],
+  .storefront-header nav[aria-label="پیمایش اصلی"] a[href="/new-arrivals"] {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .product-mobile-buybar > div {
+    gap: 0.5rem;
+  }
+
+  .product-mobile-buybar button {
+    min-width: 0;
+    padding-inline: 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .product-mobile-buybar > div > div {
+    max-width: 40%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storefront-page *,
+  .storefront-footer *,
+  .storefront-header * {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

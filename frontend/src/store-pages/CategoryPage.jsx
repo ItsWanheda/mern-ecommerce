@@ -483,9 +483,9 @@ const CategoryPage = ({ slug: routeSlug }) => {
   }
 
   return (
-    <main dir="rtl" className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
+    <main dir="rtl" className="storefront-page min-h-screen bg-[var(--ui-canvas)] px-3 py-7 text-[var(--ui-text)] sm:px-6 sm:py-9 lg:px-8">
       <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("مشخصات فنی، موجودی و قیمت محصولات دسته " + pageTitle + " را در فروشگاه سخت‌افزار بررسی کنید.")} image={selectedCategory?.image} path={"/category/" + categorySlug} type="category" itemList={products} breadcrumbs={pageBreadcrumbs} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || !selectedCategory ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory)} />
-      <div className="mx-auto max-w-[1920px]">
+      <div className="mx-auto max-w-[1440px]">
         <nav aria-label="مسیر دسته‌بندی" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-muted-soft sm:mb-5">
           <Link to="/" className="transition hover:text-ink">خانه</Link>
           <span aria-hidden="true">/</span>
@@ -499,14 +499,14 @@ const CategoryPage = ({ slug: routeSlug }) => {
           <span aria-hidden="true">/</span>
           <span aria-current="page" className="font-semibold text-[var(--ui-text)]">{pageTitle}</span>
         </nav>
-        <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
+        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div className="min-w-0">
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand">
               <ShoppingBag size={15} aria-hidden="true" />
               فروشگاه سخت‌افزار کامپیوتر
             </p>
             <motion.h1
-              className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
+              className="text-2xl font-extrabold tracking-tight text-[var(--ui-text)] sm:text-3xl"
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
@@ -553,32 +553,17 @@ const CategoryPage = ({ slug: routeSlug }) => {
           </div>
         </header>
 
-        {selectedCategory && (categoryAncestors.length > 0 || categoryChildren.length > 0) && (
-          <nav aria-label="مسیر دسته‌بندی" className="mb-5 space-y-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-soft">
-              <Link to="/shop" className="hover:text-brand">فروشگاه</Link>
-              {categoryAncestors.map((ancestor) => (
-                <span key={ancestor._id} className="inline-flex items-center gap-2">
-                  <span aria-hidden="true">/</span>
-                  <Link to={"/category/" + ancestor.slug} className="hover:text-brand">{ancestor.name?.fa || ancestor.name?.en}</Link>
-                </span>
-              ))}
-              <span aria-hidden="true">/</span>
-              <span className="font-semibold text-ink-strong">{pageTitle}</span>
-            </div>
-            {categoryChildren.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {categoryChildren.map((child) => (
-                  <Link key={child._id} to={"/category/" + child.slug} className="inline-flex min-h-9 items-center rounded-full border border-border-strong bg-surface px-3 py-1.5 text-xs font-medium text-ink-strong transition hover:border-brand hover:bg-brand-soft">
-                    {child.name?.fa || child.name?.en}
-                  </Link>
-                ))}
-              </div>
-            )}
+        {categoryChildren.length > 0 && (
+          <nav aria-label="زیر دسته‌بندی‌ها" className="mb-5 flex flex-wrap gap-2">
+            {categoryChildren.map((child) => (
+              <Link key={child._id} to={"/category/" + encodeURIComponent(child.slug)} className="inline-flex min-h-9 items-center rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3 py-1.5 text-xs font-medium text-[var(--ui-text-strong)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-accent-soft)]">
+                {child.name?.fa || child.name?.en}
+              </Link>
+            ))}
           </nav>
         )}
 
-        <section aria-label="جست‌وجو در این دسته‌بندی" className="mb-5 rounded-2xl border border-border bg-surface p-3 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] sm:p-4">
+        <section aria-label="جست‌وجو در این دسته‌بندی" className="mb-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 sm:p-4">
           <label htmlFor="category-product-search" className="mb-2 block text-sm font-semibold text-ink-strong">جست‌وجو در {pageTitle}</label>
           <div className="flex min-h-12 items-center gap-2 rounded-xl border border-border bg-surface px-3 transition focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10">
             <Search size={19} className="shrink-0 text-brand" aria-hidden="true" />
@@ -601,7 +586,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
           <p className="mt-2 text-xs leading-5 text-muted-soft">جست‌وجو با حروف «ی» و «ک» فارسی یا عربی و اعداد فارسی و انگلیسی پشتیبانی می‌شود.</p>
         </section>
 
-        <section aria-label="فیلترهای محصولات" className="mb-5 hidden rounded-2xl border border-border bg-surface p-4 shadow-[0_8px_30px_-24px_rgba(37,39,34,0.22)] md:block sm:p-5">
+        <section aria-label="فیلترهای محصولات" className="mb-5 hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 md:block sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <SlidersHorizontal size={18} className="text-brand" aria-hidden="true" />
@@ -659,13 +644,14 @@ const CategoryPage = ({ slug: routeSlug }) => {
         )}
 
         {loading ? (
-          <div role="status" className="flex min-h-64 flex-col items-center justify-center gap-3 text-sm text-muted">
-            <LoaderCircle size={28} className="animate-spin text-brand" aria-hidden="true" />
-            در حال آماده‌سازی محصولات…
+          <div role="status" aria-label="در حال دریافت محصولات" aria-busy="true" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]"><div className="aspect-square animate-pulse bg-[var(--ui-surface-raised)]" /><div className="space-y-3 p-3"><div className="h-3 w-4/5 animate-pulse rounded-full bg-[var(--ui-surface-raised)]" /><div className="h-10 animate-pulse rounded-xl bg-[var(--ui-surface-raised)]" /></div></div>
+            ))}
           </div>
         ) : filteredProducts.length > 0 ? (
           <motion.div
-            className="grid grid-cols-2 justify-items-stretch gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4"
+            className="grid grid-cols-2 justify-items-stretch gap-3 sm:gap-4 xl:grid-cols-4"
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}

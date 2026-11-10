@@ -38,8 +38,8 @@ const SignUpPage = () => {
 	};
 
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-8 text-ink sm:px-6 sm:py-10">
-			<div className="w-full max-w-xl overflow-hidden rounded-[2rem] border border-border bg-surface shadow-[0_28px_90px_-42px_rgba(37,39,34,0.28)]">
+		<main className="storefront-account-page flex min-h-screen items-center justify-center bg-[var(--ui-canvas)] px-4 py-8 text-[var(--ui-text)] sm:px-6 sm:py-10">
+			<div className="w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_22px_60px_-42px_var(--ui-shadow-color)]">
 <motion.section
 					className="flex items-center px-6 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12"
 					initial={{ opacity: 0, y: 14 }}
@@ -48,7 +48,7 @@ const SignUpPage = () => {
 					aria-labelledby="signup-heading"
 				>
 					<div className="mx-auto w-full max-w-md">
-						<Link to="/" className="inline-flex items-center font-serif text-2xl font-semibold tracking-tight text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+						<Link to="/" className="inline-flex items-center text-xl font-extrabold tracking-tight text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
 							Computer Hardware
 						</Link>
 
@@ -57,7 +57,7 @@ const SignUpPage = () => {
 								<Sparkles size={20} aria-hidden="true" />
 							</div>
 							<p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">به مجموعه ما بپیوندید</p>
-							<h1 id="signup-heading" className="mt-3 font-serif text-4xl font-medium tracking-tight sm:text-5xl">اینجا را خانه خود بدانید<span className="text-brand">.</span></h1>
+							<h1 id="signup-heading" className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">اینجا را خانه خود بدانید<span className="text-brand">.</span></h1>
 							<p className="mt-3 text-sm leading-6 text-muted-soft">برای تجربه خریدی آسان‌تر و شخصی‌تر حساب کاربری بسازید.</p>
 						</div>
 

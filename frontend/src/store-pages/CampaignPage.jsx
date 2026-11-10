@@ -38,9 +38,9 @@ const CampaignPage = ({ campaignId: routeCampaignId }) => {
   const products = (campaign?.productIds || []).filter((product) => product && product.isActive !== false);
 
   return (
-    <main dir="rtl" className="min-h-[65vh] bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
+    <main dir="rtl" className="storefront-page min-h-[65vh] bg-[var(--ui-canvas)] px-3 py-7 text-[var(--ui-text)] sm:px-6 sm:py-9 lg:px-8">
       <PageMeta title={campaign?.title || "کمپین فروشگاهی"} description={campaign?.description || "پیشنهادهای ویژه و محصولات منتخب فروشگاه سخت‌افزار."} image={campaign?.image} path={window.location.pathname} type="campaign" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }, { name: campaign?.title || "کمپین", path: window.location.pathname }]} robots={error ? "noindex, nofollow" : "index, follow, max-image-preview:large"} canonical={!error} />
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1200px]">
         <nav aria-label="مسیر صفحه" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted-soft">
           <Link to="/" className="hover:text-brand">صفحه اصلی</Link>
           <span aria-hidden="true">/</span>
@@ -64,7 +64,7 @@ const CampaignPage = ({ campaignId: routeCampaignId }) => {
           </section>
         ) : campaign && (
           <>
-            <article className="overflow-hidden rounded-3xl border border-border bg-surface shadow-sm">
+            <article className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_16px_40px_-34px_var(--ui-shadow-color)]">
               <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
                 <div className="relative min-h-64 bg-surface-muted sm:min-h-80 lg:min-h-[28rem]">
                   {campaign.image ? (
@@ -75,7 +75,7 @@ const CampaignPage = ({ campaignId: routeCampaignId }) => {
                 </div>
                 <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12">
                   <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand"><Megaphone size={15} aria-hidden="true" />پیشنهاد ویژه فروشگاه سخت‌افزار</p>
-                  <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{campaign.title}</h1>
+                  <h1 className="mt-4 text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl"><bdi dir="auto">{campaign.title}</bdi></h1>
                   {campaign.description && <p className="mt-4 whitespace-pre-line text-sm leading-7 text-muted sm:text-base">{campaign.description}</p>}
                   <div className="mt-6 space-y-2 border-t border-border pt-5 text-xs leading-6 text-muted-soft">
                     <p className="flex items-start gap-2"><CalendarClock size={16} className="mt-0.5 shrink-0 text-brand" aria-hidden="true" /><span>شروع: {formatIranianDateTime(campaign.startsAt)}</span></p>
@@ -100,7 +100,7 @@ const CampaignPage = ({ campaignId: routeCampaignId }) => {
                 </div>
               </div>
               {products.length ? (
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
                   {products.map((product) => <ProductCard key={product._id} product={product} />)}
                 </div>
               ) : (

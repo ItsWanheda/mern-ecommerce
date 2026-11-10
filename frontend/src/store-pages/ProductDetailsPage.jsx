@@ -297,17 +297,17 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
     : "/product/" + encodeURIComponent(productId);
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 sm:pb-28 lg:px-8 lg:pb-10">
+    <main dir="rtl" className="storefront-page min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-40 text-[var(--ui-text)] sm:px-6 sm:py-9 sm:pb-40 lg:px-8 lg:pb-10">
       <PageMeta title={product?.name || "محصول"} description={product?.description || "مشخصات فنی، قیمت و وضعیت موجودی این محصول را بررسی کنید."} image={product?.image} path={productPath} type="product" product={product || undefined} structuredData={false} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(productCategorySlug ? [{ name: productCategoryName, path: "/category/" + encodeURIComponent(productCategorySlug) }] : []), { name: product?.name || "محصول", path: productPath }]} />
-      <div className="mx-auto max-w-[1600px]">
+      <div className="mx-auto max-w-[1440px]">
         <Link to={productCategorySlug ? "/category/" + encodeURIComponent(productCategorySlug) : "/categories"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {productCategoryName}</Link>
 
-        <div className="mt-7 grid items-start gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-12">
+        <div className="mt-5 grid min-w-0 items-start gap-5 sm:mt-7 sm:gap-7 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8 xl:gap-10">
           <section aria-label="تصاویر محصول" className="min-w-0">
-            <div className="relative overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
+            <div className="product-gallery relative overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 sm:p-3">
               {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
                 <button type="button" onClick={() => setImageViewerOpen(true)} aria-label="نمایش تصویر محصول در اندازه بزرگ" className="group block w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]">
-                  <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[850px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
+                  <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[700px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
                   <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 py-2 text-xs font-semibold text-[var(--ui-text)] shadow-sm transition group-hover:bg-[var(--ui-surface)]"><ZoomIn size={15} aria-hidden="true" />بزرگ‌نمایی تصویر</span>
                 </button>
               ) : (
@@ -347,14 +347,14 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
             </div>
           </section>
 
-          <section className="min-w-0 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-7 shadow-[0_18px_55px_-42px_var(--ui-shadow-color)] sm:px-8 sm:py-10 lg:px-10">
+          <section className="product-info-panel min-w-0 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-5 shadow-[0_18px_45px_-38px_var(--ui-shadow-color)] sm:px-6 sm:py-7 lg:px-7">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{productCategoryName || "قطعات و تجهیزات کامپیوتر"}</p>
-            <h1 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
-            <p className="mt-5 text-2xl font-semibold tabular-nums">{formatPrice(product.price)}</p>
+            <h1 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight text-[var(--ui-text)] sm:text-3xl"><bdi dir="auto">{product.name}</bdi></h1>\n            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">\n              {reviewSummary.count > 0 ? (\n                <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">\n                  <Star size={14} className="fill-current text-[#c29b4d]" aria-hidden="true" />\n                  <strong className="tabular-nums text-[var(--ui-text-strong)]">{reviewSummary.average.toFixed(1)}</strong>\n                  <span>از ۵ · {new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه</span>\n                </span>\n              ) : <span className="rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">هنوز امتیازی ثبت نشده</span>}\n            </div>
+            <p className="mt-4 text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(product.price)}</p>
             <div className="my-6 h-px bg-[var(--ui-border)]" />
 
             {productAttributeRows.length > 0 && (
-              <section className="mb-6 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] p-4" aria-labelledby="quick-specifications-heading">
+              <section className="mb-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3.5 sm:p-4" aria-labelledby="quick-specifications-heading">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h2 id="quick-specifications-heading" className="text-sm font-bold">مشخصات کلیدی</h2>
                   <span className="text-xs text-[var(--ui-muted)]">بر اساس دسته‌بندی محصول</span>
@@ -363,7 +363,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
                   {productAttributeRows.slice(0, 4).map((attribute) => (
                     <div key={attribute.key} className="min-w-0 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2.5">
                       <dt className="break-words text-[11px] text-[var(--ui-muted)]">{attribute.label}</dt>
-                      <dd className="mt-1 break-words text-sm font-semibold text-[var(--ui-text)]">{attribute.value}{attribute.unit && <span className="mr-1 font-normal text-xs text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
+                      <dd className="mt-1 break-words text-sm font-semibold text-[var(--ui-text)]"><bdi dir="auto">{attribute.value}</bdi>{attribute.unit && <span className="mr-1 font-normal text-xs text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
                     </div>
                   ))}
                 </dl>
@@ -396,11 +396,11 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
           </section>
         </div>
 
-        <section className="mt-14 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-9 sm:mt-20 sm:px-10 sm:py-14" aria-labelledby="product-description-heading">
+        <section className="mt-8 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-7 sm:mt-10 sm:px-7 sm:py-9" aria-labelledby="product-description-heading">
           <div className="mx-auto max-w-4xl">
             <p className="text-xs font-semibold text-[var(--ui-accent)]">نگاهی نزدیک‌تر</p>
             <h2 id="product-description-heading" className="mt-3 text-2xl font-semibold leading-relaxed sm:text-3xl">درباره این محصول</h2>
-            <p className="mt-6 break-words whitespace-pre-line text-[15px] leading-9 text-[var(--ui-muted)] sm:text-base sm:leading-10">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
+            <p dir="auto" className="mt-6 break-words whitespace-pre-line text-[15px] leading-8 text-[var(--ui-muted)] sm:text-base sm:leading-9">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
             {productAttributeRows.length > 0 && (
               <div className="mt-8 border-t border-[var(--ui-border)] pt-6 sm:mt-10 sm:pt-8">
                 <h3 className="text-lg font-semibold sm:text-xl">مشخصات محصول</h3>
@@ -417,7 +417,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
           </div>
         </section>
 
-        <section className="mt-14 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-8 sm:mt-20 sm:px-10 sm:py-12" aria-labelledby="customer-reviews-heading">
+        <section className="mt-8 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-7 sm:mt-10 sm:px-7 sm:py-9" aria-labelledby="customer-reviews-heading">
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-wrap items-end justify-between gap-5 border-b border-[var(--ui-border)] pb-7">
               <div><p className="text-xs font-semibold text-[var(--ui-accent)]">تجربه خریداران</p><h2 id="customer-reviews-heading" className="mt-2 text-2xl font-semibold sm:text-3xl">دیدگاه مشتریان</h2><p className="mt-2 text-sm text-[var(--ui-muted)]">دیدگاه‌ها پس از تأیید مدیریت منتشر می‌شوند.</p></div>
@@ -456,10 +456,10 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/96 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-24px_var(--ui-shadow-color)] backdrop-blur lg:hidden">
+      <div className="product-mobile-buybar fixed inset-x-0 z-50 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/96 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-24px_var(--ui-shadow-color)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs text-[var(--ui-muted)]">{product.name}</p>
+            <p className="truncate text-xs text-[var(--ui-muted)]"><bdi dir="auto">{product.name}</bdi></p>
             <p className="mt-0.5 text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>
           </div>
           <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 min-w-[58%] shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]">

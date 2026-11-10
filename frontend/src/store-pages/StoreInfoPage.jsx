@@ -19,12 +19,12 @@ const categoryLinks = [
 
 const PageLayout = ({ eyebrow, title, intro, pathname, children }) => {
   return (
-    <main dir="rtl" className="min-h-[60vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main dir="rtl" className="storefront-page min-h-[60vh] bg-[var(--ui-canvas)] px-3 py-8 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
+      <div className="mx-auto max-w-[1100px]">
         <p className="mb-2 text-xs font-semibold tracking-wide text-brand">{eyebrow}</p>
         <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
         {intro && <p className="mt-3 max-w-3xl text-sm leading-7 text-muted sm:text-base">{intro}</p>}
-        <div className="mt-7 space-y-4">{children}</div>
+        <div className="mt-7 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4 sm:p-6"><div className="space-y-4">{children}</div></div>
         <nav aria-label="صفحات راهنما" className="mt-9 flex flex-wrap gap-2 border-t border-border pt-5">
           {categoryLinks.filter(([href]) => href !== pathname).map(([href, label]) => (
             <Link key={href} to={href} className="inline-flex min-h-9 items-center rounded-full border border-border-strong bg-surface px-3 py-2 text-xs font-semibold text-muted transition hover:border-muted-soft hover:text-ink">{label}</Link>
@@ -37,7 +37,7 @@ const PageLayout = ({ eyebrow, title, intro, pathname, children }) => {
 };
 
 const InfoCard = ({ title, children, icon: Icon = CheckCircle2 }) => (
-  <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+  <section className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:p-5">
     <div className="flex items-start gap-3">
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><Icon size={19} aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">

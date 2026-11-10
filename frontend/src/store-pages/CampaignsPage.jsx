@@ -29,12 +29,14 @@ const CampaignsPage = () => {
   useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
 
   return (
-    <main dir="rtl" className="min-h-[65vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
+    <main dir="rtl" className="storefront-page min-h-[65vh] bg-[var(--ui-canvas)] px-3 py-8 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
       <PageMeta title="پیشنهادهای ویژه" description="کمپین‌ها و پیشنهادهای فعال فروشگاه سخت‌افزار." path="/campaigns" breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }]} />
-      <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wide text-brand">فروشگاه سخت‌افزار کامپیوتر</p>
-        <h1 className="mt-2 text-3xl font-bold sm:text-4xl">پیشنهادهای ویژه</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">هر کمپین صفحه اختصاصی و نشانی جداگانه دارد؛ آن را باز کنید، جزئیات و کالاهای انتخاب‌شده را ببینید و لینک صفحه را به اشتراک بگذارید.</p>
+      <div className="mx-auto max-w-[1440px]">
+        <header className="mb-7 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
+          <p className="text-xs font-bold text-[var(--ui-accent)]">پیشنهادهای فروشگاه</p>
+          <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">پیشنهادهای ویژه</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--ui-muted)]">کمپین‌های فعال را ببینید، جزئیات و محصولات هر پیشنهاد را بررسی کنید و صفحه اختصاصی آن را به اشتراک بگذارید.</p>
+        </header>
 
         {loading ? (
           <div role="status" className="flex min-h-56 items-center justify-center gap-3 text-sm text-muted"><LoaderCircle size={22} className="animate-spin text-brand" aria-hidden="true" />در حال دریافت پیشنهادها…</div>
@@ -45,13 +47,13 @@ const CampaignsPage = () => {
         ) : campaigns.length ? (
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((campaign) => (
-              <Link key={campaign._id} to={getCampaignPath(campaign)} className="group overflow-hidden rounded-2xl border border-border bg-surface transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              <Link key={campaign._id} to={getCampaignPath(campaign)} className="group overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] transition hover:-translate-y-0.5 hover:border-[var(--ui-border-strong)] hover:shadow-[0_16px_36px_-26px_var(--ui-shadow-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
                 <div className="relative aspect-[16/9] bg-surface-muted">
                   {campaign.image ? <img src={campaign.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" /> : <div className="flex h-full items-center justify-center text-brand"><Megaphone size={35} aria-hidden="true" /></div>}
                 </div>
                 <div className="p-4 sm:p-5">
                   <p className="text-[11px] font-semibold text-brand">کمپین ویژه</p>
-                  <h2 className="mt-2 text-xl font-bold">{campaign.title}</h2>
+                  <h2 className="mt-2 text-lg font-bold"><bdi dir="auto">{campaign.title}</bdi></h2>
                   {campaign.description && <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted">{campaign.description}</p>}
                   <p className="mt-3 text-xs text-muted-soft">تا {formatIranianDateTime(campaign.endsAt)}</p>
                   <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink-strong">مشاهده صفحه کمپین<ArrowLeft size={16} aria-hidden="true" /></span>

@@ -10,17 +10,23 @@ import PageMeta from "../components/PageMeta";
 const modes = {
   newest: {
     title: "تازه‌واردها",
-    description: "جدیدترین قطعات و تجهیزات اضافه‌شده به فروشگاه، در یک صفحه مستقل.",
+    eyebrow: "تازه به فروشگاه اضافه شده",
+    description: "جدیدترین قطعات و تجهیزات کامپیوتر را با مشخصات فنی و قیمت به‌روز بررسی کنید.",
+    path: "/new-arrivals",
     load: async () => (await axios.get("/products/newest?limit=24")).data.products || [],
   },
   bestsellers: {
     title: "پرفروش‌های فروشگاه",
+    eyebrow: "محبوب خریداران",
     description: "محصولاتی که بر اساس سفارش‌های پرداخت‌شده بیشتر خریداری شده‌اند.",
+    path: "/bestsellers",
     load: async () => (await axios.get("/products/bestsellers?limit=24")).data.products || [],
   },
   featured: {
     title: "محصولات منتخب",
-    description: "مجموعه گزیده‌ای از محصولاتی که برای دیدن بیشتر انتخاب شده‌اند.",
+    eyebrow: "انتخاب فروشگاه",
+    description: "مجموعه‌ای گزیده از محصولاتی که برای بررسی بیشتر انتخاب شده‌اند.",
+    path: "/featured-products",
     load: async () => {
       const { data } = await axios.get("/products/featured");
       return Array.isArray(data) ? data : [];
@@ -58,44 +64,71 @@ const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
     }
   }, [config, slug, type]);
 
-  useEffect(() => {
-    loadCollection();
-  }, [loadCollection]);
+  useEffect(() => { loadCollection(); }, [loadCollection]);
 
   return (
-    <main dir="rtl" className="min-h-[65vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
-      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.description || "این مجموعه در فروشگاه سخت‌افزار در دسترس نیست."} image={config?.image} path={type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: type === "look" ? "/looks/" + encodeURIComponent(slug || "") : type === "newest" ? "/new-arrivals" : type === "bestsellers" ? "/bestsellers" : "/featured-products" }] : []} />
-      <div className="mx-auto max-w-[1920px]">
-        <nav aria-label="مسیر صفحه" className="mb-5 flex items-center gap-2 text-xs text-muted-soft">
-          <Link to="/" className="hover:text-brand">صفحه اصلی</Link><span aria-hidden="true">/</span><Link to="/shop" className="hover:text-brand">فروشگاه</Link><span aria-hidden="true">/</span><span className="font-semibold text-ink-strong">{config?.title || "مجموعه"}</span>
+    <main dir="rtl" className="storefront-page min-h-[65vh] bg-[var(--ui-canvas)] px-3 py-7 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
+      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.description || "این مجموعه در فروشگاه سخت‌افزار در دسترس نیست."} path={config?.path || "/shop"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: config.path }] : []} />
+      <div className="mx-auto max-w-[1440px]">
+        <nav aria-label="مسیر صفحه" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">
+          <Link to="/" className="transition hover:text-[var(--ui-accent)]">صفحه اصلی</Link>
+          <span aria-hidden="true">/</span>
+          <Link to="/shop" className="transition hover:text-[var(--ui-accent)]">فروشگاه</Link>
+          <span aria-hidden="true">/</span>
+          <span className="font-semibold text-[var(--ui-text)]">{config?.title || "مجموعه"}</span>
         </nav>
+
         {type !== "look" && (
-          <header className="mb-8 border-b border-border pb-5">
-            <p className="text-xs font-semibold tracking-wide text-brand">فروشگاه سخت‌افزار کامپیوتر</p>
-            <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{config?.title || "مجموعه"}</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">{config?.description}</p>
+          <header className="mb-6 flex flex-col gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:p-7">
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-[var(--ui-accent)]">{config?.eyebrow || "فروشگاه سخت‌افزار"}</p>
+              <h1 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">{config?.title || "مجموعه"}</h1>
+              <p className="mt-2 max-w-2xl text-xs leading-7 text-[var(--ui-muted)] sm:text-sm">{config?.description}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="inline-flex min-h-10 items-center rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2 text-xs font-semibold text-[var(--ui-text-strong)]">
+                {loading ? "در حال دریافت…" : new Intl.NumberFormat("fa-IR").format(products.length) + " محصول"}
+              </span>
+              <Link to="/shop" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-3 py-2 text-xs font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)]">
+                همه محصولات<ArrowLeft size={14} aria-hidden="true" />
+              </Link>
+            </div>
           </header>
         )}
-        {type === "look" && !config && <h1 className="mb-6 text-2xl font-bold">این مجموعه پیدا نشد.</h1>}
+
         {loading ? (
-          <div role="status" className="flex min-h-52 items-center justify-center gap-3 text-sm text-muted"><LoaderCircle size={22} className="animate-spin text-brand" aria-hidden="true" />در حال بارگذاری محصولات…</div>
+          <div role="status" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+                <div className="aspect-square animate-pulse bg-[var(--ui-surface-raised)]" />
+                <div className="space-y-3 p-3"><div className="h-3 w-4/5 animate-pulse rounded-full bg-[var(--ui-surface-raised)]" /><div className="h-10 animate-pulse rounded-xl bg-[var(--ui-surface-raised)]" /></div>
+              </div>
+            ))}
+          </div>
         ) : error ? (
-          <section role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">
-            {error}<button type="button" onClick={loadCollection} className="mr-3 inline-flex items-center gap-1 font-semibold underline"><RefreshCw size={14} aria-hidden="true" />تلاش دوباره</button>
+          <section role="alert" className="rounded-2xl border border-[var(--ui-danger-border)] bg-[var(--ui-danger-bg)] p-5 text-sm text-[var(--ui-danger)]">
+            <p>{error}</p>
+            <button type="button" onClick={loadCollection} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--ui-danger-border)] px-3 text-xs font-semibold">
+              <RefreshCw size={14} aria-hidden="true" />تلاش دوباره
+            </button>
           </section>
         ) : products.length ? (
           <>
-            <p className="mb-4 text-xs text-muted-soft">{new Intl.NumberFormat("fa-IR").format(products.length)} محصول</p>
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mb-4 text-xs text-[var(--ui-muted)]" aria-live="polite">
+              {new Intl.NumberFormat("fa-IR").format(products.length)} محصول
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
               {products.map((product) => <ProductCard key={product._id} product={product} />)}
             </div>
           </>
         ) : (
-          <section className="rounded-2xl border border-dashed border-border-strong bg-surface px-5 py-10 text-center">
-            <PackageSearch size={29} className="mx-auto text-brand" aria-hidden="true" />
-            <h2 className="mt-4 text-lg font-semibold">محصولی برای نمایش در این مجموعه وجود ندارد.</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-soft">بعداً دوباره سر بزنید یا سایر محصولات فروشگاه را ببینید.</p>
-            <Link to="/shop" className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-strong px-5 py-2 text-sm font-semibold text-white">مشاهده همه محصولات<ArrowLeft size={15} aria-hidden="true" /></Link>
+          <section className="rounded-2xl border border-dashed border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-5 py-10 text-center">
+            <PackageSearch size={29} className="mx-auto text-[var(--ui-accent)]" aria-hidden="true" />
+            <h2 className="mt-4 text-base font-bold">محصولی برای نمایش در این مجموعه وجود ندارد.</h2>
+            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">بعداً دوباره سر بزنید یا سایر محصولات فروشگاه را ببینید.</p>
+            <Link to="/shop" className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)]">
+              مشاهده همه محصولات<ArrowLeft size={14} aria-hidden="true" />
+            </Link>
           </section>
         )}
       </div>

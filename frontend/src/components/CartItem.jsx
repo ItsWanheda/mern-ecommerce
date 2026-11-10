@@ -1,4 +1,5 @@
-import { Minus, Plus, Trash } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore } from "../stores/useCartStore";
 import { formatPrice } from "../lib/commerce";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
@@ -7,65 +8,67 @@ const CartItem = ({ item }) => {
   const { removeFromCart, updateQuantity } = useCartStore();
   const requiresCatalogUpdate = requiresCatalogMigration(item);
   const selectedVariant = (item.variants || []).find((variant) =>
-    (variant.size || "") === (item.selectedSize || "") && (variant.color || "") === (item.selectedColor || "")
+    (variant.size || "") === (item.selectedSize || "") &&
+    (variant.color || "") === (item.selectedColor || "")
   );
   const trackedStock = selectedVariant ? selectedVariant.stock : item.stock;
   const hasTrackedStock = typeof trackedStock === "number" && Number.isFinite(trackedStock);
   const maxReached = hasTrackedStock && item.quantity >= trackedStock;
+  const image = item.image || item.images?.[0] || "";
 
   return (
-    <div dir="rtl" className="rounded-lg border p-4 shadow-sm border-[var(--ui-border)] bg-[var(--ui-surface)] md:p-6">
-      <div className="space-y-4 md:flex md:items-center md:justify-between md:gap-6 md:space-y-0">
-        <div className="shrink-0 md:order-1">
-          <img className="h-20 w-20 rounded bg-white object-contain p-1 md:h-32 md:w-32 md:p-2" src={item.image} alt={item.name} />
-        </div>
-        <div className="flex items-center justify-between md:order-3 md:justify-end">
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={requiresCatalogUpdate} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="کاهش تعداد"
-              onClick={() => updateQuantity(item, item.quantity - 1)}>
-              <Minus className="text-[var(--ui-muted)]" aria-hidden="true" />
-            </button>
-            <p className="min-w-5 text-center tabular-nums">{new Intl.NumberFormat("fa-IR").format(item.quantity)}</p>
-            <button type="button" disabled={maxReached || requiresCatalogUpdate} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="افزایش تعداد" onClick={() => updateQuantity(item, item.quantity + 1)}>
-              <Plus className="text-[var(--ui-muted)]" aria-hidden="true" />
+    <article dir="rtl" className="cart-item min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 shadow-[0_12px_32px_-28px_var(--ui-shadow-color)] sm:p-4">
+      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+        <Link to={`/product/${item._id}`} aria-label={"مشاهده " + item.name} className="inline-flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--ui-border)] bg-white sm:h-28 sm:w-28">
+          {image ? <img src={image} alt={item.name} loading="lazy" className="h-full w-full object-contain p-2" /> : <span className="text-xs text-[var(--ui-muted)]">بدون تصویر</span>}
+        </Link>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0">
+              <Link to={`/product/${item._id}`} className="block text-sm font-bold leading-6 text-[var(--ui-text)] transition hover:text-[var(--ui-accent)]">
+                <bdi dir="auto" className="line-clamp-2">{item.name}</bdi>
+              </Link>
+              {item.guestOnly && !requiresCatalogUpdate && <span className="mt-1 inline-flex rounded-full bg-[var(--ui-warning-bg)] px-2 py-1 text-[10px] font-semibold text-[var(--ui-warning)]">نیازمند بررسی موجودی</span>}
+            </div>
+            <button type="button" onClick={() => removeFromCart(item)} aria-label={"حذف " + item.name + " از سبد خرید"} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[var(--ui-muted)] transition hover:bg-[var(--ui-danger-bg)] hover:text-[var(--ui-danger)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
+              <Trash2 size={17} aria-hidden="true" />
             </button>
           </div>
-          <div className="text-end md:order-4 md:w-36">
-            <p dir="ltr" className="text-base font-bold text-[var(--ui-accent)]">{formatPrice(item.price)}</p>
-            {hasTrackedStock && !requiresCatalogUpdate && <p className="mt-1 text-xs text-[var(--ui-muted)]">موجودی این گزینه: {new Intl.NumberFormat("fa-IR").format(trackedStock)}</p>}
-          </div>
-        </div>
-        <div className="w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md">
-          <p className="text-base font-medium text-[var(--ui-text)]">{item.name}</p>
+
           {requiresCatalogUpdate && (
-            <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-6 text-[var(--ui-warning)]">
-              این کالا هنوز با ساختار گزینه‌های نسخه قبلی ثبت شده است. برای جلوگیری از سفارش با مشخصات اشتباه، تغییر تعداد و پرداخت غیرفعال است. می‌توانید کالا را از سبد حذف کنید تا مدیر آن را با مشخصات فنی جدید ثبت کند.
+            <p role="alert" className="mt-2 rounded-xl border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-[10px] leading-5 text-[var(--ui-warning)]">
+              این کالا هنوز به ساختار مشخصات فنی جدید منتقل نشده است؛ تغییر تعداد و پرداخت غیرفعال است. می‌توانید آن را از سبد حذف کنید.
             </p>
           )}
           {item.guestOnly && !requiresCatalogUpdate && (
-            <p role="status" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-5 text-[var(--ui-warning)]">
-              این گزینه هنوز به حساب شما منتقل نشده؛ موجودی آن را بررسی یا از سبد حذف کنید.
-            </p>
+            <p role="status" className="mt-2 text-[10px] leading-5 text-[var(--ui-muted)]">موجودی این گزینه پس از ورود به حساب دوباره بررسی می‌شود.</p>
           )}
-          {requiresCatalogUpdate && (
-            <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-5 text-[var(--ui-warning)]">
-              این کالا هنوز به ساختار مشخصات فنی فروشگاه منتقل نشده است؛ تا زمان به‌روزرسانی توسط مدیر، امکان ثبت سفارش آن وجود ندارد. می‌توانید آن را از سبد حذف کنید.
-            </p>
+          {item.description && <p dir="auto" className="mt-1 hidden line-clamp-2 text-xs leading-5 text-[var(--ui-muted)] sm:block">{item.description}</p>}
+          {(item.selectedSize || item.selectedColor) && !requiresCatalogUpdate && (
+            <p className="mt-1 text-[10px] text-[var(--ui-muted)]">گزینه: <bdi dir="auto">{[item.selectedSize, item.selectedColor].filter(Boolean).join(" · ")}</bdi></p>
           )}
-          <p className="text-sm text-[var(--ui-muted)]">{item.description}</p>
-          {!requiresCatalogUpdate && (item.selectedSize || item.selectedColor) && (
-            <p className="text-sm text-[var(--ui-muted)]">
-              گزینه انتخاب‌شده: {[item.selectedSize, item.selectedColor].filter(Boolean).join(" · ")}
-            </p>
-          )}
-          <div className="flex items-center gap-4">
-            <button type="button" className="inline-flex items-center text-sm font-medium text-red-400 hover:text-[var(--ui-danger)] hover:underline" aria-label="حذف از سبد خرید" onClick={() => removeFromCart(item)}>
-              <Trash aria-hidden="true" />
-            </button>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-1">
+              <button type="button" disabled={requiresCatalogUpdate || item.quantity <= 1} className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--ui-surface)] text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] disabled:cursor-not-allowed disabled:opacity-35" aria-label="کاهش تعداد" onClick={() => updateQuantity(item, item.quantity - 1)}>
+                <Minus size={14} aria-hidden="true" />
+              </button>
+              <span className="min-w-7 text-center text-xs font-bold tabular-nums">{new Intl.NumberFormat("fa-IR").format(item.quantity)}</span>
+              <button type="button" disabled={maxReached || requiresCatalogUpdate} className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--ui-surface)] text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] disabled:cursor-not-allowed disabled:opacity-35" aria-label="افزایش تعداد" onClick={() => updateQuantity(item, item.quantity + 1)}>
+                <Plus size={14} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-extrabold tabular-nums text-[var(--ui-text)]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
+              <p className="mt-0.5 text-[10px] text-[var(--ui-muted)]">{formatPrice(item.price)} برای هر عدد</p>
+              {hasTrackedStock && !requiresCatalogUpdate && <p className="mt-0.5 text-[10px] text-[var(--ui-muted)]">موجودی: {new Intl.NumberFormat("fa-IR").format(trackedStock)}</p>}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
+
 export default CartItem;

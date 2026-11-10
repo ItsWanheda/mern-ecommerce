@@ -24,9 +24,9 @@ const NotFoundPage = () => {
   };
 
   return (
-    <main dir="rtl" className="min-h-[65vh] bg-canvas px-4 py-12 text-ink sm:px-6 sm:py-16">
+    <main dir="rtl" className="storefront-page min-h-[65vh] bg-[var(--ui-canvas)] px-4 py-12 text-[var(--ui-text)] sm:px-6 sm:py-16">
       <PageMeta title="صفحه پیدا نشد" description="نشانی واردشده معتبر نیست یا این صفحه دیگر در فروشگاه سخت‌افزار در دسترس نیست." path={location.pathname} robots="noindex, nofollow" canonical={false} />
-      <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+      <div className="mx-auto flex max-w-3xl flex-col items-center rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-10 text-center shadow-[0_16px_40px_-35px_var(--ui-shadow-color)] sm:px-9">
         <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-surface text-brand shadow-sm">
           <ShoppingBag size={28} aria-hidden="true" />
         </div>

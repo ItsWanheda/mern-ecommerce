@@ -1,34 +1,39 @@
 import { ArrowUpLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const CategoryItem = ({ category }) => {
-	return (
-		<article className="group relative h-44 w-full overflow-hidden rounded-2xl bg-surface-muted sm:h-56 xl:h-64">
-			<Link
-				to={category.href}
-				className="absolute inset-0 block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-brand"
-				aria-label={`مشاهده ${category.name}`}
-			>
-				<img
-					src={category.imageUrl}
-					alt=""
-					className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.04] motion-reduce:transition-none"
-					loading="lazy"
-					decoding="async"
-				/>
-				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent transition-colors duration-300 group-hover:from-black/75" />
-				<div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 sm:gap-4 sm:p-6">
-					<div>
-						<h3 className="font-serif text-lg font-medium text-white sm:text-2xl">{category.name}</h3>
-						<p className="mt-1 text-sm text-white/80">مشاهده مجموعه</p>
-					</div>
-					<span className="mb-1 inline-flex h-9 w-9 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/60 text-white transition group-hover:border-white group-hover:bg-surface group-hover:text-ink">
-						<ArrowUpLeft size={19} aria-hidden="true" />
-					</span>
-				</div>
-			</Link>
-		</article>
-	);
-};
+const CategoryItem = ({ category }) => (
+  <article className="category-tile group min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--ui-border-strong)] hover:shadow-[0_14px_32px_-24px_var(--ui-shadow-color)]">
+    <Link
+      to={category.href}
+      className="block h-full min-w-0 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]"
+      aria-label={`مشاهده ${category.name}`}
+    >
+      <div className="category-tile__image flex aspect-[1.3/1] w-full items-center justify-center overflow-hidden bg-[var(--ui-surface-raised)] p-3 sm:aspect-[1.45/1]">
+        {category.imageUrl ? (
+          <img
+            src={category.imageUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-contain object-center transition-transform duration-300 group-hover:scale-[1.04] motion-reduce:transition-none"
+          />
+        ) : (
+          <span aria-hidden="true" className="text-3xl text-[var(--ui-muted)]">◇</span>
+        )}
+      </div>
+      <div className="flex min-h-[4.25rem] items-center justify-between gap-2 px-3 py-3 sm:px-3.5">
+        <div className="min-w-0">
+          <h3 className="truncate text-xs font-bold leading-5 text-[var(--ui-text)] sm:text-sm">
+            <bdi dir="auto">{category.name}</bdi>
+          </h3>
+          <p className="mt-0.5 text-[10px] text-[var(--ui-muted)] sm:text-[11px]">مشاهده محصولات</p>
+        </div>
+        <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--ui-accent-soft)] text-[var(--ui-accent)] transition group-hover:bg-[var(--ui-accent)] group-hover:text-[var(--ui-button-text)]">
+          <ArrowUpLeft size={16} aria-hidden="true" />
+        </span>
+      </div>
+    </Link>
+  </article>
+);
 
 export default CategoryItem;

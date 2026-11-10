@@ -139,20 +139,20 @@ const CategoriesPage = () => {
   const activeCount = categories.filter((category) => category.isActive !== false).length;
 
   return (
-    <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-8 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
+    <main dir="rtl" className="storefront-page min-h-screen bg-[var(--ui-canvas)] px-3 py-7 text-[var(--ui-text)] sm:px-6 sm:py-9 lg:px-8">
       <PageMeta
         title="دسته‌بندی‌های فروشگاه سخت‌افزار"
         description="همه دسته‌بندی‌های فعال قطعات و تجهیزات کامپیوتر را مرور کنید و گروه موردنظرتان را پیدا کنید."
         path="/categories"
         breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "دسته‌بندی‌ها", path: "/categories" }]}
       />
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-7 flex flex-col gap-4 border-b border-[var(--ui-border)] pb-6 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto max-w-[1440px]">
+        <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div>
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--ui-accent)]">
               <ShoppingBag size={15} aria-hidden="true" /> فروشگاه سخت‌افزار کامپیوتر
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-[var(--ui-text)] sm:text-4xl">دسته‌بندی‌های فروشگاه</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--ui-text)] sm:text-3xl">دسته‌بندی‌های فروشگاه</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-muted)]">
               همه گروه‌های محصولات را از دسته‌های اصلی تا زیر‌دسته‌ها مرور کنید. با انتخاب هر دسته، محصولات همان مجموعه را ببینید.
             </p>
