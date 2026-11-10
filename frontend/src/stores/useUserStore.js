@@ -6,10 +6,13 @@ import { createRefreshCoordinator, shouldAttemptTokenRefresh } from "../lib/refr
 const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
 	error.response?.data?.message || error.message || fallback;
 
-export const useUserStore = create((set) => ({
+let authCheckPromise = null;
+
+export const useUserStore = create((set, get) => ({
 	user: null,
 	loading: false,
 	checkingAuth: true,
+	authChecked: false,
 
 	signup: async ({ name, email, password, confirmPassword }) => {
 		set({ loading: true });
@@ -51,20 +54,28 @@ export const useUserStore = create((set) => ({
 	},
 
 	checkAuth: async () => {
+		if (get().authChecked) return;
+		if (authCheckPromise) return authCheckPromise;
+
 		set({ checkingAuth: true });
+		authCheckPromise = (async () => {
+			try {
+				const response = await axios.get("/auth/profile");
 
-		try {
-			const response = await axios.get("/auth/profile");
+				if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
+					throw new Error("پاسخ احراز هویت نامعتبر است");
+				}
 
-			if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
-				throw new Error("پاسخ احراز هویت نامعتبر است");
+				set({ user: response.data, checkingAuth: false, authChecked: true });
+			} catch (error) {
+				console.error("بررسی احراز هویت ناموفق بود:", error);
+				set({ checkingAuth: false, user: null, authChecked: true });
+			} finally {
+				authCheckPromise = null;
 			}
+		})();
 
-			set({ user: response.data, checkingAuth: false });
-		} catch (error) {
-			console.error("بررسی احراز هویت ناموفق بود:", error);
-			set({ checkingAuth: false, user: null });
-		}
+		return authCheckPromise;
 	},
 
 	updateProfile: async (name) => {
