@@ -1,6 +1,6 @@
-export const SITE_NAME = "تیک بوتیک";
-export const DEFAULT_SEO_TITLE = "تیک بوتیک | فروشگاه آنلاین پوشاک و اکسسوری";
-export const DEFAULT_SEO_DESCRIPTION = "خرید آنلاین پوشاک و اکسسوری با انتخاب آسان و تجربه خرید امن.";
+export const SITE_NAME = "Computer Hardware";
+export const DEFAULT_SEO_TITLE = "Computer Hardware | فروشگاه تخصصی قطعات کامپیوتر";
+export const DEFAULT_SEO_DESCRIPTION = "خرید آنلاین قطعات و تجهیزات کامپیوتر با مشخصات فنی شفاف، مقایسه آسان و تجربه خرید امن.";
 
 export const STATIC_PAGE_META = {
   "/": {
@@ -8,16 +8,16 @@ export const STATIC_PAGE_META = {
     description: DEFAULT_SEO_DESCRIPTION,
   },
   "/shop": {
-    title: "خرید آنلاین پوشاک و اکسسوری",
-    description: "محصولات تیک بوتیک را ببینید و با جست‌وجو و فیلترهای کاربردی، انتخاب مناسب خود را پیدا کنید.",
+    title: "خرید آنلاین قطعات و تجهیزات کامپیوتر",
+    description: "محصولات فروشگاه سخت‌افزار کامپیوتر را ببینید و با جست‌وجو و فیلترهای کاربردی، انتخاب مناسب خود را پیدا کنید.",
   },
   "/categories": {
-    title: "دسته‌بندی‌های تیک بوتیک",
-    description: "همه دسته‌بندی‌های فعال تیک بوتیک را مرور کنید و مجموعه موردنظرتان را پیدا کنید.",
+    title: "دسته‌بندی‌های Computer Hardware",
+    description: "همه دسته‌بندی‌های فعال Computer Hardware را مرور کنید و مجموعه موردنظرتان را پیدا کنید.",
   },
   "/campaigns": {
     title: "پیشنهادهای ویژه و کمپین‌های فروش",
-    description: "پیشنهادها و کمپین‌های فعال تیک بوتیک را مشاهده کنید.",
+    description: "پیشنهادها و کمپین‌های فعال Computer Hardware را مشاهده کنید.",
   },
   "/shipping-policy": {
     title: "ارسال و تحویل",
@@ -45,38 +45,38 @@ export const STATIC_PAGE_META = {
   },
   "/new-arrivals": {
     title: "تازه‌واردها | محصولات جدید",
-    description: "جدیدترین محصولات اضافه‌شده به تیک بوتیک را ببینید.",
+    description: "جدیدترین محصولات اضافه‌شده به Computer Hardware را ببینید.",
   },
   "/bestsellers": {
     title: "پرفروش‌ترین محصولات",
-    description: "محصولات پرفروش تیک بوتیک را مشاهده کنید.",
+    description: "محصولات پرفروش Computer Hardware را مشاهده کنید.",
   },
   "/featured-products": {
     title: "محصولات منتخب",
-    description: "گزیده‌ای از محصولات منتخب تیک بوتیک را بررسی کنید.",
+    description: "گزیده‌ای از قطعات منتخب فروشگاه را بررسی کنید.",
   },
 };
 
 export const PRIVATE_ROUTE_META = {
   "/login": {
     title: "ورود به حساب کاربری",
-    description: "ورود به حساب کاربری تیک بوتیک.",
+    description: "ورود به حساب کاربری Computer Hardware.",
   },
   "/signup": {
     title: "ساخت حساب کاربری",
-    description: "ساخت حساب کاربری برای مدیریت سفارش‌ها و خرید در تیک بوتیک.",
+    description: "ساخت حساب کاربری برای مدیریت سفارش‌ها و خرید در Computer Hardware.",
   },
   "/forgot-password": {
     title: "بازیابی رمز عبور",
-    description: "راهنمای بازیابی دسترسی به حساب کاربری تیک بوتیک.",
+    description: "راهنمای بازیابی دسترسی به حساب کاربری Computer Hardware.",
   },
   "/reset-password": {
     title: "تنظیم رمز عبور جدید",
-    description: "تنظیم رمز عبور جدید برای حساب کاربری تیک بوتیک.",
+    description: "تنظیم رمز عبور جدید برای حساب کاربری Computer Hardware.",
   },
   "/secret-dashboard": {
     title: "پنل مدیریت",
-    description: "پنل مدیریت فروشگاه تیک بوتیک.",
+    description: "پنل مدیریت فروشگاه سخت‌افزار کامپیوتر.",
   },
   "/cart": {
     title: "سبد خرید",
@@ -84,7 +84,7 @@ export const PRIVATE_ROUTE_META = {
   },
   "/profile": {
     title: "پروفایل کاربری",
-    description: "مدیریت اطلاعات حساب کاربری تیک بوتیک.",
+    description: "مدیریت اطلاعات حساب کاربری Computer Hardware.",
   },
   "/orders": {
     title: "سفارش‌های من",
@@ -104,7 +104,7 @@ export const PRIVATE_ROUTE_META = {
   },
   "/newsletter-unsubscribe": {
     title: "لغو عضویت خبرنامه",
-    description: "مدیریت درخواست لغو عضویت خبرنامه تیک بوتیک.",
+    description: "مدیریت درخواست لغو عضویت خبرنامه Computer Hardware.",
   },
 };
 

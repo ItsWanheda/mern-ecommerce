@@ -5,7 +5,7 @@ import { DEFAULT_SEO_DESCRIPTION, DEFAULT_SEO_TITLE, SITE_NAME, buildSiteStructu
 import { getStorefrontSeoContext } from "@/lib/next-metadata.js";
 
 const themeInitialization = `try {
-  const savedTheme = localStorage.getItem("tik-boutique-theme");
+  const savedTheme = localStorage.getItem("computer-hardware-theme");
   if (savedTheme === "dark") {
     document.documentElement.dataset.theme = "dark";
     document.documentElement.style.colorScheme = "dark";
@@ -15,7 +15,7 @@ const themeInitialization = `try {
 }`;
 
 export const metadata = {
-  title: { default: DEFAULT_SEO_TITLE, template: "%s | تیک بوتیک" },
+  title: { default: DEFAULT_SEO_TITLE, template: "%s | Computer Hardware" },
   description: DEFAULT_SEO_DESCRIPTION,
   applicationName: SITE_NAME,
   formatDetection: { telephone: false },

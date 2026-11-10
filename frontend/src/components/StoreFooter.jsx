@@ -44,15 +44,15 @@ const StoreFooter = () => {
     <footer dir="rtl" className="mt-12 border-t border-border bg-surface-raised text-ink sm:mt-16">
       <div className="mx-auto grid max-w-[1920px] gap-9 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1.3fr] lg:gap-8 lg:px-8 2xl:px-12">
         <section>
-          <Link to="/" className="inline-flex rounded-sm font-serif text-2xl font-semibold tracking-tight transition hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">تیک بوتیک</Link>
-          <p className="mt-3 max-w-xs text-sm leading-7 text-muted">انتخاب‌های سنجیده برای استایل روزمره؛ با اطلاعات روشن درباره محصول، موجودی و هزینه ارسال.</p>
+          <Link to="/" className="inline-flex rounded-sm font-serif text-2xl font-semibold tracking-tight transition hover:text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">Computer Hardware</Link>
+          <p className="mt-3 max-w-xs text-sm leading-7 text-muted">قطعات و تجهیزات کامپیوتر با مشخصات فنی روشن، موجودی به‌روز و اطلاعات شفاف ارسال.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link to="/shop" className="inline-flex min-h-10 items-center gap-2 rounded-full bg-strong px-4 py-2 text-xs font-semibold text-white transition hover:bg-strong-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">شروع خرید <ArrowLeft size={14} aria-hidden="true" /></Link>
             <Link to="/wishlist" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-strong bg-surface px-4 py-2 text-xs font-semibold text-ink-strong transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"><Heart size={14} aria-hidden="true" />علاقه‌مندی‌ها</Link>
           </div>
           <div className="mt-5 border-t border-border-strong pt-4">
             <p className="text-xs font-semibold text-ink-strong">ما را دنبال کنید</p>
-            <div className="mt-2 flex items-center gap-2" aria-label="شبکه‌های اجتماعی تیک بوتیک">
+            <div className="mt-2 flex items-center gap-2" aria-label="شبکه‌های اجتماعی Computer Hardware">
               {socialProfiles.map(({ id, label, href, Icon }) => {
                 const icon = Icon ? <Icon size={18} aria-hidden="true" /> : (
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -75,7 +75,7 @@ const StoreFooter = () => {
             <p className="mt-2 text-[11px] leading-5 text-muted-soft">پیوندهای شبکه‌های اجتماعی از تنظیمات سایت خوانده می‌شوند.</p>
             <div className="mt-4 flex items-center gap-3 rounded-xl border border-border-strong bg-surface p-3">
               {enamadVerificationUrl ? (
-                <a href={enamadVerificationUrl} target="_blank" rel="noopener noreferrer" aria-label="استعلام نماد اعتماد الکترونیکی تیک بوتیک"
+                <a href={enamadVerificationUrl} target="_blank" rel="noopener noreferrer" aria-label="استعلام نماد اعتماد الکترونیکی Computer Hardware"
                   className="inline-flex shrink-0 items-center justify-center rounded-lg bg-surface p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
                   <img src={enamadImage} alt="نماد اعتماد الکترونیکی" loading="lazy" referrerPolicy="no-referrer" className="h-16 w-16 object-contain" />
                 </a>
@@ -123,7 +123,7 @@ const StoreFooter = () => {
         <section>
           <div className="flex items-center gap-2">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-soft text-brand"><Mail size={18} aria-hidden="true" /></span>
-            <div><h2 className="text-base font-semibold">خبرنامه تیک بوتیک</h2><p className="mt-1 text-xs text-muted-soft">خبرهای مجموعه و اطلاعیه‌های تازه</p></div>
+            <div><h2 className="text-base font-semibold">خبرنامه Computer Hardware</h2><p className="mt-1 text-xs text-muted-soft">خبرهای قطعات جدید، پیشنهادها و اطلاعیه‌های فروشگاه</p></div>
           </div>
           <form onSubmit={subscribe} className="mt-4 space-y-3">
             <label htmlFor="newsletter-email" className="sr-only">نشانی ایمیل</label>
@@ -144,7 +144,7 @@ const StoreFooter = () => {
       </div>
       <div className="border-t border-border-strong">
         <div className="mx-auto flex max-w-[1920px] flex-col gap-2 px-4 py-4 text-[11px] leading-5 text-muted-soft sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 2xl:px-12">
-          <p>© {formatIranianYear()} تیک بوتیک. تمامی حقوق مادی و معنوی وب‌سایت، محتوای آن و نشان تجاری «تیک بوتیک» محفوظ است.</p>
+          <p>© {formatIranianYear()} Computer Hardware. تمامی حقوق مادی و معنوی وب‌سایت، محتوای آن و نشان تجاری «Computer Hardware» محفوظ است.</p>
           <p>هرگونه نسخه‌برداری، بازنشر یا استفاده تجاری از محتوا بدون مجوز کتبی ممنوع است.</p>
         </div>
       </div>
