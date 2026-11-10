@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 
 import LoadingSpinner from "@/src/components/LoadingSpinner.jsx";
+import { completeInitialBoot, hasCompletedInitialBoot } from "@/src/lib/initial-boot.js";
 import SmoothScroll from "@/src/components/SmoothScroll.jsx";
 import NextRouteSync from "@/src/components/NextRouteSync.jsx";
 import { getAuthReturnPath } from "@/src/lib/auth-route-state.js";
@@ -17,7 +18,7 @@ const AUTH_ENTRY_ROUTES = new Set(["/login", "/signup"]);
 function AccountRuntime({ children }) {
   const location = useLocation();
   const router = useRouter();
-  const { user, checkAuth, checkingAuth } = useUserStore();
+  const { user, checkAuth, checkingAuth, authInitialized } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
 
   useEffect(() => {
@@ -34,14 +35,17 @@ function AccountRuntime({ children }) {
   }, [user, setAuthenticated, initializeGuestCart, mergeGuestCart]);
 
   const shouldRedirectAuthenticatedUser =
-    !checkingAuth && Boolean(user) && AUTH_ENTRY_ROUTES.has(location.pathname);
+    authInitialized && Boolean(user) && AUTH_ENTRY_ROUTES.has(location.pathname);
 
   useEffect(() => {
     if (!shouldRedirectAuthenticatedUser) return;
     router.replace(getAuthReturnPath(location) || "/");
   }, [location, router, shouldRedirectAuthenticatedUser]);
 
-  if (checkingAuth || shouldRedirectAuthenticatedUser) return <LoadingSpinner />;
+  if (!authInitialized && checkingAuth) return <LoadingSpinner />;
+  if (shouldRedirectAuthenticatedUser) {
+    return <main className="flex min-h-[40vh] items-center justify-center px-4 py-12 text-center text-sm text-[var(--ui-muted)]" role="status">در حال انتقال به صفحه حساب کاربری…</main>;
+  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)]">
@@ -54,9 +58,12 @@ function AccountRuntime({ children }) {
 }
 
 export default function AccountShell({ children }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => hasCompletedInitialBoot());
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    completeInitialBoot();
+    setMounted(true);
+  }, []);
 
   // React Router reads browser history, so create it only after hydration.
   if (!mounted) return <LoadingSpinner />;

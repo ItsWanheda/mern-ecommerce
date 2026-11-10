@@ -16,7 +16,7 @@ const installAdapter = (handler) => {
   axiosInstance.defaults.adapter = async (config) => handler(config);
 };
 const resetStore = (checkingAuth = true) => {
-  useUserStore.setState({ user: null, checkingAuth, loading: false });
+  useUserStore.setState({ user: null, checkingAuth, authInitialized: !checkingAuth, loading: false });
 };
 const flushPendingLogout = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -44,6 +44,48 @@ test("initial profile check refreshes an expired access token while checkingAuth
   assert.equal(profileAttempts, 2);
   assert.equal(useUserStore.getState().user?._id, "user-1");
   assert.equal(useUserStore.getState().checkingAuth, false);
+});
+
+test("the initial auth profile is checked once and later shell mounts reuse the result", async () => {
+  resetStore(true);
+  let profileAttempts = 0;
+  installAdapter(async (config) => {
+    if (config.url === "/auth/profile") {
+      profileAttempts += 1;
+      return ok(config, { _id: "user-boot", name: "Boot User", role: "customer" });
+    }
+    throw new Error("Unexpected test request: " + config.url);
+  });
+
+  await useUserStore.getState().checkAuth();
+  await useUserStore.getState().checkAuth();
+
+  assert.equal(profileAttempts, 1);
+  assert.equal(useUserStore.getState().authInitialized, true);
+  assert.equal(useUserStore.getState().checkingAuth, false);
+  assert.equal(useUserStore.getState().user?._id, "user-boot");
+});
+
+test("concurrent initial auth checks share one profile request", async () => {
+  resetStore(true);
+  let profileAttempts = 0;
+  installAdapter(async (config) => {
+    if (config.url === "/auth/profile") {
+      profileAttempts += 1;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return ok(config, { _id: "user-shared", name: "Shared User", role: "customer" });
+    }
+    throw new Error("Unexpected test request: " + config.url);
+  });
+
+  await Promise.all([
+    useUserStore.getState().checkAuth(),
+    useUserStore.getState().checkAuth(),
+  ]);
+
+  assert.equal(profileAttempts, 1);
+  assert.equal(useUserStore.getState().authInitialized, true);
+  assert.equal(useUserStore.getState().user?._id, "user-shared");
 });
 
 test("parallel unauthorized requests share one refresh and both retry", async () => {

@@ -6,10 +6,13 @@ import { createRefreshCoordinator, shouldAttemptTokenRefresh } from "../lib/refr
 const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
 	error.response?.data?.message || error.message || fallback;
 
+let authCheckPromise = null;
+
 export const useUserStore = create((set) => ({
 	user: null,
 	loading: false,
 	checkingAuth: true,
+	authInitialized: false,
 
 	signup: async ({ name, email, password, confirmPassword }) => {
 		set({ loading: true });
@@ -21,7 +24,7 @@ export const useUserStore = create((set) => ({
 
 		try {
 			const res = await axios.post("/auth/signup", { name, email, password });
-			set({ user: res.data, loading: false });
+			set({ user: res.data, loading: false, authInitialized: true });
 		} catch (error) {
 			set({ loading: false });
 			toast.error(getErrorMessage(error));
@@ -33,7 +36,7 @@ export const useUserStore = create((set) => ({
 
 		try {
 			const res = await axios.post("/auth/login", { email, password });
-			set({ user: res.data, loading: false });
+			set({ user: res.data, loading: false, authInitialized: true });
 		} catch (error) {
 			set({ loading: false });
 			toast.error(getErrorMessage(error));
@@ -46,25 +49,34 @@ export const useUserStore = create((set) => ({
 		} catch (error) {
 			console.error("درخواست خروج ناموفق بود:", error);
 		} finally {
-			set({ user: null });
+			set({ user: null, authInitialized: true });
 		}
 	},
 
 	checkAuth: async () => {
+		if (useUserStore.getState().authInitialized) return useUserStore.getState().user;
+		if (authCheckPromise) return authCheckPromise;
+
 		set({ checkingAuth: true });
+		authCheckPromise = (async () => {
+			try {
+				const response = await axios.get("/auth/profile");
 
-		try {
-			const response = await axios.get("/auth/profile");
+				if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
+					throw new Error("پاسخ احراز هویت نامعتبر است");
+				}
 
-			if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
-				throw new Error("پاسخ احراز هویت نامعتبر است");
+				set({ user: response.data, checkingAuth: false, authInitialized: true });
+				return response.data;
+			} catch (error) {
+				console.error("بررسی احراز هویت ناموفق بود:", error);
+				set({ checkingAuth: false, user: null, authInitialized: true });
+				return null;
+			} finally {
+				authCheckPromise = null;
 			}
-
-			set({ user: response.data, checkingAuth: false });
-		} catch (error) {
-			console.error("بررسی احراز هویت ناموفق بود:", error);
-			set({ checkingAuth: false, user: null });
-		}
+		})();
+		return authCheckPromise;
 	},
 
 	updateProfile: async (name) => {

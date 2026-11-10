@@ -12,10 +12,10 @@ import { useUserStore } from "@/src/stores/useUserStore.js";
 function AdminAccessGuard({ children }) {
   const location = useLocation();
   const router = useRouter();
-  const { user, checkingAuth } = useUserStore();
+  const { user, checkingAuth, authInitialized } = useUserStore();
 
-  const requiresLogin = !checkingAuth && !user;
-  const lacksAdminRole = !checkingAuth && Boolean(user) && user.role !== "admin";
+  const requiresLogin = authInitialized && !user;
+  const lacksAdminRole = authInitialized && Boolean(user) && user.role !== "admin";
 
   useEffect(() => {
     if (requiresLogin) {
@@ -27,7 +27,10 @@ function AdminAccessGuard({ children }) {
     if (lacksAdminRole) router.replace("/");
   }, [lacksAdminRole, location.hash, location.pathname, location.search, requiresLogin, router]);
 
-  if (checkingAuth || requiresLogin || lacksAdminRole) return <LoadingSpinner />;
+  if (!authInitialized && checkingAuth) return <LoadingSpinner />;
+  if (requiresLogin || lacksAdminRole) {
+    return <div className="flex min-h-[40vh] items-center justify-center px-4 py-12 text-center text-sm text-[var(--ui-muted)]" role="status">در حال بررسی دسترسی و انتقال…</div>;
+  }
 
   return children;
 }
