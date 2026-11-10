@@ -63,7 +63,7 @@ const HomePage = () => {
   const [bestsellersError, setBestsellersError] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
-  const { categories: storeCategories, fetchCategories } = useCategoryStore();
+  const { categories: storeCategories, categoriesLoaded, fetchCategories } = useCategoryStore();
   const categories = storeCategories
     .filter((category) => !category.parentId && category.isActive !== false && category.showInNavigation !== false)
     .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
@@ -289,7 +289,7 @@ const HomePage = () => {
                 </Link>
               ) : (
                 <div className="absolute bottom-5 right-5 rounded-full border border-white/60 bg-surface/75 px-4 py-2 text-xs font-medium text-ink backdrop-blur-sm">
-                  سادگی با جلوه‌ای خاص
+                  انتخاب دقیق، خرید مطمئن
                 </div>
               )}
               {heroCampaigns.length > 1 && (
@@ -353,7 +353,11 @@ const HomePage = () => {
             aria-label="دسته‌بندی‌های فروشگاه"
             className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-5"
           >
-            {categories.length ? categories.map((category) => (
+            {!categoriesLoaded ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} aria-hidden="true" className="h-44 animate-pulse rounded-2xl bg-surface-muted sm:h-56 xl:h-64" />
+              ))
+            ) : categories.length ? categories.map((category) => (
               <CategoryItem key={category.href} category={category} />
             )) : (
               <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface px-5 py-8 text-center">
@@ -448,7 +452,7 @@ const HomePage = () => {
             <div aria-label="در حال بارگذاری محصولات تازه" className="flex gap-3 overflow-hidden sm:gap-4">
               {[0, 1, 2].map((item) => (
                 <div key={item} className="min-w-[68%] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-border bg-surface sm:min-w-[36%] lg:min-w-[24%]">
-                  <div className="aspect-[4/5] bg-surface-muted" />
+                  <div className="aspect-square bg-surface-muted" />
                   <div className="space-y-3 p-4">
                     <div className="h-4 w-3/4 rounded-full bg-surface-muted" />
                     <div className="h-4 w-1/2 rounded-full bg-surface-muted" />

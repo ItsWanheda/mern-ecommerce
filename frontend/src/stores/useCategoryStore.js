@@ -6,6 +6,7 @@ const messageFrom = (error, fallback) => error.response?.data?.message || fallba
 
 export const useCategoryStore = create((set, get) => ({
   categories: [],
+  categoriesLoaded: false,
   adminCategories: [],
   loading: false,
   error: "",
@@ -14,10 +15,10 @@ export const useCategoryStore = create((set, get) => ({
     try {
       const response = await axios.get("/categories");
       const categories = Array.isArray(response.data.categories) ? response.data.categories : [];
-      set({ categories, error: "" });
+      set({ categories, categoriesLoaded: true, error: "" });
       return categories;
     } catch (error) {
-      set({ error: messageFrom(error, "دریافت دسته‌بندی‌ها ناموفق بود.") });
+      set({ error: messageFrom(error, "دریافت دسته‌بندی‌ها ناموفق بود."), categoriesLoaded: true });
       return get().categories;
     }
   },

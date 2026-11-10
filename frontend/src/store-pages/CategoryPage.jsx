@@ -211,6 +211,10 @@ const CategoryPage = ({ slug: routeSlug }) => {
   const draftFiltersKey = useMemo(() => paramsFromFilters(draftFilters).toString(), [draftFilters]);
 
   useEffect(() => {
+    if (!categoriesLoaded || !selectedCategory) {
+      setDraftResultCount(0);
+      return;
+    }
     if (getPriceError(draftFilters)) {
       setDraftResultCount(0);
       return;
@@ -236,7 +240,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [categorySlug, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters]);
+  }, [categorySlug, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters, categoriesLoaded, selectedCategory]);
 
   const categoryAttributeDefinitions = useMemo(
     () => resolveCategoryAttributeDefinitions(selectedCategory, dynamicCategories, { filterableOnly: true }),
@@ -556,7 +560,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
               inputMode="search"
               value={filters.q}
               onChange={(event) => { setFilters((current) => ({ ...current, q: event.target.value })); setPage(1); }}
-              placeholder="مثلاً مدل محصول، سازنده یا مشخصه فنی…"
+              placeholder="مثلاً مدل، نام کالا یا سازنده…"
               autoComplete="off"
               className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-sm text-ink outline-none placeholder:text-muted-soft"
             />

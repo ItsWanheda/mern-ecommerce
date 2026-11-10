@@ -10,7 +10,6 @@ export const useProductStore = create((set) => ({
   products: [],
   priceBounds: null,
   categoryPagination: null,
-  categoryFacets: { sizes: [], colors: [], fits: [], brands: [] },
   featuredProducts: [],
   newestProducts: [],
   loading: false,
@@ -85,7 +84,6 @@ export const useProductStore = create((set) => ({
         products: Array.isArray(response.data.products) ? response.data.products : [],
         priceBounds: response.data.priceBounds || null,
         categoryPagination: response.data.pagination || null,
-        categoryFacets: response.data.filterOptions || { sizes: [], colors: [], fits: [], brands: [] },
         loading: false,
         error: "",
       });
