@@ -20,8 +20,6 @@ import {
   X,
   ChevronDown,
   FolderTree,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useUserStore } from "../stores/useUserStore";
@@ -63,16 +61,6 @@ const categoryPath = (category, categories) => {
 
 const fieldClass =
   "mt-1 min-h-11 w-full rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none transition focus:border-[var(--ui-accent)] focus:ring-2 focus:ring-[var(--ui-focus)]/20";
-
-const readSavedTheme = () => {
-  try {
-    return typeof window !== "undefined" && window.localStorage.getItem("computer-hardware-theme") === "dark"
-      ? "dark"
-      : "light";
-  } catch {
-    return "light";
-  }
-};
 
 const Navbar = () => {
   const { user, logout } = useUserStore();
@@ -118,21 +106,6 @@ const Navbar = () => {
   useEffect(() => { fetchCategories(); }, [fetchCategories]);
   const location = useLocation();
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(readSavedTheme);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = theme;
-    root.style.colorScheme = theme;
-    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-    if (themeColorMeta) themeColorMeta.setAttribute("content", theme === "dark" ? "#090a0c" : "#f7f5f0");
-    try {
-      window.localStorage.setItem("computer-hardware-theme", theme);
-    } catch {
-      // Theme still applies for this session when browser storage is unavailable.
-    }
-  }, [theme]);
-
   useEffect(() => {
     const slug = location.pathname.startsWith("/category/")
       ? decodeURIComponent(location.pathname.slice("/category/".length))
@@ -466,29 +439,6 @@ const Navbar = () => {
     );
   };
 
-  const toggleTheme = () => {
-    setTheme((current) => current === "dark" ? "light" : "dark");
-  };
-
-  const renderThemeToggle = (insideMenu = false) => (
-    <button
-      type="button"
-      onClick={toggleTheme}
-      aria-label={theme === "dark" ? "تغییر به پوسته روشن" : "تغییر به پوسته تاریک"}
-      aria-pressed={theme === "dark"}
-      title={theme === "dark" ? "پوسته روشن" : "پوسته تاریک"}
-      className={insideMenu
-        ? "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-3 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"
-        : "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"}
-    >
-      <span className="inline-flex min-w-0 items-center gap-3">
-        {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
-        {insideMenu && <span>{theme === "dark" ? "فعال‌کردن پوسته روشن" : "فعال‌کردن پوسته تاریک"}</span>}
-      </span>
-      {insideMenu && <span className="text-xs font-normal text-[var(--ui-muted)]">{theme === "dark" ? "روشن" : "تیره"}</span>}
-    </button>
-  );
-
   const renderNavigationCategory = (category, depth = 0) => {
     const id = String(category._id);
     const children = navigationTree.childrenByParent.get(id) || [];
@@ -775,8 +725,6 @@ const Navbar = () => {
                 {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
               </button>
 
-              {renderThemeToggle(false)}
-
               <button
                 type="button"
                 aria-label={accountMenuOpen ? "بستن منوی حساب کاربری" : "باز کردن منوی حساب کاربری"}
@@ -904,7 +852,7 @@ const Navbar = () => {
                 <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
                 <NavLink to="/shop" className={linkClass}>محصولات</NavLink>
                 <NavLink to="/categories" className={linkClass}>دسته‌بندی‌ها</NavLink>
-                <NavLink to="/bestsellers" className={linkClass}>پرفروش‌ها</NavLink>
+                <NavLink to="/bestsellers" className={linkClass}>محبوب‌ترین‌ها</NavLink>
                 <NavLink to="/new-arrivals" className={linkClass}>تازه‌واردها</NavLink>
                 <NavLink to="/wishlist" className={linkClass}><Heart size={15} aria-hidden="true" />علاقه‌مندی‌ها{savedProducts.length > 0 && <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ui-accent)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--ui-button-text)]">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}</NavLink>
               </nav>
@@ -917,9 +865,11 @@ const Navbar = () => {
                   onSubmit={handleDesktopSearch}
                   role="search"
                   aria-label="جست‌وجوی محصولات"
-                  className="flex min-h-12 min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-1 shadow-sm transition focus-within:border-[var(--ui-focus)] focus-within:ring-4 focus-within:ring-brand/10"
+                  className="storefront-search-form flex min-h-12 min-w-0 flex-1 items-center gap-1.5 rounded-2xl border border-[var(--ui-border-strong)] bg-white p-1.5 shadow-[0_8px_26px_-20px_var(--ui-shadow-color)] transition focus-within:border-[var(--ui-accent)] focus-within:ring-4 focus-within:ring-[var(--ui-accent-soft)]"
                 >
-                  <Search size={18} className="mr-2 shrink-0 text-[var(--ui-muted)]" aria-hidden="true" />
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--ui-surface-raised)] text-[var(--ui-accent)]">
+                    <Search size={18} aria-hidden="true" />
+                  </span>
                   <input
                     type="search"
                     value={filters.q}
@@ -931,13 +881,13 @@ const Navbar = () => {
                     aria-controls="desktop-search-suggestions"
                     aria-expanded={activeSearchSurface === "desktop" && suggestionQuery.length >= 2}
                     autoComplete="off"
-                    placeholder="جست‌وجوی محصولات..."
+                    placeholder="نام قطعه، برند یا مدل را جست‌وجو کنید..."
                     className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-muted)]"
                   />
                   <button
                     type="submit"
                     aria-label="جست‌وجو"
-                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-strong-surface)] px-3 text-sm font-semibold text-[var(--ui-inverse-text)] transition hover:bg-[var(--ui-strong-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-3.5 text-sm font-bold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
                   >
                     <Search size={16} aria-hidden="true" />
                     <span className="hidden 2xl:inline">جست‌وجو</span>
@@ -993,9 +943,10 @@ const Navbar = () => {
                 aria-label={activeFilterCount > 0
                   ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
                   : "باز کردن جست‌وجو و فیلتر محصولات"}
-                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
+                className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-white px-3 text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
               >
                 <Search size={18} aria-hidden="true" />
+                <span className="text-xs font-bold">جست‌وجو</span>
                 {activeFilterCount > 0 && (
                   <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[var(--ui-canvas)] bg-[var(--ui-accent)] px-1 py-0.5 text-[10px] font-bold leading-none text-[var(--ui-button-text)]">
                     {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
@@ -1045,10 +996,6 @@ const Navbar = () => {
             </div>
 
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-4" data-mobile-menu-scroll>
-              <section aria-label="تنظیمات نمایش" className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2">
-                {renderThemeToggle(true)}
-              </section>
-
               {user ? (
                 <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-hover)] p-4">
                   <div className="flex items-start gap-3">

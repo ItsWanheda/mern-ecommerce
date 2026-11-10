@@ -2,19 +2,19 @@
 
 :root {
   /* Primitive RGB values: the only source of truth for the shared palette. */
-  --color-canvas: 247 245 240;
-  --color-surface: 255 254 250;
-  --color-surface-raised: 242 240 233;
-  --color-surface-muted: 233 229 220;
+  --color-canvas: 255 255 255;
+  --color-surface: 255 255 255;
+  --color-surface-raised: 248 248 245;
+  --color-surface-muted: 241 240 235;
   --color-strong: 37 39 34;
   --color-strong-hover: 65 68 59;
   --color-ink: 37 39 34;
   --color-ink-strong: 65 68 59;
   --color-muted: 98 100 92;
   --color-muted-soft: 119 120 111;
-  --color-border: 228 224 216;
-  --color-border-strong: 199 195 185;
-  --color-hover: 233 237 228;
+  --color-border: 232 230 224;
+  --color-border-strong: 201 199 190;
+  --color-hover: 241 244 237;
   --color-brand: 104 116 95;
   --color-brand-hover: 65 68 59;
   --color-brand-soft: 233 237 228;
@@ -232,154 +232,18 @@
 }
 
 
-/* Dark theme: the semantic names remain identical; only their RGB values change. */
-html[data-theme="dark"] {
-  color-scheme: dark;
-  --color-canvas: 9 10 12;
-  --color-surface: 17 19 24;
-  --color-surface-raised: 23 26 32;
-  --color-surface-muted: 29 33 40;
-  --color-strong: 29 33 40;
-  --color-strong-hover: 41 46 55;
-  --color-ink: 245 246 248;
-  --color-ink-strong: 225 228 233;
-  --color-muted: 164 170 181;
-  --color-muted-soft: 164 170 181;
-  --color-border: 43 48 58;
-  --color-border-strong: 74 81 94;
-  --color-hover: 41 46 55;
-  /* Use the legacy sage family in dark mode with a lighter tint for contrast. */
-  --color-brand: 154 165 142;
-  --color-brand-hover: 174 185 163;
-  --color-brand-soft: 41 46 55;
-  --color-brand-deep: 154 165 142;
-  --color-brand-muted: 154 165 142;
-  --color-disabled: 113 121 135;
-  --color-success: 142 200 160;
-  --color-danger: 241 154 145;
-  --color-warning: 244 210 142;
-  --color-on-brand: 9 10 12;
-
-  --ui-canvas: rgb(var(--color-canvas));
-  --ui-surface: rgb(var(--color-surface));
-  --ui-surface-raised: rgb(var(--color-surface-raised));
-  --ui-input-bg: var(--ui-surface);
-  --ui-text: rgb(var(--color-ink));
-  --ui-text-strong: rgb(var(--color-ink-strong));
-  --ui-muted: rgb(var(--color-muted));
-  --ui-border: rgb(var(--color-border));
-  --ui-border-strong: rgb(var(--color-border-strong));
-  --ui-hover: rgb(var(--color-hover));
-  --ui-accent: rgb(var(--color-brand));
-  --ui-accent-hover: rgb(var(--color-brand-hover));
-  --ui-accent-soft: rgb(var(--color-brand) / 0.12);
-  --ui-focus: var(--ui-accent);
-  --ui-chart-grid: #3a3f49;
-  --ui-chart-axis: var(--ui-muted);
-  --ui-chart-secondary: #8aa1d5;
-  --ui-overlay: rgba(0, 0, 0, 0.68);
-  --ui-shadow-color: rgba(0, 0, 0, 0.55);
-  --ui-strong-surface: rgb(var(--color-strong));
-  --ui-strong-hover: rgb(var(--color-strong-hover));
-  --ui-inverse-text: var(--ui-text);
-  --ui-button-text: rgb(var(--color-on-brand));
-  --ui-disabled-bg: var(--ui-surface-raised);
-  --ui-disabled-text: rgb(var(--color-disabled));
-  --ui-success: rgb(var(--color-success));
-  --ui-success-bg: #10251a;
-  --ui-success-border: #2a5c3c;
-  --ui-danger: rgb(var(--color-danger));
-  --ui-danger-bg: #2a1415;
-  --ui-danger-border: #663234;
-  --ui-warning: rgb(var(--color-warning));
-  --ui-warning-bg: #2a2112;
-  --ui-warning-border: #664b20;
-
-  --store-canvas: var(--ui-canvas);
-  --store-surface: var(--ui-surface);
-  --store-ink: var(--ui-text);
-  --store-muted: var(--ui-muted);
-  --brand-primary: var(--ui-accent);
-  --brand-hover: var(--ui-accent-hover);
-  --brand-muted: var(--ui-accent);
-  --brand-soft: var(--ui-hover);
+/* There is one storefront palette: C-option white, charcoal and sage. */
+html,
+body,
+#root,
+input,
+textarea,
+select,
+button {
+  color-scheme: light;
 }
 
-html[data-theme="dark"] body,
-html[data-theme="dark"] #root {
-  background-color: var(--ui-canvas) !important;
-  color: var(--ui-text);
-}
-
-/* Compatibility for remaining generic Tailwind gray utilities. */
-html[data-theme="dark"] [class~="bg-gray-900"],
-html[data-theme="dark"] [class~="bg-gray-900/70"],
-html[data-theme="dark"] [class~="bg-gray-900/60"],
-html[data-theme="dark"] [class~="bg-gray-900/50"],
-html[data-theme="dark"] [class~="bg-gray-900/40"] {
-  background-color: var(--ui-canvas) !important;
-}
-
-html[data-theme="dark"] [class~="bg-gray-800"],
-html[data-theme="dark"] [class~="bg-gray-800/60"] {
-  background-color: var(--ui-surface) !important;
-}
-
-html[data-theme="dark"] [class~="bg-gray-700"],
-html[data-theme="dark"] [class~="bg-gray-700/60"],
-html[data-theme="dark"] [class~="bg-gray-700/40"] {
-  background-color: var(--ui-strong-surface) !important;
-}
-
-html[data-theme="dark"] [class~="border-gray-700"],
-html[data-theme="dark"] [class~="border-gray-600"] {
-  border-color: var(--ui-border) !important;
-}
-
-html[data-theme="dark"] [class~="text-gray-100"],
-html[data-theme="dark"] [class~="text-gray-200"] {
-  color: var(--ui-text-strong) !important;
-}
-
-html[data-theme="dark"] [class~="text-gray-300"] {
-  color: var(--ui-muted) !important;
-}
-
-html[data-theme="dark"] [class~="text-gray-400"],
-html[data-theme="dark"] [class~="text-gray-500"] {
-  color: var(--ui-muted) !important;
-}
-
-html[data-theme="dark"] [class~="text-white"] {
-  color: #f5f6f8;
-}
-
-html[data-theme="dark"] input,
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] select {
-  color-scheme: dark;
-  border-color: var(--ui-border);
-}
-
-html[data-theme="dark"] input::placeholder,
-html[data-theme="dark"] textarea::placeholder {
-  color: var(--ui-muted);
-  opacity: 1;
-}
-
-html[data-theme="dark"] a,
-html[data-theme="dark"] button {
-  -webkit-tap-highlight-color: var(--ui-accent-soft);
-}
-
-html[data-theme="dark"] ::selection {
-  color: var(--ui-button-text);
-  background: var(--ui-accent);
-}
-
-
-/* Shared admin workspace treatment. Kept token-based so light and dark themes
-   stay aligned without changing each admin feature's content layout. */
+/* Shared admin workspace treatment. Layout and admin components remain unchanged. */
 .admin-page-header {
   border: 1px solid var(--ui-border);
   border-radius: 1.25rem;
@@ -508,6 +372,7 @@ input[type="search"]::-webkit-search-decoration {
    ------------------------------------------------------------------------- */
 :root {
   --store-content-width: 90rem;
+  color-scheme: light;
   --store-radius-card: 1rem;
   --store-radius-panel: 1.25rem;
   --store-section-gap: clamp(1.75rem, 3.5vw, 2.75rem);
@@ -563,6 +428,30 @@ input[type="search"]::-webkit-search-decoration {
   border-radius: 0.875rem;
   box-shadow: none;
 }
+
+
+.storefront-search-form {
+  min-width: 0;
+  border-radius: 1rem;
+}
+
+.storefront-search-form input[type="search"] {
+  min-width: 0;
+  color: #252722;
+  background: transparent;
+  caret-color: var(--ui-accent);
+}
+
+.storefront-search-form input[type="search"]::placeholder {
+  color: #77786f;
+  opacity: 1;
+}
+
+.storefront-search-form:focus-within {
+  border-color: var(--ui-accent);
+  box-shadow: 0 0 0 4px var(--ui-accent-soft), 0 12px 28px -22px var(--ui-shadow-color);
+}
+
 
 .storefront-header nav a[aria-current="page"] {
   color: var(--ui-accent);

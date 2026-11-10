@@ -1,12 +1,7 @@
-import CollectionPage from "@/src/store-pages/CollectionPage.jsx";
-import { generateStoreMetadata } from "@/lib/next-metadata.js";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ searchParams }) {
-  return generateStoreMetadata("/featured-products", await searchParams);
-}
-
 export default function FeaturedCollectionRouteRoute() {
-  return <CollectionPage type="featured" />;
+  redirect("/bestsellers");
 }

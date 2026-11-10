@@ -17,7 +17,6 @@ import axios from "../lib/axios";
 import { attachCampaignProducts, getCampaignProductIds } from "../lib/campaign-products.js";
 import CategoryItem from "../components/CategoryItem";
 import ProductCard from "../components/ProductCard";
-import FeaturedProducts from "../components/FeaturedProducts";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { getCampaignPath } from "../lib/campaign-url";
@@ -29,16 +28,12 @@ const benefits = [
   { icon: RefreshCw, title: "پشتیبانی خرید", text: "برای انتخاب و پیگیری سفارش همراهتان هستیم." },
 ];
 
-const SectionHeading = ({ eyebrow, title, description, href, linkLabel = "مشاهده همه" }) => (
-  <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
-    <div className="min-w-0">
-      {eyebrow && <p className="mb-1.5 text-[11px] font-bold text-[var(--ui-accent)] sm:text-xs">{eyebrow}</p>}
-      <h2 className="text-xl font-bold tracking-tight text-[var(--ui-text)] sm:text-2xl">{title}</h2>
-      {description && <p className="mt-1.5 max-w-2xl text-xs leading-6 text-[var(--ui-muted)] sm:text-sm">{description}</p>}
-    </div>
+const SectionHeading = ({ title, href, linkLabel = "مشاهده همه" }) => (
+  <div className="mb-4 flex min-h-10 items-center justify-between gap-3 sm:mb-5">
+    <h2 className="min-w-0 text-lg font-extrabold tracking-tight text-[var(--ui-text)] sm:text-xl">{title}</h2>
     {href && (
-      <Link to={href} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-accent-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:self-auto sm:text-sm">
-        {linkLabel}<ArrowLeft size={15} aria-hidden="true" />
+      <Link to={href} className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-3 py-2 text-[11px] font-semibold text-[var(--ui-text-strong)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-accent-soft)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:text-xs">
+        {linkLabel}<ArrowLeft size={14} aria-hidden="true" />
       </Link>
     )}
   </div>
@@ -75,9 +70,6 @@ const HomePage = () => {
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [heroPaused, setHeroPaused] = useState(false);
-  const [bestsellers, setBestsellers] = useState([]);
-  const [bestsellersLoaded, setBestsellersLoaded] = useState(false);
-  const [bestsellersError, setBestsellersError] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
 
@@ -131,25 +123,12 @@ const HomePage = () => {
     };
 
     loadCampaigns().catch((error) => console.error("Could not load campaigns:", error.message));
-    axios.get("/products/bestsellers?limit=8")
-      .then(({ data }) => {
-        if (!active) return;
-        setBestsellers(Array.isArray(data.products) ? data.products : []);
-        setBestsellersError(false);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setBestsellersError(true);
-        console.error("Could not load bestsellers:", error.message);
-      })
-      .finally(() => { if (active) setBestsellersLoaded(true); });
-
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts, fetchCategories]);
 
-  const catalogProducts = useMemo(() => [...featuredProducts, ...bestsellers, ...newestProducts]
+  const catalogProducts = useMemo(() => [...featuredProducts, ...newestProducts]
     .filter((product, index, all) => product?._id && all.findIndex((item) => item?._id === product._id) === index),
-  [featuredProducts, bestsellers, newestProducts]);
+  [featuredProducts, newestProducts]);
 
   // The existing campaign manager supplies the hero slides. Admins can publish
   // several active campaigns with images to create a multi-image home carousel.
@@ -185,27 +164,13 @@ const HomePage = () => {
     (index + 1) % heroCampaigns.length
   );
 
-  const secondaryCampaigns = campaigns.filter(
-    (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
-  );
+  const discountCampaigns = campaigns
+    .filter((campaign) => campaign?.image && campaign?.title)
+    .slice(0, 3);
   const campaignProducts = campaigns
     .flatMap((campaign) => Array.isArray(campaign.productIds) ? campaign.productIds : [])
     .filter((product) => product && typeof product === "object" && product._id && product.isActive !== false)
     .filter((product, index, all) => all.findIndex((item) => String(item._id) === String(product._id)) === index);
-
-  const retryBestsellers = async () => {
-    setBestsellersLoaded(false);
-    setBestsellersError(false);
-    try {
-      const { data } = await axios.get("/products/bestsellers?limit=8");
-      setBestsellers(Array.isArray(data.products) ? data.products : []);
-    } catch (error) {
-      setBestsellersError(true);
-      console.error("Could not retry bestsellers:", error.message);
-    } finally {
-      setBestsellersLoaded(true);
-    }
-  };
 
   const retryNewest = async () => {
     setNewestLoaded(false);
@@ -309,13 +274,30 @@ const HomePage = () => {
           ))}
         </section>
 
+        {discountCampaigns.length > 0 && (
+          <section aria-labelledby="special-discounts-heading">
+            <SectionHeading title="تخفیف‌های ویژه" href="/campaigns" linkLabel="همه پیشنهادها" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {discountCampaigns.map((campaign) => (
+                <Link
+                  key={campaign._id}
+                  to={getCampaignPath(campaign)}
+                  className="group relative isolate flex min-h-[150px] items-end overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:min-h-[175px] sm:p-5"
+                >
+                  <img src={campaign.image} alt="" loading="lazy" decoding="async" className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
+                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                  <div className="max-w-full text-white">
+                    <h3 className="line-clamp-2 text-base font-extrabold leading-7 sm:text-lg"><bdi dir="auto">{campaign.title}</bdi></h3>
+                    <span className="mt-2 inline-flex items-center gap-2 text-xs font-bold">مشاهده پیشنهاد<ArrowLeft size={14} aria-hidden="true" /></span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section id="shop-by-category" aria-labelledby="shop-by-category-heading" className="scroll-mt-28">
-          <SectionHeading
-            eyebrow="دسته‌بندی‌های فروشگاه"
-            title="محصول موردنیازت را پیدا کن"
-            description="از دسته‌های اصلی شروع کن و برای دیدن محصولات هر گروه وارد همان مجموعه شو."
-            href="/categories"
-          />
+          <SectionHeading title="دسته‌بندی‌ها" href="/categories" />
           {!categoriesLoaded ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-5">
               {Array.from({ length: 5 }).map((_, index) => <div key={index} className="aspect-[1.3/1] animate-pulse rounded-2xl bg-[var(--ui-surface-raised)]" />)}
@@ -335,68 +317,34 @@ const HomePage = () => {
           )}
         </section>
 
-        {secondaryCampaigns.length > 0 && (
-          <section aria-labelledby="special-offers-heading">
-            <SectionHeading eyebrow="فرصت‌های ویژه" title="پیشنهادهای فروشگاه" description="پیشنهادهای فعال را ببین و محصولات هر مجموعه را بررسی کن." href="/campaigns" />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
-              {secondaryCampaigns.slice(0, 2).map((campaign) => (
-                <Link key={campaign._id} to={getCampaignPath(campaign)} className="group relative isolate flex min-h-[190px] items-end overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-5 sm:min-h-[220px] sm:p-6">
-                  {campaign.image && <img src={campaign.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
-                  <div className="max-w-lg text-white">
-                    <span className="text-[11px] font-semibold text-white/80">پیشنهاد فعال</span>
-                    <h3 className="mt-2 text-xl font-bold leading-8 sm:text-2xl"><bdi dir="auto">{campaign.title}</bdi></h3>
-                    {campaign.description && <p className="mt-1 line-clamp-2 text-xs leading-6 text-white/85">{campaign.description}</p>}
-                    <span className="mt-3 inline-flex items-center gap-2 text-xs font-bold">مشاهده پیشنهاد<ArrowLeft size={14} aria-hidden="true" /></span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+
 
         {campaignProducts.length > 0 && (
           <section aria-labelledby="campaign-products-heading">
-            <SectionHeading eyebrow="منتخب پیشنهادها" title="محصولات داخل پیشنهادها" href="/campaigns" />
+            <SectionHeading title="محصولات پیشنهادها" href="/campaigns" />
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
               {campaignProducts.slice(0, 4).map((product) => <ProductCard key={product._id} product={product} />)}
             </div>
           </section>
         )}
 
-        <section aria-labelledby="bestsellers-heading">
-          <SectionHeading
-            eyebrow="محبوب خریداران"
-            title="پرفروش‌های فروشگاه"
-            description="محصولاتی که بر اساس سفارش‌های پرداخت‌شده بیشتر انتخاب شده‌اند."
-            href="/bestsellers"
-          />
-          {!bestsellersLoaded ? (
-            <ProductGridSkeleton />
-          ) : bestsellersError ? (
-            <div role="alert" className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-5 py-8 text-center">
-              <p className="text-sm font-semibold text-[var(--ui-text)]">پرفروش‌ها بارگذاری نشدند.</p>
-              <p className="mt-1 text-xs text-[var(--ui-muted)]">اتصال را بررسی کن و دوباره تلاش کن.</p>
-              <button type="button" onClick={retryBestsellers} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)]">
-                <RefreshCw size={14} aria-hidden="true" />تلاش دوباره
-              </button>
-            </div>
-          ) : bestsellers.length > 0 ? (
+        <section aria-labelledby="popular-products-heading">
+          <SectionHeading title="محبوب‌ترین‌ها" href="/bestsellers" />
+          {featuredProducts.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4">
-              {bestsellers.slice(0, 4).map((product) => <ProductCard key={product._id} product={product} />)}
+              {featuredProducts.slice(0, 8).map((product) => <ProductCard key={product._id} product={product} />)}
             </div>
           ) : (
-            <EmptyCollection title="هنوز محصول پرفروشی برای نمایش وجود ندارد" text="پس از ثبت سفارش‌های پرداخت‌شده، محصولات محبوب اینجا نمایش داده می‌شوند." href="/shop" />
+            <EmptyCollection
+              title="هنوز محصولی برای محبوب‌ترین‌ها انتخاب نشده است"
+              text="محصولاتی که مدیریت فروشگاه پیشنهاد می‌کند، پس از فعال‌سازی در این بخش نمایش داده می‌شوند."
+              href="/shop"
+            />
           )}
         </section>
 
         <section aria-labelledby="newest-products-heading">
-          <SectionHeading
-            eyebrow="تازه به فروشگاه اضافه شده"
-            title="تازه‌واردها"
-            description="محصولات جدید را در یک نگاه بررسی کن."
-            href="/new-arrivals"
-          />
+          <SectionHeading title="تازه‌واردها" href="/new-arrivals" />
           {!newestLoaded ? (
             <ProductGridSkeleton />
           ) : newestError ? (
@@ -416,11 +364,7 @@ const HomePage = () => {
           )}
         </section>
 
-        {featuredProducts.length > 0 && (
-          <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 sm:px-5">
-            <FeaturedProducts featuredProducts={featuredProducts.slice(0, 12)} />
-          </section>
-        )}
+
       </div>
     </main>
   );

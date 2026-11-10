@@ -48,12 +48,12 @@ export const STATIC_PAGE_META = {
     description: "جدیدترین محصولات اضافه‌شده به Computer Hardware را ببینید.",
   },
   "/bestsellers": {
-    title: "پرفروش‌ترین محصولات",
-    description: "محصولات پرفروش Computer Hardware را مشاهده کنید.",
+    title: "محبوب‌ترین‌ها",
+    description: "محصولاتی که مدیریت فروشگاه برای پیشنهاد به خریداران انتخاب کرده است.",
   },
   "/featured-products": {
-    title: "محصولات منتخب",
-    description: "گزیده‌ای از قطعات منتخب فروشگاه را بررسی کنید.",
+    title: "محبوب‌ترین‌ها",
+    description: "مجموعه محصولات محبوب فروشگاه را ببینید.",
   },
 };
 

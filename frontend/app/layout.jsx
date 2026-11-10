@@ -4,16 +4,6 @@ import "lenis/dist/lenis.css";
 import { DEFAULT_SEO_DESCRIPTION, DEFAULT_SEO_TITLE, SITE_NAME, buildSiteStructuredData, safeJson } from "@/src/lib/seo-utils.js";
 import { getStorefrontSeoContext } from "@/lib/next-metadata.js";
 
-const themeInitialization = `try {
-  const savedTheme = localStorage.getItem("computer-hardware-theme");
-  if (savedTheme === "dark") {
-    document.documentElement.dataset.theme = "dark";
-    document.documentElement.style.colorScheme = "dark";
-  }
-} catch {
-  // The saved theme is optional; the storefront still renders without storage.
-}`;
-
 export const metadata = {
   title: { default: DEFAULT_SEO_TITLE, template: "%s | Computer Hardware" },
   description: DEFAULT_SEO_DESCRIPTION,
@@ -46,8 +36,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#f7f5f0" />
-        <script dangerouslySetInnerHTML={{ __html: themeInitialization }} />
+        <meta name="theme-color" content="#ffffff" />
         {siteStructuredData.map((schema, index) => (
           <script
             key={schema["@type"]}

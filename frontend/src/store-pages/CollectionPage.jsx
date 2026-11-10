@@ -10,23 +10,20 @@ import PageMeta from "../components/PageMeta";
 const modes = {
   newest: {
     title: "تازه‌واردها",
-    eyebrow: "تازه به فروشگاه اضافه شده",
-    description: "جدیدترین قطعات و تجهیزات کامپیوتر را با مشخصات فنی و قیمت به‌روز بررسی کنید.",
     path: "/new-arrivals",
     load: async () => (await axios.get("/products/newest?limit=24")).data.products || [],
   },
   bestsellers: {
-    title: "پرفروش‌های فروشگاه",
-    eyebrow: "محبوب خریداران",
-    description: "محصولاتی که بر اساس سفارش‌های پرداخت‌شده بیشتر خریداری شده‌اند.",
+    title: "محبوب‌ترین‌ها",
     path: "/bestsellers",
-    load: async () => (await axios.get("/products/bestsellers?limit=24")).data.products || [],
+    load: async () => {
+      const { data } = await axios.get("/products/featured");
+      return Array.isArray(data) ? data : [];
+    },
   },
   featured: {
-    title: "محصولات منتخب",
-    eyebrow: "انتخاب فروشگاه",
-    description: "مجموعه‌ای گزیده از محصولاتی که برای بررسی بیشتر انتخاب شده‌اند.",
-    path: "/featured-products",
+    title: "محبوب‌ترین‌ها",
+    path: "/bestsellers",
     load: async () => {
       const { data } = await axios.get("/products/featured");
       return Array.isArray(data) ? data : [];
@@ -68,7 +65,7 @@ const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
 
   return (
     <main dir="rtl" className="storefront-page min-h-[65vh] bg-[var(--ui-canvas)] px-3 py-7 text-[var(--ui-text)] sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.description || "این مجموعه در فروشگاه سخت‌افزار در دسترس نیست."} path={config?.path || "/shop"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: config.path }] : []} />
+      <PageMeta title={config?.title || "مجموعه پیدا نشد"} description={config?.title ? "محصولات این مجموعه را مشاهده کنید." : "این مجموعه در فروشگاه سخت‌افزار در دسترس نیست."} path={config?.path || "/shop"} type="collection" itemList={products} robots={config ? "index, follow, max-image-preview:large" : "noindex, nofollow"} canonical={Boolean(config)} breadcrumbs={config ? [{ name: "صفحه اصلی", path: "/" }, { name: "فروشگاه", path: "/shop" }, { name: config.title, path: config.path }] : []} />
       <div className="mx-auto max-w-[1440px]">
         <nav aria-label="مسیر صفحه" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">
           <Link to="/" className="transition hover:text-[var(--ui-accent)]">صفحه اصلی</Link>
@@ -81,9 +78,7 @@ const CollectionPage = ({ type = "newest", slug: routeSlug }) => {
         {type !== "look" && (
           <header className="mb-6 flex flex-col gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:p-7">
             <div className="min-w-0">
-              <p className="text-xs font-bold text-[var(--ui-accent)]">{config?.eyebrow || "فروشگاه سخت‌افزار"}</p>
-              <h1 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">{config?.title || "مجموعه"}</h1>
-              <p className="mt-2 max-w-2xl text-xs leading-7 text-[var(--ui-muted)] sm:text-sm">{config?.description}</p>
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{config?.title || "مجموعه"}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <span className="inline-flex min-h-10 items-center rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-2 text-xs font-semibold text-[var(--ui-text-strong)]">

@@ -18,14 +18,13 @@ const FeaturedProducts = ({ featuredProducts = [] }) => {
 
   return (
     <section dir="rtl" className="py-8 sm:py-10" aria-labelledby="featured-products-heading">
-      <div className="mb-7 flex flex-col gap-3 sm:mb-9 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">منتخب برای شما</p>
-          <h2 id="featured-products-heading" className="font-serif text-3xl font-medium tracking-tight text-ink sm:text-4xl">محصولات منتخب</h2>
+          <h2 id="featured-products-heading" className="text-xl font-extrabold tracking-tight text-[var(--ui-text)] sm:text-2xl">محبوب‌ترین‌ها</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <p className="max-w-sm text-sm leading-6 text-muted sm:text-right">مجموعه‌ای گزیده از محصولاتی که ارزش دیدن دارند.</p>
-          <Link to="/featured-products" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-strong px-4 py-2 text-xs font-semibold text-ink-strong transition hover:border-ink">
+          
+          <Link to="/bestsellers" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border-strong px-4 py-2 text-xs font-semibold text-ink-strong transition hover:border-ink">
             مشاهده همه<ArrowLeft size={14} aria-hidden="true" />
           </Link>
         </div>
@@ -36,7 +35,7 @@ const FeaturedProducts = ({ featuredProducts = [] }) => {
           id="featured-products-track"
           ref={trackRef}
           tabIndex={0}
-          aria-label="محصولات منتخب؛ برای دیدن محصولات بیشتر به چپ و راست حرکت کنید"
+          aria-label="محبوب‌ترین‌ها؛ برای دیدن محصولات بیشتر به چپ و راست حرکت کنید"
           className="desktop-product-scrollbar flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain pb-4 sm:gap-4"
         >
           {featuredProducts.map((product) => (

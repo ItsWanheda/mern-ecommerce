@@ -8,5 +8,5 @@ export async function generateMetadata({ searchParams }) {
 }
 
 export default function BestsellersCollectionRouteRoute() {
-  return <CollectionPage type="bestsellers" />;
+  return <CollectionPage type="featured" />;
 }
