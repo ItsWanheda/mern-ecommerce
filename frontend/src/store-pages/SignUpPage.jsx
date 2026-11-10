@@ -49,7 +49,7 @@ const SignUpPage = () => {
 				>
 					<div className="mx-auto w-full max-w-md">
 						<Link to="/" className="inline-flex items-center font-serif text-2xl font-semibold tracking-tight text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
-							تیک بوتیک
+							Computer Hardware
 						</Link>
 
 						<div className="mt-8">

@@ -260,7 +260,7 @@ const ProfilePage = () => {
       <div className="mx-auto max-w-5xl">
         <header className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-semibold tracking-[0.15em] text-[var(--ui-accent)]">حساب کاربری تیک بوتیک</p>
+            <p className="text-xs font-semibold tracking-[0.15em] text-[var(--ui-accent)]">حساب کاربری Computer Hardware</p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">پروفایل من</h1>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--ui-muted)]">اطلاعات شخصی و نشانی‌های تحویل را یک‌بار ذخیره کنید تا در خریدهای بعدی، فرم پرداخت به‌صورت خودکار تکمیل شود.</p>
           </div>

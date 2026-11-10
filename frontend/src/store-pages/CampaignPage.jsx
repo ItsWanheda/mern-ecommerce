@@ -39,7 +39,7 @@ const CampaignPage = ({ campaignId: routeCampaignId }) => {
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={campaign?.title || "کمپین فروشگاهی"} description={campaign?.description || "پیشنهادهای ویژه و محصولات منتخب تیک بوتیک."} image={campaign?.image} path={window.location.pathname} type="campaign" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }, { name: campaign?.title || "کمپین", path: window.location.pathname }]} robots={error ? "noindex, nofollow" : "index, follow, max-image-preview:large"} canonical={!error} />
+      <PageMeta title={campaign?.title || "کمپین فروشگاهی"} description={campaign?.description || "پیشنهادهای ویژه و محصولات منتخب فروشگاه سخت‌افزار."} image={campaign?.image} path={window.location.pathname} type="campaign" itemList={products} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }, { name: campaign?.title || "کمپین", path: window.location.pathname }]} robots={error ? "noindex, nofollow" : "index, follow, max-image-preview:large"} canonical={!error} />
       <div className="mx-auto max-w-6xl">
         <nav aria-label="مسیر صفحه" className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted-soft">
           <Link to="/" className="hover:text-brand">صفحه اصلی</Link>
@@ -74,7 +74,7 @@ const CampaignPage = ({ campaignId: routeCampaignId }) => {
                   )}
                 </div>
                 <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12">
-                  <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand"><Megaphone size={15} aria-hidden="true" />پیشنهاد ویژه تیک بوتیک</p>
+                  <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand"><Megaphone size={15} aria-hidden="true" />پیشنهاد ویژه فروشگاه سخت‌افزار</p>
                   <h1 className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{campaign.title}</h1>
                   {campaign.description && <p className="mt-4 whitespace-pre-line text-sm leading-7 text-muted sm:text-base">{campaign.description}</p>}
                   <div className="mt-6 space-y-2 border-t border-border pt-5 text-xs leading-6 text-muted-soft">

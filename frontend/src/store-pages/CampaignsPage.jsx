@@ -30,9 +30,9 @@ const CampaignsPage = () => {
 
   return (
     <main dir="rtl" className="min-h-[65vh] bg-canvas px-3 py-8 text-ink sm:px-6 sm:py-12 lg:px-8">
-      <PageMeta title="پیشنهادهای ویژه" description="کمپین‌ها و پیشنهادهای فعال فروشگاه تیک بوتیک." path="/campaigns" breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }]} />
+      <PageMeta title="پیشنهادهای ویژه" description="کمپین‌ها و پیشنهادهای فعال فروشگاه سخت‌افزار." path="/campaigns" breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, { name: "پیشنهادهای ویژه", path: "/campaigns" }]} />
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wide text-brand">مجموعه تیک بوتیک</p>
+        <p className="text-xs font-semibold tracking-wide text-brand">فروشگاه سخت‌افزار کامپیوتر</p>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">پیشنهادهای ویژه</h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">هر کمپین صفحه اختصاصی و نشانی جداگانه دارد؛ آن را باز کنید، جزئیات و کالاهای انتخاب‌شده را ببینید و لینک صفحه را به اشتراک بگذارید.</p>
 
