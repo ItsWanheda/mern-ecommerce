@@ -8,6 +8,7 @@ on:
       - master
       - feat/admin-ux-404-analytics
       - feat/nextjs-frontend-migration
+      - feat/computer-hardware-store
   workflow_dispatch:
 
 permissions:
