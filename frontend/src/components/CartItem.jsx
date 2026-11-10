@@ -20,7 +20,7 @@ const CartItem = ({ item }) => {
         </div>
         <div className="flex items-center justify-between md:order-3 md:justify-end">
           <div className="flex items-center gap-2">
-            <button type="button" disabled={requiresCatalogUpdate} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="کاهش تعداد" disabled={requiresCatalogUpdate}
+            <button type="button" disabled={requiresCatalogUpdate} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="کاهش تعداد"
               onClick={() => updateQuantity(item, item.quantity - 1)}>
               <Minus className="text-[var(--ui-muted)]" aria-hidden="true" />
             </button>
@@ -39,6 +39,11 @@ const CartItem = ({ item }) => {
           {item.guestOnly && (
             <p role="status" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-5 text-[var(--ui-warning)]">
               این گزینه هنوز به حساب شما منتقل نشده؛ موجودی آن را بررسی یا از سبد حذف کنید.
+            </p>
+          )}
+          {requiresCatalogUpdate && (
+            <p role="alert" className="rounded-lg border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] px-3 py-2 text-xs leading-5 text-[var(--ui-warning)]">
+              این کالا هنوز به ساختار مشخصات فنی فروشگاه منتقل نشده است؛ تا زمان به‌روزرسانی توسط مدیر، امکان ثبت سفارش آن وجود ندارد. می‌توانید آن را از سبد حذف کنید.
             </p>
           )}
           <p className="text-sm text-[var(--ui-muted)]">{item.description}</p>

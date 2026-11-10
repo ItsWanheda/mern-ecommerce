@@ -34,7 +34,7 @@ const ResetPasswordPage = () => {
   const field = "mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10";
   return <main className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10 text-ink">
     <section dir="rtl" className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-xl sm:p-9">
-      <Link to="/" className="font-serif text-2xl font-semibold">تیک بوتیک</Link>
+      <Link to="/" className="font-serif text-2xl font-semibold">Computer Hardware</Link>
       <h1 className="mt-8 text-2xl font-bold">تنظیم رمز عبور جدید</h1>
       {!token && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">این لینک بازیابی توکن معتبر ندارد؛ درخواست لینک تازه‌ای کنید.</p>}
       {!message && <form onSubmit={submit} className="mt-6 space-y-4">

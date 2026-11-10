@@ -197,7 +197,7 @@ const CategoryManager = () => {
       name: { fa: form.name.fa.trim(), en: form.name.en.trim() },
       slug: form.slug.trim(),
       parentId: form.parentId || null,
-      description: { fa: form.description.fa.trim(), en: "" },
+      description: { fa: form.description.fa.trim(), en: form.description.en.trim() },
       image: form.image.trim(),
       sortOrder: Number(form.sortOrder),
       isActive: Boolean(form.isActive),
