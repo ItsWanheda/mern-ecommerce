@@ -349,7 +349,16 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
 
           <section className="product-info-panel min-w-0 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-5 shadow-[0_18px_45px_-38px_var(--ui-shadow-color)] sm:px-6 sm:py-7 lg:px-7">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{productCategoryName || "قطعات و تجهیزات کامپیوتر"}</p>
-            <h1 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight text-[var(--ui-text)] sm:text-3xl"><bdi dir="auto">{product.name}</bdi></h1>\n            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">\n              {reviewSummary.count > 0 ? (\n                <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">\n                  <Star size={14} className="fill-current text-[#c29b4d]" aria-hidden="true" />\n                  <strong className="tabular-nums text-[var(--ui-text-strong)]">{reviewSummary.average.toFixed(1)}</strong>\n                  <span>از ۵ · {new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه</span>\n                </span>\n              ) : <span className="rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">هنوز امتیازی ثبت نشده</span>}\n            </div>
+            <h1 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight text-[var(--ui-text)] sm:text-3xl"><bdi dir="auto">{product.name}</bdi></h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">
+              {reviewSummary.count > 0 ? (
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">
+                  <Star size={14} className="fill-current text-[#c29b4d]" aria-hidden="true" />
+                  <strong className="tabular-nums text-[var(--ui-text-strong)]">{reviewSummary.average.toFixed(1)}</strong>
+                  <span>از ۵ · {new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه</span>
+                </span>
+              ) : <span className="rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">هنوز امتیازی ثبت نشده</span>}
+            </div>
             <p className="mt-4 text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(product.price)}</p>
             <div className="my-6 h-px bg-[var(--ui-border)]" />
 
