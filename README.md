@@ -1,10 +1,10 @@
 <div align="center">
 
-# Tik Boutique
+# Computer Hardware Store
 
-**A Persian-first, right-to-left commerce platform built for Iranian shoppers.**
+**A Persian-first, right-to-left computer hardware commerce platform built for Iranian shoppers.**
 
-A production-focused MERN storefront with whole-Toman pricing, Zarinpal checkout, inventory safeguards, order tracking, and tools for customers and store administrators.
+A production-focused MERN hardware storefront with Admin-managed category hierarchies, category-defined technical specifications, whole-Toman pricing, Zarinpal checkout, inventory safeguards, order tracking, and tools for customers and store administrators.
 
 <p>
   <a href="https://github.com/ItsWanheda/mern-ecommerce/actions/workflows/ci.yml"><img src="https://github.com/ItsWanheda/mern-ecommerce/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI status for master" /></a>
@@ -30,7 +30,7 @@ A production-focused MERN storefront with whole-Toman pricing, Zarinpal checkout
 - Persian-first right-to-left (RTL) layout, navigation, product discovery, and category browsing.
 - Responsive home, shop, category, product-detail, cart, wishlist, account, and order-history experiences.
 - Customer profile editing and saved delivery-address management, including a direct **«پروفایل و نشانی‌ها»** link in the mobile hamburger menu.
-- Product variants, stock availability, recommendations, coupons, campaigns, and newsletter subscription management.
+- Admin-managed category trees with inherited technical attributes, configurable product specifications, category-specific filters, stock availability, recommendations, coupons, campaigns, and newsletter subscription management.
 - Toman-only price formatting with whole-Toman validation.
 
 ### 💳 Checkout and inventory
