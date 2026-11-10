@@ -5,8 +5,8 @@ import PageMeta from "../components/PageMeta";
 import ProductCard from "../components/ProductCard";
 import { Link, useParams } from "react-router-dom";
 import {
-  ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, Ruler, ShoppingCart,
-  X, Shirt, ZoomIn, RefreshCw, Star, Share2,
+  ArrowLeft, ArrowRight, Check, Heart, LoaderCircle, ShoppingCart,
+  X, ZoomIn, RefreshCw, Star, Share2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
@@ -17,50 +17,15 @@ import { useCategoryStore } from "../stores/useCategoryStore";
 import { getProductAttributeRows } from "../lib/product-attributes";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
-const categoryLabels = { jeans: "شلوار جین", "t-shirts": "تی‌شرت", shoes: "کفش", glasses: "عینک", jackets: "کت و کاپشن", suits: "کت‌وشلوار", bags: "کیف" };
-const fitLabels = {
-  "true-to-size": "مطابق سایز استاندارد",
-  slim: "جذب",
-  regular: "معمولی",
-  relaxed: "آزاد",
-  oversized: "آزاد و اورسایز",
-  athletic: "ورزشی",
-};
-const measurementLabels = [
-  ["chestCm", "دور سینه"],
-  ["waistCm", "دور کمر"],
-  ["hipsCm", "دور باسن"],
-  ["lengthCm", "قد لباس"],
-];
-
-const getInitialProductSelection = (candidate) => {
-  const variants = Array.isArray(candidate?.variants) ? candidate.variants : [];
-  const firstAvailable = variants.find((variant) => Number(variant?.stock) > 0) || variants[0];
-  const sizes = Array.isArray(candidate?.sizes) && candidate.sizes.length
-    ? candidate.sizes
-    : [...new Set(variants.map((variant) => variant?.size).filter(Boolean))];
-  const colors = Array.isArray(candidate?.colors) && candidate.colors.length
-    ? candidate.colors
-    : [...new Set(variants.map((variant) => variant?.color).filter(Boolean))];
-  return {
-    size: firstAvailable?.size || sizes[0] || "",
-    color: firstAvailable?.color || colors[0]?.name || "",
-  };
-};
-
 const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }) => {
   const { productId: matchedProductId } = useParams();
   const productId = routeProductId || matchedProductId || "";
   const initialProductMatches = Boolean(initialProduct?._id && String(initialProduct._id) === String(productId));
-  const initialSelection = getInitialProductSelection(initialProductMatches ? initialProduct : null);
   const [product, setProduct] = useState(initialProductMatches ? initialProduct : null);
   const [loading, setLoading] = useState(!initialProductMatches);
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(initialSelection.size);
-  const [selectedColor, setSelectedColor] = useState(initialSelection.color);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [failedImageUrls, setFailedImageUrls] = useState(() => new Set());
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const imageViewerCloseRef = useRef(null);
@@ -76,8 +41,8 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
     category.name?.fa === product?.category ||
     category.name?.en === product?.category
   );
-  const productCategorySlug = productCategory?.slug || (categoryLabels[product?.category] ? product.category : "");
-  const productCategoryName = productCategory?.name?.fa || categoryLabels[product?.category] || product?.category || "مجموعه";
+  const productCategorySlug = productCategory?.slug || "";
+  const productCategoryName = productCategory?.name?.fa || productCategory?.name?.en || product?.category || "قطعات کامپیوتر";
   const productAttributeRows = useMemo(() => getProductAttributeRows(product, productCategories), [product, productCategories]);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0, distribution: {} });
@@ -101,11 +66,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         setFailedImageUrls(new Set());
         setImageViewerOpen(false);
         setRelatedProducts([]);
-        const selection = getInitialProductSelection(initialProduct);
-        setSelectedSize(selection.size);
-        setSelectedColor(selection.color);
         setActiveImageIndex(0);
-        setSizeGuideOpen(false);
         return;
       }
 
@@ -118,11 +79,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         if (active) {
           const nextProduct = response.data;
           setProduct(nextProduct);
-          const selection = getInitialProductSelection(nextProduct);
-          setSelectedSize(selection.size);
-          setSelectedColor(selection.color);
           setActiveImageIndex(0);
-          setSizeGuideOpen(false);
         }
       } catch (requestError) {
         if (active) {
@@ -218,7 +175,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
   useEffect(() => {
     if (!product?._id) return;
     try {
-      const stored = JSON.parse(window.localStorage.getItem("tik-boutique-recently-viewed") || "[]");
+      const stored = JSON.parse(window.localStorage.getItem("computer-hardware-recently-viewed") || "[]");
       const previous = Array.isArray(stored)
         ? stored.filter(item => item?._id && String(item._id) !== String(product._id))
         : [];
@@ -231,11 +188,8 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         price: product.price,
         category: product.category,
         stock: product.stock,
-        variants: Array.isArray(product.variants) ? product.variants : [],
-        sizes: Array.isArray(product.sizes) ? product.sizes : [],
-        colors: Array.isArray(product.colors) ? product.colors : [],
       };
-      window.localStorage.setItem("tik-boutique-recently-viewed", JSON.stringify([currentItem, ...previous].slice(0, 6)));
+      window.localStorage.setItem("computer-hardware-recently-viewed", JSON.stringify([currentItem, ...previous].slice(0, 6)));
     } catch {
       setRecentlyViewed([]);
     }
@@ -285,49 +239,16 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
     };
   }, [imageViewerOpen, galleryImages.length]);
 
-  const variants = Array.isArray(product?.variants) ? product.variants : [];
-  const hasVariants = variants.length > 0;
-  const sizes = product?.sizes?.length
-    ? product.sizes
-    : [...new Set(variants.map((variant) => variant.size).filter(Boolean))];
-  const colors = product?.colors?.length
-    ? product.colors
-    : [...new Set(variants.map((variant) => variant.color).filter(Boolean))].map((name) => ({ name, hex: "var(--ui-border-strong)" }));
-  const selectedVariant = hasVariants
-    ? variants.find((variant) => (variant.size || "") === selectedSize && (variant.color || "") === selectedColor)
-    : null;
-  const selectedStock = selectedVariant ? selectedVariant.stock : product?.stock;
-  const normalizedSelectedStock = Number(selectedStock);
-  const hasStockValue = selectedStock !== null && selectedStock !== undefined && selectedStock !== "" && Number.isFinite(normalizedSelectedStock);
-  const outOfStock = hasVariants
-    ? !selectedVariant || !hasStockValue || normalizedSelectedStock <= 0
-    : isOutOfStock(product);
-
-  const hasAnyStockForSize = (size) => variants.some((variant) => variant.size === size && variant.stock > 0);
-  const hasAnyStockForColor = (color) => variants.some((variant) => variant.color === color && variant.stock > 0);
-  const hasStockForSize = (size) => variants.some((variant) => variant.size === size && variant.color === selectedColor && variant.stock > 0);
-  const hasStockForColor = (color) => variants.some((variant) => variant.color === color && variant.size === selectedSize && variant.stock > 0);
-
-  const handleSizeSelect = (size) => {
-    if (!hasVariants) { setSelectedSize(size); return; }
-    const exact = variants.find((variant) => variant.size === size && variant.color === selectedColor && variant.stock > 0);
-    const available = exact || variants.find((variant) => variant.size === size && variant.stock > 0);
-    if (!available) return;
-    setSelectedSize(available.size || size);
-    setSelectedColor(available.color || "");
-  };
-  const handleColorSelect = (color) => {
-    if (!hasVariants) { setSelectedColor(color); return; }
-    const exact = variants.find((variant) => variant.color === color && variant.size === selectedSize && variant.stock > 0);
-    const available = exact || variants.find((variant) => variant.color === color && variant.stock > 0);
-    if (!available) return;
-    setSelectedColor(available.color || color);
-    setSelectedSize(available.size || "");
-  };
+  const legacyVariants = Array.isArray(product?.variants) ? product.variants : [];
+  const requiresCatalogUpdate = legacyVariants.length > 0;
+  const outOfStock = isOutOfStock(product) || requiresCatalogUpdate;
 
   const handleAddToCart = () => {
-    if (outOfStock) return toast.error(hasVariants ? "این ترکیب سایز و رنگ موجود نیست" : "این محصول در حال حاضر موجود نیست");
-    addToCart(product, { size: selectedSize, color: selectedColor });
+    if (requiresCatalogUpdate) {
+      return toast.error("این کالا هنوز گزینه‌های نسخه قبلی را دارد. مدیر فروشگاه باید دسته‌بندی و موجودی آن را به ساختار جدید منتقل کند.");
+    }
+    if (outOfStock) return toast.error("این محصول در حال حاضر موجود نیست");
+    addToCart(product);
   };
 
   const handleToggleWishlist = () => {
@@ -342,7 +263,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
       if (typeof navigator.share === "function") {
         await navigator.share({
           title: product.name,
-          text: product.description || "مشاهده جزئیات محصول در تیک بوتیک",
+          text: product.description || "مشاهده مشخصات فنی این محصول",
           url,
         });
         return;
@@ -377,7 +298,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
 
   return (
     <main dir="rtl" className="min-h-screen bg-[var(--ui-canvas)] px-3 py-6 pb-28 text-[var(--ui-text)] sm:px-6 sm:py-10 sm:pb-28 lg:px-8 lg:pb-10">
-      <PageMeta title={product?.name || "محصول"} description={product?.description || "جزئیات، قیمت و مشخصات محصول در تیک بوتیک."} image={product?.image} path={productPath} type="product" product={product || undefined} structuredData={false} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(productCategorySlug ? [{ name: productCategoryName, path: "/category/" + encodeURIComponent(productCategorySlug) }] : []), { name: product?.name || "محصول", path: productPath }]} />
+      <PageMeta title={product?.name || "محصول"} description={product?.description || "مشخصات فنی، قیمت و وضعیت موجودی این محصول را بررسی کنید."} image={product?.image} path={productPath} type="product" product={product || undefined} structuredData={false} breadcrumbs={[{ name: "صفحه اصلی", path: "/" }, ...(productCategorySlug ? [{ name: productCategoryName, path: "/category/" + encodeURIComponent(productCategorySlug) }] : []), { name: product?.name || "محصول", path: productPath }]} />
       <div className="mx-auto max-w-[1600px]">
         <Link to={productCategorySlug ? "/category/" + encodeURIComponent(productCategorySlug) : "/categories"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {productCategoryName}</Link>
 
@@ -386,7 +307,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
             <div className="relative overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface-raised)]">
               {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
                 <button type="button" onClick={() => setImageViewerOpen(true)} aria-label="نمایش تصویر محصول در اندازه بزرگ" className="group block w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]">
-                  <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-[4/5] max-h-[850px] w-full object-cover sm:aspect-[5/4] lg:aspect-[4/5]" />
+                  <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[850px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
                   <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 py-2 text-xs font-semibold text-[var(--ui-text)] shadow-sm transition group-hover:bg-[var(--ui-surface)]"><ZoomIn size={15} aria-hidden="true" />بزرگ‌نمایی تصویر</span>
                 </button>
               ) : (
@@ -415,7 +336,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
               <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="انتخاب تصویر محصول">
                 {galleryImages.map((image, index) => (
                   <button key={image} type="button" onClick={() => setActiveImageIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={activeImageIndex === index} className={"overflow-hidden rounded-xl border-2 bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (activeImageIndex === index ? "border-[var(--ui-accent)]" : "border-transparent hover:border-[var(--ui-border-strong)]")}>
-                    {failedImageUrls.has(image) ? <span className="flex aspect-[4/5] w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={image} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-[4/5] w-full object-cover" />}
+                    {failedImageUrls.has(image) ? <span className="flex aspect-[4/5] w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={image} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-square w-full bg-white object-contain" />}
                   </button>
                 ))}
               </div>
@@ -427,126 +348,36 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
           </section>
 
           <section className="min-w-0 rounded-[1.75rem] bg-[var(--ui-surface)] px-5 py-7 shadow-[0_18px_55px_-42px_var(--ui-shadow-color)] sm:px-8 sm:py-10 lg:px-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{productCategoryName || "مجموعه تیک بوتیک"}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{productCategoryName || "قطعات و تجهیزات کامپیوتر"}</p>
             <h1 className="mt-3 font-serif text-3xl font-medium leading-tight tracking-tight sm:text-4xl">{product.name}</h1>
             <p className="mt-5 text-2xl font-semibold tabular-nums">{formatPrice(product.price)}</p>
             <div className="my-6 h-px bg-[var(--ui-border)]" />
 
-            {sizes.length > 0 && (
-              <section aria-labelledby="size-options-heading" className="mb-6">
+            {productAttributeRows.length > 0 && (
+              <section className="mb-6 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] p-4" aria-labelledby="quick-specifications-heading">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 id="size-options-heading" className="text-sm font-semibold">انتخاب سایز</h2>
-                  {sizes.length > 0 && (
-                    <button type="button" onClick={() => setSizeGuideOpen((open) => !open)} aria-expanded={sizeGuideOpen} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold text-[var(--ui-accent)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
-                      <Ruler size={15} aria-hidden="true" />راهنمای سایز
-                    </button>
-                  )}
+                  <h2 id="quick-specifications-heading" className="text-sm font-bold">مشخصات کلیدی</h2>
+                  <span className="text-xs text-[var(--ui-muted)]">بر اساس دسته‌بندی محصول</span>
                 </div>
-                {hasVariants && <p className="mb-2 text-xs leading-5 text-[var(--ui-muted)]">گزینه‌های خط‌چین با انتخاب خودکار رنگ سازگار در دسترس‌اند؛ گزینه‌های ناموجود قابل انتخاب نیستند.</p>}
-                <div className="flex flex-wrap gap-2">
-                  {sizes.map((size) => {
-                    const hasAnyStock = hasVariants && hasAnyStockForSize(size);
-                    const compatible = !hasVariants || hasStockForSize(size);
-                    const unavailable = hasVariants && !hasAnyStock;
-                    return (
-                      <button key={size} type="button" disabled={unavailable} onClick={() => handleSizeSelect(size)} aria-pressed={selectedSize === size} aria-label={hasAnyStock && !compatible ? "سایز " + size + "؛ رنگ سازگار خودکار انتخاب می‌شود" : "سایز " + size} className={"relative min-h-12 min-w-[3.5rem] rounded-2xl border px-5 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:border-[var(--ui-border)] disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-disabled-text)] disabled:line-through " + (selectedSize === size ? "border-[var(--ui-strong-surface)] bg-[var(--ui-strong-surface)] text-[var(--ui-inverse-text)]" : compatible ? "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]" : "border-dashed border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]")}>
-                        {size}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {colors.length > 0 && (
-              <section aria-labelledby="color-options-heading" className="mb-6">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 id="color-options-heading" className="text-sm font-semibold">رنگ</h2>
-                  <span className="text-xs text-[var(--ui-muted)]">{selectedColor || "انتخاب نشده"}</span>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {colors.map((color) => {
-                    const hasAnyStock = hasVariants && hasAnyStockForColor(color.name);
-                    const compatible = !hasVariants || hasStockForColor(color.name);
-                    const unavailable = hasVariants && !hasAnyStock;
-                    return (
-                      <button key={color.name} type="button" disabled={unavailable} onClick={() => handleColorSelect(color.name)} aria-label={hasAnyStock && !compatible ? "انتخاب رنگ " + color.name + "؛ سایز سازگار خودکار انتخاب می‌شود" : "انتخاب رنگ " + color.name} aria-pressed={selectedColor === color.name} className={"group flex min-h-12 items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-35 " + (selectedColor === color.name ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text)]" : compatible ? "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] hover:border-[var(--ui-border-strong)]" : "border-dashed border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-text-strong)] hover:border-[var(--ui-accent)]")}>
-                        <span className={"relative inline-flex h-6 w-6 items-center justify-center rounded-full border border-black/10 " + (unavailable ? "after:absolute after:h-px after:w-7 after:rotate-45 after:bg-[var(--ui-danger)]" : "")} style={{ backgroundColor: color.hex || "var(--ui-border-strong)" }}>
-                          {selectedColor === color.name && <Check size={14} className={["#ffffff", "#fff", "#f9fafb"].includes(String(color.hex).toLowerCase()) ? "text-[var(--ui-text)]" : "text-[var(--ui-inverse-text)] drop-shadow"} aria-hidden="true" />}
-                        </span>
-                        <span>{color.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {hasVariants && <p className="mt-2 text-xs leading-5 text-[var(--ui-muted)]">رنگ‌های خط‌چین با انتخاب خودکار سایز سازگار در دسترس‌اند.</p>}
-              </section>
-            )}
-
-            {product.fit && (product.fit.type || product.fit.description || product.fit.modelHeight || product.fit.modelSize) && (
-              <section className="mb-6 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] p-4" aria-labelledby="fit-heading">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--ui-hover)] text-[var(--ui-accent)]"><Shirt size={19} aria-hidden="true" /></span>
-                  <div className="min-w-0 flex-1">
-                    <h2 id="fit-heading" className="text-sm font-bold">راهنمای تن‌خور</h2>
-                    <p className="mt-1 text-sm font-medium text-[var(--ui-text-strong)]">{fitLabels[product.fit.type] || "تن‌خور استاندارد"}</p>
-                    {product.fit.description && <p className="mt-1.5 text-xs leading-6 text-[var(--ui-muted)]">{product.fit.description}</p>}
-                    {(product.fit.modelHeight || product.fit.modelSize) && (
-                      <p className="mt-2 text-xs leading-5 text-[var(--ui-muted)]">
-                        {product.fit.modelHeight && <span>قد مدل: {product.fit.modelHeight}</span>}
-                        {product.fit.modelHeight && product.fit.modelSize && <span className="mx-2">•</span>}
-                        {product.fit.modelSize && <span>سایز پوشیده‌شده توسط مدل: {product.fit.modelSize}</span>}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {sizeGuideOpen && sizes.length > 0 && (
-              <section id="product-size-guide" className="mb-6 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]" aria-labelledby="size-guide-heading">
-                <div className="flex items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-3">
-                  <h2 id="size-guide-heading" className="text-sm font-bold">جدول اندازه‌ها (سانتی‌متر)</h2>
-                  <button type="button" onClick={() => setSizeGuideOpen(false)} aria-label="بستن راهنمای سایز" className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]"><X size={16} aria-hidden="true" /></button>
-                </div>
-                {product.sizeChart?.length > 0 ? (
-                  <>
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[440px] text-right text-xs">
-                        <thead className="bg-[var(--ui-canvas)] text-[var(--ui-muted)]"><tr><th scope="col" className="px-3 py-3 font-semibold">سایز</th>{measurementLabels.map(([key, label]) => <th scope="col" key={key} className="px-3 py-3 font-semibold">{label}</th>)}</tr></thead>
-                        <tbody className="divide-y divide-[var(--ui-border)]">
-                          {product.sizeChart.map((row) => (
-                            <tr key={row.size} className={row.size === selectedSize ? "bg-[var(--ui-hover)]/70 font-semibold" : ""}>
-                              <th scope="row" className="px-3 py-3">{row.size}</th>
-                              {measurementLabels.map(([key]) => <td key={key} className="px-3 py-3 tabular-nums">{row[key] == null ? "—" : new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(row[key])}</td>)}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                <dl className="grid grid-cols-2 gap-2">
+                  {productAttributeRows.slice(0, 4).map((attribute) => (
+                    <div key={attribute.key} className="min-w-0 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2.5">
+                      <dt className="break-words text-[11px] text-[var(--ui-muted)]">{attribute.label}</dt>
+                      <dd className="mt-1 break-words text-sm font-semibold text-[var(--ui-text)]">{attribute.value}{attribute.unit && <span className="mr-1 font-normal text-xs text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
                     </div>
-                    <p className="px-4 py-3 text-[11px] leading-5 text-[var(--ui-muted)]">اندازه‌ها بر حسب سانتی‌متر هستند. برای مقایسه دقیق، اندازه‌های لباس فعلی خود را با جدول مطابقت دهید.</p>
-                  </>
-                ) : (
-                  <p className="px-4 py-4 text-sm leading-7 text-[var(--ui-muted)]">برای این محصول جدول اندازه‌گیری ثبت نشده است. راهنمای تن‌خور و اندازه سایزی که مدل پوشیده را بررسی کنید یا پیش از خرید از پشتیبانی راهنمایی بگیرید.</p>
-                )}
+                  ))}
+                </dl>
               </section>
             )}
-
             <div role="status" aria-live="polite" aria-atomic="true" className="mb-7 rounded-2xl bg-[var(--ui-canvas)] px-5 py-4">
-              {(sizes.length > 0 || colors.length > 0) && (
-                <p className="mb-2 text-xs leading-5 text-[var(--ui-muted)]">
-                  انتخاب شما: {sizes.length > 0 ? "سایز " + (selectedSize || "انتخاب‌نشده") : "بدون سایز"} · {colors.length > 0 ? "رنگ " + (selectedColor || "انتخاب‌نشده") : "بدون رنگ"}
-                </p>
-              )}
               <p className={"flex items-center gap-2 text-sm font-semibold " + (outOfStock ? "text-[var(--ui-danger)]" : "text-[var(--ui-accent)]")}>
                 <span className={"h-2 w-2 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-accent)]")} aria-hidden="true" />
-                {outOfStock ? (hasVariants ? "این ترکیب سایز و رنگ ناموجود است" : "در حال حاضر ناموجود") : "موجود برای سفارش"}
+                {requiresCatalogUpdate ? "نیازمند به‌روزرسانی اطلاعات فنی و موجودی" : outOfStock ? "در حال حاضر ناموجود" : "موجود برای سفارش"}
               </p>
-              {hasStockValue && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی دقیق این ترکیب: {new Intl.NumberFormat("fa-IR").format(normalizedSelectedStock)} عدد</p>}
-              {!hasVariants && !isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
+              {isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی انبار: {new Intl.NumberFormat("fa-IR").format(product.stock)} عدد</p>}
+              {requiresCatalogUpdate && <p className="mt-2 text-xs leading-5 text-[var(--ui-muted)]">این محصول دارای گزینه‌های ساختار قدیمی است و برای جلوگیری از ثبت سفارش با مشخصات اشتباه، فعلاً قابل افزودن به سبد نیست. آن را در پنل مدیریت ویرایش و مشخصات فنی/موجودی جدید را ثبت کنید.</p>}
+              {!isStockTracked(product) && !requiresCatalogUpdate && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
             </div>
-
-
 
             <div className="mt-7 hidden flex-col gap-2.5 sm:flex sm:flex-row">
               <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
