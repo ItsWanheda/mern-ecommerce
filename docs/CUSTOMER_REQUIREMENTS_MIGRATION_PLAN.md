@@ -92,6 +92,41 @@ The current source and its documentation indicate the following work remains or 
 
 ---
 
+### 2.4 Critical domain conversion: fashion storefront to computer-hardware storefront
+
+The source branch is branded and modeled as a Persian fashion boutique, not a hardware catalogue. This is a first-class conversion requirement, not a cosmetic copy change.
+
+Evidence in the current source includes:
+- `backend/models/product.model.js` has apparel-oriented `sizes`, `colors`, `fit`, `sizeChart` fields and garment measurements such as chest, waist, hips and length.
+- Product variants are currently keyed around `size` and `color`.
+- `frontend/src/store-pages/ProductDetailsPage.jsx` contains clothing fit labels, garment measurement labels and a size-guide interaction.
+- `frontend/src/components/CreateProductForm.jsx` and `ProductEditForm.jsx` expose clothing size, color, fit and size-chart form fields.
+- Product cards and category fallbacks contain clothing categories such as jeans, T-shirts, shoes, jackets, suits and bags.
+- Store metadata/footer content still identifies “تیک بوتیک” as an apparel/accessories store.
+
+#### Required hardware-domain conversion
+
+- Replace the hard-coded fashion category fallbacks with customer-approved computer hardware taxonomy. Candidate top-level families include CPUs, GPUs, motherboards, memory, storage, power supplies, cases, cooling, monitors, peripherals, networking and accessories; the customer must approve the final taxonomy.
+- Reuse the existing dynamic category and category-attribute capability where possible. Define typed, localized, filterable attributes per category rather than building a separate hard-coded product form for every category.
+- Add a general product identity model that can represent manufacturer/brand, model, SKU, barcode/GTIN where available, manufacturer part number, warranty, condition, package contents and technical documentation.
+- Generalize variants beyond clothing size/color. A purchasable SKU/variant must support a stable identifier, a selected set of option values, optional price override, its own stock balance and any category-specific sellable options.
+- Represent technical specifications in a typed and queryable form. Examples by category may include CPU socket/core/thread details, motherboard socket/chipset/form factor, RAM type/capacity/speed, GPU chipset/VRAM/interface/power requirement, storage capacity/form factor/interface, PSU wattage/form factor/efficiency and cooling compatibility. These are examples to validate against the actual catalogue, not a fixed schema assumption.
+- Add compatibility relationships where the customer requires them (for example, CPU-to-motherboard socket compatibility or case/motherboard form-factor compatibility). Do not treat compatibility as an ordinary free-text description if the storefront must filter or validate it.
+- Update search/filter behavior for brand, model, SKU, part number, technical attributes, price, availability and compatibility. Keep Persian/Arabic text normalization.
+- Convert product detail UI from size/fit/garment charts to technical specification tables, variant/SKU selection, compatibility notes, warranty/condition and package contents. Keep the existing overall page layout and responsive behavior unless a specific hardware requirement needs a targeted adjustment.
+- Update admin create/edit product forms, product cards, category management, homepage/category merchandising, breadcrumbs, SEO metadata, structured data, FAQ, shipping/returns/support copy and footer content to hardware terminology.
+- Confirm the customer's final store name, logo, brand assets, support contacts and social links before replacing current “تیک بوتیک” identity strings. Do not invent a new store brand or credentials.
+- Decide what happens to existing apparel catalogue data. Preserve it in a backup/export and do not silently reinterpret clothing sizes, fit data or historic orders as hardware attributes. If this repository is being repurposed for a new hardware business, seed a new approved hardware taxonomy and catalogue separately.
+
+#### Domain-conversion acceptance gate
+
+- [ ] No visible customer-facing default category, SEO title, fallback label or product form still assumes clothing.
+- [ ] Hardware product create/edit and detail screens show category-specific technical attributes correctly.
+- [ ] Variant/SKU inventory and cart line identity remain unambiguous for products with multiple purchasable options.
+- [ ] Technical filters return the correct products and remain performant at the agreed catalogue size.
+- [ ] Compatibility claims are backed by approved data and are never fabricated.
+- [ ] Existing financial/order history remains preserved and is not relabeled as hardware inventory or sales.
+
 ## 3. Target module boundaries
 
 The backend remains one deployable Node.js application, but each domain owns its routes, validation, services, repositories, persistence mapping and tests.
@@ -153,7 +188,7 @@ This is the target organization, not a one-commit folder move. Move one bounded 
 |---|---|
 | Auth and users | Signup/login, password reset, sessions, addresses, customer profile and account lifecycle. |
 | Access control | Roles, permissions, least privilege, last-admin safety and route/action authorization. |
-| Catalog | Products, images, technical specifications, attributes and product variants. |
+| Catalog | Hardware products, manufacturer/brand, model/SKU/part identifiers, product media, typed technical specifications and sellable variants. |
 | Categories | Hierarchy, stable slugs, localized names, inherited attributes and filters. |
 | Pricing | Base prices, price rules, promotions, bulk price jobs, price history and previews. |
 | Inventory | Warehouses, stock balances, reservations, movements, adjustments and low-stock rules. |
@@ -181,7 +216,7 @@ The final PostgreSQL model should include at least the following logical entitie
 | Domain | Core tables |
 |---|---|
 | Identity | `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `addresses`, `sessions` (only if session ownership moves from Redis). |
-| Catalogue | `products`, `product_variants`, `product_media`, `product_attributes`, `product_attribute_values`. |
+| Catalogue | `brands`, `manufacturers`, `products`, `product_variants`, `product_media`, `product_attributes`, `product_attribute_values`, `product_compatibility`. |
 | Categories | `categories`, `category_closure` or `category_paths`, `category_attributes`. |
 | Pricing | `price_rules`, `price_history`, `bulk_price_jobs`, `bulk_price_job_items`, `promotions`, `coupons`. |
 | Inventory | `warehouses`, `inventory_balances`, `inventory_reservations`, `stock_movements`, `inventory_adjustments`. |
@@ -360,6 +395,15 @@ Audit every current route and map it to a route acceptance test:
 Add the new accounting, pricing job and financial reporting screens within the existing admin shell. Reuse existing tabs, permission checks, tables, dialogs and design tokens. Add no broad redesign. Ensure permissions are enforced by the API, not merely by hiding frontend controls.
 
 ---
+
+### 8.4 Hardware storefront content and identity
+
+The current SEO metadata, static page descriptions, product detail page and footer use fashion-boutique language. Update these deliberately as part of the hardware-domain work:
+- Replace apparel-oriented public metadata and copy with accurate hardware-store language.
+- Replace the clothing-specific product category labels and product-detail size/fit/measurement UI with category-driven hardware specifications.
+- Use the customer's approved store name and brand assets. Until supplied, keep brand identity configurable and do not invent a logo, support contact, social URL or trust-seal claim.
+- Review product JSON-LD and offer availability using actual product, price, currency and stock data; do not emit unsupported compatibility, rating, warranty or availability claims.
+- Revisit FAQ, returns, warranty, shipping and support wording with the customer. Hardware warranties and compatibility/return conditions differ from apparel policies and must not be fabricated.
 
 ## 9. API contracts and compatibility
 
