@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import { ArrowLeft, ChevronLeft, ChevronRight, Leaf, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Cpu, PackageCheck, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "../lib/axios";
 import { attachCampaignProducts, getCampaignProductIds } from "../lib/campaign-products.js";
@@ -18,26 +18,10 @@ import { getCampaignPath } from "../lib/campaign-url";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const legacyCategoryCards = [
-  { href: "/category/jeans", name: "شلوار جین", imageUrl: "/jeans.jpg" },
-  { href: "/category/t-shirts", name: "تی‌شرت", imageUrl: "/tshirts.jpg" },
-  { href: "/category/shoes", name: "کفش", imageUrl: "/shoes.jpg" },
-  { href: "/category/glasses", name: "عینک", imageUrl: "/glasses.png" },
-  { href: "/category/jackets", name: "کاپشن و کت", imageUrl: "/jackets.jpg" },
-  { href: "/category/suits", name: "کت‌وشلوار", imageUrl: "/suits.jpg" },
-  { href: "/category/bags", name: "کیف", imageUrl: "/bags.jpg" },
-];
-
-const collections = [
-  { title: "استایل روزمره", description: "پایه‌های راحت برای ترکیب روزانه", href: "/looks/daily-style", image: "/jeans.jpg", categories: ["jeans", "t-shirts", "shoes"] },
-  { title: "لایه‌های ماندگار", description: "ترکیب کت و شلوار برای روزهای خنک", href: "/looks/layers", image: "/jackets.jpg", categories: ["jackets", "jeans", "t-shirts"] },
-  { title: "جزئیات تکمیل‌کننده", description: "اکسسوری‌های ساده برای تکمیل ظاهر", href: "/looks/details", image: "/bags.jpg", categories: ["bags", "glasses", "shoes"] },
-];
-
 const benefits = [
-  { icon: Truck, title: "ارسال و تحویل", text: "هزینه و شرط ارسال رایگان را پیش از پرداخت بررسی کنید.", href: "/shipping-policy" },
-  { icon: PackageCheck, title: "مرجوعی و تعویض", text: "وضعیت سیاست مرجوعی و راه هماهنگی پیش از خرید.", href: "/returns-policy" },
-  { icon: ShieldCheck, title: "راهنما و پشتیبانی", text: "پاسخ پرسش‌های خرید و راه ارتباط رسمی فروشگاه.", href: "/support" },
+  { icon: Truck, title: "ارسال و تحویل", text: "هزینه و روش ارسال پیش از پرداخت به‌صورت شفاف نمایش داده می‌شود.", href: "/shipping-policy" },
+  { icon: PackageCheck, title: "مرجوعی و تعویض", text: "شرایط بازگشت کالا و مسیر پیگیری سفارش را پیش از خرید بررسی کنید.", href: "/returns-policy" },
+  { icon: ShieldCheck, title: "راهنما و پشتیبانی", text: "برای پرسش‌های فنی، سفارش‌ها و پیگیری خرید با پشتیبانی در ارتباط باشید.", href: "/support" },
 ];
 
 const CampaignCountdown = ({ endsAt }) => {
@@ -80,15 +64,14 @@ const HomePage = () => {
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
   const { categories: storeCategories, fetchCategories } = useCategoryStore();
-  const categories = storeCategories.length
-    ? storeCategories
-        .filter((category) => !category.parentId && category.showInNavigation !== false)
-        .map((category) => ({
-          href: "/category/" + category.slug,
-          name: category.name?.fa || category.name?.en || category.slug,
-          imageUrl: category.image || "/tshirts.jpg",
-        }))
-    : legacyCategoryCards;
+  const categories = storeCategories
+    .filter((category) => !category.parentId && category.isActive !== false && category.showInNavigation !== false)
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+    .map((category) => ({
+      href: "/category/" + category.slug,
+      name: category.name?.fa || category.name?.en || category.slug,
+      imageUrl: category.image || "/hardware-category-placeholder.svg",
+    }));
   const {
     fetchFeaturedProducts,
     featuredProducts,
@@ -224,7 +207,7 @@ const HomePage = () => {
     product.image.trim() &&
     !(typeof product.stock === "number" && product.stock <= 0)
   );
-  const heroImage = heroCampaign?.image || heroProduct?.image || "/jackets.jpg";
+  const heroImage = heroCampaign?.image || heroProduct?.image || "/hardware-category-placeholder.svg";
   useEffect(() => setHeroImageFailed(false), [heroImage]);
   const secondaryCampaigns = campaigns.filter(
     (campaign) => !heroCampaign || campaign._id !== heroCampaign._id
@@ -266,18 +249,6 @@ const HomePage = () => {
     }
   };
 
-  const sampleProductsForLook = (collection) => {
-    const used = new Set();
-    return collection.categories
-      .map((category) => catalogProducts.find((product) => product.category === category && !used.has(product._id)))
-      .filter((product) => {
-        if (!product) return false;
-        used.add(product._id);
-        return true;
-      })
-      .slice(0, 3);
-  };
-
   return (
     <main ref={pageRef} dir="rtl" className="min-h-screen overflow-hidden bg-canvas text-ink">
       
@@ -288,15 +259,15 @@ const HomePage = () => {
               {!heroImageFailed ? (
                 <img
                   src={heroImage}
-                  alt={heroCampaign ? heroCampaign.title : heroProduct?.name || "پوشاک تیک بوتیک"}
+                  alt={heroCampaign ? heroCampaign.title : heroProduct?.name || "محصولات سخت‌افزاری فروشگاه"}
                   className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center p-6 sm:p-8 lg:p-10"}`}
                   fetchPriority="high"
                   onError={() => setHeroImageFailed(true)}
                 />
               ) : (
                 <div role="img" aria-label="تصویر پیشنهادی در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-border via-surface-raised to-surface-raised p-8 text-center text-muted">
-                  <span className="flex h-20 w-20 items-center justify-center rounded-full border border-border-strong bg-surface/45 font-serif text-4xl" aria-hidden="true">T</span>
-                  <span className="max-w-xs text-sm font-medium leading-6">برای مشاهده محصولات پیشنهادی، مجموعه تیک بوتیک را ببینید.</span>
+                  <span className="flex h-20 w-20 items-center justify-center rounded-full border border-border-strong bg-surface/45 text-brand" aria-hidden="true"><Cpu size={38} /></span>
+                  <span className="max-w-xs text-sm font-medium leading-6">قطعات و تجهیزات کامپیوتر را بر اساس دسته‌بندی مرور کنید.</span>
                 </div>
               )}
               <div className={`absolute inset-0 ${heroCampaign ? "bg-gradient-to-l from-strong/30 via-transparent to-transparent" : "bg-gradient-to-t from-surface-muted/20 via-transparent to-transparent"}`} />
@@ -311,7 +282,7 @@ const HomePage = () => {
                   className="absolute bottom-4 right-4 flex max-w-[calc(100%-2rem)] items-center gap-3 rounded-2xl border border-white/70 bg-surface/90 p-3 text-ink shadow-lg backdrop-blur-md transition hover:bg-surface focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:bottom-5 sm:right-5 sm:p-4"
                 >
                   <span className="min-w-0">
-                    <span className="block text-[10px] font-medium text-brand sm:text-xs">از محصولات تیک بوتیک</span>
+                    <span className="block text-[10px] font-medium text-brand sm:text-xs">از محصولات فروشگاه</span>
                     <span className="mt-1 block line-clamp-1 text-xs font-semibold sm:text-sm">{heroProduct.name}</span>
                   </span>
                   <span className="shrink-0 text-xs font-bold tabular-nums text-ink sm:text-sm">{formatPrice(heroProduct.price)}</span>
@@ -336,17 +307,17 @@ const HomePage = () => {
             <div className="relative z-10 order-2 min-w-0 px-5 py-8 sm:px-10 sm:py-12 lg:order-1 lg:px-12 lg:py-16 xl:px-14 xl:py-20">
               <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand sm:mb-5 sm:text-xs sm:tracking-[0.22em]">
                 <Sparkles size={15} aria-hidden="true" />
-                {heroCampaign ? "پیشنهاد ویژه تیک بوتیک" : "انتخاب‌های هماهنگ برای هر روز"}
+                {heroCampaign ? "پیشنهاد ویژه فروشگاه سخت‌افزار" : "قطعات مناسب برای سیستم شما"}
               </p>
               <h1 className="max-w-xl font-serif text-3xl font-medium leading-[1.12] tracking-tight text-ink sm:text-5xl sm:leading-[1.08] xl:text-6xl">
                 {heroCampaign ? heroCampaign.title : (
-                  <>استایلی که برای تو <br className="hidden sm:block" /><span className="italic text-brand">ساخته شده.</span></>
+                  <>سیستم بعدی‌ات را با <br className="hidden sm:block" /><span className="italic text-brand">انتخاب درست بساز.</span></>
                 )}
               </h1>
               <p className="mt-4 max-w-md text-sm leading-6 text-muted sm:mt-6 sm:text-lg sm:leading-7">
                 {heroCampaign
                   ? heroCampaign.description || "این پیشنهاد را ببینید و محصولات مرتبط را انتخاب کنید."
-                  : "از میان پوشاک و اکسسوری‌های فروشگاه، انتخابی هماهنگ با سبک خودت پیدا کن."}
+                  : "مشخصات فنی را بررسی کن و قطعه‌ای متناسب با نیاز، بودجه و سازگاری سیستم خودت پیدا کن."}
               </p>
               <div className="mt-6 flex flex-col items-stretch gap-2 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                 {heroCampaign ? (
@@ -363,7 +334,7 @@ const HomePage = () => {
                 </a>
               </div>
               <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 border-t border-border-strong pt-4 text-[11px] text-muted sm:mt-8 sm:gap-x-6 sm:gap-y-3 sm:pt-5 sm:text-sm">
-                <span className="inline-flex items-center gap-2"><Leaf size={16} aria-hidden="true" />انتخاب‌های روزمره</span>
+                <span className="inline-flex items-center gap-2"><Cpu size={16} aria-hidden="true" />مشخصات فنی کاربردی</span>
                 <span className="inline-flex items-center gap-2"><PackageCheck size={16} aria-hidden="true" />اطلاعات روشن محصول</span>
               </div>
             </div>
@@ -373,18 +344,24 @@ const HomePage = () => {
         <section id="shop-by-category" data-gsap-reveal className="scroll-mt-28 pt-12 sm:pt-16 lg:pt-20">
           <div className="mb-5 flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">انتخاب مناسب شما</p>
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand sm:mb-2 sm:text-xs sm:tracking-[0.2em]">کالای موردنیاز شما</p>
               <h2 className="font-serif text-2xl font-medium tracking-tight text-ink sm:text-4xl">خرید بر اساس دسته‌بندی</h2>
-              <p className="mt-2 max-w-md text-xs leading-5 text-muted sm:text-sm sm:leading-6">دسته‌بندی موردنظرتان را انتخاب کنید.</p>
+              <p className="mt-2 max-w-md text-xs leading-5 text-muted sm:text-sm sm:leading-6">دسته‌های فعال را مدیر فروشگاه ایجاد و مرتب می‌کند.</p>
             </div>
           </div>
           <div
             aria-label="دسته‌بندی‌های فروشگاه"
             className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4 2xl:grid-cols-5"
           >
-            {categories.map((category) => (
-              <CategoryItem key={category.name} category={category} />
-            ))}
+            {categories.length ? categories.map((category) => (
+              <CategoryItem key={category.href} category={category} />
+            )) : (
+              <div className="col-span-full rounded-2xl border border-dashed border-border bg-surface px-5 py-8 text-center">
+                <Cpu size={26} className="mx-auto text-brand" aria-hidden="true" />
+                <p className="mt-3 text-sm font-semibold text-ink-strong">هنوز دسته‌بندی فعالی ایجاد نشده است.</p>
+                <p className="mt-1 text-xs leading-6 text-muted">مدیر فروشگاه می‌تواند از پنل مدیریت، دسته‌ها و زیردسته‌های دلخواه را ایجاد کند.</p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -506,39 +483,6 @@ const HomePage = () => {
         </section>
 
         {featuredProducts.length > 0 && <section className="mt-12 border-t border-border pt-8 sm:mt-16 sm:pt-12"><FeaturedProducts featuredProducts={featuredProducts} /></section>}
-
-        <section data-gsap-reveal className="pt-12 sm:pt-16 lg:pt-20" aria-labelledby="collections-heading">
-          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div><p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">انتخاب‌های هماهنگ</p><h2 id="collections-heading" className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">مجموعه‌های پیشنهادی</h2></div>
-            <p className="max-w-md text-sm leading-6 text-muted">ترکیب‌های ساده برای شروع یک انتخاب تازه.</p>
-          </div>
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-3 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-3 md:gap-4">
-            {collections.map((collection) => {
-              const lookProducts = sampleProductsForLook(collection);
-              return (
-                <Link to={collection.href} key={collection.title} className="group relative isolate flex min-h-[260px] min-w-[84%] snap-center items-end overflow-hidden rounded-2xl bg-surface-muted p-4 sm:min-h-[290px] sm:p-5 md:min-w-0">
-                  <img src={collection.image} alt="" loading="lazy" className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-strong/95 via-strong/65 to-strong/10" />
-                  <div className="w-full text-white">
-                    <h3 className="font-serif text-2xl font-medium">{collection.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-white/85">{collection.description}</p>
-                    {lookProducts.length > 0 && (
-                      <div className="mt-4 grid grid-cols-2 gap-2" aria-label="نمونه‌هایی از کالاهای این استایل">
-                        {lookProducts.slice(0, 2).map((product) => (
-                          <span key={product._id} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/25 bg-surface/95 p-2 text-ink shadow-sm backdrop-blur-sm">
-                            {product.image ? <img src={product.image} alt="" loading="lazy" className="h-12 w-10 shrink-0 rounded-lg bg-surface-muted object-cover" /> : <span className="h-12 w-10 shrink-0 rounded-lg bg-surface-muted" />}
-                            <span className="min-w-0"><span className="block line-clamp-2 text-[11px] font-semibold leading-4">{product.name}</span><span className="mt-1 block text-[10px] tabular-nums text-brand">{formatPrice(product.price)}</span></span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">مشاهده استایل<ArrowLeft size={16} aria-hidden="true" /></span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
 
         <section data-gsap-reveal className="mt-8 grid gap-3 rounded-2xl border border-border bg-surface p-4 sm:grid-cols-3 sm:gap-5 sm:p-6" aria-label="اطلاعات پیش از خرید">
           {benefits.map(({ icon: Icon, title, text, href }) => (

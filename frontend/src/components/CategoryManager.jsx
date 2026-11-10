@@ -344,7 +344,7 @@ const CategoryManager = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>نام فارسی
               <input className={fieldClass} required maxLength={120} value={form.name.fa} onChange={(event) => updateLocalized("name", "fa", event.target.value)} />
-              <span className={hintClass}>عنوانی که مشتری در فروشگاه می‌بیند؛ کوتاه و مشخص بنویسید، مثل «مانتو» یا «شلوار جین».</span>
+              <span className={hintClass}>عنوانی که مشتری در فروشگاه می‌بیند؛ کوتاه و مشخص بنویسید، مثل «پردازنده» یا «کارت گرافیک».</span>
             </label>
             <label className={labelClass}>English name
               <input className={fieldClass} required maxLength={120} dir="ltr" value={form.name.en} onChange={(event) => updateLocalized("name", "en", event.target.value)} />

@@ -29,17 +29,6 @@ import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 
-const categories = [
-  ["", "همه دسته‌بندی‌ها"],
-  ["jeans", "شلوار جین"],
-  ["t-shirts", "تی‌شرت"],
-  ["shoes", "کفش"],
-  ["glasses", "عینک"],
-  ["jackets", "کت و کاپشن"],
-  ["suits", "کت‌وشلوار"],
-  ["bags", "کیف"],
-];
-
 const sortOptions = [
   ["newest", "جدیدترین"],
   ["oldest", "قدیمی‌ترین"],
@@ -58,7 +47,7 @@ const defaultFilters = {
 
 const categoryLabel = (value, dynamicCategories = []) =>
   dynamicCategories.find((category) => category.slug === value)?.name?.fa ||
-  categories.find(([category]) => category === value)?.[1] || value || "مجموعه";
+  dynamicCategories.find((category) => category.slug === value)?.name?.en || value || "همه دسته‌بندی‌ها";
 
 const categoryPath = (category, categories) => {
   const byId = new Map(categories.map((item) => [String(item._id), item]));
@@ -77,7 +66,7 @@ const fieldClass =
 
 const readSavedTheme = () => {
   try {
-    return typeof window !== "undefined" && window.localStorage.getItem("tik-boutique-theme") === "dark"
+    return typeof window !== "undefined" && window.localStorage.getItem("computer-hardware-theme") === "dark"
       ? "dark"
       : "light";
   } catch {
@@ -91,32 +80,14 @@ const Navbar = () => {
   const { cart } = useCartStore();
   const { items: savedProducts } = useWishlistStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
-  const categories = useMemo(() => {
-    if (!dynamicCategories.length) return [
-      ["", "همه دسته‌بندی‌ها"], ["jeans", "شلوار جین"], ["t-shirts", "تی‌شرت"],
-      ["shoes", "کفش"], ["glasses", "عینک"], ["jackets", "کت و کاپشن"],
-      ["suits", "کت‌وشلوار"], ["bags", "کیف"],
-    ];
-    return [
-      ["", "همه دسته‌بندی‌ها"],
-      ...dynamicCategories.filter((category) => category.showInNavigation !== false)
-        .map((category) => [category.slug, categoryPath(category, dynamicCategories)]),
-    ];
-  }, [dynamicCategories]);
+  const categories = useMemo(() => [
+    ["", "همه دسته‌بندی‌ها"],
+    ...dynamicCategories
+      .filter((category) => category.isActive !== false && category.showInNavigation !== false)
+      .map((category) => [category.slug, categoryPath(category, dynamicCategories)]),
+  ], [dynamicCategories]);
 
   const navigationTree = useMemo(() => {
-    if (!dynamicCategories.length) {
-      return {
-        roots: categories.filter(([slug]) => Boolean(slug)).map(([slug, name]) => ({
-          _id: "legacy-" + slug,
-          slug,
-          name: { fa: name },
-          parentId: null,
-        })),
-        childrenByParent: new Map(),
-      };
-    }
-
     const navigable = dynamicCategories.filter(
       (category) => category.isActive !== false && category.showInNavigation !== false,
     );
@@ -156,7 +127,7 @@ const Navbar = () => {
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (themeColorMeta) themeColorMeta.setAttribute("content", theme === "dark" ? "#090a0c" : "#f7f5f0");
     try {
-      window.localStorage.setItem("tik-boutique-theme", theme);
+      window.localStorage.setItem("computer-hardware-theme", theme);
     } catch {
       // Theme still applies for this session when browser storage is unavailable.
     }
@@ -909,10 +880,10 @@ const Navbar = () => {
 
             <Link
               to="/"
-              aria-label="صفحه اصلی تیک بوتیک"
+              aria-label="صفحه اصلی Computer Hardware"
               className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap font-serif text-2xl font-semibold tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
             >
-              تیک بوتیک
+              Computer Hardware
             </Link>
 
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start min-[1680px]:order-none min-[1680px]:basis-auto min-[1680px]:col-start-1 min-[1680px]:row-start-1 min-[1680px]:w-full min-[1680px]:flex-initial min-[1680px]:justify-self-stretch">
@@ -1055,7 +1026,7 @@ const Navbar = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="font-serif text-2xl font-semibold tracking-tight text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)]"
                 >
-                  تیک بوتیک
+                  Computer Hardware
                 </Link>
                 <p id="store-nav-heading" className="mt-1 text-xs text-[var(--ui-muted)]">منوی فروشگاه</p>
               </div>
@@ -1083,14 +1054,14 @@ const Navbar = () => {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-[var(--ui-accent)]">حساب کاربری شما</p>
-                      <p className="mt-1 break-words text-sm font-bold text-[var(--ui-text)]">{user.name || user.email || "کاربر تیک بوتیک"}</p>
+                      <p className="mt-1 break-words text-sm font-bold text-[var(--ui-text)]">{user.name || user.email || "کاربر Computer Hardware"}</p>
                       {isAdmin && <span className="mt-2 inline-flex rounded-full bg-[var(--ui-strong-surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ui-inverse-text)]">مدیر فروشگاه</span>}
                     </div>
                   </div>
                 </section>
               ) : (
                 <section className="rounded-2xl bg-[var(--ui-strong-surface)] p-4 text-[var(--ui-inverse-text)]">
-                  <p className="text-xs font-semibold tracking-wide text-[var(--ui-accent)]">به تیک بوتیک خوش آمدید</p>
+                  <p className="text-xs font-semibold tracking-wide text-[var(--ui-accent)]">به Computer Hardware خوش آمدید</p>
                   <h2 className="mt-2 font-serif text-xl font-medium">استایل دلخواهتان را پیدا کنید.</h2>
                   <p className="mt-2 text-xs leading-5 text-white/70">وارد حساب شوید یا برای تجربه خرید شخصی‌تر ثبت‌نام کنید.</p>
                   <div className="mt-4 grid grid-cols-2 gap-2">
@@ -1294,7 +1265,7 @@ const Navbar = () => {
                   aria-controls="mobile-search-suggestions"
                   aria-expanded={activeSearchSurface === "mobile" && suggestionQuery.length >= 2}
                   autoComplete="off"
-                  placeholder="مثلاً کت، کیف، شلوار جین..."
+                  placeholder="مثلاً پردازنده، کارت گرافیک، حافظه یا مانیتور..."
                   className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[var(--ui-text)] outline-none placeholder:text-[var(--ui-muted)]"
                 />
               </div>
