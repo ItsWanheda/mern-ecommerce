@@ -18,7 +18,7 @@ const categories = [
 
 test("inherits parent attributes and keeps child-only attributes", () => {
   const definitions = resolveCategoryAttributeDefinitions(categories[1], categories);
-  assert.deepEqual(definitions.map((item) => item.key), ["base_clock", "manufacturer", "socket_type", "internal_note"]);
+  assert.deepEqual(definitions.map((item) => item.key), ["base_clock", "internal_note", "manufacturer", "socket_type"]);
 });
 
 test("child-specific definitions override inherited keys and non-inherited keys stay scoped", () => {
