@@ -11,6 +11,10 @@ import NextRouteSync from "@/src/components/NextRouteSync.jsx";
 import { getAuthReturnPath } from "@/src/lib/auth-route-state.js";
 import { useUserStore } from "@/src/stores/useUserStore.js";
 import { useCartStore } from "@/src/stores/useCartStore.js";
+import {
+  isInitialAppShellReady,
+  markInitialAppShellReady,
+} from "@/src/lib/initial-app-shell-state.js";
 
 const AUTH_ENTRY_ROUTES = new Set(["/login", "/signup"]);
 
@@ -54,9 +58,12 @@ function AccountRuntime({ children }) {
 }
 
 export default function AccountShell({ children }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => isInitialAppShellReady());
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    markInitialAppShellReady();
+    setMounted(true);
+  }, []);
 
   // React Router reads browser history, so create it only after hydration.
   if (!mounted) return <LoadingSpinner />;
