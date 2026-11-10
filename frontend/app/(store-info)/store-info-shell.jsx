@@ -15,13 +15,17 @@ import { useUserStore } from "@/src/stores/useUserStore.js";
 import { useCartStore } from "@/src/stores/useCartStore.js";
 import { isProtectedCustomerRoute } from "@/src/lib/next-route-paths.js";
 import { buildAuthPagePath } from "@/src/lib/auth-route-state.js";
+import {
+  isInitialAppShellReady,
+  markInitialAppShellReady,
+} from "@/src/lib/initial-app-shell-state.js";
 
 function StoreInfoChrome({ children }) {
   const location = useLocation();
   const router = useRouter();
   const { user, checkAuth, checkingAuth } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
-  const hideMobileBottomNavigation = /^\/product\//.test(location.pathname) ||
+  const hideMobileBottomNavigation = /^\\/product\\//.test(location.pathname) ||
     location.pathname.startsWith("/secret-dashboard") ||
     ["/login", "/signup", "/forgot-password", "/reset-password", "/purchase-success", "/purchase-cancel"].includes(location.pathname);
 
@@ -64,9 +68,12 @@ function StoreInfoChrome({ children }) {
 }
 
 export default function StoreInfoShell({ children }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => isInitialAppShellReady());
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    markInitialAppShellReady();
+    setMounted(true);
+  }, []);
 
   // BrowserRouter reads browser history; defer its construction until hydration.
   if (!mounted) return <LoadingSpinner />;
