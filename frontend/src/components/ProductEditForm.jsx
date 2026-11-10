@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ExternalLink, ImagePlus, LoaderCircle, Save, X, Cpu } from "lucide-react";
+import { ExternalLink, ImagePlus, LoaderCircle, Save, X } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";

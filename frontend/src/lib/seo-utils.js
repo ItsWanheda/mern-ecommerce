@@ -109,7 +109,7 @@ export const PRIVATE_ROUTE_META = {
 };
 
 const FILTER_QUERY_KEYS = new Set([
-  "q", "category", "minPrice", "maxPrice", "size", "color", "fit",
+  "q", "category", "minPrice", "maxPrice",
   "brand", "inStock", "attributes", "sort",
 ]);
 

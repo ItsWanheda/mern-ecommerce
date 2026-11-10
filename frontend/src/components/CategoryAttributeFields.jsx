@@ -1,5 +1,3 @@
-import React from "react";
-
 export const validateCategoryAttributeValues = (definitions, values) => {
   for (const attribute of definitions || []) {
     const value = values?.[attribute.key];

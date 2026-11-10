@@ -315,7 +315,7 @@ const CategoryManager = () => {
               <Lightbulb size={16} className="text-[var(--ui-accent)]" aria-hidden="true" /> نام و نشانی دسته
             </h4>
             <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
-              نام فارسی عنوان قابل‌مشاهده در فروشگاه است. شناسه لاتین بخشی از نشانی صفحه، مانند <code dir="ltr" className="rounded bg-[var(--ui-surface-raised)] px-1">/category/womens-coats</code>، است و پس از ایجاد قفل می‌شود تا لینک‌های قبلی نشکنند.
+              نام فارسی عنوان قابل‌مشاهده در فروشگاه است. شناسه لاتین بخشی از نشانی صفحه، مانند <code dir="ltr" className="rounded bg-[var(--ui-surface-raised)] px-1">/category/graphics-cards</code>، است و پس از ایجاد قفل می‌شود تا لینک‌های قبلی نشکنند.
             </p>
             <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
               ترتیب نمایش عددی است؛ عدد کوچک‌تر زودتر نمایش داده می‌شود. در صورت برابر بودن ترتیب، نام دسته برای مرتب‌سازی استفاده می‌شود.
@@ -425,7 +425,7 @@ const CategoryManager = () => {
                     <select className={fieldClass} value={attribute.type} onChange={(event) => updateAttribute(index, "type", event.target.value)}>
                       <option value="select">یک گزینه</option><option value="multi-select">چند گزینه</option><option value="boolean">بله / خیر</option><option value="number">عدد</option><option value="text">متن</option>
                     </select>
-                    <span className={hintClass}>یک گزینه = انتخاب تکی؛ چند گزینه = انتخاب هم‌زمان؛ بله/خیر = چک‌باکس؛ عدد و متن = ورود مقدار توسط مدیر محصول.</span>
+                    <span className={hintClass}>یک گزینه = انتخاب تکی؛ چند گزینه = انتخاب هم‌زمان؛ بله/خیر = انتخاب وضعیت؛ عدد و متن = ورود مقدار توسط مدیر محصول.</span>
                   </label>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -433,7 +433,7 @@ const CategoryManager = () => {
                     <input className={fieldClass} maxLength={24} value={attribute.unit.fa} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, fa: event.target.value })} placeholder="گیگاهرتز، وات، مگاهرتز" />
                   </label>
                   <label className={labelClass}>English unit (optional)
-                    <input className={fieldClass} maxLength={24} dir="ltr" value={attribute.unit.en} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, en: event.target.value })} placeholder="cm, g, %" />
+                    <input className={fieldClass} maxLength={24} dir="ltr" value={attribute.unit.en} onChange={(event) => updateAttribute(index, "unit", { ...attribute.unit, en: event.target.value })} placeholder="GHz, W, MHz" />
                   </label>
                 </div>
                 <label className={labelClass + " max-w-xs"}>ترتیب نمایش در مشخصات محصول
