@@ -23,7 +23,7 @@ import {
 function StoreInfoChrome({ children }) {
   const location = useLocation();
   const router = useRouter();
-  const { user, checkAuth, checkingAuth } = useUserStore();
+  const { user, checkAuth, checkingAuth, authChecked } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
   const hideMobileBottomNavigation = /^\\/product\\//.test(location.pathname) ||
     location.pathname.startsWith("/secret-dashboard") ||
@@ -50,7 +50,8 @@ function StoreInfoChrome({ children }) {
     router.replace(buildAuthPagePath("/login", returnPath));
   }, [location.hash, location.pathname, location.search, requiresAuthentication, router]);
 
-  if (checkingAuth || requiresAuthentication) return <LoadingSpinner />;
+  // Only the first authentication check may block the whole screen.
+  if ((!authChecked && checkingAuth) || requiresAuthentication) return <LoadingSpinner />;
 
   return (
     <div className={"min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)] " + (hideMobileBottomNavigation ? "" : "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0")}>
