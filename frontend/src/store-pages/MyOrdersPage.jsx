@@ -110,7 +110,7 @@ const MyOrdersPage = () => {
                         <div key={`${order._id}-${index}`} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--ui-canvas)] p-3">
                           <div className="min-w-0">
                             <p className="break-words text-sm font-semibold text-[var(--ui-text)]">{item.productName || item.product?.name || "محصول"}</p>
-                            <p className="mt-1 text-xs text-[var(--ui-muted)]">تعداد: {new Intl.NumberFormat("fa-IR").format(item.quantity)}{item.size ? ` · سایز ${item.size}` : ""}{item.color ? ` · ${item.color}` : ""}</p>
+                            <p className="mt-1 text-xs text-[var(--ui-muted)]">تعداد: {new Intl.NumberFormat("fa-IR").format(item.quantity)}{item.size || item.color ? ` · گزینه: ${[item.size, item.color].filter(Boolean).join(" / ")}` : ""}</p>
                           </div>
                           <p dir="ltr" className="shrink-0 text-sm font-semibold text-[var(--ui-accent)]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
                         </div>

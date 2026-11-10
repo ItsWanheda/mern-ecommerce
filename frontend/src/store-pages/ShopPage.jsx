@@ -10,16 +10,6 @@ import ProductCard from "../components/ProductCard";
 import { formatPrice } from "../lib/commerce";
 import { useCategoryStore } from "../stores/useCategoryStore";
 
-const categoryLabels = {
-  jeans: "شلوار جین",
-  "t-shirts": "تی‌شرت",
-  shoes: "کفش",
-  glasses: "عینک",
-  jackets: "کت و کاپشن",
-  suits: "کت‌وشلوار",
-  bags: "کیف",
-};
-
 const sortLabels = {
   oldest: "قدیمی‌ترین",
   priceAsc: "ارزان‌ترین",
@@ -88,7 +78,7 @@ const ShopPage = () => {
   const maxPrice = searchParams.get("maxPrice") || "";
   const sort = searchParams.get("sort") || "newest";
   const activeFilters = [
-    category ? { key: "category", label: "دسته‌بندی: " + (categories.find((item) => item.slug === category)?.name?.fa || categoryLabels[category] || category) } : null,
+    category ? { key: "category", label: "دسته‌بندی: " + (categories.find((item) => item.slug === category)?.name?.fa || categories.find((item) => item.slug === category)?.name?.en || category) } : null,
     minPrice ? { key: "minPrice", label: `از ${formatPrice(minPrice)}` } : null,
     maxPrice ? { key: "maxPrice", label: `تا ${formatPrice(maxPrice)}` } : null,
     sort !== "newest" && sortLabels[sort]
@@ -114,7 +104,7 @@ const ShopPage = () => {
       dir="rtl"
       className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8"
     >
-      <PageMeta title="فروشگاه پوشاک و اکسسوری" description="جست‌وجو، فیلتر و خرید محصولات فروشگاه تیک بوتیک." path="/shop" type="collection" itemList={products} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) ? "noindex, follow" : "index, follow, max-image-preview:large"} />
+      <PageMeta title="فروشگاه قطعات کامپیوتر" description="جست‌وجو، فیلتر و خرید قطعات و تجهیزات کامپیوتر با مشخصات فنی روشن." path="/shop" type="collection" itemList={products} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) ? "noindex, follow" : "index, follow, max-image-preview:large"} />
       <div className="mx-auto max-w-[1920px]">
         <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:pb-6">
           <div className="min-w-0">
