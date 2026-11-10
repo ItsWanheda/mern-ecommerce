@@ -94,15 +94,9 @@ The current source and its documentation indicate the following work remains or 
 
 ### 2.4 Critical domain conversion: fashion storefront to computer-hardware storefront
 
-The source branch is branded and modeled as a Persian fashion boutique, not a hardware catalogue. This is a first-class conversion requirement, not a cosmetic copy change.
+The original source baseline was branded and modeled as a Persian fashion boutique, not a hardware catalogue. The conversion work is now implemented on `feat/computer-hardware-store`; this section records what is complete and what still requires catalogue/business decisions.
 
-Evidence in the current source includes:
-- `backend/models/product.model.js` has apparel-oriented `sizes`, `colors`, `fit`, `sizeChart` fields and garment measurements such as chest, waist, hips and length.
-- Product variants are currently keyed around `size` and `color`.
-- `frontend/src/store-pages/ProductDetailsPage.jsx` contains clothing fit labels, garment measurement labels and a size-guide interaction.
-- `frontend/src/components/CreateProductForm.jsx` and `ProductEditForm.jsx` expose clothing size, color, fit and size-chart form fields.
-- Product cards and category fallbacks contain clothing categories such as jeans, T-shirts, shoes, jackets, suits and bags.
-- Store metadata/footer content still identifies “تیک بوتیک” as an apparel/accessories store.
+The original baseline contained the legacy fields and screens described below. The current feature branch has removed the customer-facing clothing assumptions, but the old database fields remain in the backend model for compatibility with existing product records and historical orders.
 
 #### Required hardware-domain conversion
 
@@ -118,14 +112,28 @@ Evidence in the current source includes:
 - Confirm the customer's final store name, logo, brand assets, support contacts and social links before replacing current “تیک بوتیک” identity strings. Do not invent a new store brand or credentials.
 - Decide what happens to existing apparel catalogue data. Preserve it in a backup/export and do not silently reinterpret clothing sizes, fit data or historic orders as hardware attributes. If this repository is being repurposed for a new hardware business, seed a new approved hardware taxonomy and catalogue separately.
 
-#### Domain-conversion acceptance gate
+#### Implementation status on `feat/computer-hardware-store`
 
-- [ ] No visible customer-facing default category, SEO title, fallback label or product form still assumes clothing.
-- [ ] Hardware product create/edit and detail screens show category-specific technical attributes correctly.
-- [ ] Variant/SKU inventory and cart line identity remain unambiguous for products with multiple purchasable options.
-- [ ] Technical filters return the correct products and remain performant at the agreed catalogue size.
+- [x] Customer-facing clothing category fallbacks, size/fit/measurement selectors, apparel copy, old fashion collections and apparel image assets have been removed from the frontend.
+- [x] Product create/edit forms resolve typed, localized attributes from the selected Admin-managed category and its inherited ancestors.
+- [x] Product detail pages, SEO structured data and category filters use the category-defined technical attributes.
+- [x] Admin-managed category trees remain the source of truth. The migration script no longer inserts a hardcoded clothing catalogue or invents a hardware taxonomy.
+- [x] Existing legacy apparel fields and order snapshots are preserved. Records with non-empty legacy variants, sizes, colors, fit or size-chart data are prevented from being added/adjusted/checked out until an Admin migrates them.
+- [x] Automated tests cover category inheritance, validation, product specification output and legacy-catalogue purchase guards.
+- [ ] The production database still needs an Admin review: deactivate or archive any old apparel categories already present, create the customer-approved hardware category tree, and migrate/retire old products. No database records were bulk-deleted or silently reclassified by this frontend change.
+- [ ] A generalized hardware SKU/option model with per-SKU stock and price overrides is not implemented; old apparel variants are intentionally blocked rather than misrepresented as hardware variants.
+- [ ] Compatibility relationships and compatibility validation remain future work until approved hardware data is supplied.
+- [ ] Filter query performance must still be measured against the agreed production catalogue size.
+- [ ] The displayed name “Computer Hardware” is a provisional generic identity. The final store name, logo and any support/social/trust-seal details still require customer approval.
+
+#### Remaining domain-conversion acceptance gate
+
+- [x] No visible customer-facing default category, SEO title, fallback label or product form assumes clothing.
+- [x] Hardware product create/edit and detail screens display Admin-defined category-specific technical attributes.
+- [ ] Generalized hardware SKU/variant inventory is supported for multiple purchasable options.
+- [x] Technical filters are driven by Admin-enabled category attributes; production-scale performance is not yet measured.
 - [ ] Compatibility claims are backed by approved data and are never fabricated.
-- [ ] Existing financial/order history remains preserved and is not relabeled as hardware inventory or sales.
+- [x] Existing financial/order history is preserved and old apparel records are not silently relabeled as hardware inventory or sales.
 
 ## 3. Target module boundaries
 
@@ -398,12 +406,13 @@ Add the new accounting, pricing job and financial reporting screens within the e
 
 ### 8.4 Hardware storefront content and identity
 
-The current SEO metadata, static page descriptions, product detail page and footer use fashion-boutique language. Update these deliberately as part of the hardware-domain work:
-- Replace apparel-oriented public metadata and copy with accurate hardware-store language.
-- Replace the clothing-specific product category labels and product-detail size/fit/measurement UI with category-driven hardware specifications.
-- Use the customer's approved store name and brand assets. Until supplied, keep brand identity configurable and do not invent a logo, support contact, social URL or trust-seal claim.
-- Review product JSON-LD and offer availability using actual product, price, currency and stock data; do not emit unsupported compatibility, rating, warranty or availability claims.
-- Revisit FAQ, returns, warranty, shipping and support wording with the customer. Hardware warranties and compatibility/return conditions differ from apparel policies and must not be fabricated.
+The first hardware-domain frontend conversion is implemented on `feat/computer-hardware-store`:
+- Public metadata, static page descriptions, product cards/details, footer and structured product properties now use generic hardware terminology and category-defined attributes.
+- The old clothing-specific size/fit/measurement form and product-detail interactions have been removed.
+- The category migration utility now only backfills IDs for categories that already exist; it does not seed an apparel list or invent a hardware taxonomy.
+- The product structured data emits technical properties from stored `attributes` and retains the actual price/currency/stock rules.
+- The final public brand name, logo and store-specific support/social/trust-seal details remain unconfirmed. The current “Computer Hardware” display name is provisional.
+- Hardware-specific warranty, compatibility and return policy details still need customer approval; no compatibility claims or warranty terms are fabricated.
 
 ### 8.5 Reference-led UI/UX audit and implementation (additional workstream)
 
