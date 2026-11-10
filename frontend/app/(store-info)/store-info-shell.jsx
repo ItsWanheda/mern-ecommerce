@@ -25,7 +25,7 @@ function StoreInfoChrome({ children }) {
   const router = useRouter();
   const { user, checkAuth, checkingAuth, authChecked } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
-  const hideMobileBottomNavigation = /^\\/product\\//.test(location.pathname) ||
+  const hideMobileBottomNavigation = /^\/product\//.test(location.pathname) ||
     location.pathname.startsWith("/secret-dashboard") ||
     ["/login", "/signup", "/forgot-password", "/reset-password", "/purchase-success", "/purchase-cancel"].includes(location.pathname);
 
