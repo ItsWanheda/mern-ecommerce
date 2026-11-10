@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { ArrowUpLeft, Heart, ShoppingCart } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
@@ -9,30 +9,15 @@ import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 const ProductCard = ({ product }) => {
   const { addToCart } = useCartStore();
   const { isSaved, toggleSaved } = useWishlistStore();
-  const navigate = useNavigate();
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [product.image]);
-  const hasVariants = Array.isArray(product.variants) && product.variants.length > 0;
-  const outOfStock = hasVariants
-    ? product.variants.every((variant) => Number(variant.stock) <= 0)
-    : isOutOfStock(product);
-  const colors = getProductColors(product);
-  const sizes = Array.isArray(product.sizes) && product.sizes.length
-    ? product.sizes
-    : [...new Set((Array.isArray(product.variants) ? product.variants : []).map((variant) => variant.size).filter(Boolean))];
+  const requiresCatalogUpdate = Array.isArray(product.variants) && product.variants.length > 0;
+  const outOfStock = requiresCatalogUpdate || isOutOfStock(product);
   const saved = isSaved(product._id);
-  const variantStock = hasVariants
-    ? product.variants.reduce((total, variant) => total + Math.max(0, Number(variant.stock) || 0), 0)
-    : null;
-  const lowStock = hasVariants
-    ? variantStock > 0 && variantStock <= 3
-    : isStockTracked(product) && product.stock > 0 && product.stock <= 3;
+  const lowStock = !requiresCatalogUpdate && isStockTracked(product) && product.stock > 0 && product.stock <= 3;
 
   const handleAddToCart = () => {
-    if (hasVariants) {
-      navigate("/product/" + product._id);
-      return;
-    }
+    if (requiresCatalogUpdate) return toast.error("این کالا هنوز به ساختار مشخصات فنی و موجودی جدید منتقل نشده است.");
     if (outOfStock) return toast.error("این محصول در حال حاضر موجود نیست");
     addToCart(product);
   };
@@ -72,7 +57,11 @@ const ProductCard = ({ product }) => {
           <Heart size={18} fill={saved ? "currentColor" : "none"} aria-hidden="true" />
         </button>
 
-        {outOfStock && <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-strong/95 px-3 py-1.5 text-xs font-semibold text-white shadow-sm">ناموجود</span>}
+        {requiresCatalogUpdate ? (
+          <span className="pointer-events-none absolute bottom-3 left-3 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 shadow-sm">نیازمند به‌روزرسانی</span>
+        ) : outOfStock ? (
+          <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-strong/95 px-3 py-1.5 text-xs font-semibold text-white shadow-sm">ناموجود</span>
+        ) : null}
         {lowStock && (
           <span className="pointer-events-none absolute bottom-3 left-3 rounded-full border border-white/70 bg-surface/95 px-3 py-1.5 text-[10px] font-semibold text-brand shadow-sm backdrop-blur-sm">موجودی محدود</span>
         )}
@@ -91,7 +80,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-strong px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-strong-hover sm:px-4 sm:text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:bg-border-strong disabled:text-muted-soft">
-          <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : hasVariants ? "مشاهده گزینه‌های خرید" : "افزودن به سبد خرید"}
+          <ShoppingCart size={16} aria-hidden="true" />{requiresCatalogUpdate ? "نیازمند به‌روزرسانی" : outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
         </button>
       </div>
     </article>
