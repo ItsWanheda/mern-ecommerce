@@ -101,7 +101,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
   const lastAppliedUrlRef = useRef(searchParams.toString());
   const urlChangedRef = useRef(false);
   const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination } = useProductStore();
-  const { categories: dynamicCategories, categoriesLoaded, fetchCategories } = useCategoryStore();
+  const { categories: dynamicCategories, categoriesLoaded, categoriesError, fetchCategories } = useCategoryStore();
   const categoryRoute = resolveCategoryRoute(category, dynamicCategories);
   const selectedCategory = categoryRoute.category;
   const categorySlug = categoryRoute.slug;
@@ -468,11 +468,11 @@ const CategoryPage = ({ slug: routeSlug }) => {
   if (!selectedCategory) {
     return (
       <main dir="rtl" className="min-h-[65vh] bg-canvas px-4 py-12 text-ink sm:px-6 sm:py-16">
-        <PageMeta title="دسته‌بندی در دسترس نیست" description="این دسته‌بندی فعال نیست یا توسط مدیر فروشگاه ایجاد نشده است." robots="noindex, nofollow" />
+        <PageMeta title={categoriesError ? "خطا در دریافت دسته‌بندی‌ها" : "دسته‌بندی در دسترس نیست"} description={categoriesError || "این دسته‌بندی فعال نیست یا توسط مدیر فروشگاه ایجاد نشده است."} robots="noindex, nofollow" />
         <section className="mx-auto flex max-w-xl flex-col items-center rounded-3xl border border-dashed border-border-strong bg-surface px-6 py-10 text-center">
           <ShoppingBag size={30} className="text-brand" aria-hidden="true" />
-          <h1 className="mt-4 text-xl font-semibold">این دسته‌بندی در دسترس نیست</h1>
-          <p className="mt-2 text-sm leading-6 text-muted">ممکن است دسته حذف یا بایگانی شده باشد. دسته‌بندی‌های فعال فروشگاه را مشاهده کنید.</p>
+          <h1 className="mt-4 text-xl font-semibold">{categoriesError ? "دریافت دسته‌بندی‌ها ناموفق بود" : "این دسته‌بندی در دسترس نیست"}</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">{categoriesError || "ممکن است دسته حذف یا بایگانی شده باشد. دسته‌بندی‌های فعال فروشگاه را مشاهده کنید."}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Link to="/categories" className="inline-flex min-h-11 items-center justify-center rounded-full bg-strong px-5 py-2.5 text-sm font-semibold text-white hover:bg-strong-hover">مشاهده دسته‌بندی‌ها</Link>
             <button type="button" onClick={() => fetchCategories()} className="inline-flex min-h-11 items-center justify-center rounded-full border border-border-strong px-5 py-2.5 text-sm font-semibold text-ink hover:bg-canvas">تلاش دوباره</button>

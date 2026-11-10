@@ -63,7 +63,7 @@ const HomePage = () => {
   const [bestsellersError, setBestsellersError] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
-  const { categories: storeCategories, categoriesLoaded, fetchCategories } = useCategoryStore();
+  const { categories: storeCategories, categoriesLoaded, categoriesError, fetchCategories } = useCategoryStore();
   const categories = storeCategories
     .filter((category) => !category.parentId && category.isActive !== false && category.showInNavigation !== false)
     .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
@@ -357,6 +357,12 @@ const HomePage = () => {
               Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} aria-hidden="true" className="h-44 animate-pulse rounded-2xl bg-surface-muted sm:h-56 xl:h-64" />
               ))
+            ) : categoriesError && categories.length === 0 ? (
+              <div role="alert" className="col-span-full rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center text-red-800">
+                <p className="text-sm font-semibold">دریافت دسته‌بندی‌های فروشگاه ناموفق بود.</p>
+                <p className="mt-1 text-xs leading-6">{categoriesError}</p>
+                <button type="button" onClick={() => fetchCategories()} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full border border-red-300 px-4 text-sm font-semibold">تلاش دوباره</button>
+              </div>
             ) : categories.length ? categories.map((category) => (
               <CategoryItem key={category.href} category={category} />
             )) : (
