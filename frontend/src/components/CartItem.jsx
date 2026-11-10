@@ -4,6 +4,7 @@ import { formatPrice } from "../lib/commerce";
 
 const CartItem = ({ item }) => {
   const { removeFromCart, updateQuantity } = useCartStore();
+  const requiresCatalogUpdate = Array.isArray(item.variants) && item.variants.length > 0;
   const selectedVariant = (item.variants || []).find((variant) =>
     (variant.size || "") === (item.selectedSize || "") && (variant.color || "") === (item.selectedColor || "")
   );
@@ -19,11 +20,12 @@ const CartItem = ({ item }) => {
         </div>
         <div className="flex items-center justify-between md:order-3 md:justify-end">
           <div className="flex items-center gap-2">
-            <button type="button" className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)]" aria-label="کاهش تعداد" onClick={() => updateQuantity(item, item.quantity - 1)}>
+            <button type="button" disabled={requiresCatalogUpdate} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="کاهش تعداد" disabled={requiresCatalogUpdate}
+              onClick={() => updateQuantity(item, item.quantity - 1)}>
               <Minus className="text-[var(--ui-muted)]" aria-hidden="true" />
             </button>
             <p className="min-w-5 text-center tabular-nums">{new Intl.NumberFormat("fa-IR").format(item.quantity)}</p>
-            <button type="button" disabled={maxReached} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="افزایش تعداد" onClick={() => updateQuantity(item, item.quantity + 1)}>
+            <button type="button" disabled={maxReached || requiresCatalogUpdate} className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] hover:bg-[var(--ui-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-40" aria-label="افزایش تعداد" onClick={() => updateQuantity(item, item.quantity + 1)}>
               <Plus className="text-[var(--ui-muted)]" aria-hidden="true" />
             </button>
           </div>
