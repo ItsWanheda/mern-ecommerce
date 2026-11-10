@@ -11,29 +11,10 @@ import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
-import { normalizeDigits, normalizePersianText as normalizePersian } from "../lib/persian-search";
+import { normalizeDigits } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { decodeCategoryRoute, resolveCategoryRoute } from "../lib/category-route.js";
-
-const categoryLabels = {
-  jeans: "شلوار جین",
-  "t-shirts": "تی‌شرت",
-  shoes: "کفش",
-  glasses: "عینک",
-  jackets: "کت و کاپشن",
-  suits: "کت‌وشلوار",
-  bags: "کیف",
-};
-
-const fitLabels = {
-  "true-to-size": "مطابق سایز استاندارد",
-  slim: "جذب",
-  regular: "معمولی",
-  relaxed: "آزاد",
-  oversized: "آزاد و اورسایز",
-  athletic: "ورزشی",
-};
 
 const sortOptions = [
   ["newest", "جدیدترین"],
@@ -63,10 +44,6 @@ const makeEmptyFilters = () => ({
   q: "",
   minPrice: "",
   maxPrice: "",
-  sizes: [],
-  colors: [],
-  fits: [],
-  brands: [],
   inStock: false,
   attributes: {},
   sort: "newest",
@@ -84,10 +61,6 @@ const filtersFromParams = (params) => {
   filters.q = params.get("q") || "";
   filters.minPrice = params.get("minPrice") || "";
   filters.maxPrice = params.get("maxPrice") || "";
-  filters.sizes = params.getAll("size").slice(0, 24);
-  filters.colors = params.getAll("color").slice(0, 24);
-  filters.fits = params.getAll("fit").slice(0, 12);
-  filters.brands = params.getAll("brand").slice(0, 24);
   filters.inStock = params.get("inStock") === "1";
   const sort = params.get("sort");
   if (["newest", "oldest", "priceAsc", "priceDesc", "nameAsc"].includes(sort)) filters.sort = sort;
@@ -103,28 +76,10 @@ const paramsFromFilters = (filters) => {
   if (filters.q.trim()) params.set("q", filters.q.trim());
   if (filters.minPrice.trim()) params.set("minPrice", filters.minPrice.trim());
   if (filters.maxPrice.trim()) params.set("maxPrice", filters.maxPrice.trim());
-  filters.sizes.forEach((value) => params.append("size", value));
-  filters.colors.forEach((value) => params.append("color", value));
-  filters.fits.forEach((value) => params.append("fit", value));
-  filters.brands.forEach((value) => params.append("brand", value));
   if (filters.inStock) params.set("inStock", "1");
   if (filters.sort !== "newest") params.set("sort", filters.sort);
   if (Object.keys(filters.attributes || {}).length) params.set("attributes", JSON.stringify(filters.attributes));
   return params;
-};
-
-const uniqueByNormalizedName = (values) => {
-  const seen = new Set();
-  return values
-    .filter((value) => typeof value === "string" && value.trim())
-    .map((value) => value.trim())
-    .filter((value) => {
-      const normalized = normalizePersian(value);
-      if (!normalized || seen.has(normalized)) return false;
-      seen.add(normalized);
-      return true;
-    })
-    .sort((a, b) => a.localeCompare(b, "fa", { numeric: true }));
 };
 
 const getPriceError = (filters) => {
@@ -144,7 +99,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const lastAppliedUrlRef = useRef(searchParams.toString());
   const urlChangedRef = useRef(false);
-  const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination, categoryFacets } = useProductStore();
+  const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination } = useProductStore();
   const { categories: dynamicCategories, fetchCategories } = useCategoryStore();
   const categoryRoute = resolveCategoryRoute(category, dynamicCategories);
   const selectedCategory = categoryRoute.category;
@@ -282,27 +237,6 @@ const CategoryPage = ({ slug: routeSlug }) => {
     };
   }, [categorySlug, appliedFiltersKey, draftFiltersKey, resultCount, draftFilters]);
 
-  const sizeOptions = useMemo(
-    () => uniqueByNormalizedName(categoryFacets?.sizes || []),
-    [categoryFacets],
-  );
-
-  const colorOptions = useMemo(
-    () => Array.isArray(categoryFacets?.colors)
-      ? categoryFacets.colors.filter((color) => color?.name).sort((a, b) => a.name.localeCompare(b.name, "fa"))
-      : [],
-    [categoryFacets],
-  );
-
-  const fitOptions = useMemo(
-    () => uniqueByNormalizedName(categoryFacets?.fits || []),
-    [categoryFacets],
-  );
-  const brandOptions = useMemo(
-    () => uniqueByNormalizedName(categoryFacets?.brands || []),
-    [categoryFacets],
-  );
-
   const categoryAttributeDefinitions = useMemo(() => {
     if (!selectedCategory) return [];
     const byId = new Map(dynamicCategories.map((item) => [String(item._id), item]));
@@ -318,18 +252,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
   }, [dynamicCategories, selectedCategory]);
 
   const updateFilter = (setter, field, value) => {
-    setter((current) => {
-      if (["sizes", "colors", "fits", "brands"].includes(field)) {
-        const existing = current[field];
-        return {
-          ...current,
-          [field]: existing.includes(value)
-            ? existing.filter((entry) => entry !== value)
-            : [...existing, value],
-        };
-      }
-      return { ...current, [field]: value };
-    });
+    setter((current) => ({ ...current, [field]: value }));
     if (setter === setFilters) setPage(1);
   };
 
@@ -347,9 +270,6 @@ const CategoryPage = ({ slug: routeSlug }) => {
   const removeFilter = (field, value) => {
     setPage(1);
     setFilters((current) => {
-      if (["sizes", "colors", "fits", "brands"].includes(field)) {
-        return { ...current, [field]: current[field].filter((entry) => entry !== value) };
-      }
       if (field === "inStock") return { ...current, inStock: false };
       if (field === "attributes") {
         const attributes = { ...(current.attributes || {}) };
@@ -372,10 +292,6 @@ const CategoryPage = ({ slug: routeSlug }) => {
       const value = parseStorePrice(filters.maxPrice);
       chips.push({ field: "maxPrice", label: "تا " + (value !== null && Number.isFinite(value) ? formatStorePrice(value) : filters.maxPrice + " " + priceUnitLabel) });
     }
-    filters.sizes.forEach((value) => chips.push({ field: "sizes", value, label: "سایز: " + value }));
-    filters.colors.forEach((value) => chips.push({ field: "colors", value, label: "رنگ: " + value }));
-    filters.fits.forEach((value) => chips.push({ field: "fits", value, label: "تن‌خور: " + (fitLabels[value] || value) }));
-    filters.brands.forEach((value) => chips.push({ field: "brands", value, label: "برند: " + value }));
     Object.entries(filters.attributes || {}).forEach(([key, value]) => {
       if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) return;
       const definition = categoryAttributeDefinitions.find((attribute) => attribute.key === key);
@@ -413,234 +329,107 @@ const CategoryPage = ({ slug: routeSlug }) => {
       onFilterChange("minPrice", nextMin <= rangeMin ? "" : String(nextMin));
       onFilterChange("maxPrice", nextMax >= rangeMax ? "" : String(nextMax));
     };
+    const selectedAttributes = current.attributes || {};
+    const hasSelectedAttributes = Object.values(selectedAttributes).some((value) =>
+      value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)
+    );
 
     return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-      <fieldset className="min-w-0 space-y-3">
-        <legend className="text-sm font-semibold text-ink-strong">محدوده قیمت ({priceUnitLabel})</legend>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="block text-xs text-muted-soft">
-            از
-            <input
-              type="text"
-              inputMode="numeric"
-              dir="ltr"
-              maxLength={18}
-              value={current.minPrice}
-              onChange={(event) => onFilterChange("minPrice", event.target.value)}
-              placeholder="بدون محدودیت"
-              aria-label={"حداقل قیمت به " + priceUnitLabel}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm tabular-nums text-ink outline-none transition placeholder:text-muted-soft focus:border-brand focus:ring-4 focus:ring-brand/10"
-            />
-          </label>
-          <label className="block text-xs text-muted-soft">
-            تا
-            <input
-              type="text"
-              inputMode="numeric"
-              dir="ltr"
-              maxLength={18}
-              value={current.maxPrice}
-              onChange={(event) => onFilterChange("maxPrice", event.target.value)}
-              placeholder="بدون محدودیت"
-              aria-label={"حداکثر قیمت به " + priceUnitLabel}
-              className="mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm tabular-nums text-ink outline-none transition placeholder:text-muted-soft focus:border-brand focus:ring-4 focus:ring-brand/10"
-            />
-          </label>
-        </div>
-        <div className="rounded-xl border border-border bg-canvas px-3 py-3">
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted">
-            <span>از <strong className="tabular-nums text-ink">{formatStorePrice(sliderMinValue)}</strong></span>
-            <span>تا <strong className="tabular-nums text-ink">{formatStorePrice(sliderMaxValue)}</strong></span>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <fieldset className="min-w-0 space-y-3">
+          <legend className="text-sm font-semibold text-ink-strong">محدوده قیمت ({priceUnitLabel})</legend>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs text-muted-soft">از
+              <input type="text" inputMode="numeric" dir="ltr" maxLength={18} value={current.minPrice} onChange={(event) => onFilterChange("minPrice", event.target.value)} placeholder="بدون محدودیت" aria-label={"حداقل قیمت به " + priceUnitLabel} className="mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm tabular-nums text-ink outline-none transition placeholder:text-muted-soft focus:border-brand focus:ring-4 focus:ring-brand/10" />
+            </label>
+            <label className="block text-xs text-muted-soft">تا
+              <input type="text" inputMode="numeric" dir="ltr" maxLength={18} value={current.maxPrice} onChange={(event) => onFilterChange("maxPrice", event.target.value)} placeholder="بدون محدودیت" aria-label={"حداکثر قیمت به " + priceUnitLabel} className="mt-1 min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm tabular-nums text-ink outline-none transition placeholder:text-muted-soft focus:border-brand focus:ring-4 focus:ring-brand/10" />
+            </label>
           </div>
-          <div className={"relative h-7 " + (priceBounds.count > 0 ? "" : "opacity-50")} dir="ltr">
-            <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-border" />
-            <div
-              className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand"
-              style={{ left: sliderMinPercent + "%", right: 100 - sliderMaxPercent + "%" }}
-            />
-            <input
-              type="range"
-              min={rangeMin}
-              max={rangeMax}
-              step={sliderStep}
-              value={sliderMinValue}
-              disabled={priceBounds.count === 0}
-              aria-label={"حداقل قیمت به " + priceUnitLabel}
-              aria-valuetext={formatStorePrice(sliderMinValue)}
-              onChange={(event) => updateSliderPrice("minPrice", event.target.value)}
-              className="price-range-slider"
-              style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 5 : 4 }}
-            />
-            <input
-              type="range"
-              min={rangeMin}
-              max={rangeMax}
-              step={sliderStep}
-              value={sliderMaxValue}
-              disabled={priceBounds.count === 0}
-              aria-label={"حداکثر قیمت به " + priceUnitLabel}
-              aria-valuetext={formatStorePrice(sliderMaxValue)}
-              onChange={(event) => updateSliderPrice("maxPrice", event.target.value)}
-              className="price-range-slider"
-              style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 4 : 5 }}
-            />
+          <div className="rounded-xl border border-border bg-canvas px-3 py-3">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted">
+              <span>از <strong className="tabular-nums text-ink">{formatStorePrice(sliderMinValue)}</strong></span>
+              <span>تا <strong className="tabular-nums text-ink">{formatStorePrice(sliderMaxValue)}</strong></span>
+            </div>
+            <div className={"relative h-7 " + (priceBounds.count > 0 ? "" : "opacity-50")} dir="ltr">
+              <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-border" />
+              <div className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-brand" style={{ left: sliderMinPercent + "%", right: 100 - sliderMaxPercent + "%" }} />
+              <input type="range" min={rangeMin} max={rangeMax} step={sliderStep} value={sliderMinValue} disabled={priceBounds.count === 0} aria-label={"حداقل قیمت به " + priceUnitLabel} aria-valuetext={formatStorePrice(sliderMinValue)} onChange={(event) => updateSliderPrice("minPrice", event.target.value)} className="price-range-slider" style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 5 : 4 }} />
+              <input type="range" min={rangeMin} max={rangeMax} step={sliderStep} value={sliderMaxValue} disabled={priceBounds.count === 0} aria-label={"حداکثر قیمت به " + priceUnitLabel} aria-valuetext={formatStorePrice(sliderMaxValue)} onChange={(event) => updateSliderPrice("maxPrice", event.target.value)} className="price-range-slider" style={{ zIndex: sliderMinValue >= sliderMaxValue - sliderStep ? 4 : 5 }} />
+            </div>
+            <p className="mt-1 text-[11px] leading-5 text-muted-soft">با جابه‌جایی هر دستگیره، نتایج همان لحظه به‌روز می‌شوند.</p>
           </div>
-          <p className="mt-1 text-[11px] leading-5 text-muted-soft">با جابه‌جایی هر دستگیره، نتایج همان لحظه به‌روز می‌شوند.</p>
-        </div>
-        {getPriceError(current) && (
-          <p role="alert" className="text-xs leading-5 text-danger">{getPriceError(current)}</p>
+          {getPriceError(current) && <p role="alert" className="text-xs leading-5 text-danger">{getPriceError(current)}</p>}
+          <p className="text-[11px] leading-5 text-muted-soft">قیمت‌ها بر اساس {priceUnitLabel} هستند؛ اعداد فارسی و انگلیسی پذیرفته می‌شوند.</p>
+        </fieldset>
+
+        <fieldset className="min-w-0 space-y-2">
+          <legend className="text-sm font-semibold text-ink-strong">مرتب‌سازی و موجودی</legend>
+          <select value={current.sort} onChange={(event) => onFilterChange("sort", event.target.value)} aria-label="مرتب‌سازی محصولات" className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10">
+            {sortOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink-strong transition hover:border-border-strong">
+            <input type="checkbox" checked={current.inStock} onChange={(event) => onFilterChange("inStock", event.target.checked)} className="h-4 w-4 accent-brand" />
+            فقط کالاهای موجود
+          </label>
+        </fieldset>
+
+        {categoryAttributeDefinitions.length > 0 && (
+          <details className="min-w-0 rounded-2xl border border-border bg-surface/70 p-3 sm:col-span-2 sm:p-4 xl:col-span-3" open={hasSelectedAttributes}>
+            <summary className="cursor-pointer list-none text-sm font-semibold text-ink-strong outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              فیلتر بر اساس مشخصات فنی
+              <span className="mr-2 text-xs font-normal text-muted-soft">ویژگی‌هایی که مدیر برای این دسته قابل فیلتر کرده است</span>
+            </summary>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {categoryAttributeDefinitions.map((attribute) => {
+                const selected = selectedAttributes[attribute.key];
+                const label = attribute.name?.fa || attribute.name?.en || attribute.key;
+                const unit = attribute.unit?.fa || attribute.unit?.en || "";
+                const setValue = (value) => {
+                  const next = { ...selectedAttributes };
+                  if (value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) delete next[attribute.key];
+                  else next[attribute.key] = value;
+                  onFilterChange("attributes", next);
+                };
+                return (
+                  <fieldset key={attribute.key} className="min-w-0 space-y-2">
+                    <legend className="text-sm font-semibold text-ink-strong">{label}{unit ? " (" + unit + ")" : ""}</legend>
+                    {attribute.type === "select" ? (
+                      <select value={selected === undefined ? "" : String(selected)} onChange={(event) => setValue(event.target.value || undefined)} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
+                        <option value="">همه</option>
+                        {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
+                      </select>
+                    ) : attribute.type === "multi-select" ? (
+                      <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
+                        {(attribute.options || []).map((option) => {
+                          const selectedValues = Array.isArray(selected) ? selected.map(String) : [];
+                          const checked = selectedValues.includes(option.value);
+                          return (
+                            <label key={option.value} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (checked ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
+                              <input type="checkbox" checked={checked} onChange={() => setValue(checked ? selectedValues.filter((value) => value !== option.value) : [...selectedValues, option.value])} className="h-3.5 w-3.5 accent-brand" />
+                              <span>{option.name?.fa || option.name?.en || option.value}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : attribute.type === "boolean" ? (
+                      <select value={selected === undefined ? "" : (selected ? "true" : "false")} onChange={(event) => setValue(event.target.value === "" ? undefined : event.target.value === "true")} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand">
+                        <option value="">همه</option><option value="true">بله</option><option value="false">خیر</option>
+                      </select>
+                    ) : (
+                      <input type={attribute.type === "number" ? "number" : "text"} step={attribute.type === "number" ? "any" : undefined} value={selected ?? ""} onChange={(event) => setValue(event.target.value === "" ? undefined : (attribute.type === "number" ? Number(event.target.value) : event.target.value))} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand" />
+                    )}
+                  </fieldset>
+                );
+              })}
+            </div>
+          </details>
         )}
-        <p className="text-[11px] leading-5 text-muted-soft">قیمت‌ها بر اساس {priceUnitLabel} هستند؛ اعداد فارسی و انگلیسی پذیرفته می‌شوند.</p>
-      </fieldset>
-
-      <fieldset className="min-w-0 space-y-2">
-        <legend className="text-sm font-semibold text-ink-strong">مرتب‌سازی</legend>
-        <select
-          value={current.sort}
-          onChange={(event) => onFilterChange("sort", event.target.value)}
-          aria-label="مرتب‌سازی محصولات"
-          className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/10"
-        >
-          {sortOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink-strong transition hover:border-border-strong">
-          <input
-            type="checkbox"
-            checked={current.inStock}
-            onChange={(event) => onFilterChange("inStock", event.target.checked)}
-            className="h-4 w-4 accent-brand"
-          />
-          فقط کالاهای موجود
-        </label>
-      </fieldset>
-
-      {sizeOptions.length > 0 && (
-        <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-ink-strong">سایز</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
-            {sizeOptions.map((option) => (
-              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.sizes.includes(option) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
-                <input
-                  type="checkbox"
-                  checked={current.sizes.includes(option)}
-                  onChange={() => onFilterChange("sizes", option)}
-                  className="h-3.5 w-3.5 accent-brand"
-                />
-                <span>{option}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
-
-      {colorOptions.length > 0 && (
-        <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-ink-strong">رنگ</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
-            {colorOptions.map((option) => (
-              <label key={option.name} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.colors.includes(option.name) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
-                <input
-                  type="checkbox"
-                  checked={current.colors.includes(option.name)}
-                  onChange={() => onFilterChange("colors", option.name)}
-                  className="h-3.5 w-3.5 accent-brand"
-                />
-                {option.hex && <span aria-hidden="true" className="h-4 w-4 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: option.hex }} />}
-                <span>{option.name}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
-
-      {(fitOptions.length > 0 || categoryAttributeDefinitions.length > 0 || brandOptions.length > 0) && (
-        <details
-          className="min-w-0 rounded-2xl border border-border bg-surface/70 p-3 sm:col-span-2 sm:p-4 xl:col-span-3"
-          open={Boolean(
-            current.fits.length ||
-            current.brands.length ||
-            Object.values(current.attributes || {}).some((value) =>
-              value !== undefined && value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)
-            )
-          )}
-        >
-          <summary className="cursor-pointer list-none text-sm font-semibold text-ink-strong outline-none focus-visible:ring-2 focus-visible:ring-brand">
-            فیلترهای بیشتر
-            <span className="mr-2 text-xs font-normal text-muted-soft">تن‌خور، ویژگی‌های تخصصی و برند</span>
-          </summary>
-          <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
-      {fitOptions.length > 0 && (
-        <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-ink-strong">نوع تن‌خور</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
-            {fitOptions.map((option) => (
-              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.fits.includes(option) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
-                <input
-                  type="checkbox"
-                  checked={current.fits.includes(option)}
-                  onChange={() => onFilterChange("fits", option)}
-                  className="h-3.5 w-3.5 accent-brand"
-                />
-                <span>{fitLabels[option] || option}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
-
-      {categoryAttributeDefinitions.filter((attribute) => attribute.filterable).map((attribute) => {
-        const selected = current.attributes?.[attribute.key];
-        const updateAttributeFilter = (value) => onFilterChange("attributes", { ...(current.attributes || {}), [attribute.key]: value });
-        return (
-          <fieldset key={attribute.key} className="min-w-0 space-y-2">
-            <legend className="text-sm font-semibold text-ink-strong">{attribute.name?.fa || attribute.name?.en || attribute.key}</legend>
-            {attribute.type === "select" ? (
-              <select value={selected === undefined ? "" : String(selected)} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value)} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
-                <option value="">همه</option>
-                {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
-              </select>
-            ) : attribute.type === "multi-select" ? (
-              <select multiple value={Array.isArray(selected) ? selected.map(String) : []} onChange={(event) => updateAttributeFilter([...event.target.selectedOptions].map((option) => option.value))} className="min-h-24 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10">
-                {(attribute.options || []).map((option) => <option key={option.value} value={option.value}>{option.name?.fa || option.name?.en || option.value}</option>)}
-              </select>
-            ) : attribute.type === "boolean" ? (
-              <select value={selected === undefined ? "" : (selected ? "true" : "false")} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : event.target.value === "true")} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand">
-                <option value="">همه</option><option value="true">بله</option><option value="false">خیر</option>
-              </select>
-            ) : (
-              <input type={attribute.type === "number" ? "number" : "text"} value={selected ?? ""} onChange={(event) => updateAttributeFilter(event.target.value === "" ? undefined : (attribute.type === "number" ? Number(event.target.value) : event.target.value))} className="min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand" />
-            )}
-          </fieldset>
-        );
-      })}
-
-      {brandOptions.length > 0 && (
-        <fieldset className="min-w-0 space-y-2">
-          <legend className="text-sm font-semibold text-ink-strong">برند</legend>
-          <div className="flex max-h-36 flex-wrap gap-2 overflow-y-auto rounded-xl border border-border bg-surface p-2">
-            {brandOptions.map((option) => (
-              <label key={option} className={"inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition " + (current.brands.includes(option) ? "border-brand bg-brand-soft text-ink-strong" : "border-surface-raised text-muted hover:border-border-strong")}>
-                <input
-                  type="checkbox"
-                  checked={current.brands.includes(option)}
-                  onChange={() => onFilterChange("brands", option)}
-                  className="h-3.5 w-3.5 accent-brand"
-                />
-                <span>{option}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      )}
-          </div>
-        </details>
-      )}
-    </div>
+      </div>
     );
   };
 
-  const pageTitle = selectedCategory?.name?.fa || categoryLabels[category] || category.replace(/-/g, " ");
+  const pageTitle = selectedCategory?.name?.fa || selectedCategory?.name?.en || category.replace(/-/g, " ");
   const copyFilterLink = async () => {
     const url = window.location.href;
     try {
@@ -671,7 +460,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
 
   return (
     <main dir="rtl" className="min-h-screen bg-canvas px-3 py-7 text-ink sm:px-6 sm:py-10 lg:px-8">
-      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("خرید و فیلتر محصولات دسته " + pageTitle + " در تیک بوتیک.")} image={selectedCategory?.image} path={"/category/" + categorySlug} type="category" itemList={products} breadcrumbs={pageBreadcrumbs} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || (!selectedCategory && !categoryLabels[category]) ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory || categoryLabels[category])} />
+      <PageMeta title={pageTitle} description={selectedCategory?.description?.fa || selectedCategory?.description?.en || ("مشخصات فنی، موجودی و قیمت محصولات دسته " + pageTitle + " را در فروشگاه سخت‌افزار بررسی کنید.")} image={selectedCategory?.image} path={"/category/" + categorySlug} type="category" itemList={products} breadcrumbs={pageBreadcrumbs} robots={hasIndexExcludedQuery(Object.fromEntries(searchParams.entries())) || !selectedCategory ? "noindex, follow" : "index, follow, max-image-preview:large"} canonical={Boolean(selectedCategory)} />
       <div className="mx-auto max-w-[1920px]">
         <nav aria-label="مسیر دسته‌بندی" className="mb-4 flex flex-wrap items-center gap-2 text-xs text-muted-soft sm:mb-5">
           <Link to="/" className="transition hover:text-ink">خانه</Link>
@@ -690,7 +479,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
           <div className="min-w-0">
             <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-brand">
               <ShoppingBag size={15} aria-hidden="true" />
-              مجموعه تیک بوتیک
+              فروشگاه سخت‌افزار کامپیوتر
             </p>
             <motion.h1
               className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
@@ -701,7 +490,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
               {pageTitle}
             </motion.h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-soft">
-              {selectedCategory?.description?.fa?.trim() || selectedCategory?.description?.en?.trim() || ("با جست‌وجوی فارسی و فیلترهای سایز، رنگ، تن‌خور و قیمت به " + priceUnitLabel + "، انتخابتان را دقیق‌تر کنید.")}
+              {selectedCategory?.description?.fa?.trim() || selectedCategory?.description?.en?.trim() || ("با جست‌وجوی فارسی، مشخصات فنی پویا و محدوده قیمت به " + priceUnitLabel + "، کالای مناسب را دقیق‌تر پیدا کنید.")}
             </p>
             {currentFilterError && <p role="alert" className="mt-2 text-sm font-medium text-red-700">{currentFilterError}</p>}
           </div>
@@ -775,7 +564,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
               inputMode="search"
               value={filters.q}
               onChange={(event) => { setFilters((current) => ({ ...current, q: event.target.value })); setPage(1); }}
-              placeholder="مثلاً تی‌شرت مشکی، سایز بزرگ، شلوار جین…"
+              placeholder="مثلاً مدل محصول، سازنده یا مشخصه فنی…"
               autoComplete="off"
               className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-sm text-ink outline-none placeholder:text-muted-soft"
             />
@@ -793,7 +582,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
             <div className="flex items-center gap-2">
               <SlidersHorizontal size={18} className="text-brand" aria-hidden="true" />
               <h2 className="text-base font-semibold text-ink">فیلترها</h2>
-              <span className="text-xs text-muted-soft">نتایج بر اساس مشخصات ثبت‌شده محصول</span>
+              <span className="text-xs text-muted-soft">فیلترها از ویژگی‌های تعریف‌شده توسط مدیر دسته‌بندی ساخته می‌شوند</span>
             </div>
             <button
               type="button"
