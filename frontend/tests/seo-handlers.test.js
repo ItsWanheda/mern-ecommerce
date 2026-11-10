@@ -10,15 +10,15 @@ const API_ORIGIN = "https://api.example";
 
 const product = {
   _id: "64f123456789abcdef123456",
-  name: "پیراهن آبی",
+  name: "کارت گرافیک RTX 5070",
   isActive: true,
   createdAt: "2026-10-01T10:00:00.000Z",
   updatedAt: "2026-10-10T10:00:00.000Z",
 };
 
 const category = {
-  slug: "jeans",
-  name: { fa: "شلوار جین" },
+  slug: "graphics-cards",
+  name: { fa: "کارت گرافیک" },
   isActive: true,
   updatedAt: "2026-10-10T10:00:00.000Z",
 };
@@ -79,7 +79,6 @@ async function withSeoEnvironment(run) {
     }
     if (url.pathname === "/api/categories") return Response.json({ categories: [category] });
     if (url.pathname === "/api/campaigns") return Response.json({ campaigns: [campaign] });
-    if (url.pathname.startsWith("/api/products/category/t-shirts")) return Response.json({ products: [product] });
     return Response.json({ message: "Not found" }, { status: 404 });
   };
 
@@ -117,14 +116,14 @@ test("sitemap index lists the static map and each product page segment", async (
   });
 });
 
-test("static sitemap includes native pages, active resources and confirmed legacy categories", async () => {
+test("static sitemap includes native pages, active resources and Admin-managed categories", async () => {
   await withSeoEnvironment(async () => {
     const response = createResponse();
     await sitemapStaticHandler(createRequest("/sitemap-static.xml"), response);
     assert.equal(response.statusCode, 200);
     assert.match(response.body, /https:\/\/shop\.example\//);
-    assert.match(response.body, /https:\/\/shop\.example\/category\/jeans/);
-    assert.match(response.body, /https:\/\/shop\.example\/category\/t-shirts/);
+    assert.match(response.body, /https:\/\/shop\.example\/category\/graphics-cards/);
+    assert.doesNotMatch(response.body, /https:\/\/shop\.example\/category\/(?:jeans|t-shirts|shoes|glasses|jackets|suits|bags)/);
     assert.match(response.body, /https:\/\/shop\.example\/campaign\/new-sale/);
     assert.doesNotMatch(response.body, /https:\/\/shop\.example\/(?:cart|login|secret-dashboard|profile|orders)(?:<|\/)/);
   });

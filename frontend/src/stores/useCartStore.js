@@ -130,12 +130,17 @@ export const useCartStore = create((set, get) => ({
     try {
       const response = await axios.get("/cart");
       if (!Array.isArray(response.data)) throw new Error("پاسخ سبد خرید نامعتبر است");
-      const cart = response.data.map((item) => ({
+      const accountItems = response.data.map((item) => ({
         ...item,
         selectedSize: item.selectedSize || "",
         selectedColor: item.selectedColor || "",
         cartItemId: cartItemKey(item),
       }));
+      const preservedGuestItems = readGuestCart()
+        .filter((item) => item.guestOnly)
+        .map((item) => ({ ...item, cartItemId: cartItemKey(item) }));
+      const cart = preservedGuestItems.reduce((current, item) => mergeCartLines(current, item), accountItems);
+      writeGuestCart(preservedGuestItems);
       set({ cart, ...totalsFor(cart, get().coupon) });
     } catch (error) {
       console.error("دریافت سبد خرید ناموفق بود:", error);
@@ -170,7 +175,6 @@ export const useCartStore = create((set, get) => ({
           ...skippedItems,
           ...guestItems.filter((item) => skippedKeys.has(cartItemKey(item))).map((item) => ({ ...item, guestOnly: true })),
         ];
-        writeGuestCart(skippedItems);
         if (skippedItems.length) {
           toast.error("بعضی گزینه‌ها موجودی کافی ندارند؛ آن‌ها را در سبد بررسی کنید.");
         } else if (guestItems.length) {

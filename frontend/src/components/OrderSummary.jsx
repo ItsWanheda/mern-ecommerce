@@ -50,7 +50,7 @@ const OrderSummary = () => {
   const { user } = useUserStore();
   const navigate = useNavigate();
   const hasUnmergedItems = cart.some((item) => item.guestOnly);
-  const hasLegacyVariantItems = cart.some(requiresCatalogMigration);
+  const hasCatalogMigrationItems = cart.some(requiresCatalogMigration);
   const [paymentConfig, setPaymentConfig] = useState({
     provider: "zarinpal",
     currency: STORE_CURRENCY,
@@ -168,7 +168,7 @@ const OrderSummary = () => {
       navigate("/login", { state: { from: { pathname: "/cart" } } });
       return;
     }
-    if (hasLegacyVariantItems) {
+    if (hasCatalogMigrationItems) {
       return toast.error("کالاهای دارای اطلاعات ساختار قدیمی را از سبد حذف کنید؛ ابتدا باید توسط مدیریت به کاتالوگ جدید منتقل شوند.");
     }
     if (hasUnmergedItems) {
@@ -271,9 +271,9 @@ const OrderSummary = () => {
           <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">برای ثبت سفارش و پرداخت، در مرحله بعد وارد حساب شوید یا حساب بسازید.</p>
         </div>
       )}
-      {hasLegacyVariantItems && (
+      {hasCatalogMigrationItems && (
         <p role="alert" className="rounded-xl border border-[var(--ui-warning-border)] bg-[var(--ui-warning-bg)] p-3 text-xs leading-6 text-[var(--ui-warning)]">
-          یک یا چند کالا با ساختار گزینه‌های قدیمی در سبد وجود دارد. تا زمانی که مدیر آن کالاها را به دسته‌بندی و مشخصات فنی جدید منتقل نکند، پرداخت فعال نخواهد شد. کالاهای نشان‌دار را از سبد حذف کنید یا پس از مهاجرت دوباره اضافه کنید.
+          یک یا چند کالا با اطلاعات ساختار نسخه قبلی در سبد وجود دارد. تا زمانی که مدیر آن کالاها را به دسته‌بندی و مشخصات فنی جدید منتقل نکند، پرداخت فعال نخواهد شد. کالاهای نشان‌دار را از سبد حذف کنید یا پس از مهاجرت دوباره اضافه کنید.
         </p>
       )}
       {hasUnmergedItems && (
@@ -390,7 +390,7 @@ const OrderSummary = () => {
 
         <motion.button
           type="button"
-          disabled={checkoutLoading || isMergingGuestCart || !cart.length || hasUnmergedItems || hasLegacyVariantItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
+          disabled={checkoutLoading || isMergingGuestCart || !cart.length || hasUnmergedItems || hasCatalogMigrationItems || (Boolean(user) && (paymentConfig.loading || !paymentConfig.configured || shipping.loading || Boolean(shipping.error)))}
           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--ui-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus:outline-none focus:ring-4 focus:ring-[var(--ui-focus)]/30 disabled:cursor-not-allowed disabled:opacity-50"
           whileHover={{ scale: checkoutLoading ? 1 : 1.02 }}
           whileTap={{ scale: checkoutLoading ? 1 : 0.98 }}

@@ -21,30 +21,30 @@ test("static and private metadata contain the expected canonical route entries",
 });
 
 test("SEO text collapses whitespace without damaging Persian text", () => {
-  assert.equal(normalizeSeoText("  پیراهن\n\n   آبی  ", "fallback", 100), "پیراهن آبی");
+  assert.equal(normalizeSeoText("  پردازنده\n\n   قدرتمند  ", "fallback", 100), "پردازنده قدرتمند");
   assert.equal(normalizeSeoText("", "fallback text", 8), "fallback");
   assert.equal(normalizeSeoText("الف   ب", "", 3), "الف");
 });
 
 test("canonical URLs use the configured origin and discard query/hash duplicates", () => {
   assert.equal(
-    canonicalUrlFor("/category/jeans?color=blue#products", "https://preview.example", "https://shop.example/path/"),
-    "https://shop.example/category/jeans"
+    canonicalUrlFor("/category/graphics-cards?memory_gb=16#specifications", "https://preview.example", "https://shop.example/path/"),
+    "https://shop.example/category/graphics-cards"
   );
   assert.equal(canonicalUrlFor("//evil.example/path", "https://shop.example"), "https://shop.example/");
 });
 
 test("pagination gets a page-specific canonical while filters stay excluded", () => {
   assert.equal(
-    canonicalUrlForQuery("/category/jeans", { page: "2", type: "category", id: "jeans" }, "https://preview.example", "https://shop.example"),
-    "https://shop.example/category/jeans?page=2"
+    canonicalUrlForQuery("/category/graphics-cards", { page: "2", type: "category", id: "graphics-cards" }, "https://preview.example", "https://shop.example"),
+    "https://shop.example/category/graphics-cards?page=2"
   );
   assert.equal(
-    canonicalUrlForQuery("/category/jeans", { page: "2", q: "shirt", type: "category", id: "jeans" }, "https://shop.example"),
-    "https://shop.example/category/jeans"
+    canonicalUrlForQuery("/category/graphics-cards", { page: "2", q: "graphics", type: "category", id: "graphics-cards" }, "https://shop.example"),
+    "https://shop.example/category/graphics-cards"
   );
   assert.equal(hasIndexExcludedQuery({ page: "2" }), false);
-  assert.equal(hasIndexExcludedQuery({ page: "2", q: "shirt" }), true);
+  assert.equal(hasIndexExcludedQuery({ page: "2", q: "graphics" }), true);
   assert.equal(hasIndexExcludedQuery({ sort: "newest" }), false);
   assert.equal(hasIndexExcludedQuery({ sort: "priceAsc" }), true);
 });
@@ -87,39 +87,38 @@ test("server canonicals fail closed unless a production origin is known", () => 
 });
 
 test("relative images become absolute, safe HTTP(S) URLs", () => {
-  assert.equal(absoluteUrlFor("/images/shirt.jpg", "https://shop.example/path"), "https://shop.example/images/shirt.jpg");
+  assert.equal(absoluteUrlFor("/images/processor.jpg", "https://shop.example/path"), "https://shop.example/images/processor.jpg");
   assert.equal(absoluteUrlFor("javascript:alert(1)", "https://shop.example"), "");
   assert.equal(absoluteUrlFor("", "https://shop.example"), "");
 });
 
 test("untracked stock does not produce a falsely available Product Offer", () => {
   const schema = buildProductStructuredData({
-    product: { _id: "abc123", name: "پیراهن", price: 125000, stock: null, description: "پیراهن آبی" },
-    title: "پیراهن",
+    product: { _id: "abc123", name: "کارت گرافیک", price: 125000, stock: null, description: "کارت گرافیک با حافظه ۱۶ گیگابایت" },
+    title: "کارت گرافیک",
     description: "جزئیات محصول",
-    image: "/shirt.jpg",
+    image: "/hardware/gpu.jpg",
     canonical: "https://shop.example/product/abc123",
     origin: "https://shop.example",
   });
-  assert.equal(schema.name, "پیراهن");
+  assert.equal(schema.name, "کارت گرافیک");
   assert.equal(schema.offers, undefined);
-  assert.deepEqual(schema.image, ["https://shop.example/shirt.jpg"]);
+  assert.deepEqual(schema.image, ["https://shop.example/hardware/gpu.jpg"]);
 });
 
 test("tracked stock is reflected in Product Offer availability", () => {
   const schema = buildProductStructuredData({
     product: {
       _id: "abc123",
-      name: "پیراهن",
+      name: "کارت گرافیک RTX 5070",
       price: 125000,
       stock: 0,
-      sku: "TB-123",
-      brand: "تیک بوتیک",
-      category: "پوشاک",
-      sizes: ["M", "L"],
-      colors: [{ name: "آبی" }],
+      sku: "GPU-5070",
+      brand: "NVIDIA",
+      category: "کارت گرافیک",
+      attributes: { memory_gb: 16, interface: "pcie-5", ray_tracing: true },
     },
-    title: "پیراهن",
+    title: "کارت گرافیک",
     description: "جزئیات محصول",
     canonical: "https://shop.example/product/abc123",
     origin: "https://shop.example",
@@ -127,15 +126,15 @@ test("tracked stock is reflected in Product Offer availability", () => {
   assert.equal(schema.offers.priceCurrency, "IRR");
   assert.equal(schema.offers.price, 1250000);
   assert.equal(schema.offers.availability, "https://schema.org/OutOfStock");
-  assert.equal(schema.sku, "TB-123");
-  assert.deepEqual(schema.brand, { "@type": "Brand", name: "تیک بوتیک" });
-  assert.equal(schema.category, "پوشاک");
+  assert.equal(schema.sku, "GPU-5070");
+  assert.deepEqual(schema.brand, { "@type": "Brand", name: "NVIDIA" });
+  assert.equal(schema.category, "کارت گرافیک");
   assert.equal(schema.url, "https://shop.example/product/abc123");
   assert.equal(schema.mainEntityOfPage["@id"], "https://shop.example/product/abc123");
   assert.deepEqual(schema.additionalProperty, [
-    { "@type": "PropertyValue", name: "سایز", value: "M" },
-    { "@type": "PropertyValue", name: "سایز", value: "L" },
-    { "@type": "PropertyValue", name: "رنگ", value: "آبی" },
+    { "@type": "PropertyValue", name: "memory gb", value: "16" },
+    { "@type": "PropertyValue", name: "interface", value: "pcie-5" },
+    { "@type": "PropertyValue", name: "ray tracing", value: "true" },
   ]);
 });
 
