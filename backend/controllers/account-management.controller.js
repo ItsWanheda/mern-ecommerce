@@ -49,6 +49,24 @@ const verifyTotp = (secret, code) => {
   return [-1, 0, 1].some(step => createTotp(secret, Date.now() + step * 30000) === String(code));
 };
 
+export const updateAccountProfile = async (req, res) => {
+  const name = typeof req.body?.name === "string" ? req.body.name.trim() : undefined;
+  const phone = typeof req.body?.primaryPhone === "string" ? req.body.primaryPhone.replace(/[۰-۹]/g, digit => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit))).replace(/[٠-٩]/g, digit => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))).replace(/\D/g, "") : undefined;
+  if (name !== undefined && (name.length < 2 || name.length > 100)) return res.status(400).json({ message: "نام باید بین ۲ تا ۱۰۰ نویسه باشد." });
+  if (phone !== undefined && phone !== "" && !/^09\d{9}$/.test(phone)) return res.status(400).json({ message: "شماره موبایل باید با 09 شروع شود و ۱۱ رقم داشته باشد." });
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "حساب کاربری پیدا نشد." });
+    if (name !== undefined) user.name = name;
+    if (phone !== undefined && phone !== user.primaryPhone) { user.primaryPhone = phone; user.phoneVerifiedAt = null; }
+    await user.save();
+    return res.json({ profile: { _id: user._id, name: user.name, email: user.email, primaryPhone: user.primaryPhone, phoneVerifiedAt: user.phoneVerifiedAt, emailVerifiedAt: user.emailVerifiedAt } });
+  } catch (error) {
+    console.error("Updating account profile failed", error?.message);
+    return res.status(500).json({ message: "ذخیره اطلاعات حساب انجام نشد." });
+  }
+};
+
 export const changePassword = async (req, res) => {
   const currentPassword = typeof req.body?.currentPassword === "string" ? req.body.currentPassword : "";
   const newPassword = typeof req.body?.newPassword === "string" ? req.body.newPassword : "";
