@@ -110,7 +110,7 @@ export const getCustomers = async (req, res) => {
     const [orderStats, serviceStats, sessionStats] = await Promise.all([
       Order.aggregate([{ $match: { user: { $in: customerIds } } }, { $group: { _id: "$user", orderCount: { $sum: 1 }, paidTotal: { $sum: { $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0] } } } }]),
       ServiceCase.aggregate([{ $match: { user: { $in: customerIds }, status: { $in: ["open", "in_review"] } } }, { $group: { _id: "$user", openCases: { $sum: 1 } } }]),
-      AccountSession.aggregate([{ $match: { user: { $in: customerIds }, revokedAt: null } }, { $group: { _id: "$user", activeSessions: { $sum: 1 }, lastLoginAt: { $max: "$lastUsedAt" } } }]),
+      AccountSession.aggregate([{ $match: { user: { $in: customerIds }, revokedAt: null, expiresAt: { $gt: new Date() } } }, { $group: { _id: "$user", activeSessions: { $sum: 1 }, lastLoginAt: { $max: "$lastUsedAt" } } }]),
     ]);
     const byId = rows => new Map(rows.map(row => [String(row._id), row]));
     const ordersById = byId(orderStats), servicesById = byId(serviceStats), sessionsById = byId(sessionStats);
