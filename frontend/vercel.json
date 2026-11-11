@@ -1,4 +1,9 @@
 {
+  "git":{
+    "deploymentEnabled": {
+      "dev": false
+    }
+  },
   "buildCommand": "npm run build",
   "rewrites": [
     {
