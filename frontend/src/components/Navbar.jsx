@@ -709,7 +709,7 @@ const Navbar = () => {
           </div>
         </div>
         <div className="mx-auto max-w-[1920px] px-3 sm:px-6 lg:px-8 min-[1680px]:px-12">
-          <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-2 py-3 sm:gap-4 min-[1680px]:grid min-[1680px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1680px]:justify-normal">
+          <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2.5 sm:gap-x-4 sm:py-3 min-[1440px]:flex-nowrap min-[1680px]:grid min-[1680px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1680px]:justify-normal">
             <div
               ref={accountMenuRef}
               className="relative z-50 flex shrink-0 items-center gap-1 min-[1680px]:col-start-3 min-[1680px]:row-start-1 min-[1680px]:justify-self-end min-[1680px]:gap-2"
@@ -720,7 +720,7 @@ const Navbar = () => {
                 aria-expanded={mobileMenuOpen}
                 aria-controls="store-menu-panel"
                 onClick={() => setMobileMenuOpen((open) => !open)}
-                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:hidden"
               >
                 {mobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
               </button>
@@ -739,7 +739,7 @@ const Navbar = () => {
               <Link
                 to="/cart"
                 aria-label={cart.length > 0 ? `سبد خرید، ${new Intl.NumberFormat("fa-IR").format(cart.length)} کالا` : "سبد خرید"}
-                className="hidden relative h-10 items-center justify-center gap-2 rounded-full px-2.5 text-sm font-medium text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:px-3 lg:order-1 lg:inline-flex"
+                className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:order-1 lg:h-10 lg:w-auto lg:gap-2 lg:px-3"
               >
                 <ShoppingCart size={18} aria-hidden="true" />
                 <span className="hidden lg:inline">سبد خرید</span>
@@ -829,12 +829,12 @@ const Navbar = () => {
             <Link
               to="/"
               aria-label="صفحه اصلی Computer Hardware"
-              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap text-xl font-extrabold tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
+              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap text-base font-extrabold sm:text-xl tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
             >
               Computer Hardware
             </Link>
 
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start min-[1680px]:order-none min-[1680px]:basis-auto min-[1680px]:col-start-1 min-[1680px]:row-start-1 min-[1680px]:w-full min-[1680px]:flex-initial min-[1680px]:justify-self-stretch">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start min-[1440px]:order-none min-[1440px]:basis-auto min-[1440px]:justify-start min-[1680px]:order-none min-[1680px]:basis-auto min-[1680px]:col-start-1 min-[1680px]:row-start-1 min-[1680px]:w-full min-[1680px]:flex-initial min-[1680px]:justify-self-stretch">
               <nav
                 aria-label="پیمایش اصلی"
                 className="hidden shrink-0 items-center gap-1 lg:flex"
@@ -943,10 +943,9 @@ const Navbar = () => {
                 aria-label={activeFilterCount > 0
                   ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
                   : "باز کردن جست‌وجو و فیلتر محصولات"}
-                className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-white px-3 text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-white p-0 text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
               >
                 <Search size={18} aria-hidden="true" />
-                <span className="text-xs font-bold">جست‌وجو</span>
                 {activeFilterCount > 0 && (
                   <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[var(--ui-canvas)] bg-[var(--ui-accent)] px-1 py-0.5 text-[10px] font-bold leading-none text-[var(--ui-button-text)]">
                     {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
