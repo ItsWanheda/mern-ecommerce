@@ -81,9 +81,9 @@ const StoreFooter = () => {
           </nav>
 
           <section aria-label="اطلاعات تماس" className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 text-[10px] leading-5 text-[var(--ui-text-strong)]">
-            {supportPhone && <><Phone size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><a href={"tel:" + supportPhone.replace(/[^\\d+]/g, "")} dir="ltr" className="truncate text-right font-semibold hover:text-[var(--ui-accent)]">{supportPhone}</a></>}
-            {supportEmail && <><Mail size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><a href={"mailto:" + supportEmail} dir="ltr" className="truncate text-right font-semibold hover:text-[var(--ui-accent)]">{supportEmail}</a></>}
-            {storeAddress && <><MapPin size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><span className="line-clamp-1 min-w-0">{storeAddress}{storeMapUrl && <a href={storeMapUrl} target="_blank" rel="noopener noreferrer" className="mr-2 font-bold text-[var(--ui-accent)] hover:underline">نقشه</a>}</span></>}
+            <Phone size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><span dir="ltr" className="truncate text-right font-semibold">{supportPhone || "شماره تماس ثبت نشده"}</span>
+            <Mail size={13} className="text-[var(--ui-accent)]" aria-hidden="true" />{supportEmail ? <a href={"mailto:" + supportEmail} dir="ltr" className="truncate text-right font-semibold hover:text-[var(--ui-accent)]">{supportEmail}</a> : <span>ایمیل ثبت نشده</span>}
+            <MapPin size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><span className="line-clamp-1 min-w-0">{storeAddress || "نشانی فروشگاه ثبت نشده"}{storeMapUrl && <a href={storeMapUrl} target="_blank" rel="noopener noreferrer" className="mr-2 font-bold text-[var(--ui-accent)] hover:underline">نقشه</a>}</span>
           </section>
 
           <div className="flex items-center gap-3 xl:justify-self-end">
