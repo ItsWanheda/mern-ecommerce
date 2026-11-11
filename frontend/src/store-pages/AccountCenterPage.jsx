@@ -136,6 +136,11 @@ export default function AccountCenterPage() {
       </section>
 
       <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-bold">آخرین سفارش‌ها</h2><Link to="/orders" className="text-sm font-semibold text-[var(--ui-accent)] underline">مشاهده همه سفارش‌ها</Link></div>
+        {overview?.latestOrders?.length ? <div className="grid gap-3 md:grid-cols-3">{overview.latestOrders.map(order=><article key={order._id} className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3"><p className="text-xs text-[var(--ui-muted)]">{faDate(order.createdAt)}</p><p className="mt-2 text-lg font-bold">{new Intl.NumberFormat("fa-IR").format(order.totalAmount || 0)} تومان</p><p className="mt-1 text-xs text-[var(--ui-muted)]">پرداخت: {order.paymentStatus === "paid" ? "پرداخت‌شده" : order.paymentStatus === "pending" ? "در انتظار پرداخت" : order.paymentStatus || "نامشخص"}</p><p className="mt-1 text-xs text-[var(--ui-muted)]">ارسال: {order.shipmentStatus || "در انتظار پردازش"}</p></article>)}</div> : <p className="rounded-xl border border-dashed border-[var(--ui-border)] p-5 text-sm text-[var(--ui-muted)]">هنوز سفارشی ثبت نشده است.</p>}
+      </section>
+
+      <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
         <div className="mb-4 flex items-center gap-2"><UserRound className="text-[var(--ui-accent)]"/><h2 className="text-lg font-bold">اطلاعات شخصی</h2></div>
         <form onSubmit={submitProfile} className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm text-[var(--ui-muted)]">نام و نام خانوادگی<input className={fieldClass} minLength={2} maxLength={100} value={profileForm.name} onChange={e=>setProfileForm(v=>({...v,name:e.target.value}))} required/></label>
