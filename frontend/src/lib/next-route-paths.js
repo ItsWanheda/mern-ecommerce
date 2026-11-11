@@ -16,6 +16,8 @@ export const AUTH_ROUTES = Object.freeze([
 
 export const CUSTOMER_ROUTES = Object.freeze([
   "/account",
+  "/verify-email",
+  "/confirm-email-change",
   "/profile",
   "/orders",
   "/wishlist",
