@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   Cpu,
   PackageCheck,
   RefreshCw,
@@ -68,7 +66,6 @@ const EmptyCollection = ({ title, text, href = "/shop", action = "مشاهده �
 const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
-  const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [heroPaused, setHeroPaused] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
@@ -141,14 +138,7 @@ const HomePage = () => {
   const heroCampaign = heroCampaigns.length
     ? heroCampaigns[heroSlideIndex % heroCampaigns.length]
     : null;
-  const heroProduct = catalogProducts.find((product) =>
-    typeof product?.image === "string" && product.image.trim() &&
-    !(typeof product.stock === "number" && product.stock <= 0)
-  );
-  const heroImage = heroCampaign?.image || heroProduct?.image || "/hardware-category-placeholder.svg";
-  const heroHref = heroCampaign ? getCampaignPath(heroCampaign) : "/shop";
-
-  useEffect(() => setHeroImageFailed(false), [heroImage]);
+  useEffect(() => setHeroImageFailed(false), [heroCampaign?._id]);
   useEffect(() => {
     if (heroCampaigns.length < 2 || heroPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
     const intervalId = window.setInterval(() => {
@@ -156,13 +146,6 @@ const HomePage = () => {
     }, 6500);
     return () => window.clearInterval(intervalId);
   }, [heroCampaigns.length, heroPaused]);
-
-  const showPreviousCampaign = () => setHeroSlideIndex((index) =>
-    (index - 1 + heroCampaigns.length) % heroCampaigns.length
-  );
-  const showNextCampaign = () => setHeroSlideIndex((index) =>
-    (index + 1) % heroCampaigns.length
-  );
 
   const discountCampaigns = campaigns
     .filter((campaign) => campaign?.image && campaign?.title)
@@ -187,76 +170,76 @@ const HomePage = () => {
   return (
     <main dir="rtl" className="storefront-page storefront-home min-h-screen bg-[var(--ui-canvas)] text-[var(--ui-text)]">
       <div className="mx-auto w-full max-w-none space-y-8 px-3 pb-12 pt-5 sm:space-y-10 sm:px-6 sm:pb-16 sm:pt-7 lg:px-10 2xl:px-14">
-        <section
-          aria-label="پیشنهاد اصلی فروشگاه"
-          className="storefront-hero w-full overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_18px_45px_-38px_var(--ui-shadow-color)]"
-          onMouseEnter={() => setHeroPaused(true)}
-          onMouseLeave={() => setHeroPaused(false)}
-          onFocusCapture={() => setHeroPaused(true)}
-          onBlurCapture={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget)) setHeroPaused(false);
-          }}
-        >
-          <div className="relative min-h-[280px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[360px] lg:min-h-[440px] xl:min-h-[500px]">
-            {heroImageFailed ? (
-              <div role="img" aria-label="تصویر پیشنهاد در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ui-surface-raised)] p-6 text-center text-[var(--ui-muted)]">
-                <Cpu size={38} className="text-[var(--ui-accent)]" aria-hidden="true" />
-                <p className="text-sm leading-6">تصویر این پیشنهاد در دسترس نیست.</p>
-              </div>
-            ) : (
-              <img
-                src={heroImage}
-                alt={heroCampaign?.title || heroProduct?.name || "قطعات کامپیوتر"}
-                fetchPriority="high"
-                onError={() => setHeroImageFailed(true)}
-                className="absolute inset-0 h-full w-full object-cover object-center"
-              />
-            )}
-            {heroCampaign && (
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-black/85 via-black/45 to-black/5" />
-            )}
-            <div className={"relative z-10 flex min-h-[280px] items-end px-4 pb-12 pt-6 sm:min-h-[360px] sm:items-center sm:px-8 sm:py-9 lg:min-h-[440px] lg:px-12 xl:min-h-[500px] " + (heroCampaign ? "text-white" : "justify-start")}>
-              <div className="w-full max-w-xl">
-                {heroCampaign ? (
-                  <>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/15 px-3 py-1.5 text-[10px] font-bold text-white/90 backdrop-blur-sm sm:text-xs">
-                      <Sparkles size={14} aria-hidden="true" />
-                      پیشنهاد ویژه فروشگاه
-                    </span>
-                    <h1 className="mt-3 max-w-lg text-xl font-extrabold leading-[1.5] tracking-tight text-white sm:mt-4 sm:text-3xl sm:leading-[1.45] lg:text-4xl">
-                      <bdi dir="auto">{heroCampaign.title}</bdi>
-                    </h1>
-                    {heroCampaign.description && (
-                      <p className="mt-2 max-w-lg text-xs leading-6 text-white/85 sm:mt-3 sm:text-sm sm:leading-7">
-                        {heroCampaign.description}
-                      </p>
-                    )}
-                    <Link to={heroHref} className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:mt-6 sm:min-h-11 sm:px-5 sm:text-sm">
-                      مشاهده پیشنهاد<ArrowLeft size={15} aria-hidden="true" />
-                    </Link>
-                  </>
-                ) : null}
-              </div>
-            </div>
-            {heroCampaigns.length > 1 && (
-              <div className="absolute bottom-3 left-3 flex items-center justify-center sm:bottom-5 sm:left-5">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-[var(--ui-surface)]/90 px-2 py-1.5 text-[var(--ui-text)] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.35)] backdrop-blur-md" aria-label="انتخاب تصویر پیشنهادها">
-                  <button type="button" onClick={showPreviousCampaign} aria-label="تصویر قبلی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
-                    <ChevronRight size={17} aria-hidden="true" />
-                  </button>
-                  <div className="flex items-center gap-1.5">
-                    {heroCampaigns.map((campaign, index) => (
-                      <button key={campaign._id || index} type="button" onClick={() => setHeroSlideIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={heroSlideIndex === index} className={"h-1.5 rounded-full transition-all " + (heroSlideIndex === index ? "w-5 bg-[var(--ui-accent)]" : "w-1.5 bg-[var(--ui-border-strong)] hover:bg-[var(--ui-accent)]")} />
-                    ))}
-                  </div>
-                  <button type="button" onClick={showNextCampaign} aria-label="تصویر بعدی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
-                    <ChevronLeft size={17} aria-hidden="true" />
-                  </button>
+        {heroCampaigns.length > 0 && heroCampaign && (
+          <section
+            aria-label="پیشنهادهای ویژه فروشگاه"
+            aria-roledescription="carousel"
+            className="storefront-hero w-full overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_18px_45px_-38px_var(--ui-shadow-color)]"
+            onMouseEnter={() => setHeroPaused(true)}
+            onMouseLeave={() => setHeroPaused(false)}
+            onFocusCapture={() => setHeroPaused(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setHeroPaused(false);
+            }}
+          >
+            <div className="relative min-h-[260px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[340px] lg:min-h-[420px] xl:min-h-[470px]">
+              <Link
+                to={getCampaignPath(heroCampaign)}
+                aria-label={"مشاهده پیشنهاد " + heroCampaign.title}
+                className="absolute inset-0 z-0 block"
+                tabIndex={0}
+              >
+                {heroImageFailed ? (
+                  <span aria-hidden="true" className="absolute inset-0 block bg-gradient-to-br from-[var(--ui-surface-raised)] via-[var(--ui-accent-soft)] to-[var(--ui-surface)]" />
+                ) : (
+                  <img
+                    src={heroCampaign.image}
+                    alt={heroCampaign.title}
+                    fetchPriority="high"
+                    onError={() => setHeroImageFailed(true)}
+                    className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700"
+                  />
+                )}
+              </Link>
+              <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-l from-black/80 via-black/35 to-black/5" />
+              <div className="pointer-events-none relative z-10 flex min-h-[260px] items-end px-4 pb-12 pt-6 sm:min-h-[340px] sm:items-center sm:px-8 sm:py-9 lg:min-h-[420px] lg:px-12 xl:min-h-[470px]">
+                <div className="w-full max-w-xl text-white">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/15 px-3 py-1.5 text-[10px] font-bold text-white/90 backdrop-blur-sm sm:text-xs">
+                    <Sparkles size={14} aria-hidden="true" />
+                    پیشنهاد ویژه فروشگاه
+                  </span>
+                  <h1 className="mt-3 max-w-lg text-xl font-extrabold leading-[1.5] tracking-tight text-white sm:mt-4 sm:text-3xl sm:leading-[1.45] lg:text-4xl">
+                    <bdi dir="auto">{heroCampaign.title}</bdi>
+                  </h1>
+                  {heroCampaign.description && (
+                    <p className="mt-2 max-w-lg text-xs leading-6 text-white/85 sm:mt-3 sm:text-sm sm:leading-7">
+                      {heroCampaign.description}
+                    </p>
+                  )}
+                  <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-white sm:mt-6 sm:text-sm">
+                    مشاهده پیشنهاد<ArrowLeft size={15} aria-hidden="true" />
+                  </span>
                 </div>
               </div>
-            )}
-          </div>
-        </section>
+              {heroCampaigns.length > 1 && (
+                <div className="absolute inset-x-0 bottom-3 z-20 flex justify-center sm:bottom-5" aria-label="انتخاب پیشنهاد">
+                  <div className="flex items-center justify-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-2 backdrop-blur-md">
+                    {heroCampaigns.map((campaign, index) => (
+                      <button
+                        key={campaign._id || index}
+                        type="button"
+                        onClick={() => setHeroSlideIndex(index)}
+                        aria-label={"نمایش پیشنهاد " + campaign.title}
+                        aria-pressed={heroSlideIndex === index}
+                        className={"h-1 rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white " + (heroSlideIndex === index ? "w-7 bg-white" : "w-3 bg-white/55 hover:bg-white/85")}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         <section aria-label="مزایای خرید از فروشگاه" className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 sm:grid-cols-4 sm:gap-3 sm:p-4">
           {benefits.map(({ icon: Icon, title, text }) => (
