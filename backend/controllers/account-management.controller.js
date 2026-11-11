@@ -156,6 +156,7 @@ export const confirmEmailChange = async (req, res) => {
     if (await User.exists({ _id: { $ne: user._id }, email: user.pendingEmail })) return res.status(409).json({ message: "این ایمیل قبلاً ثبت شده است." });
     user.email = user.pendingEmail; user.pendingEmail = ""; user.emailVerifiedAt = new Date();
     user.emailChangeTokenHash = undefined; user.emailChangeExpiresAt = undefined;
+    user.emailVerificationTokenHash = undefined; user.emailVerificationExpiresAt = undefined;
     await user.save();
     await notify(user._id, "email_changed", "ایمیل حساب تغییر کرد", "نشانی ایمیل حساب شما تغییر کرده است.");
     return res.json({ message: "ایمیل حساب با موفقیت تغییر کرد.", email: user.email });
@@ -258,7 +259,7 @@ export const clearAccountWishlist = async (req, res) => {
 export const getAccountOverview = async (req, res) => {
   try {
     const [user, orderCount, latestOrders, openCases, unreadNotifications] = await Promise.all([
-      User.findById(req.user._id).select("name email emailVerifiedAt primaryPhone phoneVerifiedAt createdAt twoFactorEnabled"),
+      User.findById(req.user._id).select("name email emailVerifiedAt pendingEmail primaryPhone phoneVerifiedAt createdAt twoFactorEnabled"),
       Order.countDocuments({ user: req.user._id }),
       Order.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(3).select("totalAmount paymentStatus shipmentStatus createdAt currency").lean(),
       ServiceCase.countDocuments({ user: req.user._id, status: { $in: ["open", "in_review"] } }),
