@@ -31,15 +31,16 @@ export const useUserStore = create((set) => ({
 		}
 	},
 
-	login: async (email, password) => {
+	login: async (email, password, code) => {
 		set({ loading: true });
-
 		try {
-			const res = await axios.post("/auth/login", { email, password });
+			const res = await axios.post("/auth/login", { email, password, ...(code ? { code } : {}) });
 			set({ user: res.data, loading: false, authInitialized: true });
+			return { success: true };
 		} catch (error) {
 			set({ loading: false });
 			toast.error(getErrorMessage(error));
+			return { success: false, twoFactorRequired: Boolean(error.response?.data?.twoFactorRequired) };
 		}
 	},
 
