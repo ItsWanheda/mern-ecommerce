@@ -1,7 +1,7 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import {
-  changePassword, requestEmailVerification, verifyEmail, requestEmailChange, confirmEmailChange,
+  updateAccountProfile, changePassword, requestEmailVerification, verifyEmail, requestEmailChange, confirmEmailChange,
   getAccountSessions, revokeAccountSession, getSecurityNotifications, markSecurityNotificationRead,
   getCommunicationPreferences, updateCommunicationPreferences, getAccountWishlist, addWishlistProduct,
   removeWishlistProduct, clearAccountWishlist, getAccountOverview, exportAccountData,
@@ -13,6 +13,7 @@ router.post("/verify-email", verifyEmail);
 router.post("/confirm-email-change", confirmEmailChange);
 router.use(protectRoute);
 router.get("/overview", getAccountOverview);
+router.patch("/profile", updateAccountProfile);
 router.patch("/password", changePassword);
 router.post("/email/verification", requestEmailVerification);
 router.post("/email/change", requestEmailChange);
