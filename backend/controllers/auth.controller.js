@@ -3,6 +3,7 @@ import { getPasswordPolicyError } from "../lib/password-policy.js";
 import User from "../models/user.model.js";
 import AccountSession from "../models/account-session.model.js";
 import SecurityNotification from "../models/security-notification.model.js";
+import { verifyLoginTwoFactor } from "./account-management.controller.js";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import mongoose from "mongoose";
@@ -96,11 +97,14 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
 	try {
 		const { email, password } = req.body;
-		const user = await User.findOne({ email });
+		const user = await User.findOne({ email }).select("+twoFactorSecret");
 
 		if (user && (await user.comparePassword(password))) {
       if (!isRefreshAccountActive(user)) {
         return res.status(403).json({ message: "This account is inactive. Contact support." });
+      }
+      if (user.twoFactorEnabled && !verifyLoginTwoFactor(user.twoFactorSecret, req.body?.code)) {
+        return res.status(401).json({ message: "کد تأیید دومرحله‌ای معتبر نیست.", twoFactorRequired: true });
       }
 
 			await startAccountSession(user, req, res);
