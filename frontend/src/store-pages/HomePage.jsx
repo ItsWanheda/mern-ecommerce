@@ -197,7 +197,7 @@ const HomePage = () => {
             if (!event.currentTarget.contains(event.relatedTarget)) setHeroPaused(false);
           }}
         >
-          <div className="relative min-h-[235px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[305px] lg:min-h-[365px] xl:min-h-[405px]">
+          <div className="relative min-h-[280px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[360px] lg:min-h-[440px] xl:min-h-[500px]">
             {heroImageFailed ? (
               <div role="img" aria-label="تصویر پیشنهاد در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ui-surface-raised)] p-6 text-center text-[var(--ui-muted)]">
                 <Cpu size={38} className="text-[var(--ui-accent)]" aria-hidden="true" />
@@ -215,7 +215,7 @@ const HomePage = () => {
             {heroCampaign && (
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-black/85 via-black/45 to-black/5" />
             )}
-            <div className={"relative z-10 flex min-h-[235px] items-end px-4 pb-12 pt-6 sm:min-h-[305px] sm:items-center sm:px-8 sm:py-9 lg:min-h-[365px] lg:px-12 xl:min-h-[405px] " + (heroCampaign ? "text-white" : "justify-start")}>
+            <div className={"relative z-10 flex min-h-[280px] items-end px-4 pb-12 pt-6 sm:min-h-[360px] sm:items-center sm:px-8 sm:py-9 lg:min-h-[440px] lg:px-12 xl:min-h-[500px] " + (heroCampaign ? "text-white" : "justify-start")}>
               <div className="w-full max-w-xl">
                 {heroCampaign ? (
                   <>
