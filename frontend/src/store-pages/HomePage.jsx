@@ -66,6 +66,7 @@ const EmptyCollection = ({ title, text, href = "/shop", action = "مشاهده �
 const HomePage = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [heroPaused, setHeroPaused] = useState(false);
   const [newestLoaded, setNewestLoaded] = useState(false);
   const [newestError, setNewestError] = useState(false);
