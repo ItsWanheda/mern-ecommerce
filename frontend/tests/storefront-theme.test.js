@@ -21,6 +21,9 @@ test("navbar no longer exposes or persists a dark-mode option", async () => {
   assert.doesNotMatch(navbar, /renderThemeToggle|computer-hardware-theme|Moon|Sun|data-theme/);
   assert.match(navbar, /storefront-search-form/);
   assert.match(navbar, /نام قطعه، برند یا مدل/);
+  assert.match(navbar, /lg:hidden/);
+  assert.match(navbar, /md:hidden/);
+  assert.ok(!navbar.includes('<span className="text-xs font-bold">جست‌وجو</span>'));
 });
 
 test("popular products use the admin-curated collection instead of purchase ranking", async () => {
@@ -32,4 +35,26 @@ test("popular products use the admin-curated collection instead of purchase rank
   assert.doesNotMatch(home, /\/products\/bestsellers/);
   assert.match(collection, /title: "محبوب‌ترین‌ها"/);
   assert.match(collection, /axios\.get\("\/products\/featured"\)/);
+});
+
+ 
+test("storefront hero and campaign cards use wide responsive layouts", async () => {
+  const home = await readSource("../src/store-pages/HomePage.jsx");
+
+  assert.match(home, /storefront-hero/);
+  assert.match(home, /storefront-campaign-strip/);
+  assert.match(home, /snap-x snap-mandatory/);
+  assert.doesNotMatch(home, /سیستم دلخواهت را با/);
+  assert.doesNotMatch(home, /قطعات را بر اساس بودجه/);
+});
+
+test("compact footer retains core navigation, trust seal and newsletter functionality", async () => {
+  const footer = await readSource("../src/components/StoreFooter.jsx");
+
+  assert.match(footer, /پیوندهای اصلی فروشگاه/);
+  assert.match(footer, /نماد اعتماد الکترونیکی/);
+  assert.ok(footer.includes('axios.post("/newsletter/subscribe"'));
+  assert.match(footer, /newsletter-unsubscribe/);
+  assert.doesNotMatch(footer, /فضای نشانی فروشگاه آماده است/);
+  assert.doesNotMatch(footer, /ShieldCheck|Truck/);
 });
