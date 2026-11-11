@@ -60,8 +60,7 @@ export const changePassword = async (req, res) => {
     if (!user || !(await user.comparePassword(currentPassword))) return res.status(400).json({ message: "رمز عبور فعلی صحیح نیست." });
     user.password = newPassword;
     await user.save();
-    await AccountSession.updateMany({ user: user._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
-    await redis.del("refresh_token:" + user._id);
+    await AccountSession.updateMany({ user: user._id, tokenId: { $ne: req.sessionId }, revokedAt: null }, { $set: { revokedAt: new Date() } });
     await notify(user._id, "password_changed", "رمز عبور تغییر کرد", "رمز عبور حساب شما تغییر کرده است.");
     res.clearCookie("accessToken"); res.clearCookie("refreshToken");
     return res.json({ message: "رمز عبور تغییر کرد؛ دوباره وارد شوید." });
@@ -153,7 +152,7 @@ export const getAccountSessions = async (req, res) => {
   try {
     const sessions = await AccountSession.find({ user: req.user._id, revokedAt: null, expiresAt: { $gt: new Date() } })
       .sort({ lastUsedAt: -1 }).limit(30).lean();
-    return res.json({ sessions: sessions.map(session => ({ ...session, isCurrent: session.tokenId === req.sessionId, tokenId: undefined })) });
+    return res.json({ sessions: sessions.map(session => ({ ...session, isCurrent: session.tokenId === req.sessionId })) });
   } catch (error) {
     console.error("Loading account sessions failed", error?.message);
     return res.status(500).json({ message: "بارگذاری نشست‌ها انجام نشد." });
@@ -242,7 +241,7 @@ export const clearAccountWishlist = async (req, res) => {
 export const getAccountOverview = async (req, res) => {
   try {
     const [user, orderCount, latestOrders, openCases, unreadNotifications] = await Promise.all([
-      User.findById(req.user._id).select("name email emailVerifiedAt primaryPhone phoneVerifiedAt createdAt"),
+      User.findById(req.user._id).select("name email emailVerifiedAt primaryPhone phoneVerifiedAt createdAt twoFactorEnabled"),
       Order.countDocuments({ user: req.user._id }),
       Order.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(3).select("totalAmount paymentStatus shipmentStatus createdAt currency").lean(),
       ServiceCase.countDocuments({ user: req.user._id, status: { $in: ["open", "in_review"] } }),
