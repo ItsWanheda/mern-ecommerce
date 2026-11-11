@@ -728,6 +728,15 @@ const Navbar = () => {
               </button>
 
               <Link
+                to="/wishlist"
+                aria-label={savedProducts.length > 0 ? `علاقه‌مندی‌ها، ${new Intl.NumberFormat("fa-IR").format(savedProducts.length)} کالا` : "علاقه‌مندی‌ها"}
+                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"
+              >
+                <Heart size={18} aria-hidden="true" />
+                {savedProducts.length > 0 && <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ui-accent)] px-1 py-0.5 text-[10px] font-bold text-[var(--ui-button-text)]">{new Intl.NumberFormat("fa-IR").format(savedProducts.length)}</span>}
+              </Link>
+
+              <Link
                 to="/cart"
                 aria-label={cart.length > 0 ? `سبد خرید، ${new Intl.NumberFormat("fa-IR").format(cart.length)} کالا` : "سبد خرید"}
                 className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--ui-muted)] transition hover:bg-[var(--ui-surface-raised)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:order-1 lg:h-10 lg:w-auto lg:gap-2 lg:px-3"
@@ -828,7 +837,7 @@ const Navbar = () => {
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3 md:order-last md:basis-full md:justify-start min-[1440px]:order-none min-[1440px]:basis-auto min-[1440px]:justify-start min-[1280px]:order-none min-[1280px]:basis-auto min-[1280px]:col-start-1 min-[1680px]:row-start-1 min-[1680px]:w-full min-[1680px]:flex-initial min-[1680px]:justify-self-stretch">
               <nav
                 aria-label="پیمایش اصلی"
-                className="hidden shrink-0 items-center gap-1 lg:flex"
+                className="hidden shrink-0 items-center gap-1"
               >
                 
                 <NavLink to="/" end className={linkClass}>صفحه اصلی</NavLink>
