@@ -3,6 +3,7 @@ import { getPasswordPolicyError } from "../lib/password-policy.js";
 import User from "../models/user.model.js";
 import AccountSession from "../models/account-session.model.js";
 import SecurityNotification from "../models/security-notification.model.js";
+import { sendVerificationEmail, isAccountEmailConfigured } from "../lib/account-email.js";
 import { verifyLoginTwoFactor } from "./account-management.controller.js";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
@@ -77,6 +78,13 @@ export const signup = async (req, res) => {
 			return res.status(400).json({ message: "User already exists" });
 		}
 		const user = await User.create({ name, email, password });
+    if (isAccountEmailConfigured()) {
+      const token = crypto.randomBytes(32).toString("hex");
+      user.emailVerificationTokenHash = crypto.createHash("sha256").update(token).digest("hex");
+      user.emailVerificationExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      await user.save();
+      await sendVerificationEmail(email, token).catch(error => console.warn("Signup verification email unavailable", error?.message));
+    }
 
 		// authenticate
 		await startAccountSession(user, req, res);
