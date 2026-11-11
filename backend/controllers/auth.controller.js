@@ -5,6 +5,7 @@ import AccountSession from "../models/account-session.model.js";
 import SecurityNotification from "../models/security-notification.model.js";
 import { sendVerificationEmail, isAccountEmailConfigured } from "../lib/account-email.js";
 import { verifyLoginTwoFactor } from "./account-management.controller.js";
+import { getAdminPageAccessStatus } from "../lib/admin-page-access.js";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import mongoose from "mongoose";
@@ -255,7 +256,9 @@ export const updateProfile = async (req, res) => {
 export const getAdminPageAccess = async (req, res) => {
   try {
     const accessToken = req.cookies?.accessToken;
-    let decoded = null;\n    let refreshTokenMatches = true;
+    let decoded = null;
+    let refreshTokenMatches = true;
+
     if (accessToken) {
       try {
         decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
@@ -273,12 +276,12 @@ export const getAdminPageAccess = async (req, res) => {
         ? `refresh_token:${decoded.userId}:${decoded.sid}`
         : `refresh_token:${decoded.userId}`;
       const storedRefreshToken = await redis.get(redisKey);
-      if (storedRefreshToken !== presentedRefreshToken) {
-        return res.status(401).json({ message: "Authentication session expired" });
-      }
+      refreshTokenMatches = storedRefreshToken === presentedRefreshToken;
     }
 
     if (!decoded?.userId) return res.status(401).json({ message: "Authentication required" });
+
+    let sessionActive = true;
     if (decoded.sid) {
       const session = await AccountSession.findOne({
         tokenId: decoded.sid,
@@ -286,12 +289,13 @@ export const getAdminPageAccess = async (req, res) => {
         revokedAt: null,
         expiresAt: { $gt: new Date() },
       }).select("_id");
-      if (!session) return res.status(401).json({ message: "Authentication session revoked" });
+      sessionActive = Boolean(session);
     }
 
     const user = await User.findById(decoded.userId).select("_id role isActive");
-    if (!user || user.isActive === false) return res.status(401).json({ message: "Authentication required" });
-    if (user.role !== "admin") return res.status(403).json({ message: "Administrator access required" });
+    const accessStatus = getAdminPageAccessStatus({ user, sessionActive, refreshTokenMatches });
+    if (accessStatus === 401) return res.status(401).json({ message: "Authentication required" });
+    if (accessStatus === 403) return res.status(403).json({ message: "Administrator access required" });
     return res.json({ authorized: true, user: { role: user.role } });
   } catch (error) {
     console.error("Admin page authorization check failed", { name: error?.name, message: error?.message });
