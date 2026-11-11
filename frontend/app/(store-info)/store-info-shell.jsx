@@ -40,7 +40,7 @@ function StoreInfoChrome({ children }) {
       return;
     }
     mergeGuestCart();
-  }, [user, setAuthenticated, initializeGuestCart, mergeGuestCart]);
+  }, [user, setAuthenticated, setWishlistAuthenticated, initializeGuestCart, mergeGuestCart]);
 
   const requiresAuthentication = authInitialized && !user && isProtectedCustomerRoute(location.pathname);
 
