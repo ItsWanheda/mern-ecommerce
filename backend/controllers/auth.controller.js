@@ -416,7 +416,8 @@ export const resetPassword = async (req, res) => {
     user.passwordResetTokenHash = undefined;
     user.passwordResetExpiresAt = undefined;
     await user.save();
-    await redis.del("refresh_token:" + user._id);\n    await AccountSession.updateMany({ user: user._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
+    await redis.del("refresh_token:" + user._id);
+    await AccountSession.updateMany({ user: user._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
     return res.json({ message: "رمز عبور تغییر کرد؛ اکنون وارد حساب شوید." });
@@ -432,7 +433,8 @@ export const logout = async (req, res) => {
     if (refreshToken) {
       try {
         const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-        await redis.del(decoded.sid ? `refresh_token:${decoded.userId}:${decoded.sid}` : `refresh_token:${decoded.userId}`);\n        if (decoded.sid) await AccountSession.updateOne({ tokenId: decoded.sid, user: decoded.userId, revokedAt: null }, { $set: { revokedAt: new Date() } });
+        await redis.del(decoded.sid ? `refresh_token:${decoded.userId}:${decoded.sid}` : `refresh_token:${decoded.userId}`);
+        if (decoded.sid) await AccountSession.updateOne({ tokenId: decoded.sid, user: decoded.userId, revokedAt: null }, { $set: { revokedAt: new Date() } });
       } catch (error) {
         if (!["TokenExpiredError", "JsonWebTokenError", "NotBeforeError"].includes(error?.name)) throw error;
       }
@@ -473,7 +475,8 @@ export const refreshToken = async (req, res) => {
     const user = await User.findById(decoded.userId).select("_id isActive");
     if (!isRefreshAccountActive(user)) {
       try {
-        await redis.del(decoded.sid ? `refresh_token:${decoded.userId}:${decoded.sid}` : `refresh_token:${decoded.userId}`);\n        if (decoded.sid) await AccountSession.updateOne({ tokenId: decoded.sid, user: decoded.userId, revokedAt: null }, { $set: { revokedAt: new Date() } });
+        await redis.del(decoded.sid ? `refresh_token:${decoded.userId}:${decoded.sid}` : `refresh_token:${decoded.userId}`);
+        if (decoded.sid) await AccountSession.updateOne({ tokenId: decoded.sid, user: decoded.userId, revokedAt: null }, { $set: { revokedAt: new Date() } });
       } catch (error) {
         console.warn("Unable to revoke refresh token for inactive account", {
           name: error?.name || "Error",
@@ -488,7 +491,9 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
     }
 
-    const session = decoded.sid ? await AccountSession.findOne({ tokenId: decoded.sid, user: decoded.userId, revokedAt: null, expiresAt: { $gt: new Date() } }) : null;\n    if (decoded.sid && !session) { res.clearCookie("accessToken"); res.clearCookie("refreshToken"); return res.status(401).json({ message: "Authentication session expired. Please sign in again." }); }\n    const { accessToken, refreshToken: nextRefreshToken } = generateTokens(decoded.userId, decoded.sid);
+    const session = decoded.sid ? await AccountSession.findOne({ tokenId: decoded.sid, user: decoded.userId, revokedAt: null, expiresAt: { $gt: new Date() } }) : null;
+    if (decoded.sid && !session) { res.clearCookie("accessToken"); res.clearCookie("refreshToken"); return res.status(401).json({ message: "Authentication session expired. Please sign in again." }); }
+    const { accessToken, refreshToken: nextRefreshToken } = generateTokens(decoded.userId, decoded.sid);
     const rotated = await rotateStoredRefreshToken({
       redisClient: redis,
       userId: decoded.userId,
@@ -500,7 +505,8 @@ export const refreshToken = async (req, res) => {
       res.clearCookie("refreshToken");
       return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
     }
-    if (session) { session.lastUsedAt = new Date(); await session.save(); }\n    setCookies(res, accessToken, nextRefreshToken);
+    if (session) { session.lastUsedAt = new Date(); await session.save(); }
+    setCookies(res, accessToken, nextRefreshToken);
     return res.json({ message: "Session refreshed successfully" });
   } catch (error) {
     console.error("Refresh token rotation failed", { name: error?.name, code: error?.code });
