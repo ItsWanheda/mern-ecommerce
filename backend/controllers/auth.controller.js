@@ -25,8 +25,9 @@ const generateTokens = (userId, sessionId) => {
 	return { accessToken, refreshToken };
 };
 
-const storeRefreshToken = async (userId, refreshToken) => {
-	await redis.set(`refresh_token:${userId}`, refreshToken, "EX", 7 * 24 * 60 * 60); // 7days
+const storeRefreshToken = async (userId, refreshToken, sessionId) => {
+  const key = sessionId ? `refresh_token:${userId}:${sessionId}` : `refresh_token:${userId}`;
+  await redis.set(key, refreshToken, "EX", 7 * 24 * 60 * 60);
 };
 
 const setCookies = (res, accessToken, refreshToken) => {
@@ -42,6 +43,26 @@ const setCookies = (res, accessToken, refreshToken) => {
 		sameSite: "strict", // prevents CSRF attack, cross-site request forgery attack
 		maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 	});
+};
+
+const startAccountSession = async (user, req, res) => {
+  const sessionId = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await AccountSession.create({
+    user: user._id, tokenId: sessionId,
+    deviceName: String(req.headers["x-device-name"] || req.headers["user-agent"] || "دستگاه ناشناس").slice(0, 160),
+    userAgent: String(req.headers["user-agent"] || "").slice(0, 500),
+    ipAddress: String(req.ip || "").slice(0, 80), expiresAt,
+  });
+  const { accessToken, refreshToken } = generateTokens(user._id, sessionId);
+  await storeRefreshToken(user._id, refreshToken, sessionId);
+  setCookies(res, accessToken, refreshToken);
+  await SecurityNotification.create({
+    user: user._id, type: "new_login", title: "ورود جدید به حساب",
+    message: "ورود جدیدی به حساب شما انجام شد.",
+    metadata: { deviceName: String(req.headers["user-agent"] || "").slice(0, 160), ipAddress: String(req.ip || "").slice(0, 80) },
+  }).catch(error => console.warn("Unable to save security notification", error?.message));
+  return sessionId;
 };
 
 export const signup = async (req, res) => {
