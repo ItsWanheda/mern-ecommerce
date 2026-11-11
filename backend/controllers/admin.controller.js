@@ -5,6 +5,7 @@ import { escapeSearchRegex } from "../lib/persian-search.js";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
+import AccountSession from "../models/account-session.model.js";
 import ServiceCase from "../models/service-case.model.js";
 import { redis } from "../lib/redis.js";
 import { getKnownProductStock } from "../lib/inventory-stock.js";
@@ -101,11 +102,29 @@ export const getCustomers = async (req, res) => {
     }
     if (["customer", "admin"].includes(req.query.role)) filter.role = req.query.role;
     const [customers, total] = await Promise.all([
-      User.find(filter).select("_id name email role permissions isActive createdAt").sort({ createdAt: -1, _id: -1 })
+      User.find(filter).select("_id name email role permissions isActive createdAt emailVerifiedAt primaryPhone phoneVerifiedAt twoFactorEnabled deletionRequestedAt wishlist").sort({ createdAt: -1, _id: -1 })
         .skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean(),
       User.countDocuments(filter).maxTimeMS(1500),
     ]);
-    return res.json({ customers, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+    const customerIds = customers.map(customer => customer._id);
+    const [orderStats, serviceStats, sessionStats] = await Promise.all([
+      Order.aggregate([{ $match: { user: { $in: customerIds } } }, { $group: { _id: "$user", orderCount: { $sum: 1 }, paidTotal: { $sum: { $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0] } } } }]),
+      ServiceCase.aggregate([{ $match: { user: { $in: customerIds }, status: { $in: ["open", "in_review"] } } }, { $group: { _id: "$user", openCases: { $sum: 1 } } }]),
+      AccountSession.aggregate([{ $match: { user: { $in: customerIds }, revokedAt: null } }, { $group: { _id: "$user", activeSessions: { $sum: 1 }, lastLoginAt: { $max: "$lastUsedAt" } } }]),
+    ]);
+    const byId = rows => new Map(rows.map(row => [String(row._id), row]));
+    const ordersById = byId(orderStats), servicesById = byId(serviceStats), sessionsById = byId(sessionStats);
+    const enrichedCustomers = customers.map(customer => ({
+      ...customer,
+      wishlistCount: Array.isArray(customer.wishlist) ? customer.wishlist.length : 0,
+      orderCount: ordersById.get(String(customer._id))?.orderCount || 0,
+      paidTotal: ordersById.get(String(customer._id))?.paidTotal || 0,
+      openCases: servicesById.get(String(customer._id))?.openCases || 0,
+      activeSessions: sessionsById.get(String(customer._id))?.activeSessions || 0,
+      lastLoginAt: sessionsById.get(String(customer._id))?.lastLoginAt || null,
+      wishlist: undefined,
+    }));
+    return res.json({ customers: enrichedCustomers, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
     console.error("Unable to list customers", { name: error?.name, message: error?.message });
     return res.status(500).json({ message: "Unable to load customer accounts" });
@@ -158,6 +177,7 @@ export const updateCustomerAccess = async (req, res) => {
       else if (permissions !== undefined) target.permissions = permissions;
       await target.save();
       if (isDisablingAccount) {
+        await AccountSession.updateMany({ user: target._id, revokedAt: null }, { $set: { revokedAt: new Date() } });
         try {
           await redis.del(`refresh_token:${target._id}`);
         } catch (error) {
