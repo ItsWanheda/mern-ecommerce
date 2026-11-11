@@ -41,7 +41,7 @@ FREE_SHIPPING_THRESHOLD=0
 CRON_SECRET=replace_with_a_random_secret_of_at_least_32_characters
 ```
 
-Use your actual domain names and connection strings. Set `API_URL` to the backend origin without a trailing `/api`; set `CLIENT_URL` to the frontend origin. The payment callback is built from `API_URL` and must be reachable over HTTPS by the gateway. Keep sandbox mode enabled until real end-to-end tests have passed.
+Use your actual domain names and connection strings. Set `API_URL` to the backend origin without a trailing `/api`; set `CLIENT_URL` to the frontend origin. `APP_URL`, `RESEND_API_KEY`, and `EMAIL_FROM` configure customer email verification and password recovery links; keep the Resend API key private. The payment callback is built from `API_URL` and must be reachable over HTTPS by the gateway. Keep sandbox mode enabled until real end-to-end tests have passed.
 
 The application supports `REDIS_URL` for a private Redis service. The older `UPSTASH_REDIS_URL` variable is still accepted for compatibility, but Redis-backed distributed rate limiting should be configured and monitored in production.
 
