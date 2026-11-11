@@ -14,6 +14,7 @@ import { completeInitialBoot, hasCompletedInitialBoot } from "@/src/lib/initial-
 import NextRouteSync from "@/src/components/NextRouteSync.jsx";
 import { useUserStore } from "@/src/stores/useUserStore.js";
 import { useCartStore } from "@/src/stores/useCartStore.js";
+import { useWishlistStore } from "@/src/stores/useWishlistStore.js";
 import { isProtectedCustomerRoute } from "@/src/lib/next-route-paths.js";
 import { buildAuthPagePath } from "@/src/lib/auth-route-state.js";
 
@@ -22,6 +23,7 @@ function StoreInfoChrome({ children }) {
   const router = useRouter();
   const { user, checkAuth, checkingAuth, authInitialized } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
+  const setWishlistAuthenticated = useWishlistStore(state => state.setAuthenticated);
   const hideMobileBottomNavigation = /^\/product\//.test(location.pathname) ||
     location.pathname.startsWith("/secret-dashboard") ||
     ["/login", "/signup", "/forgot-password", "/reset-password", "/purchase-success", "/purchase-cancel"].includes(location.pathname);
@@ -32,6 +34,7 @@ function StoreInfoChrome({ children }) {
 
   useEffect(() => {
     setAuthenticated(Boolean(user));
+    void setWishlistAuthenticated(Boolean(user));
     if (!user) {
       initializeGuestCart();
       return;
