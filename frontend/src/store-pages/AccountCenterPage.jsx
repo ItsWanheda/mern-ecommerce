@@ -24,7 +24,13 @@ export default function AccountCenterPage() {
   const [deletePassword, setDeletePassword] = useState("");
   const [twoFactor, setTwoFactor] = useState({ secret: "", code: "" });
 
-  const handleLogout = async () => {\n    setBusy("logout");\n    await logout();\n    window.location.assign("/login");\n  };\n\n  const load = useCallback(async () => {
+  const handleLogout = async () => {
+    setBusy("logout");
+    await logout();
+    window.location.assign("/login");
+  };
+
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [a, s, n, p] = await Promise.all([
