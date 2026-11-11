@@ -115,6 +115,8 @@ const StoreFooter = () => {
         </p>
       </div>
     </footer>
+  );
+};
 
 const CpuFallback = () => (
   <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
