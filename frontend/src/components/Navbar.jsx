@@ -829,7 +829,7 @@ const Navbar = () => {
             <Link
               to="/"
               aria-label="صفحه اصلی Computer Hardware"
-              className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 shrink-0 items-center justify-center whitespace-nowrap text-base font-extrabold sm:text-xl tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] min-[1680px]:static min-[1680px]:col-start-2 min-[1680px]:row-start-1 min-[1680px]:translate-x-0 min-[1680px]:justify-self-center"
+              className="relative z-10 inline-flex shrink-0 items-center justify-center whitespace-nowrap text-sm font-extrabold tracking-tight text-[var(--ui-text)] transition hover:text-[var(--ui-accent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--ui-focus)] sm:text-xl min-[1280px]:absolute min-[1280px]:left-1/2 min-[1280px]:top-3 min-[1280px]:-translate-x-1/2 min-[1280px]:col-start-2 min-[1280px]:row-start-1 min-[1280px]:justify-self-center"
             >
               Computer Hardware
             </Link>
