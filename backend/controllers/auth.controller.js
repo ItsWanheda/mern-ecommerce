@@ -255,7 +255,7 @@ export const updateProfile = async (req, res) => {
 export const getAdminPageAccess = async (req, res) => {
   try {
     const accessToken = req.cookies?.accessToken;
-    let decoded = null;
+    let decoded = null;\n    let refreshTokenMatches = true;
     if (accessToken) {
       try {
         decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
