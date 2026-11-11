@@ -73,7 +73,7 @@ const userSchema = new mongoose.Schema(
       default: undefined,
     },
     isActive: { type: Boolean, default: true },
-    primaryPhone: { type: String, trim: true, match: /^09\\d{9}$/ , default: "" },
+    primaryPhone: { type: String, trim: true, default: "", validate: { validator: value => !value || /^09\\d{9}$/.test(value), message: "Primary phone must be an Iranian mobile number" } },
     phoneVerifiedAt: { type: Date, default: null },
     emailVerifiedAt: { type: Date, default: null },
     emailVerificationTokenHash: { type: String, select: false },
