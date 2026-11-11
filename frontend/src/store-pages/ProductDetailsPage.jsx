@@ -378,11 +378,6 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-2 border-t border-[var(--ui-border)] pt-4 text-xs sm:grid-cols-3">
-                <Link to="/shipping-policy" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">اطلاعات ارسال</Link>
-                <Link to="/returns-policy" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">شرایط بازگشت</Link>
-                <Link to="/support" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">پشتیبانی و راهنمایی</Link>
-              </div>
               <p className="mt-4 flex items-center gap-2 text-xs leading-6 text-[var(--ui-muted)]"><Check size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
             </div>
           </div>
@@ -449,7 +444,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         )}
       </div>
 
-      <div className="product-mobile-buybar fixed inset-x-0 z-50 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/96 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-24px_var(--ui-shadow-color)] backdrop-blur lg:hidden">
+      <div className="product-mobile-buybar fixed inset-x-0 bottom-0 z-50 border-t border-[var(--ui-border)] bg-[var(--ui-surface)]/96 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-16px_40px_-24px_var(--ui-shadow-color)] backdrop-blur lg:hidden">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-[var(--ui-muted)]"><bdi dir="auto">{product.name}</bdi></p>
