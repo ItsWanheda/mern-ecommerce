@@ -577,6 +577,8 @@ input[type="search"]::-webkit-search-decoration {
 
 .storefront-footer {
   scroll-margin-top: 6rem;
+  background-color: rgb(var(--color-surface-muted));
+  border-top-color: rgb(var(--color-border-strong));
 }
 
 @media (max-width: 767px) {
@@ -597,6 +599,8 @@ input[type="search"]::-webkit-search-decoration {
   }
 
   .storefront-page {
+    width: 100%;
+    max-width: 100%;
     overflow-x: clip;
   }
 }
