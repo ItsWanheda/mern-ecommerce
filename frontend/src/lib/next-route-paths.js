@@ -15,12 +15,14 @@ export const AUTH_ROUTES = Object.freeze([
 ]);
 
 export const CUSTOMER_ROUTES = Object.freeze([
+  "/account",
   "/profile",
   "/orders",
   "/wishlist",
 ]);
 
 export const AUTH_REQUIRED_CUSTOMER_ROUTES = Object.freeze([
+  "/account",
   "/profile",
   "/orders",
 ]);
