@@ -510,6 +510,29 @@ input[type="search"]::-webkit-search-decoration {
 .storefront-footer {
   overflow: hidden;
 }
+.storefront-campaign-strip {
+  scroll-behavior: smooth;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-strong) var(--ui-surface-raised);
+  -webkit-overflow-scrolling: touch;
+}
+
+.storefront-campaign-strip::-webkit-scrollbar {
+  height: 7px;
+}
+
+.storefront-campaign-strip::-webkit-scrollbar-track {
+  border-radius: 9999px;
+  background: var(--ui-surface-raised);
+}
+
+.storefront-campaign-strip::-webkit-scrollbar-thumb {
+  border: 2px solid var(--ui-surface-raised);
+  border-radius: 9999px;
+  background: var(--ui-border-strong);
+}
+
 
 .storefront-footer a {
   text-underline-offset: 3px;
