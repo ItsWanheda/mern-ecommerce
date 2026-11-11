@@ -265,6 +265,7 @@ const ProfilePage = () => {
             <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--ui-muted)]">اطلاعات شخصی و نشانی‌های تحویل را یک‌بار ذخیره کنید تا در خریدهای بعدی، فرم پرداخت به‌صورت خودکار تکمیل شود.</p>
           </div>
           <nav aria-label="دسترسی‌های سریع حساب" className="flex flex-wrap gap-2">
+            <Link to="/account" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--ui-accent)]">مرکز حساب <ChevronLeft size={16} aria-hidden="true" /></Link>
             <Link to="/orders" className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)]">سفارش‌ها <ChevronLeft size={16} aria-hidden="true" /></Link>
             <a href="#saved-addresses" className="inline-flex min-h-10 items-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)]">نشانی‌ها</a>
             <Link to="/wishlist" className="inline-flex min-h-10 items-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2 text-sm font-medium text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-surface-raised)]">علاقه‌مندی‌ها</Link>
