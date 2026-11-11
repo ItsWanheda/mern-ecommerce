@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, CheckCircle2, Download, Laptop, LockKeyhole, LogOut, Mail, Monitor, ShieldCheck, Smartphone, UserRound, XCircle } from "lucide-react";
+import { Bell, CheckCircle2, Download, Laptop, Mail, Monitor, ShieldCheck, Smartphone, UserRound } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 
