@@ -19,6 +19,7 @@ import orderRoutes from "./routes/order.route.js";
 import productReviewRoutes from "./routes/product-review.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import serviceCaseRoutes from "./routes/service-case.route.js";
+import accountManagementRoutes from "./routes/account-management.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
 import { browserOriginAndCors, securityHeaders } from "./middleware/security.middleware.js";
 
@@ -109,6 +110,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", productReviewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/service-cases", serviceCaseRoutes);
+app.use("/api/account", accountManagementRoutes);
 
 app.use("/api", (_req, res) => res.status(404).json({ message: "API route not found" }));
 app.use((error, _req, res, next) => {
