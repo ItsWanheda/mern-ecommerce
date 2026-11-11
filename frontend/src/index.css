@@ -379,10 +379,17 @@ input[type="search"]::-webkit-search-decoration {
 }
 
 .storefront-page {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   color: var(--ui-text);
   background: var(--ui-canvas);
   overflow-wrap: anywhere;
+}
+
+.storefront-page > div[class*="max-w-"] {
+  width: 100%;
+  max-width: none !important;
 }
 
 .storefront-page :where(h1, h2, h3) {
