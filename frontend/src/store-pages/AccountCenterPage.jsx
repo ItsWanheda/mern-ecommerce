@@ -112,7 +112,8 @@ export default function AccountCenterPage() {
           <Link to="/wishlist" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm">علاقه‌مندی‌ها</Link>
           <Link to="/profile" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm">نشانی‌ها</Link>
         </nav>
-\n      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[[UserRound,"نام حساب",profile.name || "—"],[Mail,"ایمیل",profile.email || "—"],[Laptop,"تعداد سفارش‌ها",stats.orderCount ?? 0],[Bell,"درخواست‌های باز",stats.openCases ?? 0]].map(([Icon,label,value]) => <article key={label} className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4"><Icon size={19} className="text-[var(--ui-accent)]"/><p className="mt-3 text-xs text-[var(--ui-muted)]">{label}</p><p className="mt-1 break-words font-semibold">{value}</p></article>)}
       </section>
 
