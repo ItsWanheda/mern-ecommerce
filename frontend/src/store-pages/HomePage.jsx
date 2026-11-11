@@ -123,10 +123,6 @@ const HomePage = () => {
     return () => { active = false; };
   }, [fetchFeaturedProducts, fetchNewestProducts, fetchCategories]);
 
-  const catalogProducts = useMemo(() => [...featuredProducts, ...newestProducts]
-    .filter((product, index, all) => product?._id && all.findIndex((item) => item?._id === product._id) === index),
-  [featuredProducts, newestProducts]);
-
   // The existing campaign manager supplies the hero slides. Admins can publish
   // several active campaigns with images to create a multi-image home carousel.
   const heroCampaigns = campaigns.filter((campaign) => {
@@ -139,6 +135,9 @@ const HomePage = () => {
     ? heroCampaigns[heroSlideIndex % heroCampaigns.length]
     : null;
   useEffect(() => setHeroImageFailed(false), [heroCampaign?._id]);
+  useEffect(() => {
+    setHeroSlideIndex((index) => heroCampaigns.length ? index % heroCampaigns.length : 0);
+  }, [heroCampaigns.length]);
   useEffect(() => {
     if (heroCampaigns.length < 2 || heroPaused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
     const intervalId = window.setInterval(() => {
