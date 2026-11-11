@@ -80,8 +80,7 @@ export const changePassword = async (req, res) => {
     await user.save();
     await AccountSession.updateMany({ user: user._id, tokenId: { $ne: req.sessionId }, revokedAt: null }, { $set: { revokedAt: new Date() } });
     await notify(user._id, "password_changed", "رمز عبور تغییر کرد", "رمز عبور حساب شما تغییر کرده است.");
-    res.clearCookie("accessToken"); res.clearCookie("refreshToken");
-    return res.json({ message: "رمز عبور تغییر کرد؛ دوباره وارد شوید." });
+    return res.json({ message: "رمز عبور تغییر کرد؛ نشست‌های دیگر لغو شدند." });
   } catch (error) {
     console.error("Account password change failed", error?.message);
     return res.status(500).json({ message: "تغییر رمز عبور انجام نشد." });
