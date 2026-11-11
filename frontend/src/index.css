@@ -590,7 +590,7 @@ input[type="search"]::-webkit-search-decoration {
 
 @media (max-width: 767px) {
   .product-mobile-buybar {
-    bottom: calc(5.25rem + env(safe-area-inset-bottom));
+    bottom: 0;
   }
 
   .storefront-home {
