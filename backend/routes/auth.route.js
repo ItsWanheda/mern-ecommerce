@@ -1,7 +1,7 @@
 import express from "express";
 import {
  login, logout, signup, refreshToken, getProfile, forgotPassword, resetPassword, saveDefaultAddress,
- updateProfile, createShippingAddress, updateShippingAddress, setDefaultShippingAddress, deleteShippingAddress,
+ updateProfile, createShippingAddress, updateShippingAddress, setDefaultShippingAddress, deleteShippingAddress, getAdminPageAccess,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { authRateLimit, refreshTokenRateLimit } from "../middleware/rate-limit.middleware.js";
@@ -13,6 +13,7 @@ router.post("/forgot-password", authRateLimit, forgotPassword);
 router.post("/reset-password", authRateLimit, resetPassword);
 router.post("/logout", logout);
 router.post("/refresh-token", refreshTokenRateLimit, refreshToken);
+router.get("/admin-access", getAdminPageAccess);
 router.get("/profile", protectRoute, getProfile);
 router.patch("/profile", protectRoute, updateProfile);
 router.patch("/profile/default-address", protectRoute, saveDefaultAddress);
