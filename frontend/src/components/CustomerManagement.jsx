@@ -75,13 +75,14 @@ export default function CustomerManagement() {
       <button type="button" onClick={()=>save(customer)} disabled={saving===customer._id} className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--ui-accent)] px-4 text-sm font-semibold text-[var(--ui-button-text)] disabled:opacity-50">{saving===customer._id?<LoaderCircle className="animate-spin" size={15}/>:<Save size={15}/>}ذخیره دسترسی</button></div>
       <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-[var(--ui-surface-raised)] p-3 text-xs sm:grid-cols-4">
         <div><p className="text-[var(--ui-muted)]">تأیید ایمیل</p><p className="mt-1 font-semibold">{customer.emailVerifiedAt ? "تأیید شده" : "تأیید نشده"}</p></div>
-        <div><p className="text-[var(--ui-muted)]">موبایل اصلی</p><p className="mt-1 break-all font-semibold" dir="ltr">{customer.primaryPhone || "ثبت نشده"}</p></div>
+        <div><p className="text-[var(--ui-muted)]">موبایل اصلی</p><p className="mt-1 break-all font-semibold" dir="ltr">{customer.primaryPhone || "ثبت نشده"}</p><p className="mt-1 text-[10px]">{customer.phoneVerifiedAt ? "تأیید شده" : "تأیید نشده"}</p></div>
         <div><p className="text-[var(--ui-muted)]">سفارش‌ها</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.orderCount || 0)}</p></div>
         <div><p className="text-[var(--ui-muted)]">مجموع پرداخت‌شده</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.paidTotal || 0)} تومان</p></div>
         <div><p className="text-[var(--ui-muted)]">درخواست‌های باز</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.openCases || 0)}</p></div>
         <div><p className="text-[var(--ui-muted)]">نشست‌های فعال</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.activeSessions || 0)}</p></div>
         <div><p className="text-[var(--ui-muted)]">تأیید دومرحله‌ای</p><p className="mt-1 font-semibold">{customer.twoFactorEnabled ? "فعال" : "غیرفعال"}</p></div>
         <div><p className="text-[var(--ui-muted)]">علاقه‌مندی‌ها</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.wishlistCount || 0)}</p></div>
+        <div className="col-span-2 sm:col-span-4"><p className="text-[var(--ui-muted)]">آخرین ورود موفق</p><p className="mt-1 font-semibold">{customer.lastLoginAt ? new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(customer.lastLoginAt)) : "سابقه‌ای ثبت نشده"}</p></div>
         {customer.deletionRequestedAt && <div className="col-span-2 text-[var(--ui-danger)] sm:col-span-4">درخواست حذف حساب: {new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium"}).format(new Date(customer.deletionRequestedAt))}</div>}
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-sm text-[var(--ui-muted)]">نقش حساب<select className={fieldClass+" mt-1"} value={draft.role} onChange={e=>change(customer,"role",e.target.value)}><option value="customer">مشتری</option><option value="admin">مدیر</option></select></label>
