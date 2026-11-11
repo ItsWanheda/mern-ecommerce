@@ -2,7 +2,7 @@ import { create } from "zustand";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 
-const STORAGE_KEY = "computer-hardware-saved-products";
+const STORAGE_KEY = "tik-boutique-saved-products";
 const readSavedProducts = () => {
   if (typeof window === "undefined") return [];
   try {
