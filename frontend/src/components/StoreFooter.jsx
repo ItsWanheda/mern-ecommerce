@@ -133,7 +133,7 @@ const StoreFooter = () => {
         </div>
       </div>
     </footer>
-
+  );
 };
 
 const CpuFallback = () => (
