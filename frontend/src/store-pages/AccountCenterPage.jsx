@@ -16,6 +16,7 @@ export default function AccountCenterPage() {
   const [preferences, setPreferences] = useState({ orderUpdates: true, securityAlerts: true, productNews: false, promotionalEmails: false });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
+  const [profileForm, setProfileForm] = useState({ name: "", primaryPhone: "" });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
   const [emailForm, setEmailForm] = useState({ email: "", password: "" });
   const [deletePassword, setDeletePassword] = useState("");
@@ -28,7 +29,7 @@ export default function AccountCenterPage() {
         axios.get("/account/overview"), axios.get("/account/sessions"),
         axios.get("/account/notifications"), axios.get("/account/preferences"),
       ]);
-      setOverview(a.data); setSessions(s.data.sessions || []);
+      setOverview(a.data); setProfileForm({ name: a.data.profile?.name || "", primaryPhone: a.data.profile?.primaryPhone || "" }); setSessions(s.data.sessions || []);
       setNotifications(n.data.notifications || []); setPreferences(p.data.preferences || preferences);
     } catch (error) {
       toast.error(error.response?.data?.message || "بارگذاری مرکز حساب انجام نشد.");
@@ -43,6 +44,10 @@ export default function AccountCenterPage() {
     finally { setBusy(""); }
   };
 
+  const submitProfile = event => {
+    event.preventDefault();
+    void run("profile", async () => { await axios.patch("/account/profile", profileForm); }, "اطلاعات حساب ذخیره شد.");
+  };
   const submitPassword = event => {
     event.preventDefault();
     void run("password", async () => {
@@ -102,8 +107,22 @@ export default function AccountCenterPage() {
         <Link to="/profile" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm font-semibold">پروفایل و نشانی‌ها</Link>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <nav aria-label="دسترسی‌های حساب" className="flex flex-wrap gap-2">
+          <Link to="/orders" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm">سفارش‌ها و پشتیبانی</Link>
+          <Link to="/wishlist" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm">علاقه‌مندی‌ها</Link>
+          <Link to="/profile" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm">نشانی‌ها</Link>
+        </nav>
+\n      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[[UserRound,"نام حساب",profile.name || "—"],[Mail,"ایمیل",profile.email || "—"],[Laptop,"تعداد سفارش‌ها",stats.orderCount ?? 0],[Bell,"درخواست‌های باز",stats.openCases ?? 0]].map(([Icon,label,value]) => <article key={label} className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-4"><Icon size={19} className="text-[var(--ui-accent)]"/><p className="mt-3 text-xs text-[var(--ui-muted)]">{label}</p><p className="mt-1 break-words font-semibold">{value}</p></article>)}
+      </section>
+
+      <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
+        <div className="mb-4 flex items-center gap-2"><UserRound className="text-[var(--ui-accent)]"/><h2 className="text-lg font-bold">اطلاعات شخصی</h2></div>
+        <form onSubmit={submitProfile} className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm text-[var(--ui-muted)]">نام و نام خانوادگی<input className={fieldClass} minLength={2} maxLength={100} value={profileForm.name} onChange={e=>setProfileForm(v=>({...v,name:e.target.value}))} required/></label>
+          <label className="block text-sm text-[var(--ui-muted)]">شماره موبایل اصلی<input className={fieldClass} dir="ltr" inputMode="tel" maxLength={11} value={profileForm.primaryPhone} onChange={e=>setProfileForm(v=>({...v,primaryPhone:e.target.value}))} placeholder="09xxxxxxxxx"/></label>
+          <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-[var(--ui-muted)]">شماره موبایل برای ورود/تماس ثبت می‌شود؛ تأیید پیامکی هنوز فعال نشده است.</p><button disabled={busy==="profile"} className="min-h-10 rounded-xl bg-[var(--ui-accent)] px-4 text-sm font-semibold text-[var(--ui-button-text)]">ذخیره اطلاعات</button></div>
+        </form>
       </section>
 
       <div className="grid items-start gap-5 xl:grid-cols-2">
