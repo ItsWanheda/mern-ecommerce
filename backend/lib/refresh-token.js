@@ -22,10 +22,11 @@ export const rotateRefreshToken = async ({
   userId,
   presentedToken,
   nextRefreshToken,
+  sessionId,
   ttlSeconds = 7 * 24 * 60 * 60,
 }) => {
   const result = await redisClient.eval(
-    ROTATE_SCRIPT, 1, `refresh_token:${userId}`, presentedToken, nextRefreshToken, ttlSeconds
+    ROTATE_SCRIPT, 1, `${sessionId ? `refresh_token:${userId}:${sessionId}` : `refresh_token:${userId}`}`, presentedToken, nextRefreshToken, ttlSeconds
   );
   return Number(result) === 1;
 };
