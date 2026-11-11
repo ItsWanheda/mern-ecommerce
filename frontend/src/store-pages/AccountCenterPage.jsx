@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, CheckCircle2, Download, Laptop, Mail, Monitor, ShieldCheck, Smartphone, UserRound } from "lucide-react";
+import { Bell, CheckCircle2, Download, Laptop, LogOut, Mail, Monitor, ShieldCheck, Smartphone, UserRound } from "lucide-react";
+import { useUserStore } from "../stores/useUserStore";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
 
@@ -10,6 +11,7 @@ const fieldClass = "mt-1 min-h-11 w-full rounded-xl border border-[var(--ui-bord
 const faDate = value => value ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
 
 export default function AccountCenterPage() {
+  const logout = useUserStore(state => state.logout);
   const [overview, setOverview] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -22,7 +24,7 @@ export default function AccountCenterPage() {
   const [deletePassword, setDeletePassword] = useState("");
   const [twoFactor, setTwoFactor] = useState({ secret: "", code: "" });
 
-  const load = useCallback(async () => {
+  const handleLogout = async () => {\n    setBusy("logout");\n    await logout();\n    window.location.assign("/login");\n  };\n\n  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [a, s, n, p] = await Promise.all([
@@ -122,7 +124,7 @@ export default function AccountCenterPage() {
     <main dir="rtl" className="storefront-page mx-auto min-h-screen max-w-[1440px] space-y-6 px-3 py-8 text-[var(--ui-text)] sm:px-6 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4 rounded-3xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
         <div><p className="text-sm font-semibold text-[var(--ui-accent)]">مدیریت حساب</p><h1 className="mt-1 text-2xl font-bold sm:text-3xl">مرکز حساب کاربری</h1><p className="mt-2 text-sm text-[var(--ui-muted)]">اطلاعات، امنیت، دستگاه‌ها و حریم خصوصی حساب خود را مدیریت کنید.</p></div>
-        <Link to="/profile" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm font-semibold">پروفایل و نشانی‌ها</Link>
+        <div className="flex flex-wrap items-center gap-2"><Link to="/profile" className="rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm font-semibold">پروفایل و نشانی‌ها</Link><button type="button" onClick={handleLogout} disabled={busy === "logout"} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-danger)] px-4 py-2 text-sm font-semibold text-[var(--ui-danger)] transition hover:bg-[var(--ui-danger-bg)] disabled:opacity-50"><LogOut size={16} aria-hidden="true" />خروج از حساب</button></div>
       </header>
 
         <nav aria-label="دسترسی‌های حساب" className="flex flex-wrap gap-2">
