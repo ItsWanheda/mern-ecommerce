@@ -59,12 +59,15 @@ test("the native account route set contains the four authentication routes", () 
 });
 
 test("the native customer route set preserves the guest wishlist and protected pages", () => {
-  assert.deepEqual(CUSTOMER_ROUTES, ["/profile", "/orders", "/wishlist"]);
-  assert.deepEqual(AUTH_REQUIRED_CUSTOMER_ROUTES, ["/profile", "/orders"]);
+  assert.deepEqual(CUSTOMER_ROUTES, ["/account", "/verify-email", "/confirm-email-change", "/profile", "/orders", "/wishlist"]);
+  assert.deepEqual(AUTH_REQUIRED_CUSTOMER_ROUTES, ["/account", "/profile", "/orders"]);
   for (const route of CUSTOMER_ROUTES) {
     assert.equal(isCustomerRoute(route), true, route);
     assert.equal(isAppRouterRoute(route), true, route);
   }
+  assert.equal(isProtectedCustomerRoute("/account"), true);
+  assert.equal(isProtectedCustomerRoute("/verify-email"), false);
+  assert.equal(isProtectedCustomerRoute("/confirm-email-change"), false);
   assert.equal(isProtectedCustomerRoute("/profile"), true);
   assert.equal(isProtectedCustomerRoute("/orders"), true);
   assert.equal(isProtectedCustomerRoute("/wishlist"), false);
