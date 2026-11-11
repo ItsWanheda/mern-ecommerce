@@ -12,12 +12,16 @@ const LoginPage = () => {
 	const returnPath = getAuthReturnPath(location);
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [twoFactorCode, setTwoFactorCode] = useState("");
+	const [twoFactorRequired, setTwoFactorRequired] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const { login, loading } = useUserStore();
 
-	const handleSubmit = (event) => {
+	const handleSubmit = async (event) => {
 		event.preventDefault();
-		login(email.trim(), password);
+		const result = await login(email.trim(), password, twoFactorCode);
+		if (result?.twoFactorRequired) setTwoFactorRequired(true);
+		if (result?.success) setTwoFactorRequired(false);
 	};
 
 	return (
@@ -66,6 +70,11 @@ const LoginPage = () => {
 								</div>
 							</div>
 
+							{twoFactorRequired && <div>
+								<label htmlFor="login-two-factor" className="mb-2 block text-sm font-medium text-ink-strong">کد تأیید دومرحله‌ای</label>
+								<input id="login-two-factor" name="one-time-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={twoFactorCode} onChange={event => setTwoFactorCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="کد ۶ رقمی برنامه احراز هویت" dir="ltr" className="w-full rounded-xl border border-border bg-surface px-4 py-3.5 text-center text-lg tracking-[0.35em] text-ink outline-none focus:border-brand focus:ring-4 focus:ring-brand/10" />
+								<p className="mt-2 text-xs text-muted-soft">کد فعلی برنامه احراز هویت خود را وارد کنید.</p>
+							</div>}
 							<button type="submit" disabled={loading} className="group flex w-full items-center justify-center gap-2 rounded-xl bg-strong px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-strong-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-60">
 								{loading ? "در حال ورود..." : "ورود"}
 								{!loading && <ArrowRight size={17} className="transition-transform group-hover:translate-x-1" aria-hidden="true" />}
