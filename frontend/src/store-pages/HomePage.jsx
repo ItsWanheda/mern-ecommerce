@@ -197,68 +197,68 @@ const HomePage = () => {
             if (!event.currentTarget.contains(event.relatedTarget)) setHeroPaused(false);
           }}
         >
-          <div className="grid min-w-0 items-stretch lg:min-h-[430px] lg:grid-cols-[0.94fr_1.06fr]">
-            <div className="order-1 flex min-w-0 flex-col justify-center px-5 py-7 sm:px-8 sm:py-9 lg:px-10 xl:px-12">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-3 py-1.5 text-[11px] font-bold text-[var(--ui-accent)]">
-                <Sparkles size={14} aria-hidden="true" />
-                {heroCampaign ? "پیشنهاد ویژه فروشگاه" : "فروشگاه تخصصی قطعات کامپیوتر"}
-              </span>
-              <h1 className="mt-5 max-w-xl text-2xl font-extrabold leading-[1.55] tracking-tight text-[var(--ui-text)] sm:text-3xl sm:leading-[1.5] lg:text-4xl xl:text-[2.7rem]">
-                {heroCampaign ? <bdi dir="auto">{heroCampaign.title}</bdi> : <>سیستم دلخواهت را با <span className="text-[var(--ui-accent)]">انتخابی هوشمند</span> بساز.</>}
-              </h1>
-              <p className="mt-3 max-w-lg text-sm leading-7 text-[var(--ui-muted)] sm:mt-4 sm:text-base sm:leading-8">
-                {heroCampaign
-                  ? heroCampaign.description || "این پیشنهاد را ببین و قطعات مناسب سیستم خودت را انتخاب کن."
-                  : "قطعات را بر اساس بودجه، مشخصات فنی و سازگاری بررسی کن؛ بعد با خیال راحت انتخاب کن."}
-              </p>
-              <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center">
-                <Link to={heroHref} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-2.5 text-sm font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
-                  {heroCampaign ? "مشاهده پیشنهاد" : "مشاهده محصولات"}<ArrowLeft size={16} aria-hidden="true" />
-                </Link>
-                <Link to="/categories" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] px-5 py-2.5 text-sm font-semibold text-[var(--ui-text-strong)] transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
-                  خرید بر اساس دسته‌بندی
-                </Link>
+          <div className="relative min-h-[235px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[305px] lg:min-h-[365px] xl:min-h-[405px]">
+            {heroImageFailed ? (
+              <div role="img" aria-label="تصویر پیشنهاد در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ui-surface-raised)] p-6 text-center text-[var(--ui-muted)]">
+                <Cpu size={38} className="text-[var(--ui-accent)]" aria-hidden="true" />
+                <p className="text-sm leading-6">تصویر این پیشنهاد در دسترس نیست.</p>
               </div>
-              <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--ui-border)] pt-4 text-[11px] font-medium text-[var(--ui-muted)] sm:text-xs">
-                <span className="inline-flex items-center gap-2"><Cpu size={15} className="text-[var(--ui-accent)]" aria-hidden="true" />انتخاب بر اساس نیاز</span>
-                <span className="inline-flex items-center gap-2"><PackageCheck size={15} className="text-[var(--ui-accent)]" aria-hidden="true" />مشخصات قابل بررسی</span>
+            ) : (
+              <img
+                src={heroImage}
+                alt={heroCampaign?.title || heroProduct?.name || "قطعات کامپیوتر"}
+                fetchPriority="high"
+                onError={() => setHeroImageFailed(true)}
+                className={"absolute inset-0 h-full w-full " + (heroCampaign ? "object-cover object-center" : "object-contain object-center bg-white p-5 sm:p-8 lg:p-10")}
+              />
+            )}
+            {heroCampaign && (
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-l from-black/85 via-black/45 to-black/5" />
+            )}
+            <div className={"relative z-10 flex min-h-[235px] items-end px-4 pb-12 pt-6 sm:min-h-[305px] sm:items-center sm:px-8 sm:py-9 lg:min-h-[365px] lg:px-12 xl:min-h-[405px] " + (heroCampaign ? "text-white" : "justify-start")}>
+              <div className="w-full max-w-xl">
+                {heroCampaign ? (
+                  <>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-black/15 px-3 py-1.5 text-[10px] font-bold text-white/90 backdrop-blur-sm sm:text-xs">
+                      <Sparkles size={14} aria-hidden="true" />
+                      پیشنهاد ویژه فروشگاه
+                    </span>
+                    <h1 className="mt-3 max-w-lg text-xl font-extrabold leading-[1.5] tracking-tight text-white sm:mt-4 sm:text-3xl sm:leading-[1.45] lg:text-4xl">
+                      <bdi dir="auto">{heroCampaign.title}</bdi>
+                    </h1>
+                    {heroCampaign.description && (
+                      <p className="mt-2 max-w-lg text-xs leading-6 text-white/85 sm:mt-3 sm:text-sm sm:leading-7">
+                        {heroCampaign.description}
+                      </p>
+                    )}
+                    <Link to={heroHref} className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-xs font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:mt-6 sm:min-h-11 sm:px-5 sm:text-sm">
+                      مشاهده پیشنهاد<ArrowLeft size={15} aria-hidden="true" />
+                    </Link>
+                  </>
+                ) : (
+                  <Link to={heroHref} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-white/95 px-4 py-2 text-xs font-bold text-[var(--ui-text-strong)] shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:min-h-11 sm:px-5 sm:text-sm">
+                    مشاهده محصولات<ArrowLeft size={15} aria-hidden="true" />
+                  </Link>
+                )}
               </div>
             </div>
-
-            <div className="relative order-2 min-h-[230px] overflow-hidden bg-[var(--ui-surface-raised)] sm:min-h-[310px] lg:min-h-[430px]">
-              {heroImageFailed ? (
-                <div role="img" aria-label="تصویر محصولات در دسترس نیست" className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[var(--ui-surface-raised)] p-8 text-center text-[var(--ui-muted)]">
-                  <Cpu size={42} className="text-[var(--ui-accent)]" aria-hidden="true" />
-                  <p className="max-w-xs text-sm leading-7">قطعات و تجهیزات کامپیوتر را از دسته‌بندی‌های فروشگاه مرور کنید.</p>
-                </div>
-              ) : (
-                <img
-                  src={heroImage}
-                  alt={heroCampaign?.title || heroProduct?.name || "قطعات کامپیوتر"}
-                  fetchPriority="high"
-                  onError={() => setHeroImageFailed(true)}
-                  className={`absolute inset-0 h-full w-full ${heroCampaign ? "object-cover object-center" : "object-contain object-center bg-white p-5 sm:p-8 lg:p-10"}`}
-                />
-              )}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--ui-strong-surface)]/10 via-transparent to-transparent" />
-              {heroCampaigns.length > 1 && (
-                <div className="absolute inset-x-0 bottom-4 flex items-center justify-center px-4">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-[var(--ui-surface)]/90 px-2 py-1.5 text-[var(--ui-text)] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.35)] backdrop-blur-md" aria-label="انتخاب تصویر پیشنهادها">
-                    <button type="button" onClick={showPreviousCampaign} aria-label="تصویر قبلی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
-                      <ChevronRight size={17} aria-hidden="true" />
-                    </button>
-                    <div className="flex items-center gap-1.5">
-                      {heroCampaigns.map((campaign, index) => (
-                        <button key={campaign._id || index} type="button" onClick={() => setHeroSlideIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={heroSlideIndex === index} className={"h-1.5 rounded-full transition-all " + (heroSlideIndex === index ? "w-5 bg-[var(--ui-accent)]" : "w-1.5 bg-[var(--ui-border-strong)] hover:bg-[var(--ui-accent)]")} />
-                      ))}
-                    </div>
-                    <button type="button" onClick={showNextCampaign} aria-label="تصویر بعدی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
-                      <ChevronLeft size={17} aria-hidden="true" />
-                    </button>
+            {heroCampaigns.length > 1 && (
+              <div className="absolute bottom-3 left-3 flex items-center justify-center sm:bottom-5 sm:left-5">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/70 bg-[var(--ui-surface)]/90 px-2 py-1.5 text-[var(--ui-text)] shadow-[0_8px_24px_-14px_rgba(0,0,0,0.35)] backdrop-blur-md" aria-label="انتخاب تصویر پیشنهادها">
+                  <button type="button" onClick={showPreviousCampaign} aria-label="تصویر قبلی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
+                    <ChevronRight size={17} aria-hidden="true" />
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {heroCampaigns.map((campaign, index) => (
+                      <button key={campaign._id || index} type="button" onClick={() => setHeroSlideIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={heroSlideIndex === index} className={"h-1.5 rounded-full transition-all " + (heroSlideIndex === index ? "w-5 bg-[var(--ui-accent)]" : "w-1.5 bg-[var(--ui-border-strong)] hover:bg-[var(--ui-accent)]")} />
+                    ))}
                   </div>
+                  <button type="button" onClick={showNextCampaign} aria-label="تصویر بعدی" className="inline-flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]">
+                    <ChevronLeft size={17} aria-hidden="true" />
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -277,12 +277,12 @@ const HomePage = () => {
         {discountCampaigns.length > 0 && (
           <section aria-labelledby="special-discounts-heading">
             <SectionHeading title="تخفیف‌های ویژه" href="/campaigns" linkLabel="همه پیشنهادها" />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="storefront-campaign-strip flex snap-x snap-mandatory flex-nowrap gap-3 overflow-x-auto pb-2 sm:gap-4" tabIndex={0} aria-label="پیشنهادهای ویژه فروشگاه">
               {discountCampaigns.map((campaign) => (
                 <Link
                   key={campaign._id}
                   to={getCampaignPath(campaign)}
-                  className="group relative isolate flex min-h-[150px] items-end overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:min-h-[175px] sm:p-5"
+                  className="group relative isolate flex h-[145px] w-[min(84vw,26rem)] shrink-0 snap-start items-end overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:h-[170px] sm:w-[calc((100%-1rem)/2)] sm:p-5 lg:h-[185px] lg:w-[calc((100%-2rem)/3)]"
                 >
                   <img src={campaign.image} alt="" loading="lazy" decoding="async" className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
                   <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
