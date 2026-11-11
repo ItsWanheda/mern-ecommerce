@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import AccountSession from "../models/account-session.model.js";
+import AccountSession from "../models/account-session.model.js";
 
 export const protectRoute = async (req, res, next) => {
 	try {
@@ -12,7 +13,14 @@ export const protectRoute = async (req, res, next) => {
 
 		try {
 			const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
-			const user = await User.findById(decoded.userId).select("-password");
+      if (decoded.sid) {
+        const session = await AccountSession.findOne({
+          tokenId: decoded.sid, user: decoded.userId, revokedAt: null, expiresAt: { $gt: new Date() },
+        }).select("_id");
+        if (!session) return res.status(401).json({ message: "Authentication session revoked" });
+        req.sessionId = decoded.sid;
+      }
+      const user = await User.findById(decoded.userId).select("-password");
 
 			if (!user || user.isActive === false) {
 				return res.status(401).json({ message: "Authentication required" });
