@@ -302,122 +302,106 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
       <div className="mx-auto max-w-[1440px]">
         <Link to={productCategorySlug ? "/category/" + encodeURIComponent(productCategorySlug) : "/categories"} className="inline-flex min-h-10 items-center gap-2 rounded-full px-3 py-2 text-sm text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><ArrowRight size={16} aria-hidden="true" />بازگشت به {productCategoryName}</Link>
 
-        <div className="mt-5 grid min-w-0 items-start gap-5 sm:mt-7 sm:gap-7 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-8 xl:gap-10">
-          <section aria-label="تصاویر محصول" className="min-w-0">
-            <div className="product-gallery relative overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 sm:p-3">
-              {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
-                <button type="button" onClick={() => setImageViewerOpen(true)} aria-label="نمایش تصویر محصول در اندازه بزرگ" className="group block w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]">
-                  <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[700px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
-                  <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 py-2 text-xs font-semibold text-[var(--ui-text)] shadow-sm transition group-hover:bg-[var(--ui-surface)]"><ZoomIn size={15} aria-hidden="true" />بزرگ‌نمایی تصویر</span>
-                </button>
-              ) : (
-                <div role="img" aria-label={"تصویر " + product.name + " در دسترس نیست"} className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-[var(--ui-muted)] sm:aspect-[5/4] lg:aspect-[4/5]">
-                  <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--ui-border)] text-2xl">◇</span>
-                  <span>تصویر محصول به‌زودی اضافه می‌شود</span>
-                </div>
-              )}
-              {galleryImages.length > 1 && (
-                <>
-                  <button type="button" onClick={showPreviousImage} aria-label="نمایش تصویر قبلی" className="absolute end-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-[var(--ui-surface)]/95 text-[var(--ui-text)] shadow-sm backdrop-blur-sm transition hover:bg-[var(--ui-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
-                    <ArrowRight size={18} aria-hidden="true" />
+        <section className="mt-5 min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-5 shadow-[0_18px_45px_-38px_var(--ui-shadow-color)] sm:mt-7 sm:px-6 sm:py-7 lg:px-8 lg:py-9" aria-labelledby="product-description-heading">
+          <div className="grid min-w-0 items-start gap-6 lg:grid-cols-2 lg:gap-9 xl:gap-12">
+            <div className="min-w-0">
+              <div className="product-gallery relative overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-2 sm:p-3">
+                {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
+                  <button type="button" onClick={() => setImageViewerOpen(true)} aria-label="نمایش تصویر محصول در اندازه بزرگ" className="group block w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]">
+                    <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[620px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
+                    <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 py-2 text-xs font-semibold text-[var(--ui-text)] shadow-sm transition group-hover:bg-[var(--ui-surface)]"><ZoomIn size={15} aria-hidden="true" />بزرگ‌نمایی تصویر</span>
                   </button>
-                  <button type="button" onClick={showNextImage} aria-label="نمایش تصویر بعدی" className="absolute start-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-[var(--ui-surface)]/95 text-[var(--ui-text)] shadow-sm backdrop-blur-sm transition hover:bg-[var(--ui-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
-                    <ArrowLeft size={18} aria-hidden="true" />
-                  </button>
-                </>
-              )}
-              {galleryImages.length > 1 && (
-                <span className="absolute bottom-3 left-3 rounded-full border border-white/70 bg-[var(--ui-surface)]/90 px-3 py-1.5 text-xs font-medium text-[var(--ui-text-strong)] backdrop-blur-sm">
-                  {new Intl.NumberFormat("fa-IR").format(activeImageIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(galleryImages.length)} تصویر
-                </span>
-              )}
-            </div>
-            {galleryImages.length > 1 && (
-              <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="انتخاب تصویر محصول">
-                {galleryImages.map((image, index) => (
-                  <button key={image} type="button" onClick={() => setActiveImageIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={activeImageIndex === index} className={"overflow-hidden rounded-xl border-2 bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (activeImageIndex === index ? "border-[var(--ui-accent)]" : "border-transparent hover:border-[var(--ui-border-strong)]")}>
-                    {failedImageUrls.has(image) ? <span className="flex aspect-[4/5] w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={image} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-square w-full bg-white object-contain" />}
-                  </button>
-                ))}
+                ) : (
+                  <div role="img" aria-label={"تصویر " + product.name + " در دسترس نیست"} className="flex aspect-square w-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-[var(--ui-muted)]">
+                    <span aria-hidden="true" className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--ui-border)] text-2xl">◇</span>
+                    <span>تصویر محصول به‌زودی اضافه می‌شود</span>
+                  </div>
+                )}
+                {galleryImages.length > 1 && (
+                  <>
+                    <button type="button" onClick={showPreviousImage} aria-label="نمایش تصویر قبلی" className="absolute end-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-[var(--ui-surface)]/95 text-[var(--ui-text)] shadow-sm backdrop-blur-sm transition hover:bg-[var(--ui-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
+                      <ArrowRight size={18} aria-hidden="true" />
+                    </button>
+                    <button type="button" onClick={showNextImage} aria-label="نمایش تصویر بعدی" className="absolute start-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/70 bg-[var(--ui-surface)]/95 text-[var(--ui-text)] shadow-sm backdrop-blur-sm transition hover:bg-[var(--ui-surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">
+                      <ArrowLeft size={18} aria-hidden="true" />
+                    </button>
+                    <span className="absolute bottom-3 left-3 rounded-full border border-white/70 bg-[var(--ui-surface)]/90 px-3 py-1.5 text-xs font-medium text-[var(--ui-text-strong)] backdrop-blur-sm">
+                      {new Intl.NumberFormat("fa-IR").format(activeImageIndex + 1)} از {new Intl.NumberFormat("fa-IR").format(galleryImages.length)} تصویر
+                    </span>
+                  </>
+                )}
               </div>
-            )}
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <button type="button" onClick={handleShareProduct} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2.5 text-xs font-semibold text-[var(--ui-text)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><Share2 size={17} aria-hidden="true" />اشتراک‌گذاری محصول</button>
-              <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex h-11 w-11 items-center justify-center rounded-xl border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] hover:border-[var(--ui-accent)] hover:text-[var(--ui-accent)]")}><Heart size={18} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" /></button>
-            </div>
-          </section>
-
-          <section className="product-info-panel min-w-0 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-5 shadow-[0_18px_45px_-38px_var(--ui-shadow-color)] sm:px-6 sm:py-7 lg:px-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--ui-accent)]">{productCategoryName || "قطعات و تجهیزات کامپیوتر"}</p>
-            <h1 className="mt-3 text-2xl font-extrabold leading-tight tracking-tight text-[var(--ui-text)] sm:text-3xl"><bdi dir="auto">{product.name}</bdi></h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">
-              {reviewSummary.count > 0 ? (
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">
-                  <Star size={14} className="fill-current text-[#c29b4d]" aria-hidden="true" />
-                  <strong className="tabular-nums text-[var(--ui-text-strong)]">{reviewSummary.average.toFixed(1)}</strong>
-                  <span>از ۵ · {new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه</span>
-                </span>
-              ) : <span className="rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">هنوز امتیازی ثبت نشده</span>}
-            </div>
-            <p className="mt-4 text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(product.price)}</p>
-            <div className="my-6 h-px bg-[var(--ui-border)]" />
-
-            {productAttributeRows.length > 0 && (
-              <section className="mb-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-3.5 sm:p-4" aria-labelledby="quick-specifications-heading">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h2 id="quick-specifications-heading" className="text-sm font-bold">مشخصات کلیدی</h2>
-                  <span className="text-xs text-[var(--ui-muted)]">بر اساس دسته‌بندی محصول</span>
-                </div>
-                <dl className="grid grid-cols-2 gap-2">
-                  {productAttributeRows.slice(0, 4).map((attribute) => (
-                    <div key={attribute.key} className="min-w-0 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-3 py-2.5">
-                      <dt className="break-words text-[11px] text-[var(--ui-muted)]">{attribute.label}</dt>
-                      <dd className="mt-1 break-words text-sm font-semibold text-[var(--ui-text)]"><bdi dir="auto">{attribute.value}</bdi>{attribute.unit && <span className="mr-1 font-normal text-xs text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
-                    </div>
+              {galleryImages.length > 1 && (
+                <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="انتخاب تصویر محصول">
+                  {galleryImages.map((image, index) => (
+                    <button key={image} type="button" onClick={() => setActiveImageIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={activeImageIndex === index} className={"min-w-0 overflow-hidden rounded-xl border-2 bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (activeImageIndex === index ? "border-[var(--ui-accent)]" : "border-transparent hover:border-[var(--ui-border-strong)]")}>
+                      {failedImageUrls.has(image) ? <span className="flex aspect-square w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={image} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-square w-full bg-white object-contain" />}
+                    </button>
                   ))}
-                </dl>
-              </section>
-            )}
-            <div role="status" aria-live="polite" aria-atomic="true" className="mb-7 rounded-2xl bg-[var(--ui-canvas)] px-5 py-4">
-              <p className={"flex items-center gap-2 text-sm font-semibold " + (outOfStock ? "text-[var(--ui-danger)]" : "text-[var(--ui-accent)]")}>
-                <span className={"h-2 w-2 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-accent)]")} aria-hidden="true" />
-                {requiresCatalogUpdate ? "نیازمند به‌روزرسانی اطلاعات فنی و موجودی" : outOfStock ? "در حال حاضر ناموجود" : "موجود برای سفارش"}
-              </p>
-              {isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی انبار: {new Intl.NumberFormat("fa-IR").format(product.stock)} عدد</p>}
-              {requiresCatalogUpdate && <p className="mt-2 text-xs leading-5 text-[var(--ui-muted)]">این محصول دارای گزینه‌های ساختار قدیمی است و برای جلوگیری از ثبت سفارش با مشخصات اشتباه، فعلاً قابل افزودن به سبد نیست. آن را در پنل مدیریت ویرایش و مشخصات فنی/موجودی جدید را ثبت کنید.</p>}
-              {!isStockTracked(product) && !requiresCatalogUpdate && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
+                </div>
+              )}
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button type="button" onClick={handleShareProduct} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-2.5 text-xs font-semibold text-[var(--ui-text)] transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]"><Share2 size={17} aria-hidden="true" />اشتراک‌گذاری محصول</button>
+                <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex h-11 w-11 items-center justify-center rounded-xl border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-accent-soft)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-muted)] hover:border-[var(--ui-accent)] hover:text-[var(--ui-accent)]")}><Heart size={18} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" /></button>
+              </div>
             </div>
 
-            <div className="mt-7 hidden flex-col gap-2.5 sm:flex sm:flex-row">
-              <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{requiresCatalogUpdate ? "نیازمند به‌روزرسانی" : outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
-              <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:flex-1 " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-hover)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)]")}>
-                <Heart size={17} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" />
-                {isWishlisted ? "ذخیره‌شده در علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
-              </button>
-            </div>
-            <Link to="/" className="mt-4 inline-flex min-h-9 items-center gap-2 self-start rounded-full px-2 py-2 text-xs font-semibold text-[var(--ui-muted)] transition hover:text-[var(--ui-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)]">ادامه گشت‌وگذار <ArrowLeft size={14} aria-hidden="true" /></Link>
-            <div className="mt-5 grid gap-2 border-t border-[var(--ui-border)] pt-4 text-xs sm:grid-cols-3">
-              <Link to="/shipping-policy" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">اطلاعات ارسال</Link>
-              <Link to="/returns-policy" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">شرایط بازگشت</Link>
-              <Link to="/support" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">پشتیبانی و راهنمایی</Link>
-            </div>
-            <p className="mt-4 flex items-center gap-2 text-xs leading-5 text-[var(--ui-muted)]"><Check size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
-          </section>
-        </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-accent)]">{productCategoryName || "قطعات و تجهیزات کامپیوتر"}</p>
+              <h1 className="mt-3 break-words text-2xl font-extrabold leading-tight tracking-tight text-[var(--ui-text)] sm:text-3xl lg:text-4xl"><bdi dir="auto">{product.name}</bdi></h1>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-muted)]">
+                {reviewSummary.count > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">
+                    <Star size={14} className="fill-current text-[#c29b4d]" aria-hidden="true" />
+                    <strong className="tabular-nums text-[var(--ui-text-strong)]">{reviewSummary.average.toFixed(1)}</strong>
+                    <span>از ۵ · {new Intl.NumberFormat("fa-IR").format(reviewSummary.count)} دیدگاه</span>
+                  </span>
+                ) : <span className="rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">هنوز امتیازی ثبت نشده</span>}
+              </div>
+              <p className="mt-5 break-words text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(product.price)}</p>
 
-        <section className="mt-8 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-7 sm:mt-10 sm:px-7 sm:py-9" aria-labelledby="product-description-heading">
-          <div className="mx-auto max-w-4xl">
+              <div role="status" aria-live="polite" aria-atomic="true" className="mt-5 rounded-2xl bg-[var(--ui-canvas)] px-4 py-4 sm:px-5">
+                <p className={"flex items-center gap-2 text-sm font-semibold " + (outOfStock ? "text-[var(--ui-danger)]" : "text-[var(--ui-accent)]")}>
+                  <span className={"h-2 w-2 shrink-0 rounded-full " + (outOfStock ? "bg-[var(--ui-danger)]" : "bg-[var(--ui-accent)]")} aria-hidden="true" />
+                  {requiresCatalogUpdate ? "نیازمند به‌روزرسانی اطلاعات فنی و موجودی" : outOfStock ? "در حال حاضر ناموجود" : "موجود برای سفارش"}
+                </p>
+                {isStockTracked(product) && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی انبار: {new Intl.NumberFormat("fa-IR").format(product.stock)} عدد</p>}
+                {requiresCatalogUpdate && <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">این محصول دارای گزینه‌های ساختار قدیمی است و برای جلوگیری از ثبت سفارش با مشخصات اشتباه، فعلاً قابل افزودن به سبد نیست. آن را در پنل مدیریت ویرایش و مشخصات فنی/موجودی جدید را ثبت کنید.</p>}
+                {!isStockTracked(product) && !requiresCatalogUpdate && <p className="mt-1.5 text-xs text-[var(--ui-muted)]">موجودی این محصول هنگام ثبت سفارش بررسی می‌شود.</p>}
+              </div>
+
+              <div className="mt-5 hidden flex-col gap-2.5 sm:flex sm:flex-row">
+                <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)] sm:flex-[1.2]"><ShoppingCart size={17} aria-hidden="true" />{requiresCatalogUpdate ? "نیازمند به‌روزرسانی" : outOfStock ? "ناموجود" : "افزودن به سبد خرید"}</button>
+                <button type="button" onClick={handleToggleWishlist} aria-pressed={isWishlisted} aria-label={isWishlisted ? "حذف محصول از علاقه‌مندی‌ها" : "افزودن محصول به علاقه‌مندی‌ها"} className={"inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:flex-1 " + (isWishlisted ? "border-[var(--ui-accent)] bg-[var(--ui-hover)] text-[var(--ui-accent)]" : "border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-text)] hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)]")}>
+                  <Heart size={17} fill={isWishlisted ? "currentColor" : "none"} aria-hidden="true" />
+                  {isWishlisted ? "ذخیره‌شده در علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}
+                </button>
+              </div>
+
+              <div className="mt-5 grid gap-2 border-t border-[var(--ui-border)] pt-4 text-xs sm:grid-cols-3">
+                <Link to="/shipping-policy" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">اطلاعات ارسال</Link>
+                <Link to="/returns-policy" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">شرایط بازگشت</Link>
+                <Link to="/support" className="rounded-xl bg-[var(--ui-canvas)] px-3 py-3 text-center text-[var(--ui-muted)] transition hover:bg-[var(--ui-hover)] hover:text-[var(--ui-text)]">پشتیبانی و راهنمایی</Link>
+              </div>
+              <p className="mt-4 flex items-center gap-2 text-xs leading-6 text-[var(--ui-muted)]"><Check size={15} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />قیمت‌گذاری شفاف و اطلاعات قابل اتکا.</p>
+            </div>
+          </div>
+
+          <div className="mt-8 min-w-0 border-t border-[var(--ui-border)] pt-7 sm:mt-10 sm:pt-9">
             <p className="text-xs font-semibold text-[var(--ui-accent)]">نگاهی نزدیک‌تر</p>
-            <h2 id="product-description-heading" className="mt-3 text-2xl font-semibold leading-relaxed sm:text-3xl">درباره این محصول</h2>
-            <p dir="auto" className="mt-6 break-words whitespace-pre-line text-[15px] leading-8 text-[var(--ui-muted)] sm:text-base sm:leading-9">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
+            <h2 id="product-description-heading" className="mt-2 break-words text-2xl font-semibold leading-relaxed sm:text-3xl">درباره این محصول</h2>
+            <p dir="auto" className="mt-5 max-w-none break-words whitespace-pre-line text-[15px] leading-8 text-[var(--ui-muted)] [overflow-wrap:anywhere] sm:mt-6 sm:text-base sm:leading-9">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
             {productAttributeRows.length > 0 && (
               <div className="mt-8 border-t border-[var(--ui-border)] pt-6 sm:mt-10 sm:pt-8">
-                <h3 className="text-lg font-semibold sm:text-xl">مشخصات محصول</h3>
-                <dl className="mt-4 grid grid-cols-1 gap-2 sm:mt-5 sm:grid-cols-2 sm:gap-3">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <h3 className="text-lg font-semibold sm:text-xl">مشخصات فنی کامل محصول</h3>
+                  <span className="text-xs text-[var(--ui-muted)]">ویژگی‌های ثبت‌شده برای این دسته‌بندی</span>
+                </div>
+                <dl className="mt-4 grid min-w-0 grid-cols-1 gap-2 sm:mt-5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
                   {productAttributeRows.map((attribute) => (
                     <div key={attribute.key} className="grid min-w-0 grid-cols-1 gap-1 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] px-3 py-3 sm:px-4 sm:py-3.5">
                       <dt className="min-w-0 break-words text-xs leading-5 text-[var(--ui-muted)]">{attribute.label}</dt>
-                      <dd className="min-w-0 break-words text-sm font-semibold leading-6 text-[var(--ui-text)] sm:text-[15px]">{attribute.value}{attribute.unit && <span className="mr-1 font-normal text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
+                      <dd className="min-w-0 break-words text-sm font-semibold leading-6 text-[var(--ui-text)] sm:text-[15px] [overflow-wrap:anywhere]"><bdi dir="auto">{attribute.value}</bdi>{attribute.unit && <span className="mr-1 font-normal text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
                     </div>
                   ))}
                 </dl>
