@@ -72,12 +72,30 @@ export default function AccountCenterPage() {
     try { await axios.patch("/account/notifications/" + id + "/read"); await load(); }
     catch { toast.error("به‌روزرسانی اعلان انجام نشد."); }
   };
-  const requestDelete = event => {
+  const requestDelete = async event => {
     event.preventDefault();
-    void run("delete", async () => {
+    setBusy("delete");
+    try {
       await axios.post("/account/deletion-request", { password: deletePassword });
-      setDeletePassword("");
-    }, "درخواست حذف حساب ثبت شد.");
+      toast.success("درخواست حذف حساب ثبت شد.");
+      window.location.assign("/login");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "ثبت درخواست حذف حساب انجام نشد.");
+      setBusy("");
+    }
+  };
+  const downloadExport = async () => {
+    setBusy("export");
+    try {
+      const response = await axios.get("/account/export", { responseType: "blob" });
+      const url = URL.createObjectURL(response.data);
+      const anchor = document.createElement("a");
+      anchor.href = url; anchor.download = "account-data-export.json";
+      document.body.appendChild(anchor); anchor.click(); anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "دریافت خروجی اطلاعات حساب انجام نشد.");
+    } finally { setBusy(""); }
   };
   const setup2fa = () => void run("2fa-setup", async () => {
     const { data } = await axios.post("/account/two-factor/setup");
@@ -137,7 +155,7 @@ export default function AccountCenterPage() {
 
         <section className="space-y-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
           <div className="flex items-center gap-2"><Monitor className="text-[var(--ui-accent)]"/><h2 className="text-lg font-bold">دستگاه‌ها و نشست‌های فعال</h2></div>
-          {sessions.length ? sessions.map(session=><article key={session._id} className="rounded-xl border border-[var(--ui-border)] p-3"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-2"><Smartphone size={18} className="mt-1 shrink-0 text-[var(--ui-muted)]"/><div className="min-w-0"><p className="break-words text-sm font-semibold">{session.deviceName || "دستگاه ناشناس"} {session.isCurrent && <span className="text-[var(--ui-success)]">· این دستگاه</span>}</p><p className="mt-1 break-all text-xs text-[var(--ui-muted)]" dir="ltr">{session.ipAddress || "IP نامشخص"}</p><p className="mt-1 text-xs text-[var(--ui-muted)]">آخرین فعالیت: {faDate(session.lastUsedAt)}</p></div></div><button type="button" onClick={()=>revoke(session.tokenId)} disabled={busy==="session-"+session.tokenId} className="shrink-0 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs font-semibold">لغو</button></div></article>) : <p className="text-sm text-[var(--ui-muted)]">نشست فعالی ثبت نشده است.</p>}
+          {sessions.length ? sessions.map(session=><article key={session._id} className="rounded-xl border border-[var(--ui-border)] p-3"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-2"><Smartphone size={18} className="mt-1 shrink-0 text-[var(--ui-muted)]"/><div className="min-w-0"><p className="break-words text-sm font-semibold">{session.deviceName || "دستگاه ناشناس"} {session.isCurrent && <span className="text-[var(--ui-success)]">· این دستگاه</span>}</p><p className="mt-1 break-all text-xs text-[var(--ui-muted)]" dir="ltr">{session.ipAddress || "IP نامشخص"}</p><p className="mt-1 text-xs text-[var(--ui-muted)]">آخرین فعالیت: {faDate(session.lastUsedAt)}</p></div></div><button type="button" onClick={()=>revoke(session.tokenId)} disabled={session.isCurrent || busy==="session-"+session.tokenId} className="shrink-0 rounded-lg border border-[var(--ui-border)] px-3 py-2 text-xs font-semibold">لغو</button></div></article>) : <p className="text-sm text-[var(--ui-muted)]">نشست فعالی ثبت نشده است.</p>}
           <div className="border-t border-[var(--ui-border)] pt-4"><h3 className="font-semibold">تأیید دومرحله‌ای</h3><p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">با برنامه‌هایی مانند Google Authenticator یک کد یک‌بارمصرف اضافه کنید.</p>{twoFactor.secret ? <form onSubmit={enable2fa} className="mt-3 space-y-2"><p className="break-all rounded-lg bg-[var(--ui-surface-raised)] p-3 font-mono text-sm" dir="ltr">{twoFactor.secret}</p><input className={fieldClass} inputMode="numeric" maxLength={6} placeholder="کد ۶ رقمی" value={twoFactor.code} onChange={e=>setTwoFactor(v=>({...v,code:e.target.value}))}/><button className="min-h-10 rounded-xl bg-[var(--ui-accent)] px-4 text-sm font-semibold text-[var(--ui-button-text)]">فعال‌سازی</button></form> : <button type="button" onClick={profile.twoFactorEnabled ? disable2fa : setup2fa} className="mt-3 min-h-10 rounded-xl border border-[var(--ui-border)] px-4 text-sm font-semibold">{profile.twoFactorEnabled ? "غیرفعال‌سازی تأیید دومرحله‌ای" : "راه‌اندازی تأیید دومرحله‌ای"}</button>}</div>
         </section>
       </div>
@@ -145,7 +163,7 @@ export default function AccountCenterPage() {
       <div className="grid items-start gap-5 xl:grid-cols-2">
         <section className="rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5"><div className="flex items-center gap-2"><Bell className="text-[var(--ui-accent)]"/><h2 className="text-lg font-bold">اعلان‌های امنیتی و تاریخچه ورود</h2></div><div className="mt-4 max-h-[440px] space-y-2 overflow-y-auto">{notifications.length ? notifications.map(item=><article key={item._id} className="rounded-xl bg-[var(--ui-surface-raised)] p-3"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{item.title}</p><p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">{item.message}</p><p className="mt-1 text-[11px] text-[var(--ui-muted)]">{faDate(item.createdAt)}</p></div>{!item.readAt && <button type="button" onClick={()=>markRead(item._id)} aria-label="خوانده شد" className="rounded-lg p-1 text-[var(--ui-accent)]"><CheckCircle2 size={18}/></button>}</div></article>) : <p className="text-sm text-[var(--ui-muted)]">هنوز رویداد امنیتی ثبت نشده است.</p>}</div></section>
         <section className="space-y-4 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5"><h2 className="text-lg font-bold">ترجیحات ارتباطی</h2>{[[ "orderUpdates","به‌روزرسانی سفارش‌ها" ],[ "securityAlerts","هشدارهای امنیتی" ],[ "productNews","اخبار محصولات" ],[ "promotionalEmails","پیشنهادها و ایمیل‌های تبلیغاتی" ]].map(([key,label])=><label key={key} className="flex min-h-12 items-center justify-between gap-3 border-b border-[var(--ui-border)] py-2 text-sm"><span>{label}</span><input type="checkbox" checked={Boolean(preferences[key])} onChange={e=>updatePreference(key,e.target.checked)} className="h-4 w-4 accent-[var(--ui-accent)]"/></label>)}
-          <a href={(process.env.NEXT_PUBLIC_API_URL || "/api") + "/account/export"} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] px-4 text-sm font-semibold"><Download size={16}/>دریافت نسخه اطلاعات حساب</a>
+          <button type="button" onClick={downloadExport} disabled={busy==="export"} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ui-border)] px-4 text-sm font-semibold disabled:opacity-50"><Download size={16}/>دریافت نسخه اطلاعات حساب</button>
           <form onSubmit={requestDelete} className="space-y-2 border-t border-[var(--ui-border)] pt-4"><h3 className="font-semibold text-[var(--ui-danger)]">درخواست حذف حساب</h3><p className="text-xs leading-5 text-[var(--ui-muted)]">حساب غیرفعال می‌شود و دسترسی نشست‌ها لغو خواهد شد. سوابق سفارش برای الزامات مالی حفظ می‌شوند.</p><input className={fieldClass} type="password" placeholder="رمز عبور برای تأیید درخواست" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)} required/><button disabled={busy==="delete"} className="min-h-10 rounded-xl border border-[var(--ui-danger)] px-4 text-sm font-semibold text-[var(--ui-danger)]">ثبت درخواست حذف حساب</button></form>
         </section>
       </div>
