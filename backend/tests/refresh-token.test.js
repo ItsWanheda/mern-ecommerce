@@ -34,3 +34,22 @@ test("disabled or missing users cannot refresh; legacy accounts remain active", 
   assert.equal(isRefreshAccountActive({ _id: "user-3", isActive: false }), false);
   assert.equal(isRefreshAccountActive(null), false);
 });
+
+
+test("refresh token rotation isolates concurrent device sessions", async () => {
+  const tokens = new Map([
+    ["refresh_token:user-1:session-a", "token-a"],
+    ["refresh_token:user-1:session-b", "token-b"],
+  ]);
+  const redisClient = {
+    eval: async (_script, _numKeys, key, presented, next) => {
+      if (tokens.get(key) !== presented) return 0;
+      tokens.set(key, next);
+      return 1;
+    },
+  };
+  assert.equal(await rotateRefreshToken({ redisClient, userId: "user-1", sessionId: "session-a", presentedToken: "token-a", nextRefreshToken: "token-a-next" }), true);
+  assert.equal(await rotateRefreshToken({ redisClient, userId: "user-1", sessionId: "session-b", presentedToken: "token-b", nextRefreshToken: "token-b-next" }), true);
+  assert.equal(tokens.get("refresh_token:user-1:session-a"), "token-a-next");
+  assert.equal(tokens.get("refresh_token:user-1:session-b"), "token-b-next");
+});
