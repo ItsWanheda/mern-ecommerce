@@ -81,7 +81,7 @@ const StoreFooter = () => {
           </nav>
 
           <section aria-label="اطلاعات تماس" className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 text-[10px] leading-5 text-[var(--ui-text-strong)]">
-            <Phone size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><span dir="ltr" className="truncate text-right font-semibold">{supportPhone || "شماره تماس ثبت نشده"}</span>
+            <Phone size={13} className="text-[var(--ui-accent)]" aria-hidden="true" />{supportPhone ? <a href={"tel:" + supportPhone.replace(/[^\\d+]/g, "")} dir="ltr" className="truncate text-right font-semibold hover:text-[var(--ui-accent)]">{supportPhone}</a> : <span>شماره تماس ثبت نشده</span>}
             <Mail size={13} className="text-[var(--ui-accent)]" aria-hidden="true" />{supportEmail ? <a href={"mailto:" + supportEmail} dir="ltr" className="truncate text-right font-semibold hover:text-[var(--ui-accent)]">{supportEmail}</a> : <span>ایمیل ثبت نشده</span>}
             <MapPin size={13} className="text-[var(--ui-accent)]" aria-hidden="true" /><span className="line-clamp-1 min-w-0">{storeAddress || "نشانی فروشگاه ثبت نشده"}{storeMapUrl && <a href={storeMapUrl} target="_blank" rel="noopener noreferrer" className="mr-2 font-bold text-[var(--ui-accent)] hover:underline">نقشه</a>}</span>
           </section>
