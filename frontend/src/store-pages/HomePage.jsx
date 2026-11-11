@@ -186,10 +186,10 @@ const HomePage = () => {
 
   return (
     <main dir="rtl" className="storefront-page storefront-home min-h-screen bg-[var(--ui-canvas)] text-[var(--ui-text)]">
-      <div className="mx-auto max-w-[1440px] space-y-8 px-3 pb-12 pt-5 sm:space-y-10 sm:px-6 sm:pb-16 sm:pt-7 lg:px-8">
+      <div className="mx-auto w-full max-w-none space-y-8 px-3 pb-12 pt-5 sm:space-y-10 sm:px-6 sm:pb-16 sm:pt-7 lg:px-10 2xl:px-14">
         <section
           aria-label="پیشنهاد اصلی فروشگاه"
-          className="storefront-hero overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_18px_45px_-38px_var(--ui-shadow-color)]"
+          className="storefront-hero w-full overflow-hidden rounded-[1.5rem] border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-[0_18px_45px_-38px_var(--ui-shadow-color)]"
           onMouseEnter={() => setHeroPaused(true)}
           onMouseLeave={() => setHeroPaused(false)}
           onFocusCapture={() => setHeroPaused(true)}
@@ -209,7 +209,7 @@ const HomePage = () => {
                 alt={heroCampaign?.title || heroProduct?.name || "قطعات کامپیوتر"}
                 fetchPriority="high"
                 onError={() => setHeroImageFailed(true)}
-                className={"absolute inset-0 h-full w-full " + (heroCampaign ? "object-cover object-center" : "object-contain object-center bg-white p-5 sm:p-8 lg:p-10")}
+                className="absolute inset-0 h-full w-full object-cover object-center"
               />
             )}
             {heroCampaign && (
@@ -235,11 +235,7 @@ const HomePage = () => {
                       مشاهده پیشنهاد<ArrowLeft size={15} aria-hidden="true" />
                     </Link>
                   </>
-                ) : (
-                  <Link to={heroHref} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--ui-border-strong)] bg-white/95 px-4 py-2 text-xs font-bold text-[var(--ui-text-strong)] shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] sm:min-h-11 sm:px-5 sm:text-sm">
-                    مشاهده محصولات<ArrowLeft size={15} aria-hidden="true" />
-                  </Link>
-                )}
+                ) : null}
               </div>
             </div>
             {heroCampaigns.length > 1 && (
