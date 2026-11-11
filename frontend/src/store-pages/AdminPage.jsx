@@ -1,10 +1,11 @@
 "use client";
 
-import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent, Users, LifeBuoy, Boxes, Star } from "lucide-react";
+import { Activity, BarChart, PlusCircle, ShoppingBasket, Megaphone, Truck, Mail, ScrollText, FolderTree, TicketPercent, Users, LifeBuoy, Boxes, Star, LogOut } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import axios from "../lib/axios";
+import { useUserStore } from "../stores/useUserStore";
 
 const AnalyticsTab = lazy(() => import("../components/AnalyticsTab"));
 const DashboardOverview = lazy(() => import("../components/DashboardOverview"));
@@ -30,8 +31,10 @@ const groups = [
  { id:"reports-system", label:"گزارش‌ها و سامانه", items:[{id:"dashboard",label:"نمای کلی",icon:Activity},{id:"analytics",label:"آمار و تحلیل",icon:BarChart},{id:"audit",label:"تاریخچه اقدامات",icon:ScrollText},{id:"operations",label:"وضعیت سامانه",icon:Activity}] },
 ];
 const AdminPage = () => {
+ const logout = useUserStore(state => state.logout);
  const [searchParams,setSearchParams]=useSearchParams();
  const requestedTab=searchParams.get("tab");
+ const handleLogout=async()=>{await logout();window.location.assign("/login");};
  const [adminPermissions,setAdminPermissions]=useState(null);
  useEffect(()=>{axios.get("/auth/profile").then(({data})=>setAdminPermissions(Array.isArray(data.permissions)?data.permissions:null)).catch(()=>setAdminPermissions(null));},[]);
  const visibleGroups=useMemo(()=>{
@@ -74,8 +77,9 @@ const AdminPage = () => {
  };
  return <div className="admin-page min-h-[65vh] bg-[var(--ui-canvas)] text-[var(--ui-text)]">
   <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:py-8">
-   <motion.header className="admin-page-header mb-6" initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} transition={{duration:.25}}>
-    <h1 className="text-2xl font-bold sm:text-3xl">داشبورد مدیریت</h1><p className="mt-2 text-sm leading-6 text-[var(--ui-muted)]">کاتالوگ، سفارش‌ها، بازاریابی و گزارش‌های فروشگاه را از یک فضای کاری مدیریت کنید.</p>
+   <motion.header className="admin-page-header mb-6 flex flex-wrap items-center justify-between gap-3" initial={{opacity:0,y:-10}} animate={{opacity:1,y:0}} transition={{duration:.25}}>
+    <div><h1 className="text-2xl font-bold sm:text-3xl">داشبورد مدیریت</h1><p className="mt-2 text-sm leading-6 text-[var(--ui-muted)]">کاتالوگ، سفارش‌ها، بازاریابی و گزارش‌های فروشگاه را از یک فضای کاری مدیریت کنید.</p></div>
+    <button type="button" onClick={handleLogout} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--ui-danger)] px-4 py-2 text-sm font-semibold text-[var(--ui-danger)] transition hover:bg-[var(--ui-danger-bg)]"><LogOut size={16} aria-hidden="true" />خروج از حساب</button>
    </motion.header>
    <div className="mb-5 md:hidden"><label htmlFor="admin-mobile-nav" className="mb-2 block text-xs font-semibold text-[var(--ui-muted)]">رفتن به بخش</label>
     <select id="admin-mobile-nav" value={activeTab} onChange={event=>selectTab(event.target.value)} className="admin-mobile-nav min-h-12 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] focus:ring-2 focus:ring-[var(--ui-focus)]/25">
