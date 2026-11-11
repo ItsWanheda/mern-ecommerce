@@ -499,6 +499,7 @@ export const refreshToken = async (req, res) => {
       userId: decoded.userId,
       presentedToken,
       nextRefreshToken,
+      sessionId: decoded.sid,
     });
     if (!rotated) {
       res.clearCookie("accessToken");
