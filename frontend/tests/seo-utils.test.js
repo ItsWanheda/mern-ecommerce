@@ -143,3 +143,22 @@ test("variant availability reflects whether at least one combination is purchasa
   assert.equal(getSchemaAvailability({ variants: [{ stock: 0 }], stock: null }), "https://schema.org/OutOfStock");
   assert.equal(getSchemaAvailability({ isActive: false, stock: 5 }), "https://schema.org/Discontinued");
 });
+
+test("discounted products expose the sale price in the structured Product Offer", () => {
+  const schema = buildProductStructuredData({
+    product: {
+      _id: "discounted-gpu",
+      name: "کارت گرافیک",
+      price: 100000,
+      discountPercent: 15,
+      stock: 5,
+    },
+    title: "کارت گرافیک",
+    description: "جزئیات محصول",
+    image: "/hardware/gpu.jpg",
+    canonical: "https://shop.example/product/discounted-gpu",
+    origin: "https://shop.example",
+  });
+  assert.equal(schema.offers.priceCurrency, "IRR");
+  assert.equal(schema.offers.price, 850000);
+});
