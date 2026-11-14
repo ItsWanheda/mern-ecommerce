@@ -884,6 +884,7 @@ export const setProductsDiscount = async (req, res) => {
     try {
       await redis.del(
         "recommended_products_v1",
+        "product_price_bounds_v2",
         ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v1:" + (index + 1))
       );
     } catch (cacheError) {
