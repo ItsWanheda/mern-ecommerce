@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Coupon from "../models/coupon.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { getProductDiscountedPrice } from "../lib/product-pricing.js";
 import {
   calculateCouponDiscount,
   couponEligibilityError,
@@ -75,7 +76,7 @@ const cartSubtotalFor = async (user) => {
   if (!items.length) return { error: "سبد خرید شما خالی است." };
   const ids = items.map((item) => String(item?.product || item?._id || "")).filter(mongoose.isValidObjectId);
   if (!ids.length) return { error: "سبد خرید را به‌روزرسانی کنید و دوباره تلاش کنید." };
-  const products = await Product.find({ _id: { $in: ids }, isActive: { $ne: false } }).select("_id price").lean();
+  const products = await Product.find({ _id: { $in: ids }, isActive: { $ne: false } }).select("_id price discountPercent").lean();
   const byId = new Map(products.map((product) => [String(product._id), product]));
   let subtotal = 0;
   for (const item of items) {
@@ -85,7 +86,7 @@ const cartSubtotalFor = async (user) => {
     if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
       return { error: "یکی از کالاهای سبد خرید معتبر نیست؛ سبد را به‌روزرسانی کنید." };
     }
-    subtotal += product.price * quantity;
+    subtotal += getProductDiscountedPrice(product) * quantity;
     if (!Number.isSafeInteger(subtotal)) return { error: "مبلغ سبد خرید معتبر نیست." };
   }
   return { subtotal };
