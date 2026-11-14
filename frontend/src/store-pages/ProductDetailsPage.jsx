@@ -45,6 +45,12 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
   const productCategorySlug = productCategory?.slug || "";
   const productCategoryName = productCategory?.name?.fa || productCategory?.name?.en || product?.category || "قطعات کامپیوتر";
   const productAttributeRows = useMemo(() => getProductAttributeRows(product, productCategories), [product, productCategories]);
+  const displayedSpecificationRows = useMemo(() => [
+    ...productAttributeRows,
+    ...(Array.isArray(product?.customSpecifications) ? product.customSpecifications : [])
+      .filter(item => item && typeof item.name === "string" && typeof item.value === "string" && item.name.trim() && item.value.trim())
+      .map((item, index) => ({ key: "custom-" + index, label: item.name, value: item.value, unit: "" })),
+  ], [productAttributeRows, product?.customSpecifications]);
   const [reviews, setReviews] = useState([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0, distribution: {} });
   const [reviewEligibility, setReviewEligibility] = useState({ loading: true, eligible: false, reason: "" });
@@ -386,14 +392,14 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
             <p className="text-xs font-semibold text-[var(--ui-accent)]">نگاهی نزدیک‌تر</p>
             <h2 id="product-description-heading" className="mt-2 break-words text-2xl font-semibold leading-relaxed sm:text-3xl">درباره این محصول</h2>
             <p dir="auto" className="mt-5 max-w-none break-words whitespace-pre-line text-[15px] leading-8 text-[var(--ui-muted)] [overflow-wrap:anywhere] sm:mt-6 sm:text-base sm:leading-9">{product.description || "اطلاعات بیشتری برای این محصول ثبت نشده است."}</p>
-            {productAttributeRows.length > 0 && (
+            {displayedSpecificationRows.length > 0 && (
               <div className="mt-8 border-t border-[var(--ui-border)] pt-6 sm:mt-10 sm:pt-8">
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <h3 className="text-lg font-semibold sm:text-xl">مشخصات فنی کامل محصول</h3>
-                  <span className="text-xs text-[var(--ui-muted)]">ویژگی‌های ثبت‌شده برای این دسته‌بندی</span>
+                  <span className="text-xs text-[var(--ui-muted)]">ویژگی‌های دسته‌بندی و اطلاعات تکمیلی</span>
                 </div>
                 <dl className="mt-4 grid min-w-0 grid-cols-1 gap-2 sm:mt-5 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
-                  {productAttributeRows.map((attribute) => (
+                  {displayedSpecificationRows.map((attribute) => (
                     <div key={attribute.key} className="grid min-w-0 grid-cols-1 gap-1 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-canvas)] px-3 py-3 sm:px-4 sm:py-3.5">
                       <dt className="min-w-0 break-words text-xs leading-5 text-[var(--ui-muted)]">{attribute.label}</dt>
                       <dd className="min-w-0 break-words text-sm font-semibold leading-6 text-[var(--ui-text)] sm:text-[15px] [overflow-wrap:anywhere]"><bdi dir="auto">{attribute.value}</bdi>{attribute.unit && <span className="mr-1 font-normal text-[var(--ui-muted)]">{attribute.unit}</span>}</dd>
