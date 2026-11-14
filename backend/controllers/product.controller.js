@@ -5,6 +5,7 @@ import Category from "../models/category.model.js";
 import Order from "../models/order.model.js";
 import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { normalizeCustomSpecifications } from "../lib/custom-product-specifications.js";
 
 const idOf = (value) => value == null ? "" : String(value);
 const getCategoryProductScope = async (slug) => {
@@ -326,6 +327,8 @@ export const createProduct = async (req, res) => {
       ? await validateProductAttributes(categoryRecord, attributes)
       : { values: attributes && typeof attributes === "object" && !Array.isArray(attributes) ? attributes : {} };
     if (normalizedAttributes.error) return res.status(400).json({ message: normalizedAttributes.error });
+    const normalizedCustomSpecifications = normalizeCustomSpecifications(req.body?.customSpecifications);
+    if (normalizedCustomSpecifications.error) return res.status(400).json({ message: normalizedCustomSpecifications.error });
     const numericPrice = price === "" || price === undefined || price === null ? Number.NaN : Number(price);
     const numericStock = stock === "" || stock === undefined || stock === null ? null : Number(stock);
     const normalizedSizes = Array.isArray(sizes)
@@ -424,6 +427,7 @@ export const createProduct = async (req, res) => {
       category: productCategory,
       categoryId: categoryRecord?._id || null,
       attributes: normalizedAttributes.values || {},
+      customSpecifications: normalizedCustomSpecifications.values || [],
       sizes: normalizedSizes,
       colors: normalizedColors,
       variants: normalizedVariants,
@@ -490,6 +494,8 @@ export const updateProduct = async (req, res) => {
       ? await validateProductAttributes(categoryRecord, rawAttributes)
       : { values: rawAttributes };
     if (normalizedAttributes.error) return res.status(400).json({ message: normalizedAttributes.error });
+    const normalizedCustomSpecifications = normalizeCustomSpecifications(body.customSpecifications, product.customSpecifications || []);
+    if (normalizedCustomSpecifications.error) return res.status(400).json({ message: normalizedCustomSpecifications.error });
 
     const normalizedSizes = Array.isArray(body.sizes)
       ? [...new Set(body.sizes.filter((value) => typeof value === "string").map((value) => value.trim()).filter(Boolean))].slice(0, 24)
@@ -605,6 +611,7 @@ export const updateProduct = async (req, res) => {
     product.category = productCategory;
     product.categoryId = categoryRecord?._id || null;
     product.attributes = normalizedAttributes.values || {};
+    product.customSpecifications = normalizedCustomSpecifications.values || [];
     product.sizes = normalizedSizes;
     product.colors = normalizedColors;
     product.variants = normalizedVariants;
