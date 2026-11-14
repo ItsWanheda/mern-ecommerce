@@ -675,7 +675,7 @@ const CategoryManager = () => {
           <details open={Boolean(editingId && form.attributes.length)} className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
             <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--ui-text)] [&::-webkit-details-marker]:hidden">
               <span>فیلدهای مشخصات فنی محصولات</span>
-              <span className="mr-auto text-xs font-normal text-[var(--ui-muted)]">${form.attributes.length} فیلد تعریف‌شده</span>
+              <span className="mr-auto text-xs font-normal text-[var(--ui-muted)]">{form.attributes.length} فیلد تعریف‌شده</span>
             </summary>
             <div className="border-t border-[var(--ui-border)] p-3 sm:p-4">
           <section className="space-y-3 rounded-xl border border-[var(--ui-border)] p-4">
