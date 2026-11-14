@@ -61,6 +61,7 @@ const productSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 160 },
     description: { type: String, required: true, maxlength: 5000 },
     price: { type: Number, min: 0, required: true },
+    discountPercent: { type: Number, min: 0, max: 99, default: 0, validate: { validator: Number.isInteger, message: "Product discount must be a whole percentage between 0 and 99" } },
     image: { type: String, trim: true, default: "" },
     // Keep image for existing integrations while allowing a proper product gallery.
     images: { type: [String], default: [] },
