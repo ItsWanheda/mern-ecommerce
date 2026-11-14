@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Archive, BookOpen, FolderPlus, Lightbulb, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
+import { Archive, FolderPlus, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
 import { useCategoryStore } from "../stores/useCategoryStore";
 
 const emptyForm = () => ({
@@ -128,13 +128,27 @@ const CategoryManager = () => {
   };
 
   const updateLocalized = (group, key, value) => {
+    if (group === "name" && key === "fa" && !editingId) {
+      setForm((current) => {
+        const nextSlug = slugify(value);
+        const previousAutoName = current.slug.replace(/-/g, " ");
+        const shouldRefreshEnglishName = !current.name.en || current.name.en === previousAutoName;
+        return {
+          ...current,
+          slug: nextSlug,
+          name: {
+            ...current.name,
+            fa: value,
+            en: shouldRefreshEnglishName ? nextSlug.replace(/-/g, " ") : current.name.en,
+          },
+        };
+      });
+      return;
+    }
     setForm((current) => ({
       ...current,
       [group]: { ...current[group], [key]: value },
     }));
-    if (group === "name" && key === "fa" && !editingId) {
-      setForm((current) => ({ ...current, slug: slugify(value) }));
-    }
   };
 
   const handleCategoryImageChange = (event) => {
@@ -746,7 +760,7 @@ const CategoryManager = () => {
       <div className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
           <div><h3 className="font-semibold">درخت دسته‌بندی‌ها</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">{categories.length} دسته ثبت‌شده</p></div>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-brand-muted" placeholder="جست‌وجوی دسته‌ها بر اساس نام…" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-brand-muted" placeholder="جست‌وجوی دسته‌ها..." />
         </div>
         {loading && categories.length === 0 ? (
           <div role="status" className="p-8 text-center text-sm text-[var(--ui-muted)]">در حال دریافت دسته‌بندی‌ها…</div>
