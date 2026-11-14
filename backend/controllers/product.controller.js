@@ -9,6 +9,19 @@ import { normalizeCustomSpecifications } from "../lib/custom-product-specificati
 import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
 const idOf = (value) => value == null ? "" : String(value);
+const discountedPriceExpression = {
+  $subtract: [
+    "$price",
+    {
+      $floor: {
+        $add: [
+          { $divide: [{ $multiply: ["$price", { $ifNull: ["$discountPercent", 0] }] }, 100] },
+          0.5,
+        ],
+      },
+    },
+  ],
+};
 const getCategoryProductScope = async (slug) => {
   const selected = await Category.findOne({ slug }).lean();
   if (!selected) return null;
@@ -206,18 +219,19 @@ export const getNewestProducts = async (req, res) => {
 };
 
 export const getProductPriceBounds = async (_req, res) => {
-  const cacheKey = "product_price_bounds_v1";
+  const cacheKey = "product_price_bounds_v2";
   const cached = await readJsonCache(cacheKey);
   if (cached) return res.json({ priceBounds: cached });
 
   try {
     const [stats] = await Product.aggregate([
       { $match: { isActive: { $ne: false }, price: { $gte: 0 } } },
+      { $addFields: { discountedPrice: discountedPriceExpression } },
       {
         $group: {
           _id: null,
-          minPrice: { $min: "$price" },
-          maxPrice: { $max: "$price" },
+          minPrice: { $min: "$discountedPrice" },
+          maxPrice: { $max: "$discountedPrice" },
           count: { $sum: 1 },
         },
       },
@@ -285,9 +299,10 @@ export const getSearchedProducts = async (req, res) => {
       });
     }
     if (minPrice !== null || maxPrice !== null) {
-      filter.price = {};
-      if (minPrice !== null) filter.price.$gte = minPrice;
-      if (maxPrice !== null) filter.price.$lte = maxPrice;
+      const priceConditions = [];
+      if (minPrice !== null) priceConditions.push({ $gte: [discountedPriceExpression, minPrice] });
+      if (maxPrice !== null) priceConditions.push({ $lte: [discountedPriceExpression, maxPrice] });
+      filter.$and = [...(filter.$and || []), { $expr: { $and: priceConditions } }];
     }
 
     const sortMap = {
@@ -970,10 +985,10 @@ export const getProductsByCategory = async (req, res) => {
       return res.status(400).json({ message: "بازه قیمت معتبر نیست." });
     }
     if (minPrice.value !== null || maxPrice.value !== null) {
-      const price = {};
-      if (minPrice.value !== null) price.$gte = minPrice.value;
-      if (maxPrice.value !== null) price.$lte = maxPrice.value;
-      clauses.push({ price });
+      const priceConditions = [];
+      if (minPrice.value !== null) priceConditions.push({ $gte: [discountedPriceExpression, minPrice.value] });
+      if (maxPrice.value !== null) priceConditions.push({ $lte: [discountedPriceExpression, maxPrice.value] });
+      clauses.push({ $expr: { $and: priceConditions } });
     }
 
     const readValues = (input, maxItems, maxLength = 80) => {
