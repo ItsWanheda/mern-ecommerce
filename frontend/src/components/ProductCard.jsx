@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { useReviewSummaryStore } from "../stores/useReviewSummaryStore.js";
-import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
+import { formatPrice, getProductDiscountPercent, getProductDiscountedPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const persianNumber = (value) => new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
@@ -28,6 +28,8 @@ const ProductCard = ({ product }) => {
   const lowStock = !requiresCatalogUpdate && isStockTracked(product) && product.stock > 0 && product.stock <= 3;
   const rating = Number(reviewSummary?.average || 0);
   const reviewCount = Number(reviewSummary?.count || 0);
+  const discountPercent = getProductDiscountPercent(product);
+  const discountedPrice = getProductDiscountedPrice(product);
 
   const handleAddToCart = () => {
     if (requiresCatalogUpdate) return toast.error("این کالا هنوز به ساختار مشخصات فنی و موجودی جدید منتقل نشده است.");
@@ -113,7 +115,17 @@ const ProductCard = ({ product }) => {
         </div>
 
         <div className="mt-auto pt-3">
-          <p className="text-base font-bold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-lg">{formatPrice(product.price)}</p>
+          {discountPercent > 0 ? (
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex rounded-full bg-[var(--ui-danger-bg)] px-2 py-0.5 text-[10px] font-bold text-[var(--ui-danger)]">{persianNumber(discountPercent)}٪ تخفیف</span>
+                <span className="text-xs font-medium tabular-nums text-[var(--ui-muted)] line-through">{formatPrice(product.price)}</span>
+              </div>
+              <p className="text-base font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-lg">{formatPrice(discountedPrice)}</p>
+            </div>
+          ) : (
+            <p className="text-base font-bold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-lg">{formatPrice(product.price)}</p>
+          )}
           <button
             type="button"
             onClick={handleAddToCart}
