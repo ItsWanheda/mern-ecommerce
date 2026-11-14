@@ -17,6 +17,7 @@ export const isStockTracked = (product) =>
 
 export const isOutOfStock = (product) => isStockTracked(product) && product.stock <= 0;
 
+// Keep whole-Toman rounding aligned with backend/lib/product-pricing.js.
 export const getProductDiscountPercent = (product) => {
   const percent = Number(product?.discountPercent ?? 0);
   return Number.isInteger(percent) && percent >= 0 && percent <= 99 ? percent : 0;
