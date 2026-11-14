@@ -13,6 +13,7 @@ import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 import { hasConfiguredInventory, hasKnownFiniteStock } from "../lib/inventory-stock.js";
 import { redis } from "../lib/redis.js";
 import { getDueReconciliationFilter, getNextReconciliationDelayMs, PAYMENT_RECONCILIATION_BATCH_SIZE, PAYMENT_RECONCILIATION_LOCK_TTL_MS } from "../lib/payment-reconciliation.js";
+import { getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
@@ -217,7 +218,7 @@ export const reserveInventory = async (items, productsById, { session } = {}) =>
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         reserved.push({ product: product._id, quantity, size, color, hasVariant: true, stockReserved: true });
-        orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: true, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: getProductDiscountedPrice(product), originalPrice: product.price, discountPercent: normalizeProductDiscountPercent(product.discountPercent), size, color, productName: product.name, image: product.image || "", hasVariant: true, stockReserved: true });
       } else if (isTracked(product)) {
         const updated = await Product.findOneAndUpdate(
           { _id: product._id, isActive: { $ne: false }, price: product.price, stock: { $gte: quantity } },
@@ -226,7 +227,7 @@ export const reserveInventory = async (items, productsById, { session } = {}) =>
         ).lean();
         if (!updated) throw new Error("INSUFFICIENT_STOCK");
         reserved.push({ product: product._id, quantity, hasVariant: false, stockReserved: true });
-        orderItems.push({ product: product._id, quantity, price: product.price, size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: getProductDiscountedPrice(product), originalPrice: product.price, discountPercent: normalizeProductDiscountPercent(product.discountPercent), size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: true });
       } else {
         // Defense in depth: unknown inventory is not an unlimited-stock policy.
         throw new Error("UNTRACKED_INVENTORY");
@@ -305,6 +306,9 @@ export const createZarinpalCheckout = async (req, res) => {
     const initialPricesByProductId = new Map(
       validated.map((item) => [String(item.productId), item.product.price])
     );
+    const initialDiscountsByProductId = new Map(
+      validated.map((item) => [String(item.productId), normalizeProductDiscountPercent(item.product.discountPercent)])
+    );
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(async () => {
@@ -319,21 +323,27 @@ export const createZarinpalCheckout = async (req, res) => {
           throw new Error("INVALID_CART");
         }
         for (const [productId, currentProduct] of transactionProductsById) {
-          if (currentProduct.price !== initialPricesByProductId.get(productId)) {
+          if (currentProduct.price !== initialPricesByProductId.get(productId) ||
+              normalizeProductDiscountPercent(currentProduct.discountPercent) !== initialDiscountsByProductId.get(productId)) {
             const priceError = new Error("PRICE_CHANGED");
             priceError.code = "PRICE_CHANGED";
             throw priceError;
           }
         }
 
+        let transactionOriginalSubtotal = 0;
         const transactionSubtotal = transactionItems.reduce((sum, item) => {
           const currentProduct = transactionProductsById.get(String(item.product));
           if (!currentProduct || !Number.isSafeInteger(currentProduct.price) || currentProduct.price < 0) {
             throw new Error("INVALID_CART");
           }
-          return sum + currentProduct.price * item.quantity;
+          transactionOriginalSubtotal += currentProduct.price * item.quantity;
+          return sum + getProductDiscountedPrice(currentProduct) * item.quantity;
         }, 0);
-        if (!Number.isSafeInteger(transactionSubtotal) || transactionSubtotal < 0) {
+        const transactionProductDiscountAmount = transactionOriginalSubtotal - transactionSubtotal;
+        if (!Number.isSafeInteger(transactionSubtotal) || transactionSubtotal < 0 ||
+            !Number.isSafeInteger(transactionOriginalSubtotal) || transactionOriginalSubtotal < transactionSubtotal ||
+            !Number.isSafeInteger(transactionProductDiscountAmount) || transactionProductDiscountAmount < 0) {
           const amountError = new Error("Invalid checkout amount");
           amountError.code = "INVALID_CHECKOUT_AMOUNT";
           throw amountError;
@@ -373,6 +383,7 @@ export const createZarinpalCheckout = async (req, res) => {
           shipmentStatus: "not_ready",
           totalAmount: transactionTotal,
           subtotalAmount: transactionSubtotal,
+          productDiscountAmount: transactionProductDiscountAmount,
           shippingFee: transactionShippingFee,
           currency: "IRT",
           paymentProvider: "zarinpal",
@@ -390,6 +401,410 @@ export const createZarinpalCheckout = async (req, res) => {
           order: createdOrder,
           reserved: reservations.reserved,
           coupon: transactionCoupon,
+import mongoose from "mongoose";
+import { randomUUID, timingSafeEqual } from "node:crypto";
+import Order from "../models/order.model.js";
+import Product from "../models/product.model.js";
+import User from "../models/user.model.js";
+import {
+  redeemCouponReservationForOrder,
+  releaseCouponReservationByCode,
+  releaseCouponReservationForOrder,
+  reserveCoupon,
+} from "../lib/coupons.js";
+import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
+import { hasConfiguredInventory, hasKnownFiniteStock } from "../lib/inventory-stock.js";
+import { redis } from "../lib/redis.js";
+import { getDueReconciliationFilter, getNextReconciliationDelayMs, PAYMENT_RECONCILIATION_BATCH_SIZE, PAYMENT_RECONCILIATION_LOCK_TTL_MS } from "../lib/payment-reconciliation.js";
+import { getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
+
+const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
+const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
+const apiBase = () => isSandbox()
+  ? "https://sandbox.zarinpal.com/pg/v4/payment"
+  : "https://api.zarinpal.com/pg/v4/payment";
+const startPayBase = () => isSandbox()
+  ? "https://sandbox.zarinpal.com/pg/StartPay"
+  : "https://www.zarinpal.com/pg/StartPay";
+const isTracked = hasKnownFiniteStock;
+const cartProductId = (item) => item.product?.toString() || item._id?.toString();
+const optionValue = (value) => typeof value === "string" ? value.trim() : "";
+const findVariant = (product, size, color) => (product.variants || []).find((variant) =>
+  optionValue(variant.size) === optionValue(size) && optionValue(variant.color) === optionValue(color)
+);
+const sameCartLine = (item, productId, size, color) =>
+  cartProductId(item) === productId &&
+  optionValue(item.size) === optionValue(size) &&
+  optionValue(item.color) === optionValue(color);
+const safeClientUrl = () => (process.env.CLIENT_URL || "").replace(/\/$/, "");
+const normalizeIranDigits = (value) => String(value ?? "")
+  .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+  .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+const normalizeIranPhone = (value) => {
+  let digits = normalizeIranDigits(value).replace(/\D/g, "");
+  if (digits.startsWith("0098") && digits.length === 14) digits = `0${digits.slice(4)}`;
+  else if (digits.startsWith("98") && digits.length === 12) digits = `0${digits.slice(2)}`;
+  else if (digits.length === 10 && digits.startsWith("9")) digits = `0${digits}`;
+  return digits;
+};
+const parseShippingAddress = (input) => {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const address = {
+    recipientName: typeof input.recipientName === "string" ? input.recipientName.trim().slice(0, 100) : "",
+    phone: normalizeIranPhone(input.phone),
+    province: typeof input.province === "string" ? input.province.trim().slice(0, 80) : "",
+    city: typeof input.city === "string" ? input.city.trim().slice(0, 80) : "",
+    district: typeof input.district === "string" ? input.district.trim().slice(0, 80) : "",
+    addressLine: typeof input.addressLine === "string" ? input.addressLine.trim().slice(0, 500) : "",
+    postalCode: normalizeIranDigits(input.postalCode).replace(/\D/g, "").slice(0, 10),
+    notes: typeof input.notes === "string" ? input.notes.trim().slice(0, 500) : "",
+  };
+  const valid = address.recipientName.length >= 2 &&
+    /^09\d{9}$/.test(address.phone) &&
+    address.province.length > 0 &&
+    address.city.length > 0 &&
+    address.addressLine.length >= 10 &&
+    /^\d{10}$/.test(address.postalCode);
+  return valid ? address : null;
+};
+
+
+export const getPaymentConfiguration = (_req, res) => {
+  const configured = Boolean(
+    process.env.ZARINPAL_MERCHANT_ID &&
+    process.env.API_URL &&
+    safeClientUrl() &&
+    isTomanCatalogConfirmed()
+  );
+  return res.json({
+    provider: "zarinpal",
+    currency: "IRT",
+    configured,
+    message: configured
+      ? ""
+      : "برای پرداخت، شناسه پذیرنده زرین‌پال، API_URL و CLIENT_URL را تنظیم کنید؛ پس از بازبینی قیمت‌های واقعی، IRT_CATALOG_PRICES_CONFIRMED=true را فعال کنید.",
+  });
+};
+
+const releaseReservedInventoryDirect = async (items = []) => {
+  for (const item of items) {
+    if (!item.stockReserved || !item.product || item.quantity <= 0) continue;
+    if (item.hasVariant || item.size || item.color) {
+      await Product.updateOne(
+        { _id: item.product, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
+        { $inc: { "variants.$.stock": item.quantity } }
+      );
+    } else {
+      await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
+    }
+  }
+};
+
+const isTransactionUnsupported = (error) =>
+  /Transaction numbers are only allowed|replica set|mongos|does not support transactions/i.test(error?.message || "");
+
+export const releaseReservedInventory = async (items = [], orderId = null) => {
+  if (!orderId) return releaseReservedInventoryDirect(items);
+
+  const session = await mongoose.startSession();
+  let transactionUnsupported = false;
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }).session(session);
+      if (!order) return;
+      let changed = false;
+      for (let index = 0; index < order.products.length; index += 1) {
+        const item = order.products[index];
+        if (!item.stockReserved || !item.product || item.quantity <= 0) continue;
+        const productExists = await Product.exists({ _id: item.product }).session(session);
+        if (productExists) {
+          let result;
+          if (item.hasVariant || item.size || item.color) {
+            result = await Product.updateOne(
+              { _id: item.product, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
+              { $inc: { "variants.$.stock": item.quantity } },
+              { session }
+            );
+          } else {
+            result = await Product.updateOne(
+              { _id: item.product },
+              { $inc: { stock: item.quantity } },
+              { session }
+            );
+          }
+          if (!result.matchedCount) throw new Error("RESERVED_INVENTORY_TARGET_NOT_FOUND");
+        }
+        item.stockReserved = false;
+        changed = true;
+      }
+      if (changed) await order.save({ session });
+    });
+  } catch (error) {
+    if (!isTransactionUnsupported(error)) throw error;
+    transactionUnsupported = true;
+    console.warn("MongoDB transactions are unavailable; using compatibility inventory release:", error.message);
+  } finally {
+    await session.endSession();
+  }
+
+  if (transactionUnsupported) {
+    // Standalone local MongoDB has no transactions. Preserve local development;
+    // production recovery is atomic on MongoDB Atlas/replica sets.
+    await releaseReservedInventoryDirect(items);
+    const updates = {};
+    items.forEach((item, index) => {
+      if (item.stockReserved) updates[`products.${index}.stockReserved`] = false;
+    });
+    if (Object.keys(updates).length) await Order.updateOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }, { $set: updates });
+  }
+};
+
+const finalizePaidOrder = async (paidOrder) => {
+  if (!paidOrder || paidOrder.finalizedAt) return;
+  if (paidOrder.couponReservationStatus === "reserved") {
+    await redeemCouponReservationForOrder(paidOrder._id);
+  }
+  const user = await User.findById(paidOrder.user);
+  if (user) {
+    user.cartItems = (user.cartItems || []).filter((item) =>
+      !(paidOrder.products || []).some((purchased) =>
+        sameCartLine(item, purchased.product.toString(), purchased.size, purchased.color)
+      )
+    );
+    await user.save();
+  }
+  await Order.updateOne(
+    { _id: paidOrder._id, paymentProvider: "zarinpal", currency: "IRT", paymentStatus: "paid", finalizedAt: null },
+    {
+      $set: { finalizedAt: new Date(), shipmentStatus: "processing" },
+      $push: {
+        shipmentEvents: {
+          status: "processing",
+          note: "پرداخت تأیید شد؛ سفارش برای آماده‌سازی ارسال ثبت شد.",
+          createdAt: new Date(),
+        },
+      },
+    }
+  );
+};
+
+export const reserveInventory = async (items, productsById, { session } = {}) => {
+  const reserved = [];
+  const orderItems = [];
+  try {
+    for (const item of items) {
+      const id = cartProductId(item);
+      const product = id && productsById.get(id);
+      const quantity = Number(item.quantity);
+      const size = optionValue(item.size);
+      const color = optionValue(item.color);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 || product.isActive === false) {
+        throw new Error("INVALID_CART");
+      }
+      if (!hasConfiguredInventory(product)) throw new Error("UNTRACKED_INVENTORY");
+
+      const hasVariant = (product.variants || []).length > 0;
+      const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
+      if (hasVariant && (!selectedVariant || !Number.isSafeInteger(selectedVariant.stock) || selectedVariant.stock < 0)) {
+        throw new Error("UNTRACKED_INVENTORY");
+      }
+      if (hasVariant) {
+        const updated = await Product.findOneAndUpdate(
+          {
+            _id: product._id,
+            isActive: { $ne: false },
+            price: product.price,
+            variants: { $elemMatch: { size, color, stock: { $gte: quantity } } },
+          },
+          { $inc: { "variants.$.stock": -quantity } },
+          session ? { new: true, session } : { new: true }
+        ).lean();
+        if (!updated) throw new Error("INSUFFICIENT_STOCK");
+        reserved.push({ product: product._id, quantity, size, color, hasVariant: true, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: getProductDiscountedPrice(product), originalPrice: product.price, discountPercent: normalizeProductDiscountPercent(product.discountPercent), size, color, productName: product.name, image: product.image || "", hasVariant: true, stockReserved: true });
+      } else if (isTracked(product)) {
+        const updated = await Product.findOneAndUpdate(
+          { _id: product._id, isActive: { $ne: false }, price: product.price, stock: { $gte: quantity } },
+          { $inc: { stock: -quantity } },
+          session ? { new: true, session } : { new: true }
+        ).lean();
+        if (!updated) throw new Error("INSUFFICIENT_STOCK");
+        reserved.push({ product: product._id, quantity, hasVariant: false, stockReserved: true });
+        orderItems.push({ product: product._id, quantity, price: getProductDiscountedPrice(product), originalPrice: product.price, discountPercent: normalizeProductDiscountPercent(product.discountPercent), size, color, productName: product.name, image: product.image || "", hasVariant: false, stockReserved: true });
+      } else {
+        // Defense in depth: unknown inventory is not an unlimited-stock policy.
+        throw new Error("UNTRACKED_INVENTORY");
+      }
+    }
+    return { orderItems, reserved };
+  } catch (error) {
+    // A transaction caller owns rollback; compensating writes inside its session
+    // could otherwise duplicate the rollback.
+    if (!session) await releaseReservedInventory(reserved);
+    throw error;
+  }
+};
+export const createZarinpalCheckout = async (req, res) => {
+  if (!isTomanCatalogConfirmed()) {
+    return res.status(503).json({ message: "پرداخت تا زمان تأیید قیمت‌های واقعی کاتالوگ به تومان غیرفعال است." });
+  }
+  if (!process.env.ZARINPAL_MERCHANT_ID || !process.env.API_URL || !safeClientUrl()) {
+    return res.status(503).json({ message: "Zarinpal is not configured on the server" });
+  }
+
+  let reserved = [];
+  let order = null;
+  let checkoutOrderId = null;
+  let gatewayRequestStarted = false;
+  let gatewayRequestRejected = false;
+  let receivedAuthority = "";
+  let couponReservedWithoutOrder = false;
+  let reservedCouponCode = "";
+  const shippingAddress = parseShippingAddress(req.body?.shippingAddress);
+  if (!shippingAddress) {
+    return res.status(400).json({ message: "نام گیرنده، موبایل ایرانی، استان، شهر، نشانی کامل و کد پستی ۱۰ رقمی را بررسی کنید." });
+  }
+  try {
+    const cartItems = req.user.cartItems || [];
+    if (!cartItems.length) return res.status(400).json({ message: "سبد خرید خالی است" });
+
+    const productIds = cartItems.map(cartProductId).filter(Boolean);
+    const products = await Product.find({ _id: { $in: productIds }, isActive: { $ne: false } }).lean();
+    const productsById = new Map(products.map((product) => [product._id.toString(), product]));
+    const validated = cartItems.map((item) => {
+      const id = cartProductId(item);
+      const product = id && productsById.get(id);
+      const quantity = Number(item.quantity);
+      const size = optionValue(item.size);
+      const color = optionValue(item.color);
+      if (!product || !Number.isInteger(quantity) || quantity < 1 || quantity > 100 ||
+          !Number.isSafeInteger(product.price) || product.price < 0) return null;
+      if (!hasConfiguredInventory(product)) return null;
+      const hasVariant = (product.variants || []).length > 0;
+      const selectedVariant = hasVariant ? findVariant(product, size, color) : null;
+      if (hasVariant && (!selectedVariant || selectedVariant.stock < quantity)) return null;
+      if (!hasVariant && isTracked(product) && product.stock < quantity) return null;
+      return { productId: id, quantity, product, size, color, hasVariant };
+    });
+    if (validated.some((item) => !item)) {
+      return res.status(409).json({ message: "موجودی یا اطلاعات یکی از کالاهای سبد خرید معتبر نیست؛ سبد خرید را به‌روزرسانی کنید." });
+    }
+
+    const couponCode = typeof req.body.couponCode === "string" ? req.body.couponCode.trim().toUpperCase() : "";
+    let coupon = null;
+    let couponDiscountAmount = 0;
+    let shippingFee = 0;
+    let totalToman = 0;
+
+    // Reserve coupon usage, finite inventory, and the pending order in one MongoDB
+    // transaction. A crash cannot leave stock reserved without a durable order record.
+    checkoutOrderId = new mongoose.Types.ObjectId();
+    let transactionResult = null;
+    const transactionItems = validated.map((item) => ({
+      product: item.productId,
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+    }));
+    const initialPricesByProductId = new Map(
+      validated.map((item) => [String(item.productId), item.product.price])
+    );
+    const initialDiscountsByProductId = new Map(
+      validated.map((item) => [String(item.productId), normalizeProductDiscountPercent(item.product.discountPercent)])
+    );
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        transactionResult = null;
+        const uniqueProductIds = [...new Set(transactionItems.map((item) => String(item.product)))];
+        const currentProducts = await Product.find({
+          _id: { $in: uniqueProductIds },
+          isActive: { $ne: false },
+        }).session(session).lean();
+        const transactionProductsById = new Map(currentProducts.map((product) => [String(product._id), product]));
+        if (transactionProductsById.size !== uniqueProductIds.length) {
+          throw new Error("INVALID_CART");
+        }
+        for (const [productId, currentProduct] of transactionProductsById) {
+          if (currentProduct.price !== initialPricesByProductId.get(productId) ||
+              normalizeProductDiscountPercent(currentProduct.discountPercent) !== initialDiscountsByProductId.get(productId)) {
+            const priceError = new Error("PRICE_CHANGED");
+            priceError.code = "PRICE_CHANGED";
+            throw priceError;
+          }
+        }
+
+        let transactionOriginalSubtotal = 0;
+        const transactionSubtotal = transactionItems.reduce((sum, item) => {
+          const currentProduct = transactionProductsById.get(String(item.product));
+          if (!currentProduct || !Number.isSafeInteger(currentProduct.price) || currentProduct.price < 0) {
+            throw new Error("INVALID_CART");
+          }
+          transactionOriginalSubtotal += currentProduct.price * item.quantity;
+          return sum + getProductDiscountedPrice(currentProduct) * item.quantity;
+        }, 0);
+        const transactionProductDiscountAmount = transactionOriginalSubtotal - transactionSubtotal;
+        if (!Number.isSafeInteger(transactionSubtotal) || transactionSubtotal < 0 ||
+            !Number.isSafeInteger(transactionOriginalSubtotal) || transactionOriginalSubtotal < transactionSubtotal ||
+            !Number.isSafeInteger(transactionProductDiscountAmount) || transactionProductDiscountAmount < 0) {
+          const amountError = new Error("Invalid checkout amount");
+          amountError.code = "INVALID_CHECKOUT_AMOUNT";
+          throw amountError;
+        }
+
+        let transactionCoupon = null;
+        let transactionDiscount = 0;
+        if (couponCode) {
+          const reservation = await reserveCoupon(couponCode, transactionSubtotal, new Date(), { session });
+          if (reservation.error) {
+            const couponError = new Error(reservation.error);
+            couponError.code = "COUPON_REJECTED";
+            throw couponError;
+          }
+          transactionCoupon = reservation.coupon;
+          transactionDiscount = reservation.discountAmount;
+        }
+
+        // Read dynamic shipping settings from the same transaction snapshot as
+        // the catalogue and inventory, so an admin update cannot race checkout totals.
+        const transactionShippingSettings = await getShippingSettings({ session });
+        const transactionDiscountedSubtotal = transactionSubtotal - transactionDiscount;
+        const transactionShippingFee = calculateShippingFee(transactionDiscountedSubtotal, transactionShippingSettings);
+        const transactionTotal = transactionDiscountedSubtotal + transactionShippingFee;
+        if (!Number.isSafeInteger(transactionTotal) || transactionTotal < 0) {
+          const amountError = new Error("Invalid checkout amount");
+          amountError.code = "INVALID_CHECKOUT_AMOUNT";
+          throw amountError;
+        }
+
+        const reservations = await reserveInventory(transactionItems, transactionProductsById, { session });
+        const [createdOrder] = await Order.create([{
+          _id: checkoutOrderId,
+          user: req.user._id,
+          products: reservations.orderItems,
+          shippingAddress,
+          shipmentStatus: "not_ready",
+          totalAmount: transactionTotal,
+          subtotalAmount: transactionSubtotal,
+          productDiscountAmount: transactionProductDiscountAmount,
+          shippingFee: transactionShippingFee,
+          currency: "IRT",
+          paymentProvider: "zarinpal",
+          paymentStatus: "pending",
+          status: "pending",
+          couponCode: transactionCoupon?.code || "",
+          couponDiscountAmount: transactionDiscount,
+          couponDiscountPercentage: transactionCoupon ? Number(transactionCoupon.discountPercentage) : 0,
+          couponReservationStatus: transactionCoupon ? "reserved" : "none",
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          paymentRequestStatus: "not_started",
+        }], { session });
+
+        transactionResult = {
+          order: createdOrder,
+          reserved: reservations.reserved,
+          coupon: transactionCoupon,
+          productDiscountAmount: transactionProductDiscountAmount,
           couponDiscountAmount: transactionDiscount,
           shippingFee: transactionShippingFee,
           totalToman: transactionTotal,
