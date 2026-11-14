@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Archive, ExternalLink, LoaderCircle, Pencil, RefreshCw, RotateCcw, Save, Star, Trash2 } from "lucide-react";
+import { Archive, ExternalLink, LoaderCircle, Pencil, Percent, RefreshCw, RotateCcw, Save, Star, Trash2, X } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
-import { formatPrice, isStockTracked } from "../lib/commerce";
+import { formatPrice, getProductDiscountPercent, getProductDiscountedPrice, isStockTracked } from "../lib/commerce";
+import axios from "../lib/axios";
+import toast from "react-hot-toast";
 import ProductEditForm from "./ProductEditForm";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
@@ -33,6 +35,9 @@ const ProductsList = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingProduct, setEditingProduct] = useState(null);
   const [stockDrafts, setStockDrafts] = useState({});
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [discountPercentDraft, setDiscountPercentDraft] = useState("");
+  const [discountBusy, setDiscountBusy] = useState(false);
 
   useEffect(() => { fetchAdminCategories(); }, [fetchAdminCategories]);
   useEffect(() => {
@@ -60,6 +65,57 @@ const ProductsList = () => {
     setPage(1);
   };
   const reload = () => setRefreshKey((current) => current + 1);
+
+  const selectableProducts = products.filter((product) =>
+    product.isActive !== false && !requiresCatalogMigration(product)
+  );
+  const selectablePageIds = selectableProducts.map((product) => String(product._id));
+  const allPageSelected = selectablePageIds.length > 0 &&
+    selectablePageIds.every((id) => selectedProductIds.includes(id));
+
+  const toggleProductSelection = (productId) => {
+    const id = String(productId);
+    setSelectedProductIds((current) => {
+      if (current.includes(id)) return current.filter((value) => value !== id);
+      if (current.length >= 100) {
+        toast.error("حداکثر ۱۰۰ محصول را می‌توانید در هر بار انتخاب کنید.");
+        return current;
+      }
+      return [...current, id];
+    });
+  };
+
+  const togglePageSelection = () => {
+    setSelectedProductIds((current) => allPageSelected
+      ? current.filter((id) => !selectablePageIds.includes(id))
+      : [...new Set([...current, ...selectablePageIds])].slice(0, 100)
+    );
+    if (!allPageSelected && selectedProductIds.length + selectablePageIds.filter((id) => !selectedProductIds.includes(id)).length > 100) {
+      toast.error("حداکثر ۱۰۰ محصول را می‌توانید در هر بار انتخاب کنید.");
+    }
+  };
+
+  const submitDiscount = async (percent) => {
+    if (!selectedProductIds.length) return toast.error("ابتدا حداقل یک محصول انتخاب کنید.");
+    if (!Number.isInteger(percent) || percent < 0 || percent > 99) {
+      return toast.error("درصد تخفیف باید عدد صحیحی بین ۱ تا ۹۹ باشد.");
+    }
+    setDiscountBusy(true);
+    try {
+      const response = await axios.patch("/products/bulk-discount", {
+        productIds: selectedProductIds,
+        discountPercent: percent,
+      });
+      toast.success(response.data?.message || "تخفیف محصولات به‌روزرسانی شد.");
+      setSelectedProductIds([]);
+      setDiscountPercentDraft("");
+      reload();
+    } catch (requestError) {
+      toast.error(requestError.response?.data?.message || "اعمال تخفیف محصولات ناموفق بود.");
+    } finally {
+      setDiscountBusy(false);
+    }
+  };
 
   const saveStock = async (product) => {
     const raw = stockDrafts[product._id] ?? (isStockTracked(product) ? String(product.stock) : "");
@@ -96,7 +152,7 @@ const ProductsList = () => {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-[var(--ui-text)]">محصولات و موجودی</h2>
-          <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">محصولات را ویرایش، پیش‌نمایش، بایگانی یا بازیابی کنید. حذف دائمی فقط برای محصولات بایگانی‌شده نمایش داده می‌شود.</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--ui-muted)]">محصولات، موجودی و تخفیف‌های مستقیم را مدیریت کنید. تخفیف می‌تواند روی یک محصول یا چند محصول انتخاب‌شده اعمال شود و به کمپین وابسته نیست.</p>
         </div>
         <button type="button" onClick={reload} disabled={loading} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--ui-border)] px-4 py-2 text-sm text-[var(--ui-text)] hover:bg-[var(--ui-hover)] disabled:opacity-50">
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} aria-hidden="true" /> تازه‌سازی
@@ -130,6 +186,32 @@ const ProductsList = () => {
         </label>
       </div>
 
+      {selectedProductIds.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-[var(--ui-accent)]/40 bg-[var(--ui-surface)] p-4 shadow-sm sm:p-5" aria-label="اعمال تخفیف روی محصولات انتخاب‌شده">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-[var(--ui-text)]">تخفیف محصولات انتخاب‌شده</h3>
+              <p className="mt-1 text-xs text-[var(--ui-muted)]">{numberFa(selectedProductIds.length)} محصول انتخاب شده · انتخاب تکی و گروهی پشتیبانی می‌شود.</p>
+            </div>
+            <button type="button" onClick={() => setSelectedProductIds([])} disabled={discountBusy} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-3 text-xs text-[var(--ui-muted)] hover:bg-[var(--ui-hover)] disabled:opacity-50"><X size={14} aria-hidden="true" />پاک‌کردن انتخاب</button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
+            <label className="block text-xs font-semibold text-[var(--ui-muted)]">
+              درصد تخفیف (۱ تا ۹۹)
+              <div className="relative mt-1">
+                <input type="number" min="1" max="99" step="1" inputMode="numeric" value={discountPercentDraft} onChange={(event) => setDiscountPercentDraft(event.target.value)} placeholder="مثلاً ۱۵" disabled={discountBusy} className="min-h-11 w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 pl-10 text-sm text-[var(--ui-text)] outline-none focus:border-[var(--ui-focus)] disabled:opacity-50" />
+                <Percent size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ui-muted)]" aria-hidden="true" />
+              </div>
+            </label>
+            <button type="button" disabled={discountBusy || !discountPercentDraft.trim()} onClick={() => submitDiscount(Number(discountPercentDraft))} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-sm font-bold text-[var(--ui-button-text)] transition hover:bg-[var(--ui-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50">
+              {discountBusy ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <Percent size={16} aria-hidden="true" />}اعمال تخفیف
+            </button>
+            <button type="button" disabled={discountBusy} onClick={() => submitDiscount(0)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ui-border)] px-4 py-2 text-sm font-semibold text-[var(--ui-danger)] transition hover:bg-[var(--ui-danger-bg)] disabled:opacity-50">حذف تخفیف</button>
+          </div>
+          <p className="text-[11px] leading-5 text-[var(--ui-muted)]">درصد انتخاب‌شده برای همه محصولات انتخابی اعمال می‌شود. برای هر محصول درصد متفاوتی می‌خواهید، آن را جداگانه انتخاب کنید. این تخفیف مستقل از سیستم کمپین‌هاست.</p>
+        </section>
+      )}
+
       <div className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ui-border)] px-4 py-3 sm:px-5">
           <h3 className="font-semibold text-[var(--ui-text)]">فهرست محصولات</h3>
@@ -151,15 +233,28 @@ const ProductsList = () => {
           <>
             {error && <p role="alert" className="border-b border-red-900/50 bg-red-950/20 px-4 py-2 text-xs text-[var(--ui-danger)]">{error}</p>}
             <div className="overflow-x-auto">
-              <table className="min-w-[1040px] w-full divide-y divide-[var(--ui-border)]">
+              <table className="min-w-[1100px] w-full divide-y divide-[var(--ui-border)]">
                 <thead className="bg-[var(--ui-input-bg)]">
                   <tr>
+                    <th scope="col" className="w-12 px-3 py-3 text-center">
+                      <input type="checkbox" aria-label="انتخاب همه محصولات قابل تخفیف این صفحه" checked={allPageSelected} onChange={togglePageSelection} disabled={!selectablePageIds.length || discountBusy} className="h-4 w-4 accent-[var(--ui-accent)]" />
+                    </th>
                     {["محصول", "قیمت", "دسته‌بندی", "موجودی", "انتشار", "عملیات"].map((label) => <th key={label} scope="col" className="px-4 py-3 text-right text-xs font-semibold text-[var(--ui-muted)]">{label}</th>)}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--ui-border)]">
                   {products.map((product) => (
                     <tr key={product._id} className="align-top transition hover:bg-[var(--ui-hover)]">
+                      <td className="px-3 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          aria-label={"انتخاب محصول " + product.name}
+                          checked={selectedProductIds.includes(String(product._id))}
+                          onChange={() => toggleProductSelection(product._id)}
+                          disabled={product.isActive === false || requiresCatalogMigration(product) || discountBusy}
+                          className="h-4 w-4 accent-[var(--ui-accent)] disabled:cursor-not-allowed disabled:opacity-30"
+                        />
+                      </td>
                       <td className="px-4 py-4">
                         <div className="flex max-w-sm items-start gap-3">
                           {product.image ? <img src={product.image} alt="" loading="lazy" className="h-14 w-12 shrink-0 rounded-lg bg-white object-contain p-1" /> : <span className="h-14 w-12 shrink-0 rounded-lg bg-[var(--ui-surface-raised)]" />}
@@ -174,7 +269,15 @@ const ProductsList = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-sm text-[var(--ui-text)]"><span dir="ltr">{formatPrice(product.price)}</span></td>
+                      <td className="whitespace-nowrap px-4 py-4 text-sm text-[var(--ui-text)]">
+                        {getProductDiscountPercent(product) > 0 ? (
+                          <div className="space-y-1">
+                            <p dir="ltr" className="font-extrabold text-[var(--ui-accent)]">{formatPrice(getProductDiscountedPrice(product))}</p>
+                            <p dir="ltr" className="text-xs text-[var(--ui-muted)] line-through">{formatPrice(product.price)}</p>
+                            <span className="inline-flex rounded-full bg-[var(--ui-danger-bg)] px-2 py-0.5 text-[10px] font-bold text-[var(--ui-danger)]">{numberFa(getProductDiscountPercent(product))}٪ تخفیف</span>
+                          </div>
+                        ) : <span dir="ltr">{formatPrice(product.price)}</span>}
+                      </td>
                       <td className="max-w-48 px-4 py-4 text-sm text-[var(--ui-muted)]">{categoryName(product)}</td>
                       <td className="min-w-56 px-4 py-4">
                         {requiresCatalogMigration(product) ? (
