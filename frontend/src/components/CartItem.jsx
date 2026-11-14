@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore } from "../stores/useCartStore";
-import { formatPrice } from "../lib/commerce";
+import { formatPrice, getProductDiscountAmount, getProductDiscountPercent, getProductDiscountedPrice } from "../lib/commerce";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const CartItem = ({ item }) => {
@@ -15,6 +15,9 @@ const CartItem = ({ item }) => {
   const hasTrackedStock = typeof trackedStock === "number" && Number.isFinite(trackedStock);
   const maxReached = hasTrackedStock && item.quantity >= trackedStock;
   const image = item.image || item.images?.[0] || "";
+  const discountPercent = getProductDiscountPercent(item);
+  const discountedPrice = getProductDiscountedPrice(item);
+  const discountAmount = getProductDiscountAmount(item);
 
   return (
     <article dir="rtl" className="cart-item min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-3 shadow-[0_12px_32px_-28px_var(--ui-shadow-color)] sm:p-4">
@@ -60,8 +63,11 @@ const CartItem = ({ item }) => {
               </button>
             </div>
             <div className="min-w-0 text-left">
-              <p className="text-sm font-extrabold tabular-nums text-[var(--ui-text)]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
-              <p className="mt-0.5 text-[10px] text-[var(--ui-muted)]">{formatPrice(item.price)} برای هر عدد</p>
+              {discountPercent > 0 && (
+                <p className="mb-0.5 text-[10px] font-semibold text-[var(--ui-danger)]">{new Intl.NumberFormat("fa-IR").format(discountPercent)}٪ تخفیف · {formatPrice(discountAmount)} صرفه‌جویی</p>
+              )}
+              <p className="text-sm font-extrabold tabular-nums text-[var(--ui-text)]">{formatPrice(discountedPrice * Number(item.quantity))}</p>
+              <p className={"mt-0.5 text-[10px] " + (discountPercent > 0 ? "text-[var(--ui-muted)] line-through" : "text-[var(--ui-muted)]")}>{formatPrice(item.price)} برای هر عدد</p>
               {hasTrackedStock && !requiresCatalogUpdate && <p className="mt-0.5 text-[10px] text-[var(--ui-muted)]">موجودی: {new Intl.NumberFormat("fa-IR").format(trackedStock)}</p>}
             </div>
           </div>
