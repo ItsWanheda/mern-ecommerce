@@ -6,6 +6,7 @@ import Order from "../models/order.model.js";
 import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { normalizeCustomSpecifications } from "../lib/custom-product-specifications.js";
+import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
 const idOf = (value) => value == null ? "" : String(value);
 const getCategoryProductScope = async (slug) => {
@@ -800,6 +801,100 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
+export const setProductsDiscount = async (req, res) => {
+  const inputIds = Array.isArray(req.body?.productIds) ? req.body.productIds : [];
+  const productIds = [...new Set(inputIds.map((id) => String(id || "").trim()))];
+  const discountPercent = Number(req.body?.discountPercent);
+
+  if (!productIds.length || productIds.length > 100 ||
+      productIds.some((id) => !/^[a-f\\d]{24}$/i.test(id))) {
+    return res.status(400).json({ message: "یک تا ۱۰۰ محصول معتبر برای اعمال تخفیف انتخاب کنید." });
+  }
+  if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 99) {
+    return res.status(400).json({ message: "درصد تخفیف باید عدد صحیحی بین صفر تا ۹۹ باشد." });
+  }
+
+  try {
+    const beforeProducts = await Product.find({ _id: { $in: productIds } })
+      .select("_id name price discountPercent isActive")
+      .lean();
+    if (beforeProducts.length !== productIds.length) {
+      return res.status(404).json({ message: "یک یا چند محصول انتخاب‌شده پیدا نشد." });
+    }
+    const archived = beforeProducts.filter((product) => product.isActive === false);
+    if (archived.length) {
+      return res.status(409).json({ message: "برای محصول بایگانی‌شده تخفیف ثبت نمی‌شود؛ ابتدا آن را بازیابی کنید." });
+    }
+
+    const updated = await Product.updateMany(
+      { _id: { $in: productIds }, isActive: { $ne: false } },
+      { $set: { discountPercent } },
+      { runValidators: true }
+    );
+    if (Number(updated.matchedCount ?? updated.n ?? 0) !== productIds.length) {
+      return res.status(409).json({ message: "وضعیت بعضی محصولات هم‌زمان تغییر کرده است؛ فهرست را تازه‌سازی و دوباره تلاش کنید." });
+    }
+
+    const afterProducts = await Product.find({ _id: { $in: productIds } })
+      .select("_id name price discountPercent")
+      .lean();
+    const beforeById = new Map(beforeProducts.map((product) => [String(product._id), product]));
+
+    await Promise.all(afterProducts.map((product) => {
+      const before = beforeById.get(String(product._id));
+      const previousPercent = normalizeProductDiscountPercent(before?.discountPercent);
+      const nextPercent = normalizeProductDiscountPercent(product.discountPercent);
+      return recordAuditEvent(req, {
+        action: nextPercent ? "product.discount_updated" : "product.discount_removed",
+        targetType: "product",
+        targetId: product._id,
+        summary: (nextPercent ? "Product discount set to " + nextPercent + "%: " : "Product discount removed: ") + product.name,
+        metadata: {
+          before: {
+            price: before?.price ?? null,
+            discountPercent: previousPercent,
+            discountedPrice: getProductDiscountedPrice({ price: before?.price, discountPercent: previousPercent }),
+          },
+          after: {
+            price: product.price,
+            discountPercent: nextPercent,
+            discountAmount: getProductDiscountAmount(product),
+            discountedPrice: getProductDiscountedPrice(product),
+          },
+        },
+      });
+    }));
+
+    await updateFeaturedProductsCache();
+    try {
+      await redis.del(
+        "recommended_products_v1",
+        ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v1:" + (index + 1))
+      );
+    } catch (cacheError) {
+      if (!cacheWarningLogged) {
+        console.warn("Unable to clear product recommendation caches after discount update:", cacheError.message);
+        cacheWarningLogged = true;
+      }
+    }
+
+    return res.json({
+      message: discountPercent
+        ? "تخفیف " + discountPercent + " درصدی روی " + afterProducts.length + " محصول اعمال شد."
+        : "تخفیف " + afterProducts.length + " محصول حذف شد.",
+      updatedCount: afterProducts.length,
+      products: afterProducts.map((product) => ({
+        _id: product._id,
+        discountPercent: normalizeProductDiscountPercent(product.discountPercent),
+        discountedPrice: getProductDiscountedPrice(product),
+      })),
+    });
+  } catch (error) {
+    console.error("Unable to update product discounts", error.message);
+    return res.status(500).json({ message: "ذخیره تخفیف محصولات ناموفق بود." });
+  }
+};
+
 export const getRecommendedProducts = async (_req, res) => {
   try {
     const cached = await readJsonCache("recommended_products_v1");
@@ -807,7 +902,7 @@ export const getRecommendedProducts = async (_req, res) => {
     const products = await Product.aggregate([
       { $match: { isActive: { $ne: false } } },
       { $sample: { size: 4 } },
-      { $project: { _id: 1, name: 1, description: 1, image: 1, price: 1, category: 1, stock: 1 } },
+      { $project: { _id: 1, name: 1, description: 1, image: 1, price: 1, discountPercent: 1, category: 1, stock: 1 } },
     ]).option({ maxTimeMS: 1500 });
     await writeJsonCache("recommended_products_v1", products, 60);
     return res.json(products);
