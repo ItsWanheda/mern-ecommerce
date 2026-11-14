@@ -1,3 +1,5 @@
+import { getProductDiscountedPrice } from "./commerce.js";
+
 export const SITE_NAME = "Computer Hardware";
 export const DEFAULT_SEO_TITLE = "Computer Hardware | فروشگاه تخصصی قطعات کامپیوتر";
 export const DEFAULT_SEO_DESCRIPTION = "خرید آنلاین قطعات و تجهیزات کامپیوتر با مشخصات فنی شفاف، مقایسه آسان و تجربه خرید امن.";
@@ -236,7 +238,7 @@ export function buildProductStructuredData({ product, title, description, image,
       name: key.replace(/_/g, " "),
       value: Array.isArray(value) ? value.map(String).join(", ") : String(value),
     }));
-  const priceToman = Number(product.price);
+  const priceToman = getProductDiscountedPrice(product);
   const hasValidPrice = Number.isFinite(priceToman) && priceToman >= 0;
   const availability = getSchemaAvailability(product);
   const rawBrand = typeof product.brand === "string" ? product.brand : product.brand?.name;
