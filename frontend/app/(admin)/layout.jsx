@@ -1,15 +1,16 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import AdminShell from "./admin-shell.jsx";
+import { resolveServerOrigin } from "@/src/lib/admin-api-origin.js";
 
 export const dynamic = "force-dynamic";
 
 const buildApiRoot = (origin) => {
-  const configured = String(process.env.NEXT_PUBLIC_API_URL || "/api").trim().replace(/\/+$/, "");
-  const resolved = /^https?:\/\//i.test(configured)
+  const configured = String(process.env.NEXT_PUBLIC_API_URL || "/api").trim().replace(/\\/+$/, "");
+  const resolved = /^https?:\\/\\//i.test(configured)
     ? configured
     : new URL(configured.startsWith("/") ? configured : "/" + configured, origin).toString();
-  return /\/api$/i.test(resolved) ? resolved : resolved + "/api";
+  return /\\/api$/i.test(resolved) ? resolved : resolved + "/api";
 };
 
 async function verifyAdminRequest() {
@@ -17,15 +18,13 @@ async function verifyAdminRequest() {
   const cookieHeader = cookieStore.getAll().map(({ name, value }) => name + "=" + value).join("; ");
   if (!cookieHeader) redirect("/login?next=%2Fsecret-dashboard");
 
-  const forwardedHost = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
-  const forwardedProtocol = (requestHeaders.get("x-forwarded-proto") || "https").split(",")[0].trim();
-  const origin = process.env.APP_URL
-    ? process.env.APP_URL.replace(/\/+$/, "")
-    : process.env.VERCEL_URL
-      ? "https://" + process.env.VERCEL_URL
-      : forwardedHost
-        ? forwardedProtocol + "://" + forwardedHost
-        : "http://localhost:3000";
+  const origin = resolveServerOrigin({
+    appUrl: process.env.APP_URL,
+    vercelUrl: process.env.VERCEL_URL,
+    forwardedHost: requestHeaders.get("x-forwarded-host") || requestHeaders.get("host"),
+    forwardedProtocol: requestHeaders.get("x-forwarded-proto"),
+    nodeEnv: process.env.NODE_ENV,
+  });
 
   let response;
   try {
