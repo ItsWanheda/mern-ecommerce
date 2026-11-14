@@ -4,6 +4,7 @@ import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import CategoryAttributeFields from "./CategoryAttributeFields";
+import CustomProductSpecifications from "./CustomProductSpecifications";
 import { resolveCategoryAttributeDefinitions, validateCategoryAttributeValues } from "../lib/category-attributes.js";
 
 const currencyLabel = getCurrencyLabel(STORE_CURRENCY);
@@ -41,6 +42,7 @@ const toAttributeObject = (value) => value instanceof Map ? Object.fromEntries(v
 const ProductEditForm = ({ product, onClose, onSaved }) => {
   const [form, setForm] = useState(() => makeInitialForm(product));
   const [attributes, setAttributes] = useState(() => toAttributeObject(product.attributes));
+  const [customSpecifications, setCustomSpecifications] = useState(() => Array.isArray(product.customSpecifications) ? product.customSpecifications.map(item => ({ name: item.name || "", value: item.value || "" })) : []);
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [imageBusy, setImageBusy] = useState(false);
@@ -135,6 +137,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
         category: selectedCategory.slug,
         categoryId: String(selectedCategory._id),
         attributes: safeAttributes,
+        customSpecifications,
         image: form.images[0] || "",
         images: form.images,
         sizes: [],
@@ -172,6 +175,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
                 <label className={labelClass}>توضیحات
                   <textarea value={form.description} onChange={(event) => updateField("description", event.target.value)} required maxLength={5000} rows={4} className={fieldClass} />
                 </label>
+                <CustomProductSpecifications value={customSpecifications} onChange={setCustomSpecifications} />
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className={labelClass}>قیمت ({currencyLabel})
                     <input type="number" min="0" step="1" value={form.price} onChange={(event) => updateField("price", event.target.value)} required className={fieldClass} />
