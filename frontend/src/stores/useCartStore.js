@@ -91,6 +91,7 @@ export const useCartStore = create((set, get) => ({
   coupon: null,
   total: 0,
   subtotal: 0,
+  productDiscountAmount: 0,
   isCouponApplied: false,
   authenticated: false,
   isMergingGuestCart: false,
@@ -220,7 +221,7 @@ export const useCartStore = create((set, get) => ({
 
   clearCart: async () => {
     writeGuestCart([]);
-    set({ cart: [], coupon: null, total: 0, subtotal: 0, isCouponApplied: false });
+    set({ cart: [], coupon: null, total: 0, subtotal: 0, productDiscountAmount: 0, discountAmount: 0, isCouponApplied: false });
   },
 
   addToCart: async (product, selection = {}) => {
