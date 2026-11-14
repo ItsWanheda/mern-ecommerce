@@ -5,6 +5,7 @@ import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import CategoryAttributeFields from "./CategoryAttributeFields";
+import CustomProductSpecifications from "./CustomProductSpecifications";
 import { resolveCategoryAttributeDefinitions, validateCategoryAttributeValues } from "../lib/category-attributes.js";
 
 const categoryPath = (category, categories) => {
@@ -34,6 +35,7 @@ const CreateProductForm = () => {
   const [newProduct, setNewProduct] = useState(defaults);
   const [imageError, setImageError] = useState("");
   const [attributeValues, setAttributeValues] = useState({});
+  const [customSpecifications, setCustomSpecifications] = useState([]);
   const [imageBusy, setImageBusy] = useState(false);
   const { createProduct, loading } = useProductStore();
   const { categories: availableCategories, fetchCategories } = useCategoryStore();
@@ -85,6 +87,7 @@ const CreateProductForm = () => {
         category: selectedCategory.slug,
         categoryId: String(selectedCategory._id),
         attributes: attributeValues,
+        customSpecifications,
         image: newProduct.images[0] || "",
         images: newProduct.images,
         sizes: [],
@@ -95,6 +98,7 @@ const CreateProductForm = () => {
       });
       setNewProduct(defaults);
       setAttributeValues({});
+      setCustomSpecifications([]);
     } catch {
       // The product store displays the API error to the administrator.
     }
@@ -147,6 +151,7 @@ const CreateProductForm = () => {
           <label className={labelClass}>توضیحات
             <textarea value={newProduct.description} onChange={(event) => updateField("description", event.target.value)} rows={3} className={fieldClass} maxLength={5000} required />
           </label>
+          <CustomProductSpecifications value={customSpecifications} onChange={setCustomSpecifications} />
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>قیمت ({priceUnitLabel})
               <input type="number" min="0" step="1" inputMode="numeric" value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
