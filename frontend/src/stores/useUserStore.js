@@ -80,6 +80,22 @@ export const useUserStore = create((set) => ({
 		return authCheckPromise;
 	},
 
+	// Re-read the current account even after the initial auth check. This keeps role
+	// changes made by an administrator in sync without requiring a new login.
+	refreshUser: async () => {
+		try {
+			const response = await axios.get("/auth/profile");
+			if (!response.data || typeof response.data !== "object" || Array.isArray(response.data)) {
+				throw new Error("پاسخ پروفایل نامعتبر است");
+			}
+			set({ user: response.data, authInitialized: true, checkingAuth: false });
+			return response.data;
+		} catch (error) {
+			set({ checkingAuth: false });
+			throw error;
+		}
+	},
+
 	updateProfile: async (name) => {
 		const response = await axios.patch("/auth/profile", { name });
 		const updatedUser = response.data?.user;
