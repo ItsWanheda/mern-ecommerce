@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "../lib/axios";
 import { useDialogAccessibility } from "../lib/useDialogAccessibility.js";
-import { formatPrice } from "../lib/commerce";
+import { formatPrice, getProductDiscountPercent, getProductDiscountedPrice } from "../lib/commerce";
 import {
   ShoppingCart,
   Truck,
@@ -419,7 +419,7 @@ const Navbar = () => {
                     <span className="block truncate text-sm font-medium text-[var(--ui-text)]">{product.name}</span>
                     <span className="mt-1 block truncate text-xs text-[var(--ui-muted)]">{categoryLabel(product.category, dynamicCategories)}</span>
                   </span>
-                  <span className="shrink-0 text-xs font-semibold tabular-nums text-[var(--ui-text-strong)]">{formatPrice(product.price)}</span>
+                  <span className="shrink-0 text-xs font-semibold tabular-nums text-[var(--ui-text-strong)]">{getProductDiscountPercent(product) > 0 ? formatPrice(getProductDiscountedPrice(product)) : formatPrice(product.price)}</span>
                 </button>
               );
             })}
