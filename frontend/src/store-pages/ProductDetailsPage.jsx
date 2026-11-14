@@ -16,7 +16,7 @@ import { useUserStore } from "../stores/useUserStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
 import { getProductAttributeRows } from "../lib/product-attributes";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
-import { formatPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
+import { formatPrice, getProductDiscountPercent, getProductDiscountedPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
 
 const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }) => {
   const { productId: matchedProductId } = useParams();
@@ -58,6 +58,8 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const isWishlisted = Boolean(product && isSaved(product._id));
+  const discountPercent = getProductDiscountPercent(product);
+  const discountedPrice = getProductDiscountedPrice(product);
 
   useEffect(() => {
     if (productCategories.length === 0) void fetchProductCategories();
@@ -364,7 +366,13 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
                   </span>
                 ) : <span className="rounded-lg bg-[var(--ui-surface-raised)] px-2.5 py-1.5">هنوز امتیازی ثبت نشده</span>}
               </div>
-              <p className="mt-5 break-words text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(product.price)}</p>
+              {discountPercent > 0 ? (
+                <div className="mt-5 flex flex-wrap items-center gap-2.5">
+                  <p className="text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(discountedPrice)}</p>
+                  <span className="rounded-full bg-[var(--ui-danger-bg)] px-2.5 py-1 text-xs font-bold text-[var(--ui-danger)]">{new Intl.NumberFormat("fa-IR").format(discountPercent)}٪ تخفیف</span>
+                  <p className="basis-full text-sm font-semibold tabular-nums text-[var(--ui-muted)] line-through">{formatPrice(product.price)}</p>
+                </div>
+              ) : <p className="mt-5 break-words text-2xl font-extrabold tabular-nums tracking-tight text-[var(--ui-text)] sm:text-3xl">{formatPrice(product.price)}</p>}
 
               <div role="status" aria-live="polite" aria-atomic="true" className="mt-5 rounded-2xl bg-[var(--ui-canvas)] px-4 py-4 sm:px-5">
                 <p className={"flex items-center gap-2 text-sm font-semibold " + (outOfStock ? "text-[var(--ui-danger)]" : "text-[var(--ui-accent)]")}>
@@ -454,7 +462,13 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-[var(--ui-muted)]"><bdi dir="auto">{product.name}</bdi></p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>
+            {discountPercent > 0 ? (
+              <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <p className="text-sm font-extrabold tabular-nums">{formatPrice(discountedPrice)}</p>
+                <span className="text-[10px] font-bold text-[var(--ui-danger)]">{new Intl.NumberFormat("fa-IR").format(discountPercent)}٪</span>
+                <p className="basis-full text-[10px] tabular-nums text-[var(--ui-muted)] line-through">{formatPrice(product.price)}</p>
+              </div>
+            ) : <p className="mt-0.5 text-sm font-bold tabular-nums">{formatPrice(product.price)}</p>}
           </div>
           <button type="button" onClick={handleAddToCart} disabled={outOfStock} className="inline-flex min-h-14 min-w-[58%] shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-3 text-base font-bold text-[var(--ui-button-text)] shadow-sm transition hover:bg-[var(--ui-accent-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:bg-[var(--ui-disabled-bg)] disabled:text-[var(--ui-muted)]">
             <ShoppingCart size={16} aria-hidden="true" />{outOfStock ? "ناموجود" : "افزودن به سبد خرید"}
