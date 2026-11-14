@@ -186,3 +186,31 @@ test("only an explicit authoritative terminal-unpaid reason is a confirmed payme
     assert.equal(isConfirmedPaymentFailure(reason), false, String(reason));
   }
 });
+
+
+test("admin dashboard entry refreshes a stale customer role after an administrator grants access", async () => {
+  resetStore(false);
+  useUserStore.setState({
+    user: { _id: "promoted-user", name: "Promoted User", role: "customer" },
+    authInitialized: true,
+    checkingAuth: false,
+  });
+
+  installAdapter(async (config) => {
+    if (config.url === "/auth/profile") {
+      return ok(config, {
+        _id: "promoted-user",
+        name: "Promoted User",
+        role: "admin",
+        permissions: ["*"],
+      });
+    }
+    throw new Error("Unexpected test request: " + config.url);
+  });
+
+  const refreshedUser = await useUserStore.getState().refreshUser();
+
+  assert.equal(refreshedUser.role, "admin");
+  assert.equal(useUserStore.getState().user?.role, "admin");
+  assert.deepEqual(useUserStore.getState().user?.permissions, ["*"]);
+});
