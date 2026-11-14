@@ -169,9 +169,20 @@ export const getAllProducts = async (req, res) => {
       : req.query.sort === "nameAsc"
         ? { name: 1, _id: 1 }
         : { createdAt: -1, _id: -1 };
+    const discountedSortDirection = req.query.sort === "priceAsc" ? 1 : req.query.sort === "priceDesc" ? -1 : 0;
+    const productsQuery = discountedSortDirection
+      ? Product.aggregate([
+          { $match: filter },
+          { $addFields: { discountedPrice: discountedPriceExpression } },
+          { $sort: { discountedPrice: discountedSortDirection, _id: 1 } },
+          { $skip: (page - 1) * limit },
+          { $limit: limit },
+          { $project: { discountedPrice: 0, searchTextNormalized: 0 } },
+        ]).option({ maxTimeMS: 1500 })
+      : Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean();
     const [total, products] = await Promise.all([
       Product.countDocuments(filter).maxTimeMS(1500),
-      Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean(),
+      productsQuery,
     ]);
     return res.json({ products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
@@ -1154,12 +1165,24 @@ export const getProductsByCategory = async (req, res) => {
       await writeJsonCache(facetCacheKey, filterOptions, 120);
     }
 
+    const discountedSortDirection = sortKey === "priceAsc" ? 1 : sortKey === "priceDesc" ? -1 : 0;
+    const productsQuery = discountedSortDirection
+      ? Product.aggregate([
+          { $match: filter },
+          { $addFields: { discountedPrice: discountedPriceExpression } },
+          { $sort: { discountedPrice: discountedSortDirection, _id: 1 } },
+          { $skip: offset },
+          { $limit: limit },
+          { $project: { discountedPrice: 0, searchTextNormalized: 0 } },
+        ]).option({ maxTimeMS: 1500 })
+      : Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean();
     const [products, total, priceStats] = await Promise.all([
-      Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean(),
+      productsQuery,
       Product.countDocuments(filter).maxTimeMS(1500),
       Product.aggregate([
         { $match: { $and: baseClauses } },
-        { $group: { _id: null, minPrice: { $min: "$price" }, maxPrice: { $max: "$price" }, count: { $sum: 1 } } },
+        { $addFields: { discountedPrice: discountedPriceExpression } },
+        { $group: { _id: null, minPrice: { $min: "$discountedPrice" }, maxPrice: { $max: "$discountedPrice" }, count: { $sum: 1 } } },
       ]).option({ maxTimeMS: 1500 }),
     ]);
 
