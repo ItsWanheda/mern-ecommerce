@@ -833,7 +833,7 @@ export const setProductsDiscount = async (req, res) => {
   const discountPercent = Number(req.body?.discountPercent);
 
   if (!productIds.length || productIds.length > 100 ||
-      productIds.some((id) => !/^[a-f\\d]{24}$/i.test(id))) {
+      productIds.some((id) => !/^[a-f\d]{24}$/i.test(id))) {
     return res.status(400).json({ message: "یک تا ۱۰۰ محصول معتبر برای اعمال تخفیف انتخاب کنید." });
   }
   if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 99) {
