@@ -48,7 +48,15 @@ const fitSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const customSpecificationSchema = new mongoose.Schema(\n  {\n    name: { type: String, required: true, trim: true, maxlength: 80 },\n    value: { type: String, required: true, trim: true, maxlength: 500 },\n  },\n  { _id: false }\n);\n\nconst productSchema = new mongoose.Schema(
+const customSpecificationSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    value: { type: String, required: true, trim: true, maxlength: 500 },
+  },
+  { _id: false }
+);
+
+const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 160 },
     description: { type: String, required: true, maxlength: 5000 },
@@ -58,7 +66,8 @@ const customSpecificationSchema = new mongoose.Schema(\n  {\n    name: { type: S
     images: { type: [String], default: [] },
     category: { type: String, required: true, trim: true, maxlength: 96 },
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null, index: true },
-    attributes: { type: Map, of: mongoose.Schema.Types.Mixed, default: () => ({}) },\n    customSpecifications: { type: [customSpecificationSchema], default: [] },
+    attributes: { type: Map, of: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    customSpecifications: { type: [customSpecificationSchema], default: [] },
     searchTextNormalized: { type: String, default: "", select: false },
     sizes: { type: [String], default: [] },
     colors: { type: [colorSchema], default: [] },
