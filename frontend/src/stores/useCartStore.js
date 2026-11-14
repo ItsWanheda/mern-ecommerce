@@ -2,6 +2,7 @@ import { create } from "zustand";
 import axios from "../lib/axios";
 import { toast } from "react-hot-toast";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
+import { getProductDiscountAmount, getProductDiscountedPrice } from "../lib/commerce.js";
 
 const GUEST_CART_KEY = "computer-hardware-guest-cart";
 const LEGACY_GUEST_CART_KEY = "tik-boutique-guest-cart";
@@ -70,15 +71,19 @@ const mergeCartLines = (cart, incomingItem) => {
 };
 
 const totalsFor = (cart, coupon) => {
-  const subtotal = (Array.isArray(cart) ? cart : []).reduce(
-    (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0
+  const items = Array.isArray(cart) ? cart : [];
+  const subtotal = items.reduce(
+    (sum, item) => sum + getProductDiscountedPrice(item) * Number(item.quantity || 0), 0
+  );
+  const productDiscountAmount = items.reduce(
+    (sum, item) => sum + getProductDiscountAmount(item) * Number(item.quantity || 0), 0
   );
   const meetsMinimum = coupon && subtotal >= Number(coupon.minOrderAmount || 0);
   const rawDiscount = meetsMinimum ? Math.round(subtotal * Number(coupon.discountPercentage || 0) / 100) : 0;
   const maximumDiscount = coupon?.maxDiscountAmount == null ? Number.MAX_SAFE_INTEGER : Number(coupon.maxDiscountAmount);
   const discountAmount = Math.min(Math.max(0, rawDiscount), Number.isSafeInteger(maximumDiscount) ? maximumDiscount : Number.MAX_SAFE_INTEGER, subtotal);
   const total = Math.max(0, subtotal - discountAmount);
-  return { subtotal, total, discountAmount };
+  return { subtotal, total, discountAmount, productDiscountAmount };
 };
 
 export const useCartStore = create((set, get) => ({
