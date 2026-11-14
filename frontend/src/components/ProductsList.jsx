@@ -98,7 +98,7 @@ const ProductsList = () => {
   const submitDiscount = async (percent) => {
     if (!selectedProductIds.length) return toast.error("ابتدا حداقل یک محصول انتخاب کنید.");
     if (!Number.isInteger(percent) || percent < 0 || percent > 99) {
-      return toast.error("درصد تخفیف باید عدد صحیحی بین ۱ تا ۹۹ باشد.");
+      return toast.error("درصد تخفیف باید عدد صحیحی بین صفر تا ۹۹ باشد.");
     }
     setDiscountBusy(true);
     try {
