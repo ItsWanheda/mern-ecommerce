@@ -254,7 +254,7 @@ const CategoryManager = () => {
     const isExpanded = filtered || expanded[idOf(category._id)] !== false;
     return (
       <div key={idOf(category._id)} className="border-b border-[var(--ui-border)]/80 last:border-b-0">
-        <div className="flex flex-wrap items-center gap-2 px-3 py-3 hover:bg-[var(--ui-hover)]" style={{ paddingRight: (12 + depth * 20) + "px" }}>
+        <div className="flex flex-wrap items-center gap-2 px-3 py-3 hover:bg-[var(--ui-hover)]" style={{ paddingRight: (12 + Math.min(depth, 6) * 12) + "px" }}>
           <button
             type="button"
             onClick={() => setExpanded((current) => ({ ...current, [idOf(category._id)]: !isExpanded }))}
@@ -273,10 +273,10 @@ const CategoryManager = () => {
               {category.name?.en || ""} · {Number(category.productCount || 0)} محصول · {Number(category.childCount || 0)} زیر‌دسته
             </p>
           </div>
-          <button type="button" onClick={() => startCreate(category._id)} title="افزودن زیر‌دسته" aria-label={"افزودن زیر‌دسته برای " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-success)] hover:bg-[var(--ui-hover)]"><FolderPlus size={16} aria-hidden="true" /><span className="hidden lg:inline">زیر‌دسته</span></button>
-          <button type="button" onClick={() => startEdit(category)} title="ویرایش" aria-label={"ویرایش " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-sky-500 hover:bg-[var(--ui-hover)]"><Pencil size={16} aria-hidden="true" /><span className="hidden lg:inline">ویرایش</span></button>
-          <button type="button" onClick={() => toggleActive(category)} title={category.isActive ? "بایگانی" : "فعال‌سازی"} aria-label={(category.isActive ? "بایگانی " : "فعال‌سازی ") + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-warning)] hover:bg-[var(--ui-hover)]"><Archive size={16} aria-hidden="true" /><span className="hidden lg:inline">{category.isActive ? "بایگانی" : "فعال‌سازی"}</span></button>
-          <button type="button" onClick={() => handleDelete(category)} title="حذف دائمی" aria-label={"حذف " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-danger)] hover:bg-[var(--ui-hover)]"><Trash2 size={16} aria-hidden="true" /><span className="hidden lg:inline">حذف</span></button>
+          <button type="button" onClick={() => startCreate(category._id)} title="افزودن زیر‌دسته" aria-label={"افزودن زیر‌دسته برای " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-success)] hover:bg-[var(--ui-hover)]"><FolderPlus size={16} aria-hidden="true" /><span className="inline">زیر‌دسته</span></button>
+          <button type="button" onClick={() => startEdit(category)} title="ویرایش" aria-label={"ویرایش " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-sky-500 hover:bg-[var(--ui-hover)]"><Pencil size={16} aria-hidden="true" /><span className="inline">ویرایش</span></button>
+          <button type="button" onClick={() => toggleActive(category)} title={category.isActive ? "بایگانی" : "فعال‌سازی"} aria-label={(category.isActive ? "بایگانی " : "فعال‌سازی ") + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-warning)] hover:bg-[var(--ui-hover)]"><Archive size={16} aria-hidden="true" /><span className="inline">{category.isActive ? "بایگانی" : "فعال‌سازی"}</span></button>
+          <button type="button" onClick={() => handleDelete(category)} title="حذف دائمی" aria-label={"حذف " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-danger)] hover:bg-[var(--ui-hover)]"><Trash2 size={16} aria-hidden="true" /><span className="inline">حذف</span></button>
         </div>
         {isExpanded && children.length > 0 && <div>{children.map((child) => renderCategory(child, depth + 1))}</div>}
       </div>
