@@ -68,7 +68,7 @@ export const getActiveCampaigns = async (req, res) => {
       campaignQuery = campaignQuery.populate({
         path: "productIds",
         match: { isActive: { $ne: false } },
-        select: "name description price image images category sizes colors variants fit stock isFeatured isActive createdAt",
+        select: "name description price discountPercent image images category sizes colors variants fit stock isFeatured isActive createdAt",
       });
     }
     const campaigns = await campaignQuery.lean();
@@ -93,7 +93,7 @@ export const getCampaignById = async (req, res) => {
     }, { $inc: { views: 1 } }, { new: true }).select("slug title description image href startsAt endsAt productIds views clicks").populate({
       path: "productIds",
       match: { isActive: { $ne: false } },
-      select: "name description price image images category sizes colors variants fit stock isFeatured isActive createdAt",
+      select: "name description price discountPercent image images category sizes colors variants fit stock isFeatured isActive createdAt",
     }).lean();
     if (!campaign) return res.status(404).json({ message: "Campaign not found or no longer active" });
     return res.json({ campaign });
