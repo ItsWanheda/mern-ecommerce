@@ -46,7 +46,7 @@ const FieldError = ({ id, message }) => message
   : null;
 
 const OrderSummary = () => {
-  const { total, subtotal, coupon, isCouponApplied, cart, isMergingGuestCart } = useCartStore();
+  const { total, subtotal, productDiscountAmount, coupon, isCouponApplied, cart, isMergingGuestCart } = useCartStore();
   const { user } = useUserStore();
   const navigate = useNavigate();
   const hasUnmergedItems = cart.some((item) => item.guestOnly);
@@ -348,13 +348,19 @@ const OrderSummary = () => {
       )}
         <div className="space-y-3">
           <dl className="flex items-center justify-between gap-4">
-            <dt className="text-sm font-normal text-[var(--ui-muted)]">قیمت محصولات</dt>
+            <dt className="text-sm font-normal text-[var(--ui-muted)]">قیمت محصولات پس از تخفیف مستقیم</dt>
             <dd dir="ltr" className="text-sm font-medium text-[var(--ui-text)]">{formatPrice(subtotal, paymentConfig.currency)}</dd>
           </dl>
+          {productDiscountAmount > 0 && (
+            <dl className="flex items-center justify-between gap-4">
+              <dt className="text-sm font-normal text-[var(--ui-muted)]">تخفیف محصولات</dt>
+              <dd dir="ltr" className="text-sm font-medium text-[var(--ui-accent)]">−{formatPrice(productDiscountAmount, paymentConfig.currency)}</dd>
+            </dl>
+          )}
 
           {savings > 0 && (
             <dl className="flex items-center justify-between gap-4">
-              <dt className="text-sm font-normal text-[var(--ui-muted)]">تخفیف {coupon && isCouponApplied ? `(${coupon.code})` : ""}</dt>
+              <dt className="text-sm font-normal text-[var(--ui-muted)]">تخفیف کد خرید {coupon && isCouponApplied ? `(${coupon.code})` : ""}</dt>
               <dd dir="ltr" className="text-sm font-medium text-[var(--ui-accent)]">−{formatPrice(savings, paymentConfig.currency)}</dd>
             </dl>
           )}
