@@ -5,16 +5,16 @@ export const resolveServerOrigin = ({
   forwardedProtocol,
   nodeEnv,
 } = {}) => {
-  const configuredAppUrl = typeof appUrl === "string" ? appUrl.trim().replace(/\\/+$/, "") : "";
+  const configuredAppUrl = typeof appUrl === "string" ? appUrl.trim().replace(/\/+$/, "") : "";
   if (configuredAppUrl) return configuredAppUrl;
 
   const deploymentHost = typeof vercelUrl === "string"
-    ? vercelUrl.trim().replace(/^https?:\\/\\//i, "").replace(/\\/+$/, "")
+    ? vercelUrl.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "")
     : "";
-  if (deploymentHost) return `https://${deploymentHost}`;
+  if (deploymentHost) return "https://" + deploymentHost;
 
   const host = typeof forwardedHost === "string"
-    ? forwardedHost.trim().replace(/^https?:\\/\\//i, "").replace(/\\/+$/, "")
+    ? forwardedHost.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "")
     : "";
   if (!host) return "http://localhost:3000";
 
@@ -26,5 +26,5 @@ export const resolveServerOrigin = ({
     ? requestedProtocol
     : fallbackProtocol;
 
-  return `${protocol}://${host}`;
+  return protocol + "://" + host;
 };
