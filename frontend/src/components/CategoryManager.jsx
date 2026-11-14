@@ -259,6 +259,300 @@ const CategoryManager = () => {
               {category.name?.en || ""} · {Number(category.productCount || 0)} محصول · {Number(category.childCount || 0)} زیر‌دسته
             </p>
           </div>
+          <button type="button" onClick={() => startCreate(category._id)} title="افزودن زیر‌دسته" aria-label={"افزودن زیر‌دسته برای " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-success)] hover:bg-[var(--ui-hover)]"><FolderPlus size={16} aria-hidden="true" /><span className="hidden lg:inline">زیر‌دسته</span></button>
+          <button type="button" onClick={() => startEdit(category)} title="ویرایش" aria-label={"ویرایش " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-sky-500 hover:bg-[var(--ui-hover)]"><Pencil size={16} aria-hidden="true" /><span className="hidden lg:inline">ویرایش</span></button>
+          <button type="button" onClick={() => toggleActive(category)} title={category.isActive ? "بایگانی" : "فعال‌سازی"} aria-label={(category.isActive ? "بایگانی " : "فعال‌سازی ") + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-warning)] hover:bg-[var(--ui-hover)]"><Archive size={16} aria-hidden="true" /><span className="hidden lg:inline">{category.isActive ? "بایگانی" : "فعال‌سازی"}</span></button>
+          <button type="button" onClick={() => handleDelete(category)} title="حذف دائمی" aria-label={"حذف " + labelOf(category)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs text-[var(--ui-danger)] hover:bg-[var(--ui-hover)]"><Trash2 size={16} aria-hidden="true" /><span className="hidden lg:inline">حذف</span></button>
+        </div>
+        {isExpanded && children.length > 0 && <div>{children.map((child) => renderCategory(child, depth + 1))}</div>}
+      </div>
+    );
+  };
+
+  const fieldClass = "mt-1 block w-full rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2.5 text-sm text-[var(--ui-text)] outline-none transition focus:border-brand-muted focus:ring-2 focus:ring-brand/30";
+  const labelClass = "block text-sm font-medium text-[var(--ui-muted)]";
+  const hintClass = "mt-1 block text-xs font-normal leading-5 text-[var(--ui-muted)]";
+
+  return (
+    <section dir="rtl" className="mx-auto max-w-6xl space-y-5 text-[var(--ui-text)]">
+      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5">
+        <div>
+          <h2 className="text-2xl font-semibold text-brand-muted">مدیریت دسته‌بندی‌ها</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-muted)]">دسته‌ها را بسازید، مرتب کنید و در صورت نیاز زیر‌دسته و مشخصات اختصاصی برای محصولات تعریف کنید.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => fetchAdminCategories()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--ui-border)] px-3 py-2 text-sm text-[var(--ui-text)] hover:bg-[var(--ui-hover)]"><RefreshCw size={15} aria-hidden="true" /> تازه‌سازی</button>
+          <button type="button" onClick={() => startCreate()} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--ui-accent)] px-4 py-2 text-sm font-semibold text-[var(--ui-button-text)] hover:bg-[#78866d]"><Plus size={16} aria-hidden="true" /> افزودن دسته‌بندی</button>
+        </div>
+      </header>
+
+      {(notice || error) && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-[var(--ui-danger)]">{notice || error}</div>}
+
+      <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3 text-sm leading-6 text-[var(--ui-muted)]">
+        برای شروع فقط نام فارسی و انگلیسی را بنویسید و مشخص کنید این دسته اصلی است یا زیرمجموعه کدام دسته. شناسه، تصویر، ترتیب نمایش و فیلدهای فنی را می‌توانید بعداً از تنظیمات بیشتر انجام دهید.
+      </div>
+
+import { useEffect, useMemo, useState } from "react";
+import { Archive, BookOpen, FolderPlus, Lightbulb, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-react";
+import { useCategoryStore } from "../stores/useCategoryStore";
+
+const emptyForm = () => ({
+  name: { fa: "", en: "" },
+  slug: "",
+  parentId: "",
+  description: { fa: "", en: "" },
+  image: "",
+  sortOrder: "0",
+  isActive: true,
+  showInNavigation: true,
+  attributes: [],
+});
+
+const slugify = (value) => {
+  const transliteration = {
+    "ا":"a","آ":"a","ب":"b","پ":"p","ت":"t","ث":"s","ج":"j","چ":"ch","ح":"h","خ":"kh",
+    "د":"d","ذ":"z","ر":"r","ز":"z","ژ":"zh","س":"s","ش":"sh","ص":"s","ض":"z","ط":"t","ظ":"z",
+    "ع":"a","غ":"gh","ف":"f","ق":"gh","ک":"k","گ":"g","ل":"l","م":"m","ن":"n","و":"u","ه":"h",
+    "ی":"y","ئ":"y","ء":""
+  };
+  return String(value || "").toLowerCase().trim()
+    .replace(/[آا‌بپتثجچحخدذرزژسشصضطظعغفقکگلمنوهیئء]/g, (letter) => transliteration[letter] ?? letter)
+    .normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+};
+
+const idOf = (value) => value == null ? "" : String(value);
+const labelOf = (category) => category?.name?.fa || category?.name?.en || category?.slug || "بدون نام";
+
+const getPath = (category, categories) => {
+  const byId = new Map(categories.map((item) => [idOf(item._id), item]));
+  const parts = [];
+  let current = category;
+  let remaining = 20;
+  while (current && remaining-- > 0) {
+    parts.unshift(labelOf(current));
+    current = byId.get(idOf(current.parentId));
+  }
+  return parts.join(" / ");
+};
+
+const normalizeAttribute = (attribute, index) => ({
+  key: attribute.key || "",
+  name: { fa: attribute.name?.fa || "", en: attribute.name?.en || "" },
+  unit: { fa: attribute.unit?.fa || "", en: attribute.unit?.en || "" },
+  type: attribute.type || "select",
+  optionsText: (attribute.options || []).map((option) =>
+    [option.value, option.name?.fa, option.name?.en].join("|")
+  ).join("\n"),
+  required: Boolean(attribute.required),
+  filterable: attribute.filterable !== false,
+  searchable: attribute.searchable !== false,
+  inherited: attribute.inherited !== false,
+  showInProductDetails: attribute.showInProductDetails !== false,
+  sortOrder: String(attribute.sortOrder ?? index),
+});
+
+const CategoryManager = () => {
+  const {
+    adminCategories: categories,
+    loading,
+    error,
+    fetchAdminCategories,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+  } = useCategoryStore();
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [expanded, setExpanded] = useState({});
+  const [query, setQuery] = useState("");
+
+  useEffect(() => { fetchAdminCategories(); }, [fetchAdminCategories]);
+
+  const sorted = useMemo(() => [...categories].sort((a, b) =>
+    Number(a.sortOrder || 0) - Number(b.sortOrder || 0) ||
+    labelOf(a).localeCompare(labelOf(b), "fa")
+  ), [categories]);
+
+  const descendantsOf = (id) => {
+    const result = new Set([idOf(id)]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const category of categories) {
+        if (result.has(idOf(category.parentId)) && !result.has(idOf(category._id))) {
+          result.add(idOf(category._id));
+          changed = true;
+        }
+      }
+    }
+    return result;
+  };
+
+  const resetForm = () => {
+    setForm(emptyForm());
+    setEditingId("");
+    setFormOpen(false);
+    setNotice("");
+  };
+
+  const startCreate = (parentId = "") => {
+    setForm({ ...emptyForm(), parentId: idOf(parentId), showInNavigation: true });
+    setEditingId("");
+    setNotice("");
+    setFormOpen(true);
+  };
+
+  const startEdit = (category) => {
+    setForm({
+      name: { fa: category.name?.fa || "", en: category.name?.en || "" },
+      slug: category.slug || "",
+      parentId: idOf(category.parentId),
+      description: { fa: category.description?.fa || "", en: category.description?.en || "" },
+      image: category.image || "",
+      sortOrder: String(category.sortOrder ?? 0),
+      isActive: category.isActive !== false,
+      showInNavigation: category.showInNavigation !== false,
+      attributes: (category.attributes || []).map(normalizeAttribute),
+    });
+    setEditingId(idOf(category._id));
+    setNotice("");
+    setFormOpen(true);
+  };
+
+  const updateLocalized = (group, key, value) => {
+    setForm((current) => ({
+      ...current,
+      [group]: { ...current[group], [key]: value },
+    }));
+    if (group === "name" && key === "fa" && !editingId) {
+      setForm((current) => ({ ...current, slug: slugify(value) }));
+    }
+  };
+
+  const handleCategoryImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setNotice("لطفاً یک فایل تصویری انتخاب کنید.");
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setNotice("حجم تصویر دسته‌بندی باید حداکثر ۲ مگابایت باشد.");
+      event.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((current) => ({ ...current, image: String(reader.result || "") }));
+      setNotice("");
+    };
+    reader.onerror = () => setNotice("خواندن تصویر ناموفق بود؛ دوباره تلاش کنید.");
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const updateAttribute = (index, key, value) => {
+    setForm((current) => ({
+      ...current,
+      attributes: current.attributes.map((attribute, i) =>
+        i === index ? { ...attribute, [key]: value } : attribute
+      ),
+    }));
+  };
+
+  const parseAttributeOptions = (text) => String(text || "").split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [value, fa, en] = line.split("|").map((part) => (part || "").trim());
+      return { value, name: { fa: fa || value, en: en || value } };
+    });
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setNotice("");
+    const attributes = form.attributes.map((attribute, index) => ({
+      key: attribute.key.trim(),
+      name: { fa: attribute.name.fa.trim(), en: attribute.name.en.trim() },
+      unit: { fa: attribute.unit.fa.trim(), en: attribute.unit.en.trim() },
+      type: attribute.type,
+      options: ["select", "multi-select"].includes(attribute.type) ? parseAttributeOptions(attribute.optionsText) : [],
+      required: Boolean(attribute.required),
+      filterable: Boolean(attribute.filterable),
+      searchable: Boolean(attribute.searchable),
+      inherited: Boolean(attribute.inherited),
+      showInProductDetails: Boolean(attribute.showInProductDetails),
+      sortOrder: Number(attribute.sortOrder || index),
+    }));
+    const payload = {
+      name: { fa: form.name.fa.trim(), en: form.name.en.trim() },
+      slug: form.slug.trim(),
+      parentId: form.parentId || null,
+      description: { fa: form.description.fa.trim(), en: form.description.en.trim() },
+      image: form.image.trim(),
+      sortOrder: Number(form.sortOrder),
+      isActive: Boolean(form.isActive),
+      showInNavigation: Boolean(form.showInNavigation),
+      attributes,
+    };
+    const success = editingId
+      ? await updateCategory(editingId, payload)
+      : await createCategory(payload);
+    if (success) resetForm();
+    else setNotice(useCategoryStore.getState().error || "ذخیره دسته‌بندی ناموفق بود.");
+  };
+
+  const toggleActive = async (category) => {
+    await updateCategory(idOf(category._id), { isActive: !category.isActive });
+  };
+
+  const handleDelete = async (category) => {
+    const warning = "حذف دائمی «" + labelOf(category) + "»؟ اگر محصول یا زیر‌دسته‌ای وابسته باشد، حذف رد می‌شود.";
+    if (!window.confirm(warning)) return;
+    const success = await deleteCategory(idOf(category._id));
+    if (!success) setNotice(useCategoryStore.getState().error || "حذف دسته‌بندی ناموفق بود.");
+  };
+
+  const filtered = query.trim().toLocaleLowerCase("fa-IR");
+  const visibleCategories = filtered
+    ? sorted.filter((category) =>
+        [category.name?.fa, category.name?.en, category.slug, getPath(category, sorted)]
+          .some((value) => String(value || "").toLocaleLowerCase("fa-IR").includes(filtered))
+      )
+    : sorted;
+  const visibleIds = new Set(visibleCategories.map((category) => idOf(category._id)));
+  const roots = visibleCategories.filter((category) => !category.parentId || !visibleIds.has(idOf(category.parentId)));
+  const editableParents = sorted.filter((category) =>
+    category.isActive && (!editingId || !descendantsOf(editingId).has(idOf(category._id)))
+  );
+
+  const renderCategory = (category, depth = 0) => {
+    const children = visibleCategories.filter((item) => idOf(item.parentId) === idOf(category._id));
+    const isExpanded = filtered || expanded[idOf(category._id)] !== false;
+    return (
+      <div key={idOf(category._id)} className="border-b border-[var(--ui-border)]/80 last:border-b-0">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-3 hover:bg-[var(--ui-hover)]" style={{ paddingRight: (12 + depth * 20) + "px" }}>
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => ({ ...current, [idOf(category._id)]: !isExpanded }))}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]"
+            aria-label={isExpanded ? "بستن زیر‌دسته‌ها" : "نمایش زیر‌دسته‌ها"}
+          >
+            <span className="text-lg leading-none">{children.length ? (isExpanded ? "−" : "+") : "·"}</span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium text-[var(--ui-text)]">{labelOf(category)}</span>
+              <span className="text-xs text-[var(--ui-muted)]" dir="ltr">{category.slug}</span>
+              {!category.isActive && <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] text-[var(--ui-warning)]">بایگانی / غیرفعال</span>}
+            </div>
+            <p className="mt-1 text-xs text-[var(--ui-muted)]">
+              {category.name?.en || ""} · {Number(category.productCount || 0)} محصول · {Number(category.childCount || 0)} زیر‌دسته
+            </p>
+          </div>
           <button type="button" onClick={() => startCreate(category._id)} title="افزودن زیر‌دسته" className="rounded-lg p-2 text-[var(--ui-success)] hover:bg-[var(--ui-hover)]"><FolderPlus size={16} aria-hidden="true" /></button>
           <button type="button" onClick={() => startEdit(category)} title="ویرایش" className="rounded-lg p-2 text-sky-300 hover:bg-[var(--ui-hover)]"><Pencil size={16} aria-hidden="true" /></button>
           <button type="button" onClick={() => toggleActive(category)} title={category.isActive ? "بایگانی" : "فعال‌سازی"} className="rounded-lg p-2 text-[var(--ui-warning)] hover:bg-[var(--ui-hover)]"><Archive size={16} aria-hidden="true" /></button>
@@ -288,72 +582,24 @@ const CategoryManager = () => {
 
       {(notice || error) && <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-[var(--ui-danger)]">{notice || error}</div>}
 
-      <details className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
-        <summary className="flex min-h-14 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--ui-text)] [&::-webkit-details-marker]:hidden">
-          <BookOpen size={18} className="shrink-0 text-[var(--ui-accent)]" aria-hidden="true" />
-          <span>راهنمای ایجاد و مدیریت دسته‌بندی</span>
-          <span className="mr-auto text-xs font-normal text-[var(--ui-muted)]">برای مشاهده نکته‌ها باز کنید</span>
-        </summary>
-        <div className="grid gap-4 border-t border-[var(--ui-border)] p-4 sm:grid-cols-2 sm:p-5">
-          <section className="min-w-0">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]">
-              <FolderPlus size={16} className="text-[var(--ui-accent)]" aria-hidden="true" /> ساختار والد و زیر‌دسته
-            </h4>
-            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
-              برای ساخت دسته اصلی، والد را روی «بدون والد» بگذارید. برای ساخت زیر‌دسته، والد مناسب را انتخاب کنید. صفحه دسته والد، محصولات زیر‌دسته‌های فعال آن را هم در نتایج خود لحاظ می‌کند.
-            </p>
-            <pre dir="rtl" className="mt-2 overflow-x-auto rounded-xl bg-[var(--ui-surface-raised)] p-3 text-xs leading-6 text-[var(--ui-text)]">قطعات کامپیوتر
-├── پردازنده
-│   ├── Intel
-│   └── AMD
-└── حافظه
-    ├── RAM
-    └── SSD</pre>
-          </section>
-          <section className="min-w-0">
-            <h4 className="flex items-center gap-2 text-sm font-semibold text-[var(--ui-text)]">
-              <Lightbulb size={16} className="text-[var(--ui-accent)]" aria-hidden="true" /> نام و نشانی دسته
-            </h4>
-            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
-              نام فارسی عنوان قابل‌مشاهده در فروشگاه است. شناسه لاتین بخشی از نشانی صفحه، مانند <code dir="ltr" className="rounded bg-[var(--ui-surface-raised)] px-1">/category/graphics-cards</code>، است و پس از ایجاد قفل می‌شود تا لینک‌های قبلی نشکنند.
-            </p>
-            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
-              ترتیب نمایش عددی است؛ عدد کوچک‌تر زودتر نمایش داده می‌شود. در صورت برابر بودن ترتیب، نام دسته برای مرتب‌سازی استفاده می‌شود.
-            </p>
-          </section>
-          <section className="min-w-0">
-            <h4 className="text-sm font-semibold text-[var(--ui-text)]">وضعیت نمایش</h4>
-            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
-              غیرفعال‌سازی، دسته را از فروشگاه عمومی حذف می‌کند؛ اگر والد را غیرفعال کنید، زیر‌دسته‌های آن نیز در فروشگاه نمایش داده نمی‌شوند. خاموش‌کردن «نمایش در منوی همبرگری» فقط آن را از منو پنهان می‌کند؛ دسته فعال همچنان در صفحه همه دسته‌بندی‌ها و نشانی مستقیم خود قابل دسترسی است.
-            </p>
-          </section>
-          <section className="min-w-0">
-            <h4 className="text-sm font-semibold text-[var(--ui-text)]">ویژگی‌های محصول</h4>
-            <p className="mt-2 text-xs leading-6 text-[var(--ui-muted)]">
-              ویژگی‌ها در فرم ثبت یا ویرایش محصول استفاده می‌شوند. «اجباری» بودن توسط سرور بررسی می‌شود، «قابل فیلتر» بودن فیلتر صفحه دسته را کنترل می‌کند و «ارث‌بری» مشخص می‌کند ویژگی والد به زیر‌دسته‌ها منتقل شود یا نه. گزینه «قابل جست‌وجو» فعلاً ذخیره می‌شود اما در منطق جست‌وجوی فعلی محصول استفاده نمی‌شود.
-            </p>
-          </section>
-        </div>
-      </details>
+      <div className="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)] px-4 py-3 text-sm leading-6 text-[var(--ui-muted)]">
+        برای شروع فقط نام فارسی و انگلیسی را بنویسید و مشخص کنید این دسته اصلی است یا زیرمجموعه کدام دسته. شناسه، تصویر، ترتیب نمایش و فیلدهای فنی را می‌توانید بعداً از تنظیمات بیشتر انجام دهید.
+      </div>
 
       {formOpen && (
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-xl font-semibold text-brand-muted">{editingId ? "ویرایش دسته‌بندی" : "ایجاد دسته‌بندی"}</h3>
+            <h3 className="text-xl font-semibold text-brand-muted">{editingId ? "ویرایش دسته‌بندی" : "افزودن دسته‌بندی"}</h3>
             <button type="button" onClick={resetForm} aria-label="بستن فرم" className="rounded-lg p-2 text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]"><X size={18} aria-hidden="true" /></button>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2">
             <label className={labelClass}>نام فارسی
               <input className={fieldClass} required maxLength={120} value={form.name.fa} onChange={(event) => updateLocalized("name", "fa", event.target.value)} />
-              <span className={hintClass}>عنوانی که مشتری در فروشگاه می‌بیند؛ کوتاه و مشخص بنویسید، مثل «پردازنده» یا «کارت گرافیک».</span>
+              <span className={hintClass}>نامی که خریدار در فروشگاه می‌بیند؛ مثل «پردازنده» یا «کارت گرافیک».</span>
             </label>
             <label className={labelClass}>English name
               <input className={fieldClass} required maxLength={120} dir="ltr" value={form.name.en} onChange={(event) => updateLocalized("name", "en", event.target.value)} />
-              <span className={hintClass}>معادل انگلیسی همان نام است؛ برای داده‌های چندزبانه نگهداری می‌شود و تکمیل آن الزامی است.</span>
-            </label>
-            <label className={labelClass}>شناسه لاتین برگرفته از نام فارسی
-              <input className={fieldClass} required maxLength={96} pattern="[a-z0-9]+(-[a-z0-9]+)*" dir="ltr" disabled={Boolean(editingId)} value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase() }))} />
-              <span className={hintClass}>بخش لاتین نشانی صفحه است: /category/slug. هنگام ایجاد از نام فارسی ساخته می‌شود؛ پس از ذخیره قابل ویرایش نیست تا لینک‌های قبلی حفظ شوند.</span>
+              <span className={hintClass}>برای نمایش انگلیسی فروشگاه؛ مثل CPU یا Graphics Cards.</span>
             </label>
             <label className={labelClass}>دسته والد
               <select className={fieldClass} value={form.parentId} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value }))}>
@@ -361,6 +607,21 @@ const CategoryManager = () => {
                 {editableParents.map((category) => <option key={idOf(category._id)} value={idOf(category._id)}>{getPath(category, sorted)}</option>)}
               </select>
               <span className={hintClass}>برای دسته اصلی خالی بگذارید. با انتخاب والد، این دسته زیرمجموعه آن می‌شود؛ تغییر والد مسیر زیر‌دسته‌های موجود را نیز به‌روزرسانی می‌کند.</span>
+            </label>
+
+          </div>
+          <p className="text-xs leading-5 text-[var(--ui-muted)]">شناسه صفحه به‌صورت خودکار از نام فارسی ساخته می‌شود. برای یک دسته اصلی، والد را خالی بگذارید؛ برای زیر‌دسته، دسته والد را انتخاب کنید.</p>
+
+          <details className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--ui-text)] [&::-webkit-details-marker]:hidden">
+              <span>تنظیمات بیشتر</span>
+              <span className="mr-auto text-xs font-normal text-[var(--ui-muted)]">تصویر، توضیحات، ترتیب و وضعیت نمایش</span>
+            </summary>
+            <div className="space-y-4 border-t border-[var(--ui-border)] p-4">
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+            <label className={labelClass}>شناسه لاتین برگرفته از نام فارسی
+              <input className={fieldClass} required maxLength={96} pattern="[a-z0-9]+(-[a-z0-9]+)*" dir="ltr" disabled={Boolean(editingId)} value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value.toLowerCase() }))} />
+              <span className={hintClass}>بخش لاتین نشانی صفحه است: /category/slug. هنگام ایجاد از نام فارسی ساخته می‌شود؛ پس از ذخیره قابل ویرایش نیست تا لینک‌های قبلی حفظ شوند.</span>
             </label>
             <label className={labelClass}>ترتیب نمایش
               <input className={fieldClass} type="number" min="0" max="100000" step="1" required value={form.sortOrder} onChange={(event) => setForm((current) => ({ ...current, sortOrder: event.target.value }))} />
@@ -376,6 +637,8 @@ const CategoryManager = () => {
               </div>}
             </div>
           </div>
+
+              </div>
           <div>
             <label className={labelClass}>توضیحات فارسی
               <textarea className={fieldClass} rows={3} maxLength={1000} value={form.description.fa} onChange={(event) => updateLocalized("description", "fa", event.target.value)} />
@@ -393,6 +656,16 @@ const CategoryManager = () => {
             </label>
           </div>
 
+
+            </div>
+          </details>
+
+          <details open={Boolean(editingId && form.attributes.length)} className="overflow-hidden rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface)]">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-[var(--ui-text)] [&::-webkit-details-marker]:hidden">
+              <span>فیلدهای مشخصات فنی محصولات</span>
+              <span className="mr-auto text-xs font-normal text-[var(--ui-muted)]">${form.attributes.length} فیلد تعریف‌شده</span>
+            </summary>
+            <div className="border-t border-[var(--ui-border)] p-3 sm:p-4">
           <section className="space-y-3 rounded-xl border border-[var(--ui-border)] p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -459,6 +732,10 @@ const CategoryManager = () => {
             ))}
           </section>
 
+
+            </div>
+          </details>
+
           <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[var(--ui-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--ui-button-text)] hover:bg-[#78866d] disabled:cursor-not-allowed disabled:opacity-60"><Save size={16} aria-hidden="true" /> {loading ? "در حال ذخیره…" : "ذخیره دسته‌بندی"}</button>
             <button type="button" onClick={resetForm} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ui-border)] px-5 py-2.5 text-sm text-[var(--ui-muted)] hover:bg-[var(--ui-hover)]">انصراف</button>
@@ -469,7 +746,7 @@ const CategoryManager = () => {
       <div className="overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] shadow-lg">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ui-border)] px-4 py-4 sm:px-5">
           <div><h3 className="font-semibold">درخت دسته‌بندی‌ها</h3><p className="mt-1 text-xs text-[var(--ui-muted)]">{categories.length} دسته ثبت‌شده</p></div>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-brand-muted" placeholder="جست‌وجوی نام یا slug…" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-10 w-full max-w-xs rounded-xl border border-[var(--ui-border)] bg-[var(--ui-input-bg)] px-3 py-2 text-sm text-[var(--ui-text)] outline-none focus:border-brand-muted" placeholder="جست‌وجوی دسته‌ها بر اساس نام…" />
         </div>
         {loading && categories.length === 0 ? (
           <div role="status" className="p-8 text-center text-sm text-[var(--ui-muted)]">در حال دریافت دسته‌بندی‌ها…</div>
