@@ -611,9 +611,9 @@ const CategoryManager = () => {
               <input className={fieldClass} required maxLength={120} value={form.name.fa} onChange={(event) => updateLocalized("name", "fa", event.target.value)} />
               <span className={hintClass}>نامی که خریدار در فروشگاه می‌بیند؛ مثل «پردازنده» یا «کارت گرافیک».</span>
             </label>
-            <label className={labelClass}>English name
-              <input className={fieldClass} required maxLength={120} dir="ltr" value={form.name.en} onChange={(event) => updateLocalized("name", "en", event.target.value)} />
-              <span className={hintClass}>برای نمایش انگلیسی فروشگاه؛ مثل CPU یا Graphics Cards.</span>
+            <label className={labelClass}>نام انگلیسی (اختیاری)
+              <input className={fieldClass} maxLength={120} dir="ltr" value={form.name.en} onChange={(event) => updateLocalized("name", "en", event.target.value)} />
+              <span className={hintClass}>برای نمایش انگلیسی فروشگاه؛ مثل CPU یا Graphics Cards. اگر خالی بماند، از شناسه لاتین ساخته می‌شود.</span>
             </label>
             <label className={labelClass}>دسته والد
               <select className={fieldClass} value={form.parentId} onChange={(event) => setForm((current) => ({ ...current, parentId: event.target.value }))}>
