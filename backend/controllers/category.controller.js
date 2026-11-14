@@ -50,7 +50,7 @@ const getCategoryScope = async (slug) => {
 
 const validateCategoryInput = (body, previous = null) => {
   const name = localized(body.name, previous?.name);
-  if (!name.fa || !name.en) return { error: "نام فارسی و انگلیسی دسته‌بندی الزامی است." };
+  if (!name.fa) return { error: "نام فارسی دسته‌بندی الزامی است." };
   const description = localized(body.description, previous?.description);
   const image = body.image === undefined ? (previous?.image || "") : safeImage(body.image);
   if (image === null) return { error: "آدرس تصویر باید یک مسیر محلی یا یک URL امن HTTPS باشد." };
@@ -62,6 +62,7 @@ const validateCategoryInput = (body, previous = null) => {
   if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 96) {
     return { error: "Slug باید انگلیسی، کوچک و شامل حروف، عدد و خط تیره باشد." };
   }
+  if (!name.en) name.en = slug.replace(/-/g, " ");
   const attributes = body.attributes === undefined ? (previous?.attributes || []) : body.attributes;
   if (!Array.isArray(attributes)) return { error: "تعریف ویژگی‌ها باید به شکل فهرست ارسال شود." };
   const keys = new Set();
