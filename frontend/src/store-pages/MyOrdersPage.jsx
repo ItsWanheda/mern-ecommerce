@@ -112,7 +112,13 @@ const MyOrdersPage = () => {
                             <p className="break-words text-sm font-semibold text-[var(--ui-text)]">{item.productName || item.product?.name || "محصول"}</p>
                             <p className="mt-1 text-xs text-[var(--ui-muted)]">تعداد: {new Intl.NumberFormat("fa-IR").format(item.quantity)}{item.size || item.color ? ` · گزینه: ${[item.size, item.color].filter(Boolean).join(" / ")}` : ""}</p>
                           </div>
-                          <p dir="ltr" className="shrink-0 text-sm font-semibold text-[var(--ui-accent)]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
+                          <div className="shrink-0 text-left">
+                            {Number(item.originalPrice) > Number(item.price) && (
+                              <p dir="ltr" className="mb-0.5 text-[10px] tabular-nums text-[var(--ui-muted)] line-through">{formatPrice(Number(item.originalPrice) * Number(item.quantity))}</p>
+                            )}
+                            <p dir="ltr" className="text-sm font-semibold text-[var(--ui-accent)]">{formatPrice(Number(item.price) * Number(item.quantity))}</p>
+                            {Number(item.discountPercent) > 0 && <p className="mt-0.5 text-[10px] font-semibold text-[var(--ui-danger)]">{new Intl.NumberFormat("fa-IR").format(item.discountPercent)}٪ تخفیف هنگام خرید</p>}
+                          </div>
                         </div>
                       ))}
                     </div>
