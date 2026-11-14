@@ -2,7 +2,7 @@ import express from "express";
 import {
   createProduct, deleteProduct, getAllProducts, getBestsellingProducts, getFeaturedProducts, getNewestProducts,
   getProductById, getProductsByCategory, getProductPriceBounds, getRecommendedProducts, getSearchedProducts,
-  toggleFeaturedProduct, updateProduct, setProductActive, updateProductStock, updateProductVariantStock,
+  toggleFeaturedProduct, updateProduct, setProductActive, updateProductStock, updateProductVariantStock, setProductsDiscount,
 } from "../controllers/product.controller.js";
 import { adminRoute, protectRoute } from "../middleware/auth.middleware.js";
 
@@ -16,6 +16,7 @@ router.get("/newest", getNewestProducts);
 router.get("/featured", getFeaturedProducts);
 router.get("/category/:category", getProductsByCategory);
 router.get("/recommendations", getRecommendedProducts);
+router.patch("/bulk-discount", protectRoute, adminRoute, setProductsDiscount);
 router.get("/", protectRoute, adminRoute, getAllProducts);
 router.get("/:id", getProductById);
 router.post("/", protectRoute, adminRoute, createProduct);
