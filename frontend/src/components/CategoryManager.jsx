@@ -651,8 +651,6 @@ const CategoryManager = () => {
               </div>}
             </div>
           </div>
-
-              </div>
           <div>
             <label className={labelClass}>توضیحات فارسی
               <textarea className={fieldClass} rows={3} maxLength={1000} value={form.description.fa} onChange={(event) => updateLocalized("description", "fa", event.target.value)} />
