@@ -6,11 +6,11 @@ import { resolveServerOrigin } from "@/src/lib/admin-api-origin.js";
 export const dynamic = "force-dynamic";
 
 const buildApiRoot = (origin) => {
-  const configured = String(process.env.NEXT_PUBLIC_API_URL || "/api").trim().replace(/\\/+$/, "");
-  const resolved = /^https?:\\/\\//i.test(configured)
+  const configured = String(process.env.NEXT_PUBLIC_API_URL || "/api").trim().replace(/\/+$/, "");
+  const resolved = /^https?:\/\//i.test(configured)
     ? configured
     : new URL(configured.startsWith("/") ? configured : "/" + configured, origin).toString();
-  return /\\/api$/i.test(resolved) ? resolved : resolved + "/api";
+  return /\/api$/i.test(resolved) ? resolved : resolved + "/api";
 };
 
 async function verifyAdminRequest() {
