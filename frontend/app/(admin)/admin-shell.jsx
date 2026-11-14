@@ -1,37 +1,35 @@
 "use client";
 
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import StoreInfoShell from "../(store-info)/store-info-shell.jsx";
 import LoadingSpinner from "@/src/components/LoadingSpinner.jsx";
-import { buildAuthPagePath } from "@/src/lib/auth-route-state.js";
 import { useUserStore } from "@/src/stores/useUserStore.js";
 
 function AdminAccessGuard({ children }) {
-  const location = useLocation();
-  const router = useRouter();
-  const { user, checkingAuth, authInitialized } = useUserStore();
-
-  const requiresLogin = authInitialized && !user;
-  const lacksAdminRole = authInitialized && Boolean(user) && user.role !== "admin";
+  const refreshUser = useUserStore((state) => state.refreshUser);
+  const [profileSynchronized, setProfileSynchronized] = useState(false);
 
   useEffect(() => {
-    if (requiresLogin) {
-      const returnPath = location.pathname + location.search + location.hash;
-      router.replace(buildAuthPagePath("/login", returnPath));
-      return;
-    }
+    let active = true;
 
-    if (lacksAdminRole) router.replace("/");
-  }, [lacksAdminRole, location.hash, location.pathname, location.search, requiresLogin, router]);
+    // The server layout has already verified the live administrator role and
+    // session. Refreshing here only synchronizes client-side UI state so a
+    // recently promoted administrator is not rejected by a stale Zustand role.
+    refreshUser()
+      .catch((error) => {
+        console.warn("Unable to refresh the client profile after server admin verification", error?.message);
+      })
+      .finally(() => {
+        if (active) setProfileSynchronized(true);
+      });
 
-  if (!authInitialized && checkingAuth) return <LoadingSpinner />;
-  if (requiresLogin || lacksAdminRole) {
-    return <div className="flex min-h-[40vh] items-center justify-center px-4 py-12 text-center text-sm text-[var(--ui-muted)]" role="status">در حال بررسی دسترسی و انتقال…</div>;
-  }
+    return () => {
+      active = false;
+    };
+  }, [refreshUser]);
 
+  if (!profileSynchronized) return <LoadingSpinner />;
   return children;
 }
 
