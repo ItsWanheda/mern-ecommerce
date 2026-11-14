@@ -10,7 +10,7 @@ import PageMeta from "../components/PageMeta";
 import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
 import toast from "react-hot-toast";
 import axios from "../lib/axios";
-import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
+import { formatPrice, getCurrencyLabel, getProductDiscountedPrice, STORE_CURRENCY } from "../lib/commerce";
 import { normalizeDigits } from "../lib/persian-search";
 import { useProductStore } from "../stores/useProductStore";
 import { useCategoryStore } from "../stores/useCategoryStore";
@@ -187,7 +187,7 @@ const CategoryPage = ({ slug: routeSlug }) => {
     let max = Number.NEGATIVE_INFINITY;
     let count = 0;
     catalog.forEach((product) => {
-      const amount = Number(product.price);
+      const amount = getProductDiscountedPrice(product);
       if (!Number.isFinite(amount) || amount < 0) return;
       min = Math.min(min, amount);
       max = Math.max(max, amount);
