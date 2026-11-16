@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildNormalizedProductSearchText,
+  buildNormalizedProductSearchTokens,
+  tokenizePersianSearchText,
   escapeSearchRegex,
   normalizePersianText,
 } from "../lib/persian-search.js";
@@ -56,4 +58,22 @@ test("frontend and backend normalize Persian search text identically", () => {
   for (const input of inputs) {
     assert.equal(normalizePersianText(input), normalizeFrontendPersianText(input), input);
   }
+});
+
+
+test("builds unique normalized tokens for indexed prefix search", () => {
+  assert.deepEqual(tokenizePersianSearchText("RTX ۴۰۷۰ ر‌تی‌اکس RTX"), ["rtx", "4070", "ر", "تی", "اکس"]);
+});
+
+test("includes custom specifications and brand fields in the search index", () => {
+  const tokens = buildNormalizedProductSearchTokens({
+    name: "مادربرد",
+    category: "motherboards",
+    customSpecifications: [{ name: "چیپست", value: "AMD B650" }],
+    brandName: "ASUS",
+  });
+  assert.ok(tokens.includes("چیپست"));
+  assert.ok(tokens.includes("amd"));
+  assert.ok(tokens.includes("b650"));
+  assert.ok(tokens.includes("asus"));
 });
