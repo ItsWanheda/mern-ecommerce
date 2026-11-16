@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { redis } from "../lib/redis.js";
+import { createCircuitBreaker } from "../lib/circuit-breaker.js";
 
 const redisWindowScript = `
 local current = redis.call("INCR", KEYS[1])
@@ -9,6 +10,7 @@ return { current, ttl }
 `;
 
 const memoryWindows = new Map();
+const redisRateLimitCircuit = createCircuitBreaker({ failureThreshold: 3, resetTimeoutMs: 5000 });
 let redisFallbackWarningLogged = false;
 const MAX_MEMORY_KEYS = 15000;
 
@@ -41,14 +43,20 @@ export const createRateLimiter = ({ name, limit, windowSeconds, message = "Too m
     const clientIp = req.ip || req.socket?.remoteAddress || "unknown";
     const key = `rate-limit:${name}:${hashedClientKey(clientIp)}`;
     let usage;
-    try {
-      const result = await redis.eval(redisWindowScript, 1, key, String(windowSeconds));
-      usage = { count: Number(result?.[0] || 0), resetSeconds: Math.max(1, Number(result?.[1] || windowSeconds)) };
-    } catch (error) {
-      // Keeps the storefront serving if Redis fails; fallback is per-instance,
-      // best-effort only, and does not provide global coordination.
+    const redisResult = await redisRateLimitCircuit.execute(
+      () => redis.eval(redisWindowScript, 1, key, String(windowSeconds))
+    );
+    if (redisResult.ok) {
+      usage = {
+        count: Number(redisResult.value?.[0] || 0),
+        resetSeconds: Math.max(1, Number(redisResult.value?.[1] || windowSeconds)),
+      };
+      redisFallbackWarningLogged = false;
+    } else {
+      // During an outage, skip Redis calls during cooldown and keep the bounded
+      // per-instance fallback. This does not provide global coordination.
       if (!redisFallbackWarningLogged) {
-        console.warn("Distributed rate limiting is degraded; using per-instance fallback:", error.message);
+        console.warn("Distributed rate limiting is degraded; using per-instance fallback:", redisResult.error?.message || "Redis circuit is open");
         redisFallbackWarningLogged = true;
       }
       usage = consumeMemoryWindow(key, windowSeconds);

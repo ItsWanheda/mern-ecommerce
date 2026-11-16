@@ -138,6 +138,24 @@ const getCachedProductPriceBounds = async (filter, scopeKey) => {
   return result;
 };
 
+const findProductsSortedByEffectivePrice = async (filter, direction, skip, limit) => {
+  const legacyCount = await Product.countDocuments({
+    $and: [filter, { effectivePrice: { $exists: false } }],
+  }).maxTimeMS(1500);
+  if (legacyCount > 0) {
+    return Product.aggregate([
+      { $match: filter },
+      { $addFields: { effectivePrice: { $ifNull: ["$effectivePrice", discountedPriceExpression] } } },
+      { $sort: { effectivePrice: direction, _id: direction } },
+      { $skip: skip },
+      { $limit: limit },
+      { $project: { effectivePrice: 0, searchTextNormalized: 0, searchTokens: 0 } },
+    ]).option({ maxTimeMS: 1500 });
+  }
+  return Product.find(filter).sort({ effectivePrice: direction, _id: direction })
+    .skip(skip).limit(limit).maxTimeMS(1500).lean();
+};
+
 const validateProductAttributes = async (category, input) => {
   const raw = input && typeof input === "object" && !Array.isArray(input) ? input : {};
   const ids = [...(category.ancestors || []), category._id];
@@ -263,8 +281,10 @@ export const getAllProducts = async (req, res) => {
         : req.query.sort === "nameAsc"
           ? { name: 1, _id: 1 }
           : { createdAt: -1, _id: -1 };
-    const productsQuery = Product.find(filter).sort(sort)
-      .skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean();
+    const priceDirection = req.query.sort === "priceAsc" ? 1 : req.query.sort === "priceDesc" ? -1 : 0;
+    const productsQuery = priceDirection
+      ? findProductsSortedByEffectivePrice(filter, priceDirection, (page - 1) * limit, limit)
+      : Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean();
     const [total, products] = await Promise.all([
       Product.countDocuments(filter).maxTimeMS(1500),
       productsQuery,
@@ -370,9 +390,13 @@ export const getSearchedProducts = async (req, res) => {
       nameAsc: { name: 1, _id: 1 },
     };
     const sort = sortMap[req.query.sort] || sortMap.newest;
+    const priceDirection = req.query.sort === "priceAsc" ? 1 : req.query.sort === "priceDesc" ? -1 : 0;
+    const productsQuery = priceDirection
+      ? findProductsSortedByEffectivePrice(filter, priceDirection, (page - 1) * limit, limit)
+      : Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean();
     const [total, products] = await Promise.all([
       Product.countDocuments(filter).maxTimeMS(1500),
-      Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean(),
+      productsQuery,
     ]);
     return res.json({ products, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   } catch (error) {
@@ -1197,7 +1221,10 @@ export const getProductsByCategory = async (req, res) => {
       await writeJsonCache(facetCacheKey, filterOptions, 120);
     }
 
-    const productsQuery = Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean();
+    const priceDirection = sortKey === "priceAsc" ? 1 : sortKey === "priceDesc" ? -1 : 0;
+    const productsQuery = priceDirection
+      ? findProductsSortedByEffectivePrice(filter, priceDirection, offset, limit)
+      : Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean();
     const basePriceFilter = { $and: baseClauses };
     const [products, total, priceBounds] = await Promise.all([
       productsQuery,

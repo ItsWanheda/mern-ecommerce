@@ -1,26 +1,12 @@
 import Category from "../models/category.model.js";
+import { filterVisibleCategoryTree } from "./category-tree.js";
 import { redis } from "./redis.js";
 
 const CATEGORY_TREE_CACHE_KEY = "category_tree_v1";
 const CATEGORY_TREE_CACHE_TTL_SECONDS = 180;
 let cacheWarningLogged = false;
 
-const idOf = (value) => value == null ? "" : String(value);
-
-export const filterVisibleCategoryTree = (categories = []) => {
-  const activeIds = new Set(categories
-    .filter((category) => category.isActive !== false)
-    .map((category) => idOf(category._id)));
-  return categories
-    .filter((category) =>
-      category.isActive !== false &&
-      (category.ancestors || []).every((ancestor) => activeIds.has(idOf(ancestor)))
-    )
-    .sort((a, b) =>
-      Number(a.sortOrder || 0) - Number(b.sortOrder || 0) ||
-      String(a.name?.fa || "").localeCompare(String(b.name?.fa || ""), "fa")
-    );
-};
+export { filterVisibleCategoryTree } from "./category-tree.js";
 
 export const getVisibleCategoryTree = async () => {
   try {
