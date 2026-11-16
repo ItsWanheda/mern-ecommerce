@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
-import { buildNormalizedProductSearchText } from "../lib/persian-search.js";
+import { buildNormalizedProductSearchText, buildNormalizedProductSearchTokens } from "../lib/persian-search.js";
+import { getProductDiscountedPrice } from "../lib/product-pricing.js";
 
 const colorSchema = new mongoose.Schema(
   {
@@ -70,6 +71,8 @@ const productSchema = new mongoose.Schema(
     attributes: { type: Map, of: mongoose.Schema.Types.Mixed, default: () => ({}) },
     customSpecifications: { type: [customSpecificationSchema], default: [] },
     searchTextNormalized: { type: String, default: "", select: false },
+    searchTokens: { type: [String], default: [], select: false },
+    effectivePrice: { type: Number, min: 0, select: false },
     sizes: { type: [String], default: [] },
     colors: { type: [colorSchema], default: [] },
     variants: { type: [variantSchema], default: [] },
@@ -94,9 +97,13 @@ productSchema.index({ createdAt: -1 });
 productSchema.index({ category: 1, price: 1, createdAt: -1 });
 productSchema.index({ isActive: 1, category: 1, createdAt: -1, _id: -1 });
 productSchema.index({ isActive: 1, isFeatured: 1, createdAt: -1, _id: -1 });
+productSchema.index({ searchTokens: 1 });
+productSchema.index({ isActive: 1, effectivePrice: 1, _id: 1 });
+productSchema.index({ categoryId: 1, effectivePrice: 1, _id: 1 });
+productSchema.index({ category: 1, effectivePrice: 1, _id: 1 });
 
 productSchema.pre("validate", function () {
-  this.searchTextNormalized = buildNormalizedProductSearchText({
+  const searchableProduct = {
     name: this.name,
     description: this.description,
     category: this.category,
@@ -105,7 +112,13 @@ productSchema.pre("validate", function () {
     variants: this.variants,
     fit: this.fit,
     attributes: this.attributes,
-  });
+    customSpecifications: this.customSpecifications,
+    brand: this.brand,
+    brandName: this.brandName,
+  };
+  this.searchTextNormalized = buildNormalizedProductSearchText(searchableProduct);
+  this.searchTokens = buildNormalizedProductSearchTokens(searchableProduct);
+  this.effectivePrice = getProductDiscountedPrice(this);
 });
 
 export default mongoose.model("Product", productSchema);

@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Product from "../models/product.model.js";
-import { buildNormalizedProductSearchText } from "../lib/persian-search.js";
+import { buildNormalizedProductSearchText, buildNormalizedProductSearchTokens } from "../lib/persian-search.js";
+import { getProductDiscountedPrice } from "../lib/product-pricing.js";
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ let updated = 0;
 try {
   await mongoose.connect(uri);
   const cursor = Product.find({})
-    .select("_id name description category sizes colors variants fit")
+    .select("_id name description category sizes colors variants fit attributes customSpecifications brand brandName price discountPercent")
     .lean()
     .cursor({ batchSize });
 
@@ -32,10 +33,12 @@ try {
 
   for await (const product of cursor) {
     const searchTextNormalized = buildNormalizedProductSearchText(product);
+    const searchTokens = buildNormalizedProductSearchTokens(product);
+    const effectivePrice = getProductDiscountedPrice(product);
     pending.push({
       updateOne: {
         filter: { _id: product._id },
-        update: { $set: { searchTextNormalized } },
+        update: { $set: { searchTextNormalized, searchTokens, effectivePrice } },
       },
     });
     if (pending.length >= batchSize) await flush();

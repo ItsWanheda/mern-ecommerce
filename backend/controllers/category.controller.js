@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Category from "../models/category.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { getVisibleCategoryTree, invalidateCategoryTreeCache } from "../lib/category-tree-cache.js";
+import { invalidateProductPriceBoundsCache } from "../lib/product-cache.js";
 import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
 
 const objectIdPattern = /^[a-f\d]{24}$/i;
@@ -22,13 +24,7 @@ const sortCategories = (items) => items.sort((a, b) =>
   String(a.name?.fa || "").localeCompare(String(b.name?.fa || ""), "fa")
 );
 
-const getVisibleCategories = async () => {
-  const all = await Category.find({}).sort({ sortOrder: 1, "name.fa": 1 }).lean();
-  const activeIds = new Set(all.filter((item) => item.isActive).map((item) => idString(item._id)));
-  return sortCategories(all.filter((item) =>
-    item.isActive && (item.ancestors || []).every((ancestor) => activeIds.has(idString(ancestor)))
-  ));
-};
+const getVisibleCategories = async () => getVisibleCategoryTree();
 
 const getCategoryScope = async (slug) => {
   const selected = await Category.findOne({ slug }).lean();
@@ -202,6 +198,8 @@ export const createCategory = async (req, res) => {
       ancestors: parent ? [...parent.ancestors, parent._id] : [],
     });
     pendingUploadedImage = "";
+    await invalidateCategoryTreeCache();
+    await invalidateProductPriceBoundsCache();
     await recordAuditEvent(req, {
       action: "category.created", targetType: "category", targetId: category._id,
       summary: "Category created: " + (category.name?.fa || category.slug),
@@ -304,6 +302,8 @@ export const updateCategory = async (req, res) => {
         await descendant.save();
       }
     }
+    await invalidateCategoryTreeCache();
+    await invalidateProductPriceBoundsCache();
     await recordAuditEvent(req, {
       action: "category.updated", targetType: "category", targetId: category._id,
       summary: "Category updated: " + (category.name?.fa || category.slug),
@@ -365,6 +365,8 @@ export const deleteCategory = async (req, res) => {
       attributes: category.attributes,
     };
     await Category.deleteOne({ _id: category._id });
+    await invalidateCategoryTreeCache();
+    await invalidateProductPriceBoundsCache();
     await deleteManagedCloudinaryImage(category.image, { folder: "categories" }).catch((cleanupError) => {
       console.error("Deleted category image cleanup failed", { name: cleanupError?.name || "Error" });
     });

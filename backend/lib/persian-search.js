@@ -32,6 +32,12 @@ export const normalizePersianText = (value) =>
 export const escapeSearchRegex = (value) =>
   String(value).replace(/[|\\{}()[\]^$+*?.]/g, "\\$&");
 
+export const tokenizePersianSearchText = (value, maxTokens = 256) => {
+  const normalized = normalizePersianText(value);
+  if (!normalized) return [];
+  return [...new Set(normalized.split(" ").filter(Boolean))].slice(0, maxTokens);
+};
+
 export const buildNormalizedProductSearchText = (product) => {
   const category = String(product?.category ?? "");
   const attributeEntries = product?.attributes instanceof Map
@@ -44,7 +50,13 @@ export const buildNormalizedProductSearchText = (product) => {
     ...(Array.isArray(product?.colors) ? product.colors.map((item) => item?.name) : []),
     ...(Array.isArray(product?.variants) ? product.variants.flatMap((item) => [item?.size, item?.color]) : []),
     product?.fit?.type,
+    product?.brand,
+    product?.brandName,
+    product?.brand?.name,
     ...attributeText,
+    ...(Array.isArray(product?.customSpecifications)
+      ? product.customSpecifications.flatMap((item) => [item?.name, item?.value])
+      : []),
   ];
   return normalizePersianText([
     product?.name,
@@ -54,3 +66,6 @@ export const buildNormalizedProductSearchText = (product) => {
     ...options,
   ].filter(Boolean).join(" "));
 };
+
+export const buildNormalizedProductSearchTokens = (product) =>
+  tokenizePersianSearchText(buildNormalizedProductSearchText(product));

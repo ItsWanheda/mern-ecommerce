@@ -3,7 +3,9 @@ import cloudinary from "../lib/cloudinary.js";
 import Product from "../models/product.model.js";
 import Category from "../models/category.model.js";
 import Order from "../models/order.model.js";
-import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
+import { normalizePersianText, tokenizePersianSearchText, escapeSearchRegex } from "../lib/persian-search.js";
+import { getVisibleCategoryTree } from "../lib/category-tree-cache.js";
+import { invalidateProductDerivedCaches } from "../lib/product-cache.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { normalizeCustomSpecifications } from "../lib/custom-product-specifications.js";
 import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
@@ -23,13 +25,9 @@ const discountedPriceExpression = {
   ],
 };
 const getCategoryProductScope = async (slug) => {
-  const selected = await Category.findOne({ slug }).lean();
+  const selected = await Category.findOne({ slug }).select("_id slug").lean();
   if (!selected) return null;
-  const all = await Category.find({}).select("_id slug parentId ancestors isActive").lean();
-  const activeIds = new Set(all.filter((category) => category.isActive).map((category) => idOf(category._id)));
-  const visible = all.filter((category) =>
-    category.isActive && (category.ancestors || []).every((ancestor) => activeIds.has(idOf(ancestor)))
-  );
+  const visible = await getVisibleCategoryTree();
   const selectedId = idOf(selected._id);
   if (!visible.some((category) => idOf(category._id) === selectedId)) return { ids: [], slugs: [] };
   const scope = visible.filter((category) =>
@@ -37,6 +35,107 @@ const getCategoryProductScope = async (slug) => {
     (category.ancestors || []).some((ancestor) => idOf(ancestor) === selectedId)
   );
   return { ids: scope.map((category) => category._id), slugs: scope.map((category) => category.slug) };
+};
+
+const buildProductSearchClause = (rawQuery) => {
+  const normalized = normalizePersianText(rawQuery);
+  const tokens = tokenizePersianSearchText(normalized, 8);
+  if (!tokens.length) return null;
+  const tokenPrefixes = tokens.map((token) => new RegExp("^" + escapeSearchRegex(token)));
+  const legacyPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
+  const normalizedPattern = new RegExp(escapeSearchRegex(normalized));
+  return {
+    $or: [
+      { searchTokens: { $all: tokenPrefixes } },
+      {
+        searchTokens: { $exists: false },
+        $or: [
+          { searchTextNormalized: normalizedPattern },
+          { name: legacyPattern },
+          { description: legacyPattern },
+          { category: legacyPattern },
+          { sizes: legacyPattern },
+          { "variants.size": legacyPattern },
+          { "variants.color": legacyPattern },
+          { "colors.name": legacyPattern },
+          { "fit.type": legacyPattern },
+          { "attributes.brand": legacyPattern },
+          { "attributes.brandName": legacyPattern },
+          { "customSpecifications.name": legacyPattern },
+          { "customSpecifications.value": legacyPattern },
+        ],
+      },
+    ],
+  };
+};
+
+const buildEffectivePriceRangeClause = (minPrice, maxPrice) => {
+  const indexedRange = {};
+  const legacyConditions = [];
+  if (minPrice !== null) {
+    indexedRange.$gte = minPrice;
+    legacyConditions.push({ $gte: [discountedPriceExpression, minPrice] });
+  }
+  if (maxPrice !== null) {
+    indexedRange.$lte = maxPrice;
+    legacyConditions.push({ $lte: [discountedPriceExpression, maxPrice] });
+  }
+  return {
+    $or: [
+      { effectivePrice: indexedRange },
+      { effectivePrice: { $exists: false }, $expr: { $and: legacyConditions } },
+    ],
+  };
+};
+
+const getCachedProductPriceBounds = async (filter, scopeKey) => {
+  let version = "redis-unavailable";
+  try {
+    version = (await redis.get("product_price_bounds_version_v1")) || "initial";
+  } catch {
+    // Redis is optional for reads; MongoDB remains the source of truth.
+  }
+  const cacheKey = "product_price_bounds_v3:" + scopeKey + ":" + version;
+  const cached = await readJsonCache(cacheKey);
+  if (cached && Number.isFinite(Number(cached.minPrice)) &&
+      Number.isFinite(Number(cached.maxPrice)) && Number.isFinite(Number(cached.count))) return cached;
+
+  const [count, legacyCount] = await Promise.all([
+    Product.countDocuments(filter).maxTimeMS(1500),
+    Product.countDocuments({ $and: [filter, { effectivePrice: { $exists: false } }] }).maxTimeMS(1500),
+  ]);
+  if (!count) {
+    const empty = { minPrice: 0, maxPrice: 0, count: 0 };
+    await writeJsonCache(cacheKey, empty, 120);
+    return empty;
+  }
+
+  let min;
+  let max;
+  if (legacyCount > 0) {
+    const [stats] = await Product.aggregate([
+      { $match: filter },
+      { $addFields: { effectivePrice: { $ifNull: ["$effectivePrice", discountedPriceExpression] } } },
+      { $group: { _id: null, minPrice: { $min: "$effectivePrice" }, maxPrice: { $max: "$effectivePrice" } } },
+    ]).option({ maxTimeMS: 2500 });
+    min = Number(stats?.minPrice);
+    max = Number(stats?.maxPrice);
+  } else {
+    const [minimum, maximum] = await Promise.all([
+      Product.findOne(filter).sort({ effectivePrice: 1, _id: 1 }).select("+effectivePrice").lean().maxTimeMS(1500),
+      Product.findOne(filter).sort({ effectivePrice: -1, _id: -1 }).select("+effectivePrice").lean().maxTimeMS(1500),
+    ]);
+    min = Number(minimum?.effectivePrice);
+    max = Number(maximum?.effectivePrice);
+  }
+
+  const result = {
+    minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
+    maxPrice: Number.isFinite(max) ? Math.max(0, Math.ceil(max)) : 0,
+    count,
+  };
+  await writeJsonCache(cacheKey, result, 120);
+  return result;
 };
 
 const validateProductAttributes = async (category, input) => {
@@ -127,15 +226,8 @@ export const getAllProducts = async (req, res) => {
     else if (status === "archived") filter.isActive = false;
 
     if (rawQuery) {
-      const normalized = normalizePersianText(rawQuery).slice(0, 80);
-      const rawPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
-      const normalizedPattern = new RegExp(escapeSearchRegex(normalized), "i");
-      clauses.push({ $or: [
-        { searchTextNormalized: normalizedPattern },
-        { name: rawPattern },
-        { description: rawPattern },
-        { category: rawPattern },
-      ] });
+      const searchClause = buildProductSearchClause(rawQuery);
+      if (searchClause) clauses.push(searchClause);
     }
     if (category) {
       const categoryRecord = await Category.findOne({ slug: category }).select("_id").lean();
@@ -165,21 +257,14 @@ export const getAllProducts = async (req, res) => {
     if (clauses.length) filter.$and = clauses;
 
     const sort = req.query.sort === "priceAsc"
-      ? { price: 1, _id: 1 }
-      : req.query.sort === "nameAsc"
-        ? { name: 1, _id: 1 }
-        : { createdAt: -1, _id: -1 };
-    const discountedSortDirection = req.query.sort === "priceAsc" ? 1 : req.query.sort === "priceDesc" ? -1 : 0;
-    const productsQuery = discountedSortDirection
-      ? Product.aggregate([
-          { $match: filter },
-          { $addFields: { discountedPrice: discountedPriceExpression } },
-          { $sort: { discountedPrice: discountedSortDirection, _id: 1 } },
-          { $skip: (page - 1) * limit },
-          { $limit: limit },
-          { $project: { discountedPrice: 0, searchTextNormalized: 0 } },
-        ]).option({ maxTimeMS: 1500 })
-      : Product.find(filter).sort(sort).skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean();
+      ? { effectivePrice: 1, _id: 1 }
+      : req.query.sort === "priceDesc"
+        ? { effectivePrice: -1, _id: -1 }
+        : req.query.sort === "nameAsc"
+          ? { name: 1, _id: 1 }
+          : { createdAt: -1, _id: -1 };
+    const productsQuery = Product.find(filter).sort(sort)
+      .skip((page - 1) * limit).limit(limit).maxTimeMS(1500).lean();
     const [total, products] = await Promise.all([
       Product.countDocuments(filter).maxTimeMS(1500),
       productsQuery,
@@ -230,32 +315,8 @@ export const getNewestProducts = async (req, res) => {
 };
 
 export const getProductPriceBounds = async (_req, res) => {
-  const cacheKey = "product_price_bounds_v2";
-  const cached = await readJsonCache(cacheKey);
-  if (cached) return res.json({ priceBounds: cached });
-
   try {
-    const [stats] = await Product.aggregate([
-      { $match: { isActive: { $ne: false }, price: { $gte: 0 } } },
-      { $addFields: { discountedPrice: discountedPriceExpression } },
-      {
-        $group: {
-          _id: null,
-          minPrice: { $min: "$discountedPrice" },
-          maxPrice: { $max: "$discountedPrice" },
-          count: { $sum: 1 },
-        },
-      },
-    ]).option({ maxTimeMS: 1500 });
-
-    const min = Number(stats?.minPrice);
-    const max = Number(stats?.maxPrice);
-    const priceBounds = {
-      minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
-      maxPrice: Number.isFinite(max) ? Math.max(1, Math.ceil(max)) : 1,
-      count: Number(stats?.count || 0),
-    };
-    await writeJsonCache(cacheKey, priceBounds, 60);
+    const priceBounds = await getCachedProductPriceBounds({ isActive: { $ne: false } }, "global");
     return res.json({ priceBounds });
   } catch (error) {
     console.error("Error in getProductPriceBounds controller", error.message);
@@ -294,33 +355,18 @@ export const getSearchedProducts = async (req, res) => {
       }
     }
     if (q) {
-      // Match each normalized token so word order is flexible in Persian and Latin queries.
-      const tokens = [...new Set(q.split(" ").filter(Boolean))].slice(0, 8);
-      filter.$and = tokens.map((token) => {
-        const expression = new RegExp(escapeSearchRegex(token));
-        return {
-          $or: [
-            { searchTextNormalized: expression },
-            // Compatibility while existing catalogue documents are being backfilled.
-            { name: new RegExp(escapeSearchRegex(rawQuery), "i") },
-            { description: new RegExp(escapeSearchRegex(rawQuery), "i") },
-            { category: new RegExp(escapeSearchRegex(rawQuery), "i") },
-          ],
-        };
-      });
+      const searchClause = buildProductSearchClause(rawQuery);
+      if (searchClause) filter.$and = [searchClause];
     }
     if (minPrice !== null || maxPrice !== null) {
-      const priceConditions = [];
-      if (minPrice !== null) priceConditions.push({ $gte: [discountedPriceExpression, minPrice] });
-      if (maxPrice !== null) priceConditions.push({ $lte: [discountedPriceExpression, maxPrice] });
-      filter.$and = [...(filter.$and || []), { $expr: { $and: priceConditions } }];
+      filter.$and = [...(filter.$and || []), buildEffectivePriceRangeClause(minPrice, maxPrice)];
     }
 
     const sortMap = {
       newest: { createdAt: -1, _id: -1 },
       oldest: { createdAt: 1, _id: 1 },
-      priceAsc: { price: 1, _id: 1 },
-      priceDesc: { price: -1, _id: -1 },
+      priceAsc: { effectivePrice: 1, _id: 1 },
+      priceDesc: { effectivePrice: -1, _id: -1 },
       nameAsc: { name: 1, _id: 1 },
     };
     const sort = sortMap[req.query.sort] || sortMap.newest;
@@ -462,6 +508,7 @@ export const createProduct = async (req, res) => {
       sizeChart: normalizedSizeChart,
       stock: normalizedVariants.length ? null : numericStock,
     });
+    await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: "product.created",
       targetType: "product",
@@ -649,6 +696,7 @@ export const updateProduct = async (req, res) => {
     await product.save();
 
     await updateFeaturedProductsCache();
+    await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: "product.updated",
       targetType: "product",
@@ -675,6 +723,7 @@ export const setProductActive = async (req, res) => {
     product.isActive = next;
     await product.save();
     await updateFeaturedProductsCache();
+    await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: next ? "product.restored" : "product.archived",
       targetType: "product",
@@ -792,6 +841,7 @@ export const deleteProduct = async (req, res) => {
     }
     await Product.findByIdAndDelete(req.params.id);
     await updateFeaturedProductsCache();
+    await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: "product.deleted",
       targetType: "product",
@@ -852,10 +902,22 @@ export const setProductsDiscount = async (req, res) => {
       return res.status(409).json({ message: "برای محصول بایگانی‌شده تخفیف ثبت نمی‌شود؛ ابتدا آن را بازیابی کنید." });
     }
 
+    const discountAmountExpression = {
+      $floor: {
+        $add: [
+          { $divide: [{ $multiply: ["$price", discountPercent] }, 100] },
+          0.5,
+        ],
+      },
+    };
     const updated = await Product.updateMany(
       { _id: { $in: productIds }, isActive: { $ne: false } },
-      { $set: { discountPercent } },
-      { runValidators: true }
+      [{
+        $set: {
+          discountPercent,
+          effectivePrice: { $max: [0, { $subtract: ["$price", discountAmountExpression] }] },
+        },
+      }]
     );
     if (Number(updated.matchedCount ?? updated.n ?? 0) !== productIds.length) {
       return res.status(409).json({ message: "وضعیت بعضی محصولات هم‌زمان تغییر کرده است؛ فهرست را تازه‌سازی و دوباره تلاش کنید." });
@@ -892,18 +954,7 @@ export const setProductsDiscount = async (req, res) => {
     }));
 
     await updateFeaturedProductsCache();
-    try {
-      await redis.del(
-        "recommended_products_v1",
-        "product_price_bounds_v2",
-        ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v1:" + (index + 1))
-      );
-    } catch (cacheError) {
-      if (!cacheWarningLogged) {
-        console.warn("Unable to clear product recommendation caches after discount update:", cacheError.message);
-        cacheWarningLogged = true;
-      }
-    }
+    await invalidateProductDerivedCaches();
 
     return res.json({
       message: discountPercent
@@ -961,24 +1012,8 @@ export const getProductsByCategory = async (req, res) => {
     const clauses = [...baseClauses];
     const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";
     if (rawQuery) {
-      const normalized = normalizePersianText(rawQuery).slice(0, 80);
-      const rawPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
-      const normalizedPattern = normalized ? new RegExp(escapeSearchRegex(normalized), "i") : rawPattern;
-      clauses.push({
-        $or: [
-          { searchTextNormalized: normalizedPattern },
-          { name: rawPattern },
-          { description: rawPattern },
-          { category: rawPattern },
-          { sizes: rawPattern },
-          { "variants.size": rawPattern },
-          { "variants.color": rawPattern },
-          { "colors.name": rawPattern },
-          { "fit.type": rawPattern },
-          { "attributes.brand": rawPattern },
-          { "attributes.brandName": rawPattern },
-        ],
-      });
+      const searchClause = buildProductSearchClause(rawQuery);
+      if (searchClause) clauses.push(searchClause);
     }
 
     const parsePriceBound = (value) => {
@@ -997,10 +1032,7 @@ export const getProductsByCategory = async (req, res) => {
       return res.status(400).json({ message: "بازه قیمت معتبر نیست." });
     }
     if (minPrice.value !== null || maxPrice.value !== null) {
-      const priceConditions = [];
-      if (minPrice.value !== null) priceConditions.push({ $gte: [discountedPriceExpression, minPrice.value] });
-      if (maxPrice.value !== null) priceConditions.push({ $lte: [discountedPriceExpression, maxPrice.value] });
-      clauses.push({ $expr: { $and: priceConditions } });
+      clauses.push(buildEffectivePriceRangeClause(minPrice.value, maxPrice.value));
     }
 
     const readValues = (input, maxItems, maxLength = 80) => {
@@ -1086,8 +1118,8 @@ export const getProductsByCategory = async (req, res) => {
     }
 
     const sortKey = typeof req.query.sort === "string" ? req.query.sort : "newest";
-    const sort = sortKey === "priceAsc" ? { price: 1, createdAt: -1, _id: -1 }
-      : sortKey === "priceDesc" ? { price: -1, createdAt: -1, _id: -1 }
+    const sort = sortKey === "priceAsc" ? { effectivePrice: 1, _id: 1 }
+      : sortKey === "priceDesc" ? { effectivePrice: -1, _id: -1 }
       : sortKey === "nameAsc" ? { name: 1, _id: 1 }
       : sortKey === "oldest" ? { createdAt: 1, _id: 1 }
       : { createdAt: -1, _id: -1 };
@@ -1165,37 +1197,17 @@ export const getProductsByCategory = async (req, res) => {
       await writeJsonCache(facetCacheKey, filterOptions, 120);
     }
 
-    const discountedSortDirection = sortKey === "priceAsc" ? 1 : sortKey === "priceDesc" ? -1 : 0;
-    const productsQuery = discountedSortDirection
-      ? Product.aggregate([
-          { $match: filter },
-          { $addFields: { discountedPrice: discountedPriceExpression } },
-          { $sort: { discountedPrice: discountedSortDirection, _id: 1 } },
-          { $skip: offset },
-          { $limit: limit },
-          { $project: { discountedPrice: 0, searchTextNormalized: 0 } },
-        ]).option({ maxTimeMS: 1500 })
-      : Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean();
-    const [products, total, priceStats] = await Promise.all([
+    const productsQuery = Product.find(filter).sort(sort).skip(offset).limit(limit).maxTimeMS(1500).lean();
+    const basePriceFilter = { $and: baseClauses };
+    const [products, total, priceBounds] = await Promise.all([
       productsQuery,
       Product.countDocuments(filter).maxTimeMS(1500),
-      Product.aggregate([
-        { $match: { $and: baseClauses } },
-        { $addFields: { discountedPrice: discountedPriceExpression } },
-        { $group: { _id: null, minPrice: { $min: "$discountedPrice" }, maxPrice: { $max: "$discountedPrice" }, count: { $sum: 1 } } },
-      ]).option({ maxTimeMS: 1500 }),
+      getCachedProductPriceBounds(basePriceFilter, "category:" + slug),
     ]);
 
-    const stats = priceStats[0];
-    const min = Number(stats?.minPrice);
-    const max = Number(stats?.maxPrice);
     return res.json({
       products,
-      priceBounds: {
-        minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
-        maxPrice: Number.isFinite(max) ? Math.max(0, Math.ceil(max)) : 0,
-        count: Number(stats?.count || 0),
-      },
+      priceBounds,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
       filterOptions,
     });
