@@ -1,23 +1,20 @@
 # Storefront Performance Optimization
 
-This branch adds incremental performance improvements while preserving the existing MongoDB, Redis, Express and storefront API contracts.
+This branch uses MongoDB schema indexes, normalized product search tokens, stored effective prices, Redis category caching and resilient request limiting.
 
-## Search index and effective-price backfill
+## Product search and effective price
 
-Before relying on indexed search or effective-price range queries in production, run the one-time backfill against the intended database:
+No product-data migration or backfill is required.
 
-```bash
-cd backend
-npm run migrate:performance
-```
+Every product created or updated through the backend's Mongoose document flow automatically generates these internal fields before validation completes:
 
-The command:
-1. Processes products in batches and writes `searchTextNormalized`, `searchTokens` and `effectivePrice`.
-2. Creates indexes declared by the Product and Category models using `createIndexes()`; it does not drop unrelated indexes.
+- `searchTextNormalized`: normalized searchable product text.
+- `searchTokens`: unique normalized words used by token-prefix search.
+- `effectivePrice`: the product price after its percentage discount.
 
-Run this during a low-traffic window and take a backup before a production data migration. The backfill is repeatable and can be run again after interruption.
+Search, price filtering, price sorting and price-bound queries use these fields directly. There is no branch for older documents missing either field. Future products are handled the same way from their first save.
 
-Until all existing catalogue records are backfilled, search retains a compatibility branch for documents without `searchTokens`, and price range/bounds queries retain a fallback for documents without `effectivePrice`. Price sorting also temporarily falls back to the legacy calculation while any matching documents are missing `effectivePrice`.
+Product indexes are declared on the Product schema. The MongoDB connection explicitly enables Mongoose schema index creation with `autoIndex: true`; index creation does not rewrite or migrate product documents.
 
 ## MongoDB connection pool
 

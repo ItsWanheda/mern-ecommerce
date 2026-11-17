@@ -3,7 +3,8 @@ import cloudinary from "../lib/cloudinary.js";
 import Product from "../models/product.model.js";
 import Category from "../models/category.model.js";
 import Order from "../models/order.model.js";
-import { normalizePersianText, tokenizePersianSearchText, escapeSearchRegex } from "../lib/persian-search.js";
+import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
+import { buildProductSearchClause, buildEffectivePriceRangeClause } from "../lib/product-query.js";
 import { getVisibleCategoryTree } from "../lib/category-tree-cache.js";
 import { invalidateProductDerivedCaches } from "../lib/product-cache.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
@@ -11,19 +12,6 @@ import { normalizeCustomSpecifications } from "../lib/custom-product-specificati
 import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
 const idOf = (value) => value == null ? "" : String(value);
-const discountedPriceExpression = {
-  $subtract: [
-    "$price",
-    {
-      $floor: {
-        $add: [
-          { $divide: [{ $multiply: ["$price", { $ifNull: ["$discountPercent", 0] }] }, 100] },
-          0.5,
-        ],
-      },
-    },
-  ],
-};
 const getCategoryProductScope = async (slug) => {
   const selected = await Category.findOne({ slug }).select("_id slug").lean();
   if (!selected) return null;
@@ -37,98 +25,31 @@ const getCategoryProductScope = async (slug) => {
   return { ids: scope.map((category) => category._id), slugs: scope.map((category) => category.slug) };
 };
 
-const buildProductSearchClause = (rawQuery) => {
-  const normalized = normalizePersianText(rawQuery);
-  const tokens = tokenizePersianSearchText(normalized, 8);
-  if (!tokens.length) return null;
-  const tokenPrefixes = tokens.map((token) => new RegExp("^" + escapeSearchRegex(token)));
-  const legacyPattern = new RegExp(escapeSearchRegex(rawQuery), "i");
-  const normalizedPattern = new RegExp(escapeSearchRegex(normalized));
-  return {
-    $or: [
-      { searchTokens: { $all: tokenPrefixes } },
-      {
-        searchTokens: { $exists: false },
-        $or: [
-          { searchTextNormalized: normalizedPattern },
-          { name: legacyPattern },
-          { description: legacyPattern },
-          { category: legacyPattern },
-          { sizes: legacyPattern },
-          { "variants.size": legacyPattern },
-          { "variants.color": legacyPattern },
-          { "colors.name": legacyPattern },
-          { "fit.type": legacyPattern },
-          { "attributes.brand": legacyPattern },
-          { "attributes.brandName": legacyPattern },
-          { "customSpecifications.name": legacyPattern },
-          { "customSpecifications.value": legacyPattern },
-        ],
-      },
-    ],
-  };
-};
-
-const buildEffectivePriceRangeClause = (minPrice, maxPrice) => {
-  const indexedRange = {};
-  const legacyConditions = [];
-  if (minPrice !== null) {
-    indexedRange.$gte = minPrice;
-    legacyConditions.push({ $gte: [discountedPriceExpression, minPrice] });
-  }
-  if (maxPrice !== null) {
-    indexedRange.$lte = maxPrice;
-    legacyConditions.push({ $lte: [discountedPriceExpression, maxPrice] });
-  }
-  return {
-    $or: [
-      { effectivePrice: indexedRange },
-      { effectivePrice: { $exists: false }, $expr: { $and: legacyConditions } },
-    ],
-  };
-};
-
 const getCachedProductPriceBounds = async (filter, scopeKey) => {
   let version = "redis-unavailable";
   try {
     version = (await redis.get("product_price_bounds_version_v1")) || "initial";
   } catch {
-    // Redis is optional for reads; MongoDB remains the source of truth.
+    // Redis is optional for cache reads; MongoDB remains the source of truth.
   }
-  const cacheKey = "product_price_bounds_v3:" + scopeKey + ":" + version;
+  const cacheKey = "product_price_bounds_v4:" + scopeKey + ":" + version;
   const cached = await readJsonCache(cacheKey);
   if (cached && Number.isFinite(Number(cached.minPrice)) &&
       Number.isFinite(Number(cached.maxPrice)) && Number.isFinite(Number(cached.count))) return cached;
 
-  const [count, legacyCount] = await Promise.all([
-    Product.countDocuments(filter).maxTimeMS(1500),
-    Product.countDocuments({ $and: [filter, { effectivePrice: { $exists: false } }] }).maxTimeMS(1500),
-  ]);
+  const count = await Product.countDocuments(filter).maxTimeMS(1500);
   if (!count) {
     const empty = { minPrice: 0, maxPrice: 0, count: 0 };
     await writeJsonCache(cacheKey, empty, 120);
     return empty;
   }
 
-  let min;
-  let max;
-  if (legacyCount > 0) {
-    const [stats] = await Product.aggregate([
-      { $match: filter },
-      { $addFields: { effectivePrice: { $ifNull: ["$effectivePrice", discountedPriceExpression] } } },
-      { $group: { _id: null, minPrice: { $min: "$effectivePrice" }, maxPrice: { $max: "$effectivePrice" } } },
-    ]).option({ maxTimeMS: 2500 });
-    min = Number(stats?.minPrice);
-    max = Number(stats?.maxPrice);
-  } else {
-    const [minimum, maximum] = await Promise.all([
-      Product.findOne(filter).sort({ effectivePrice: 1, _id: 1 }).select("+effectivePrice").lean().maxTimeMS(1500),
-      Product.findOne(filter).sort({ effectivePrice: -1, _id: -1 }).select("+effectivePrice").lean().maxTimeMS(1500),
-    ]);
-    min = Number(minimum?.effectivePrice);
-    max = Number(maximum?.effectivePrice);
-  }
-
+  const [minimum, maximum] = await Promise.all([
+    Product.findOne(filter).sort({ effectivePrice: 1, _id: 1 }).select("+effectivePrice").lean().maxTimeMS(1500),
+    Product.findOne(filter).sort({ effectivePrice: -1, _id: -1 }).select("+effectivePrice").lean().maxTimeMS(1500),
+  ]);
+  const min = Number(minimum?.effectivePrice);
+  const max = Number(maximum?.effectivePrice);
   const result = {
     minPrice: Number.isFinite(min) ? Math.max(0, Math.floor(min)) : 0,
     maxPrice: Number.isFinite(max) ? Math.max(0, Math.ceil(max)) : 0,
@@ -138,23 +59,13 @@ const getCachedProductPriceBounds = async (filter, scopeKey) => {
   return result;
 };
 
-const findProductsSortedByEffectivePrice = async (filter, direction, skip, limit) => {
-  const legacyCount = await Product.countDocuments({
-    $and: [filter, { effectivePrice: { $exists: false } }],
-  }).maxTimeMS(1500);
-  if (legacyCount > 0) {
-    return Product.aggregate([
-      { $match: filter },
-      { $addFields: { effectivePrice: { $ifNull: ["$effectivePrice", discountedPriceExpression] } } },
-      { $sort: { effectivePrice: direction, _id: direction } },
-      { $skip: skip },
-      { $limit: limit },
-      { $project: { effectivePrice: 0, searchTextNormalized: 0, searchTokens: 0 } },
-    ]).option({ maxTimeMS: 1500 });
-  }
-  return Product.find(filter).sort({ effectivePrice: direction, _id: direction })
-    .skip(skip).limit(limit).maxTimeMS(1500).lean();
-};
+const findProductsSortedByEffectivePrice = (filter, direction, skip, limit) =>
+  Product.find(filter)
+    .sort({ effectivePrice: direction, _id: direction })
+    .skip(skip)
+    .limit(limit)
+    .maxTimeMS(1500)
+    .lean();
 
 const validateProductAttributes = async (category, input) => {
   const raw = input && typeof input === "object" && !Array.isArray(input) ? input : {};
@@ -365,14 +276,10 @@ export const getSearchedProducts = async (req, res) => {
     const filter = { isActive: { $ne: false } };
     if (category) {
       const scope = await getCategoryProductScope(category);
-      if (scope) {
-        filter.$or = [
-          { categoryId: { $in: scope.ids } },
-          { category: { $in: scope.slugs } },
-        ];
-      } else {
-        filter.category = category;
-      }
+      filter.$or = [
+        { categoryId: { $in: scope?.ids || [] } },
+        { category: { $in: scope?.slugs || [] } },
+      ];
     }
     if (q) {
       const searchClause = buildProductSearchClause(rawQuery);
@@ -1020,18 +927,16 @@ export const getProductsByCategory = async (req, res) => {
     if (!slug) return res.status(400).json({ message: "دسته‌بندی معتبر نیست." });
 
     const scope = await getCategoryProductScope(slug);
-    const baseClauses = [{ isActive: { $ne: false } }];
-    if (scope) {
-      baseClauses.push({
+    if (!scope) return res.status(404).json({ message: "دسته‌بندی پیدا نشد." });
+    const baseClauses = [
+      { isActive: { $ne: false } },
+      {
         $or: [
           { categoryId: { $in: scope.ids } },
           { category: { $in: scope.slugs } },
         ],
-      });
-    } else {
-      // Preserve access to legacy category slugs during and after migration.
-      baseClauses.push({ category: slug });
-    }
+      },
+    ];
 
     const clauses = [...baseClauses];
     const rawQuery = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 80) : "";

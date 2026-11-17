@@ -59,6 +59,7 @@ const getMongoConnectionOptions = () => {
   const maxPoolSize = boundedInteger("MONGO_MAX_POOL_SIZE", 5, 1, 20);
   return {
     maxPoolSize,
+    autoIndex: true,
     minPoolSize: boundedInteger("MONGO_MIN_POOL_SIZE", 0, 0, maxPoolSize),
     maxConnecting: boundedInteger("MONGO_MAX_CONNECTING", 2, 1, maxPoolSize),
     waitQueueTimeoutMS: boundedInteger("MONGO_WAIT_QUEUE_TIMEOUT_MS", 5000, 100, 30000),
