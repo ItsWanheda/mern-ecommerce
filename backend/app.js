@@ -96,6 +96,30 @@ app.use("/api", express.json({ limit: "10mb", type: largeJsonRequest }));
 app.use("/api", express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
+// Cache only public catalogue GET responses at the shared edge. Never mark
+// authenticated/admin, cart, account, order, payment, or checkout responses public.
+// Product stock and price are always revalidated by the backend during checkout.
+const isPublicCatalogGet = (path) =>
+  path === "/categories" ||
+  (path.startsWith("/categories/") && path !== "/categories/admin") ||
+  [
+    "/products/price-bounds",
+    "/products/search",
+    "/products/bestsellers",
+    "/products/newest",
+    "/products/featured",
+    "/products/recommendations",
+  ].includes(path) ||
+  /^\/products\/category\/[^/]+$/.test(path) ||
+  /^\/products\/[a-f\\d]{24}$/i.test(path);
+
+app.use("/api", (req, res, next) => {
+  if (req.method === "GET" && isPublicCatalogGet(req.path)) {
+    res.set("Cache-Control", "public, max-age=0, s-maxage=10, stale-while-revalidate=20");
+  }
+  return next();
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
