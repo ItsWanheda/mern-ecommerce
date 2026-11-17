@@ -14,6 +14,16 @@ export const useProductStore = create((set) => ({
   newestProducts: [],
   loading: false,
   setProducts: (products) => set({ products, priceBounds: null }),
+  setCategoryData: ({ products, priceBounds, pagination } = {}) => {
+    categoryRequestCounter += 1;
+    set({
+      products: Array.isArray(products) ? products : [],
+      priceBounds: priceBounds || null,
+      categoryPagination: pagination || null,
+      loading: false,
+      error: "",
+    });
+  },
 
   createProduct: async (productData) => {
     set({ loading: true });

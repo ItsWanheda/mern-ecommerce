@@ -17,9 +17,16 @@ const persistSavedProducts = items => {
 };
 
 export const useWishlistStore = create((set, get) => ({
-  items: readSavedProducts(),
+  // Start identically on the server and browser; local storage is read after hydration.
+  items: [],
+  localHydrated: false,
   isAuthenticated: false,
   isSyncing: false,
+
+  initializeLocalWishlist: () => {
+    if (get().localHydrated) return;
+    set({ items: readSavedProducts(), localHydrated: true });
+  },
 
   isSaved: productId => get().items.some(product => product._id === productId),
 

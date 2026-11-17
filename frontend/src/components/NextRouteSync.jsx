@@ -10,6 +10,7 @@ export default function NextRouteSync({ mode = "native-app-router" }) {
   const location = useLocation();
   const router = useRouter();
   const previousKey = useRef(location.key);
+  const previousPathname = useRef(location.pathname);
   const isPopState = useRef(false);
 
   useEffect(() => {
@@ -22,6 +23,9 @@ export default function NextRouteSync({ mode = "native-app-router" }) {
   }, []);
 
   useEffect(() => {
+    const pathnameChanged = previousPathname.current !== location.pathname;
+    previousPathname.current = location.pathname;
+
     if (previousKey.current === location.key) return;
     previousKey.current = location.key;
 
@@ -31,6 +35,9 @@ export default function NextRouteSync({ mode = "native-app-router" }) {
       return;
     }
 
+    // Search/hash-only changes are handled by the active client page. Keeping
+    // them out of App Router navigation lets filters remain client-interactive.
+    if (!pathnameChanged) return;
     if (mode !== "all" && !isAppRouterRoute(location.pathname)) return;
 
     const destination = withAuthReturnPath(location);

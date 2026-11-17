@@ -93,19 +93,55 @@ const getPriceError = (filters) => {
   return "";
 };
 
-const CategoryPage = ({ slug: routeSlug }) => {
+const CategoryPage = ({ slug: routeSlug, initialData = null }) => {
   const { slug: matchedSlug } = useParams();
   const category = decodeCategoryRoute(routeSlug || matchedSlug || "");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const lastAppliedUrlRef = useRef(searchParams.toString());
   const urlChangedRef = useRef(false);
-  const { fetchProductsByCategory, products, loading, priceBounds: remotePriceBounds, categoryPagination } = useProductStore();
-  const { categories: dynamicCategories, categoriesLoaded, categoriesError, fetchCategories } = useCategoryStore();
+  const initialDataAppliedKeyRef = useRef("");
+  const {
+    fetchProductsByCategory,
+    products: storedProducts,
+    loading: storeLoading,
+    priceBounds: storedPriceBounds,
+    categoryPagination: storedCategoryPagination,
+    setCategoryData,
+  } = useProductStore();
+  const {
+    categories: storedCategories,
+    categoriesLoaded: storedCategoriesLoaded,
+    categoriesError,
+    fetchCategories,
+    setCategories,
+  } = useCategoryStore();
+
+  const dynamicCategories = Array.isArray(initialData?.categories)
+    ? initialData.categories
+    : storedCategories;
+  const categoriesLoaded = Array.isArray(initialData?.categories) || storedCategoriesLoaded;
+  const initialDataMatches = Boolean(
+    initialData &&
+    initialData.slug === category &&
+    initialData.search === searchParams.toString()
+  );
+  const products = initialDataMatches && Array.isArray(initialData?.products)
+    ? initialData.products
+    : storedProducts;
+  const loading = initialDataMatches && Array.isArray(initialData?.products)
+    ? false
+    : storeLoading;
+  const remotePriceBounds = initialDataMatches ? initialData?.priceBounds : storedPriceBounds;
+  const categoryPagination = initialDataMatches ? initialData?.pagination : storedCategoryPagination;
+
   const categoryRoute = resolveCategoryRoute(category, dynamicCategories);
   const selectedCategory = categoryRoute.category;
   const categorySlug = categoryRoute.slug;
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  useEffect(() => {
+    if (Array.isArray(initialData?.categories)) setCategories(initialData.categories);
+    else fetchCategories();
+  }, [initialData, fetchCategories, setCategories]);
 
   useEffect(() => {
     if (!selectedCategory || selectedCategory.slug === category) return;
@@ -157,12 +193,38 @@ const CategoryPage = ({ slug: routeSlug }) => {
   }, [category]);
 
   useEffect(() => {
+    const initialDataKey = category + "?" + String(initialData?.search || "");
+    if (
+      initialDataMatches &&
+      Array.isArray(initialData?.products) &&
+      initialDataAppliedKeyRef.current !== initialDataKey
+    ) {
+      initialDataAppliedKeyRef.current = initialDataKey;
+      setCategoryData({
+        products: initialData.products,
+        priceBounds: initialData.priceBounds || null,
+        pagination: initialData.pagination || null,
+      });
+      return;
+    }
+
     if (!categoriesLoaded || !selectedCategory || getPriceError(filters)) return;
     const query = paramsFromFilters(filters);
     query.set("page", String(page));
     query.set("limit", String(CATEGORY_PAGE_SIZE));
     fetchProductsByCategory(categorySlug, query.toString());
-  }, [fetchProductsByCategory, categorySlug, filters, page, categoriesLoaded, selectedCategory]);
+  }, [
+    fetchProductsByCategory,
+    categorySlug,
+    category,
+    filters,
+    page,
+    categoriesLoaded,
+    selectedCategory,
+    initialData,
+    initialDataMatches,
+    setCategoryData,
+  ]);
 
   const catalog = Array.isArray(products) ? products : [];
   const priceBounds = useMemo(() => {

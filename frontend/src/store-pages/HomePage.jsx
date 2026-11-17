@@ -63,66 +63,90 @@ const EmptyCollection = ({ title, text, href = "/shop", action = "مشاهده �
   </div>
 );
 
-const HomePage = () => {
-  const [campaigns, setCampaigns] = useState([]);
+const HomePage = ({ initialData = null }) => {
+  const [campaigns, setCampaigns] = useState(() =>
+    Array.isArray(initialData?.campaigns) ? initialData.campaigns : []
+  );
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   const [heroPaused, setHeroPaused] = useState(false);
-  const [newestLoaded, setNewestLoaded] = useState(false);
+  const [newestLoaded, setNewestLoaded] = useState(() => Array.isArray(initialData?.newestProducts));
   const [newestError, setNewestError] = useState(false);
 
   const {
     fetchFeaturedProducts,
-    featuredProducts,
+    featuredProducts: storedFeaturedProducts,
     fetchNewestProducts,
-    newestProducts,
+    newestProducts: storedNewestProducts,
   } = useProductStore();
   const {
     categories: storeCategories,
-    categoriesLoaded,
+    categoriesLoaded: storedCategoriesLoaded,
     categoriesError,
     fetchCategories,
+    setCategories,
   } = useCategoryStore();
 
-  const categories = useMemo(() => storeCategories
+  const featuredProducts = Array.isArray(initialData?.featuredProducts)
+    ? initialData.featuredProducts
+    : storedFeaturedProducts;
+  const newestProducts = Array.isArray(initialData?.newestProducts)
+    ? initialData.newestProducts
+    : storedNewestProducts;
+  const categoryData = Array.isArray(initialData?.categories)
+    ? initialData.categories
+    : storeCategories;
+  const categoriesLoaded = Array.isArray(initialData?.categories) || storedCategoriesLoaded;
+
+  const categories = useMemo(() => categoryData
     .filter((category) => !category.parentId && category.isActive !== false && category.showInNavigation !== false)
     .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
     .map((category) => ({
       href: "/category/" + encodeURIComponent(category.slug),
       name: category.name?.fa || category.name?.en || category.slug,
       imageUrl: category.image || "/hardware-category-placeholder.svg",
-    })), [storeCategories]);
+    })), [categoryData]);
 
   useEffect(() => {
     let active = true;
-    fetchFeaturedProducts();
-    fetchCategories();
 
-    Promise.resolve(fetchNewestProducts())
-      .then((succeeded) => { if (active) setNewestError(succeeded === false); })
-      .finally(() => { if (active) setNewestLoaded(true); });
+    if (Array.isArray(initialData?.categories)) setCategories(initialData.categories);
+    else fetchCategories();
 
-    const loadCampaigns = async () => {
-      const { data } = await axios.get("/campaigns");
-      const campaignList = Array.isArray(data.campaigns) ? data.campaigns : [];
-      const productIds = getCampaignProductIds(campaignList);
-      const productResults = await Promise.allSettled(
-        productIds.map((productId) => axios.get("/products/" + productId))
-      );
-      const productsById = new Map();
-      productResults.forEach((result, index) => {
-        if (result.status !== "fulfilled") return;
-        const product = result.value?.data;
-        if (product?._id && String(product._id) === productIds[index] && product.isActive !== false) {
-          productsById.set(productIds[index], product);
-        }
-      });
-      if (active) setCampaigns(attachCampaignProducts(campaignList, productsById));
-    };
+    if (!Array.isArray(initialData?.featuredProducts)) fetchFeaturedProducts();
 
-    loadCampaigns().catch((error) => console.error("Could not load campaigns:", error.message));
+    if (Array.isArray(initialData?.newestProducts)) {
+      setNewestLoaded(true);
+    } else {
+      Promise.resolve(fetchNewestProducts())
+        .then((succeeded) => { if (active) setNewestError(succeeded === false); })
+        .finally(() => { if (active) setNewestLoaded(true); });
+    }
+
+    if (!Array.isArray(initialData?.campaigns)) {
+      const loadCampaigns = async () => {
+        const { data } = await axios.get("/campaigns?includeProducts=1");
+        const campaignList = Array.isArray(data.campaigns) ? data.campaigns : [];
+        const productIds = getCampaignProductIds(campaignList);
+        const productResults = await Promise.allSettled(
+          productIds.map((productId) => axios.get("/products/" + productId))
+        );
+        const productsById = new Map();
+        productResults.forEach((result, index) => {
+          if (result.status !== "fulfilled") return;
+          const product = result.value?.data;
+          if (product?._id && String(product._id) === productIds[index] && product.isActive !== false) {
+            productsById.set(productIds[index], product);
+          }
+        });
+        if (active) setCampaigns(attachCampaignProducts(campaignList, productsById));
+      };
+
+      loadCampaigns().catch((error) => console.error("Could not load campaigns:", error.message));
+    }
+
     return () => { active = false; };
-  }, [fetchFeaturedProducts, fetchNewestProducts, fetchCategories]);
+  }, [initialData, fetchFeaturedProducts, fetchNewestProducts, fetchCategories, setCategories]);
 
   // The existing campaign manager supplies the hero slides. Admins can publish
   // several active campaigns with images to create a multi-image home carousel.

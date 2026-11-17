@@ -9,6 +9,12 @@ export const useCategoryStore = create((set, get) => ({
   categoriesLoaded: false,
   categoriesError: "",
   adminCategories: [],
+  setCategories: (categories) => set({
+    categories: Array.isArray(categories) ? categories : [],
+    categoriesLoaded: true,
+    categoriesError: "",
+    error: "",
+  }),
   loading: false,
   error: "",
 

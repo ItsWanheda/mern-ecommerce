@@ -96,6 +96,12 @@ export async function getStorefrontProduct(productId) {
   return getProductForApi(apiBase, productId);
 }
 
+export async function getStorefrontApiJson(endpoint) {
+  const { requestOrigin } = await getStorefrontSeoContext();
+  const apiBase = await getApiBase(requestOrigin);
+  return getApiJson(apiBase, String(endpoint || ""));
+}
+
 function createMetadata({ title, description, image, path, query, canonicalOriginValue, privateRoute, missingResource }) {
   const safeTitle = normalizeSeoText(title, DEFAULT_SEO_TITLE, 160);
   const safeDescription = normalizeSeoText(description, DEFAULT_SEO_DESCRIPTION, 300);

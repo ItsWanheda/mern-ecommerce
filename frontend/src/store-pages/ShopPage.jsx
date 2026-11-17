@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PageMeta from "../components/PageMeta";
 import { hasIndexExcludedQuery } from "../lib/seo-utils.js";
 import { Search, LoaderCircle, Sparkles, ShoppingBag, SlidersHorizontal, X } from "lucide-react";
@@ -20,21 +20,53 @@ const sortLabels = {
 const persianNumber = (value) =>
   new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
 
-const ShopPage = () => {
+const ShopPage = ({ initialData = null }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    total: 0,
-    totalPages: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const initialSearchMatches = Boolean(
+    initialData &&
+    initialData.search === searchParams.toString() &&
+    Array.isArray(initialData.products)
+  );
+  const [products, setProducts] = useState(() => initialSearchMatches ? initialData.products : []);
+  const [pagination, setPagination] = useState(() =>
+    initialSearchMatches
+      ? (initialData.pagination || { page: 1, total: 0, totalPages: 0 })
+      : { page: 1, total: 0, totalPages: 0 }
+  );
+  const [loading, setLoading] = useState(() => !initialSearchMatches);
   const [error, setError] = useState("");
-  const { categories, fetchCategories } = useCategoryStore();
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  const appliedInitialSearchRef = useRef(null);
+  const {
+    categories: storedCategories,
+    fetchCategories,
+    setCategories,
+  } = useCategoryStore();
+  const categories = Array.isArray(initialData?.categories)
+    ? initialData.categories
+    : storedCategories;
+
+  useEffect(() => {
+    if (Array.isArray(initialData?.categories)) setCategories(initialData.categories);
+    else fetchCategories();
+  }, [initialData, fetchCategories, setCategories]);
 
   useEffect(() => {
     let active = true;
+
+    if (
+      initialSearchMatches &&
+      appliedInitialSearchRef.current !== initialData.search
+    ) {
+      appliedInitialSearchRef.current = initialData.search;
+      setProducts(initialData.products);
+      setPagination(
+        initialData.pagination || { page: 1, total: 0, totalPages: 0 },
+      );
+      setLoading(false);
+      setError("");
+      return () => { active = false; };
+    }
+
     setLoading(true);
     setError("");
 
@@ -63,7 +95,7 @@ const ShopPage = () => {
     return () => {
       active = false;
     };
-  }, [searchParams]);
+  }, [searchParams, initialSearchMatches, initialData]);
 
   const changePage = (page) => {
     const next = new URLSearchParams(searchParams);

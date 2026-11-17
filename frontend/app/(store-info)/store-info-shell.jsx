@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BrowserRouter, useLocation } from "react-router-dom";
-import { useRouter } from "next/navigation";
+import { BrowserRouter, MemoryRouter, useLocation } from "react-router-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Toaster } from "react-hot-toast";
 
 import Navbar from "@/src/components/Navbar.jsx";
@@ -10,7 +10,7 @@ import MobileBottomNavigation from "@/src/components/MobileBottomNavigation.jsx"
 import StoreFooter from "@/src/components/StoreFooter.jsx";
 import SmoothScroll from "@/src/components/SmoothScroll.jsx";
 import LoadingSpinner from "@/src/components/LoadingSpinner.jsx";
-import { completeInitialBoot, hasCompletedInitialBoot } from "@/src/lib/initial-boot.js";
+import { completeInitialBoot } from "@/src/lib/initial-boot.js";
 import NextRouteSync from "@/src/components/NextRouteSync.jsx";
 import { useUserStore } from "@/src/stores/useUserStore.js";
 import { useCartStore } from "@/src/stores/useCartStore.js";
@@ -24,6 +24,7 @@ function StoreInfoChrome({ children }) {
   const { user, checkAuth, checkingAuth, authInitialized } = useUserStore();
   const { setAuthenticated, initializeGuestCart, mergeGuestCart } = useCartStore();
   const setWishlistAuthenticated = useWishlistStore(state => state.setAuthenticated);
+  const initializeLocalWishlist = useWishlistStore(state => state.initializeLocalWishlist);
   const hideMobileBottomNavigation = /^\/product\//.test(location.pathname) ||
     location.pathname.startsWith("/secret-dashboard") ||
     ["/login", "/signup", "/forgot-password", "/reset-password", "/purchase-success", "/purchase-cancel"].includes(location.pathname);
@@ -34,13 +35,14 @@ function StoreInfoChrome({ children }) {
 
   useEffect(() => {
     setAuthenticated(Boolean(user));
+    initializeLocalWishlist();
     void setWishlistAuthenticated(Boolean(user));
     if (!user) {
       initializeGuestCart();
       return;
     }
     mergeGuestCart();
-  }, [user, setAuthenticated, setWishlistAuthenticated, initializeGuestCart, mergeGuestCart]);
+  }, [user, setAuthenticated, setWishlistAuthenticated, initializeLocalWishlist, initializeGuestCart, mergeGuestCart]);
 
   const requiresAuthentication = authInitialized && !user && isProtectedCustomerRoute(location.pathname);
 
@@ -50,7 +52,9 @@ function StoreInfoChrome({ children }) {
     router.replace(buildAuthPagePath("/login", returnPath));
   }, [location.hash, location.pathname, location.search, requiresAuthentication, router]);
 
-  if (!authInitialized && checkingAuth) return <LoadingSpinner />;
+  if (!authInitialized && checkingAuth && isProtectedCustomerRoute(location.pathname)) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className={"min-h-screen overflow-x-hidden bg-[var(--ui-canvas)] text-[var(--ui-text)] " + (hideMobileBottomNavigation ? "" : "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0")}>
@@ -72,15 +76,26 @@ function StoreInfoChrome({ children }) {
 }
 
 export default function StoreInfoShell({ children }) {
-  const [mounted, setMounted] = useState(() => hasCompletedInitialBoot());
+  const pathname = usePathname() || "/";
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() || "";
+  const initialLocation = pathname + (search ? "?" + search : "");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     completeInitialBoot();
     setMounted(true);
   }, []);
 
-  // BrowserRouter reads browser history; defer its construction until hydration.
-  if (!mounted) return <LoadingSpinner />;
+  // MemoryRouter renders deterministically on the server and during hydration.
+  // Switch to browser history after hydration without changing the active URL.
+  if (!mounted) {
+    return (
+      <MemoryRouter initialEntries={[initialLocation]}>
+        <StoreInfoChrome>{children}</StoreInfoChrome>
+      </MemoryRouter>
+    );
+  }
 
   return (
     <BrowserRouter>
