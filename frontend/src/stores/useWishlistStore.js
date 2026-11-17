@@ -252,14 +252,25 @@ export const useWishlistStore = create((set, get) => ({
     }).catch((error) => {
       if (generation === wishlistAuthGeneration && get().isAuthenticated &&
           get().accountUserId === accountUserId) {
-        set((current) => ({
-          items: wasSaved
-            ? mergeProducts([product], current.items)
-            : current.items.filter((item) => item._id !== product._id),
-          guestOnlyIds: wasSaved && wasGuestOnly && !current.guestOnlyIds.includes(product._id)
-            ? [...current.guestOnlyIds, product._id]
-            : current.guestOnlyIds,
-        }));
+        if (!wasSaved) {
+          // Preserve a failed add as an account-owned retry item instead of dropping it.
+          const pending = mergeProducts(readPendingProducts(accountUserId), [product]);
+          writePendingProducts(accountUserId, pending);
+          set((current) => ({
+            items: mergeProducts([product], current.items),
+            guestOnlyIds: current.guestOnlyIds.includes(product._id)
+              ? current.guestOnlyIds
+              : [...current.guestOnlyIds, product._id],
+            accountSynced: false,
+          }));
+        } else {
+          set((current) => ({
+            items: mergeProducts([product], current.items),
+            guestOnlyIds: wasGuestOnly && !current.guestOnlyIds.includes(product._id)
+              ? [...current.guestOnlyIds, product._id]
+              : current.guestOnlyIds,
+          }));
+        }
       }
       toast.error(error.response?.data?.message || "همگام‌سازی علاقه‌مندی‌ها انجام نشد.");
     });

@@ -188,3 +188,45 @@ test("failed guest-wishlist sync remains queued for the same account and can be 
   assert.equal(storage.getItem("computer-hardware-pending-wishlist:account-retry"), null);
   assert.equal(useWishlistStore.getState().accountSynced, true);
 });
+
+
+test("failed authenticated wishlist additions stay in that account's retry queue", async () => {
+  const product = { _id: "account-favorite", name: "Account favorite" };
+  const serverProducts = new Map();
+  let postAttempts = 0;
+  let activeAccount = "account-add";
+  axios.defaults.adapter = async (config) => {
+    if (config.url === "/account/wishlist" && config.method === "post") {
+      postAttempts += 1;
+      if (postAttempts === 1) throw new Error("temporary network issue");
+      serverProducts.set(activeAccount, [
+        ...(serverProducts.get(activeAccount) || []),
+        { _id: JSON.parse(config.data).productId, name: product.name },
+      ]);
+      return response(config, { products: serverProducts.get(activeAccount) });
+    }
+    if (config.url === "/account/wishlist" && config.method === "get") {
+      return response(config, { products: serverProducts.get(activeAccount) || [] });
+    }
+    throw new Error("Unexpected request: " + config.method + " " + config.url);
+  };
+
+  await useWishlistStore.getState().setAuthenticated(true, "account-add");
+  useWishlistStore.getState().toggleSaved(product);
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.equal(postAttempts, 1);
+  assert.deepEqual(useWishlistStore.getState().items.map((item) => item._id), [product._id]);
+  assert.deepEqual(useWishlistStore.getState().guestOnlyIds, [product._id]);
+  assert.notEqual(storage.getItem("computer-hardware-pending-wishlist:account-add"), null);
+  assert.equal(useWishlistStore.getState().accountSynced, false);
+
+  await useWishlistStore.getState().setAuthenticated(false);
+  await useWishlistStore.getState().setAuthenticated(true, "account-add");
+
+  assert.equal(postAttempts, 2);
+  assert.deepEqual(useWishlistStore.getState().items.map((item) => item._id), [product._id]);
+  assert.deepEqual(useWishlistStore.getState().guestOnlyIds, []);
+  assert.equal(storage.getItem("computer-hardware-pending-wishlist:account-add"), null);
+  assert.equal(useWishlistStore.getState().accountSynced, true);
+});
