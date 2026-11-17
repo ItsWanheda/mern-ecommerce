@@ -111,7 +111,7 @@ const isPublicCatalogGet = (path) =>
     "/products/recommendations",
   ].includes(path) ||
   /^\/products\/category\/[^/]+$/.test(path) ||
-  /^\/products\/[a-f\\d]{24}$/i.test(path);
+  /^\/products\/[a-f\d]{24}$/i.test(path);
 
 app.use("/api", (req, res, next) => {
   if (req.method === "GET" && isPublicCatalogGet(req.path)) {
