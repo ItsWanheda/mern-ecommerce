@@ -9,6 +9,8 @@ const LEGACY_GUEST_CART_KEY = "tik-boutique-guest-cart";
 const getErrorMessage = (error, fallback = "خطایی رخ داد") =>
   error.response?.data?.message || error.message || fallback;
 
+let cartAuthGeneration = 0;
+
 export const cartItemKey = (item) => item.cartItemId ||
   String(item._id || "") + "::" + encodeURIComponent(item.selectedSize || item.size || "") +
   "::" + encodeURIComponent(item.selectedColor || item.color || "");
@@ -94,9 +96,27 @@ export const useCartStore = create((set, get) => ({
   productDiscountAmount: 0,
   isCouponApplied: false,
   authenticated: false,
+  accountUserId: null,
   isMergingGuestCart: false,
 
-  setAuthenticated: (authenticated) => set({ authenticated: Boolean(authenticated) }),
+  setAuthenticated: (authenticated, userId = null) => {
+    const nextAuthenticated = Boolean(authenticated);
+    const nextAccountUserId = nextAuthenticated && userId ? String(userId) : null;
+    const current = get();
+    if (current.authenticated === nextAuthenticated && current.accountUserId === nextAccountUserId) return;
+
+    cartAuthGeneration += 1;
+    const accountChanged = current.authenticated && nextAuthenticated && current.accountUserId !== nextAccountUserId;
+    set({
+      authenticated: nextAuthenticated,
+      accountUserId: nextAccountUserId,
+      isMergingGuestCart: false,
+      ...(!nextAuthenticated || accountChanged ? {
+        cart: [], coupon: null, total: 0, subtotal: 0,
+        productDiscountAmount: 0, discountAmount: 0, isCouponApplied: false,
+      } : {}),
+    });
+  },
 
   initializeGuestCart: () => {
     if (get().authenticated) return;
@@ -133,8 +153,11 @@ export const useCartStore = create((set, get) => ({
       get().initializeGuestCart();
       return;
     }
+    const generation = cartAuthGeneration;
+    const accountUserId = get().accountUserId;
     try {
       const response = await axios.get("/cart");
+      if (generation !== cartAuthGeneration || !get().authenticated || get().accountUserId !== accountUserId) return;
       if (!Array.isArray(response.data)) throw new Error("پاسخ سبد خرید نامعتبر است");
       const accountItems = response.data.map((item) => ({
         ...item,
@@ -149,6 +172,7 @@ export const useCartStore = create((set, get) => ({
       writeGuestCart(preservedGuestItems);
       set({ cart, ...totalsFor(cart, get().coupon) });
     } catch (error) {
+      if (generation !== cartAuthGeneration) return;
       console.error("دریافت سبد خرید ناموفق بود:", error);
       toast.error(getErrorMessage(error, "دریافت سبد خرید ناموفق بود"));
     }
@@ -159,6 +183,9 @@ export const useCartStore = create((set, get) => ({
       get().initializeGuestCart();
       return;
     }
+    if (get().isMergingGuestCart) return;
+    const generation = cartAuthGeneration;
+    const accountUserId = get().accountUserId;
     set({ isMergingGuestCart: true });
     const storedItems = readGuestCart();
     const guestItems = storedItems.filter((item) => !item.guestOnly && !requiresCatalogMigration(item));
@@ -176,6 +203,7 @@ export const useCartStore = create((set, get) => ({
             color: item.selectedColor || "",
           })),
         });
+        if (generation !== cartAuthGeneration || !get().authenticated || get().accountUserId !== accountUserId) return;
         const skippedKeys = new Set(response.data.skippedKeys || []);
         skippedItems = [
           ...skippedItems,
@@ -193,6 +221,7 @@ export const useCartStore = create((set, get) => ({
         toast.error("کالاهای دارای اطلاعات نسخه قدیمی در حساب ادغام نشدند؛ آن‌ها را حذف کنید یا پس از مهاجرت دوباره اضافه کنید.");
       }
       const response = await axios.get("/cart");
+      if (generation !== cartAuthGeneration || !get().authenticated || get().accountUserId !== accountUserId) return;
       if (!Array.isArray(response.data)) throw new Error("پاسخ سبد خرید نامعتبر است");
       const accountCart = response.data.map((item) => ({
         ...item,
@@ -203,10 +232,12 @@ export const useCartStore = create((set, get) => ({
       const cart = skippedItems.reduce((current, item) => mergeCartLines(current, item), accountCart);
       set({ cart, isMergingGuestCart: false, ...totalsFor(cart, get().coupon) });
     } catch (error) {
+      if (generation !== cartAuthGeneration || !get().authenticated || get().accountUserId !== accountUserId) return;
       console.error("ادغام سبد خرید مهمان ناموفق بود:", error);
       const remainingGuestItems = readGuestCart().map((item) => ({ ...item, guestOnly: true }));
       try {
         const response = await axios.get("/cart");
+        if (generation !== cartAuthGeneration || !get().authenticated || get().accountUserId !== accountUserId) return;
         const accountCart = Array.isArray(response.data) ? response.data.map((item) => ({
           ...item, selectedSize: item.selectedSize || "", selectedColor: item.selectedColor || "", cartItemId: cartItemKey(item),
         })) : [];
@@ -220,8 +251,20 @@ export const useCartStore = create((set, get) => ({
   },
 
   clearCart: async () => {
+    const { authenticated } = get();
+    const generation = cartAuthGeneration;
+    if (authenticated) {
+      try {
+        await axios.delete("/cart", { data: {} });
+      } catch (error) {
+        toast.error(getErrorMessage(error, "خالی‌کردن سبد خرید ناموفق بود"));
+        return false;
+      }
+      if (generation !== cartAuthGeneration || !get().authenticated) return true;
+    }
     writeGuestCart([]);
     set({ cart: [], coupon: null, total: 0, subtotal: 0, productDiscountAmount: 0, discountAmount: 0, isCouponApplied: false });
+    return true;
   },
 
   addToCart: async (product, selection = {}) => {

@@ -26,13 +26,15 @@ function AccountRuntime({ children }) {
   }, [checkAuth]);
 
   useEffect(() => {
-    setAuthenticated(Boolean(user));
+    if (!authInitialized) return;
+
+    setAuthenticated(Boolean(user), user?._id);
     if (!user) {
       initializeGuestCart();
       return;
     }
     mergeGuestCart();
-  }, [user, setAuthenticated, initializeGuestCart, mergeGuestCart]);
+  }, [authInitialized, user, setAuthenticated, initializeGuestCart, mergeGuestCart]);
 
   const shouldRedirectAuthenticatedUser =
     authInitialized && Boolean(user) && AUTH_ENTRY_ROUTES.has(location.pathname);

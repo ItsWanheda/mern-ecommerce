@@ -34,15 +34,18 @@ function StoreInfoChrome({ children }) {
   }, [checkAuth]);
 
   useEffect(() => {
-    setAuthenticated(Boolean(user));
-    initializeLocalWishlist();
-    void setWishlistAuthenticated(Boolean(user));
+    if (!authInitialized) return;
+
+    setAuthenticated(Boolean(user), user?._id);
     if (!user) {
+      void setWishlistAuthenticated(false);
+      initializeLocalWishlist();
       initializeGuestCart();
       return;
     }
+    void setWishlistAuthenticated(true, user._id);
     mergeGuestCart();
-  }, [user, setAuthenticated, setWishlistAuthenticated, initializeLocalWishlist, initializeGuestCart, mergeGuestCart]);
+  }, [authInitialized, user, setAuthenticated, setWishlistAuthenticated, initializeLocalWishlist, initializeGuestCart, mergeGuestCart]);
 
   const requiresAuthentication = authInitialized && !user && isProtectedCustomerRoute(location.pathname);
 
