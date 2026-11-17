@@ -27,7 +27,7 @@ const sortCategories = (items) => items.sort((a, b) =>
 const getVisibleCategories = async () => getVisibleCategoryTree();
 
 const getCategoryScope = async (slug) => {
-  const selected = await Category.findOne({ slug }).lean();
+  const selected = await Category.findOne({ slug }).maxTimeMS(1200).lean();
   if (!selected) return null;
   const visible = await getVisibleCategories();
   const selectedId = idString(selected._id);

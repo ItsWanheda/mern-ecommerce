@@ -80,6 +80,12 @@ export const authRateLimit = createRateLimiter({
   name: "auth", limit: 10, windowSeconds: 900,
   message: "تعداد تلاش‌های ورود یا ثبت‌نام بیش از حد مجاز است؛ بعداً دوباره تلاش کنید.",
 });
+export const searchRateLimit = createRateLimiter({
+  name: "search",
+  limit: 120,
+  windowSeconds: 60,
+  message: "تعداد جست‌وجوها بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید.",
+});
 export const refreshTokenRateLimit = createRateLimiter({ name: "refresh-token", limit: 60, windowSeconds: 60 });
 export const checkoutRateLimit = createRateLimiter({
   name: "checkout", limit: 12, windowSeconds: 60,

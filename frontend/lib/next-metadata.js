@@ -65,11 +65,11 @@ async function getApiBase(requestOrigin) {
   return base.toString().replace(/\/$/, "");
 }
 
-async function getApiJson(apiBase, endpoint) {
+const getApiJson = cache(async (apiBase, endpoint) => {
   try {
     const response = await fetch(apiBase + "/" + endpoint.replace(/^\/+/, ""), {
       headers: { Accept: "application/json" },
-      cache: "no-store",
+      next: { revalidate: 30 },
       signal: AbortSignal.timeout(3500),
     });
     if (!response.ok) return null;
@@ -77,7 +77,7 @@ async function getApiJson(apiBase, endpoint) {
   } catch {
     return null;
   }
-}
+});
 
 const getProductForApi = cache(async (apiBase, productId) => {
   const response = await getApiJson(apiBase, "products/" + encodeURIComponent(String(productId)));

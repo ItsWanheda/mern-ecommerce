@@ -6,14 +6,14 @@ import Order from "../models/order.model.js";
 import { normalizePersianText, escapeSearchRegex } from "../lib/persian-search.js";
 import { buildProductSearchClause, buildEffectivePriceRangeClause } from "../lib/product-query.js";
 import { getVisibleCategoryTree } from "../lib/category-tree-cache.js";
-import { invalidateProductDerivedCaches } from "../lib/product-cache.js";
+import { getProductDerivedCacheVersion, invalidateProductDerivedCaches } from "../lib/product-cache.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { normalizeCustomSpecifications } from "../lib/custom-product-specifications.js";
 import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
 const idOf = (value) => value == null ? "" : String(value);
 const getCategoryProductScope = async (slug) => {
-  const selected = await Category.findOne({ slug }).select("_id slug").lean();
+  const selected = await Category.findOne({ slug }).select("_id slug").maxTimeMS(1200).lean();
   if (!selected) return null;
   const visible = await getVisibleCategoryTree();
   const selectedId = idOf(selected._id);
@@ -209,7 +209,7 @@ export const getAllProducts = async (req, res) => {
 
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findOne({ _id: req.params.id, isActive: { $ne: false } }).lean();
+    const product = await Product.findOne({ _id: req.params.id, isActive: { $ne: false } }).maxTimeMS(1500).lean();
     if (!product) return res.status(404).json({ message: "Product not found" });
     return res.json(product);
   } catch (error) {
@@ -236,8 +236,13 @@ export const getFeaturedProducts = async (_req, res) => {
 export const getNewestProducts = async (req, res) => {
   try {
     const limit = clampInteger(req.query.limit, 8, 1, 24);
+    const cacheKey = "newest_products_v1:" + limit;
+    const cached = await readJsonCache(cacheKey);
+    if (Array.isArray(cached)) return res.json({ products: cached });
+
     const products = await Product.find({ isActive: { $ne: false } })
-      .sort({ createdAt: -1, _id: -1 }).limit(limit).lean();
+      .sort({ createdAt: -1, _id: -1 }).limit(limit).maxTimeMS(1500).lean();
+    await writeJsonCache(cacheKey, products, 60);
     return res.json({ products });
   } catch (error) {
     console.error("Error in getNewestProducts controller", error.message);
@@ -690,6 +695,7 @@ export const updateProductStock = async (req, res) => {
     ).select("_id stock");
     if (!product) return res.status(404).json({ message: "Product not found" });
     await updateFeaturedProductsCache();
+    await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: "product.stock_updated",
       targetType: "product",
@@ -734,6 +740,7 @@ export const updateProductVariantStock = async (req, res) => {
     ).select("_id variants");
     if (!product) return res.status(404).json({ message: "Product variant not found" });
     await updateFeaturedProductsCache();
+    await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: "product.variant_stock_updated",
       targetType: "product",
@@ -1053,7 +1060,8 @@ export const getProductsByCategory = async (req, res) => {
       : sortKey === "oldest" ? { createdAt: 1, _id: 1 }
       : { createdAt: -1, _id: -1 };
 
-    const facetCacheKey = "category_filter_facets_v3:" + slug;
+    const facetCacheVersion = await getProductDerivedCacheVersion();
+    const facetCacheKey = "category_filter_facets_v4:" + slug + ":" + facetCacheVersion;
     let filterOptions = await readJsonCache(facetCacheKey);
     if (!filterOptions || !Array.isArray(filterOptions.sizes) || !Array.isArray(filterOptions.colors)) {
       const facetResult = await Product.aggregate([

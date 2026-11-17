@@ -4,6 +4,14 @@ import { redis } from "./redis.js";
 const PRICE_BOUNDS_VERSION_KEY = "product_price_bounds_version_v1";
 let cacheWarningLogged = false;
 
+export const getProductDerivedCacheVersion = async () => {
+  try {
+    return (await redis.get(PRICE_BOUNDS_VERSION_KEY)) || "initial";
+  } catch {
+    return "redis-unavailable";
+  }
+};
+
 export const invalidateProductPriceBoundsCache = async () => {
   try {
     await redis.set(PRICE_BOUNDS_VERSION_KEY, randomUUID(), "EX", 86400);
@@ -20,7 +28,8 @@ export const invalidateProductDerivedCaches = async () => {
   try {
     await redis.del(
       "recommended_products_v2",
-      ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v2:" + (index + 1))
+      ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v2:" + (index + 1)),
+      ...Array.from({ length: 24 }, (_, index) => "newest_products_v1:" + (index + 1))
     );
   } catch (error) {
     if (!cacheWarningLogged) {
