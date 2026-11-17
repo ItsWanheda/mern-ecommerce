@@ -23,13 +23,14 @@ export const invalidateProductPriceBoundsCache = async () => {
   }
 };
 
-export const invalidateProductDerivedCaches = async () => {
+export const invalidateProductDerivedCaches = async ({ includeFeatured = false } = {}) => {
   await invalidateProductPriceBoundsCache();
   try {
     await redis.del(
       "recommended_products_v2",
       ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v2:" + (index + 1)),
-      ...Array.from({ length: 24 }, (_, index) => "newest_products_v1:" + (index + 1))
+      ...Array.from({ length: 24 }, (_, index) => "newest_products_v1:" + (index + 1)),
+      ...(includeFeatured ? ["featured_products_v3"] : [])
     );
   } catch (error) {
     if (!cacheWarningLogged) {

@@ -12,6 +12,7 @@ import {
 import { calculateShippingFee, getShippingSettings } from "../lib/shipping.js";
 import { hasConfiguredInventory, hasKnownFiniteStock } from "../lib/inventory-stock.js";
 import { redis } from "../lib/redis.js";
+import { invalidateProductDerivedCaches } from "../lib/product-cache.js";
 import { getDueReconciliationFilter, getNextReconciliationDelayMs, PAYMENT_RECONCILIATION_BATCH_SIZE, PAYMENT_RECONCILIATION_LOCK_TTL_MS } from "../lib/payment-reconciliation.js";
 import { getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
@@ -84,17 +85,18 @@ export const getPaymentConfiguration = (_req, res) => {
 };
 
 const releaseReservedInventoryDirect = async (items = []) => {
+  let inventoryChanged = false;
   for (const item of items) {
     if (!item.stockReserved || !item.product || item.quantity <= 0) continue;
-    if (item.hasVariant || item.size || item.color) {
-      await Product.updateOne(
-        { _id: item.product, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
-        { $inc: { "variants.$.stock": item.quantity } }
-      );
-    } else {
-      await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
-    }
+    const result = item.hasVariant || item.size || item.color
+      ? await Product.updateOne(
+          { _id: item.product, variants: { $elemMatch: { size: optionValue(item.size), color: optionValue(item.color) } } },
+          { $inc: { "variants.$.stock": item.quantity } }
+        )
+      : await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
+    if (result.matchedCount) inventoryChanged = true;
   }
+  if (inventoryChanged) await invalidateProductDerivedCaches({ includeFeatured: true });
 };
 
 const isTransactionUnsupported = (error) =>
@@ -105,6 +107,7 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
 
   const session = await mongoose.startSession();
   let transactionUnsupported = false;
+  let inventoryReleased = false;
   try {
     await session.withTransaction(async () => {
       const order = await Order.findOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }).session(session);
@@ -134,7 +137,10 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
         item.stockReserved = false;
         changed = true;
       }
-      if (changed) await order.save({ session });
+      if (changed) {
+        await order.save({ session });
+        inventoryReleased = true;
+      }
     });
   } catch (error) {
     if (!isTransactionUnsupported(error)) throw error;
@@ -153,6 +159,8 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
       if (item.stockReserved) updates[`products.${index}.stockReserved`] = false;
     });
     if (Object.keys(updates).length) await Order.updateOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }, { $set: updates });
+  } else if (inventoryReleased) {
+    await invalidateProductDerivedCaches({ includeFeatured: true });
   }
 };
 
@@ -417,6 +425,7 @@ export const createZarinpalCheckout = async (req, res) => {
     // payment-request status updates call save().
     if (typeof order.$session === "function") order.$session(null);
     reserved = transactionResult.reserved;
+    if (reserved.length) await invalidateProductDerivedCaches({ includeFeatured: true });
     coupon = transactionResult.coupon;
     couponDiscountAmount = transactionResult.couponDiscountAmount;
     shippingFee = transactionResult.shippingFee;
