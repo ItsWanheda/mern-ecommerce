@@ -17,7 +17,7 @@ const ProductCard = ({ product }) => {
   const reviewSummary = useReviewSummaryStore((state) => state.summaries[String(product?._id || "")]);
   const requestReviewSummary = useReviewSummaryStore((state) => state.requestSummary);
   const [imageFailed, setImageFailed] = useState(false);
-  const productImage = optimizeCloudinaryImageUrl(product.image || product.images?.[0] || "");
+  const productImage = optimizeCloudinaryImageUrl(product.image || product.images?.[0] || "", 640);
   useEffect(() => setImageFailed(false), [productImage]);
   useEffect(() => {
     if (product?._id) requestReviewSummary(product._id);

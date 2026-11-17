@@ -101,7 +101,7 @@ app.use(cookieParser());
 // Product stock and price are always revalidated by the backend during checkout.
 const isPublicCatalogGet = (path) =>
   path === "/categories" ||
-  (path.startsWith("/categories/") && path !== "/categories/admin") ||
+  (path.startsWith("/categories/") && !/^\/categories\/admin\/?$/.test(path)) ||
   [
     "/products/price-bounds",
     "/products/search",

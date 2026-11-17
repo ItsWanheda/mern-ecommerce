@@ -12,7 +12,7 @@ const CategoryItem = ({ category }) => (
       <div className="category-tile__image flex aspect-[1.3/1] w-full items-center justify-center overflow-hidden bg-[var(--ui-surface-raised)] p-3 sm:aspect-[1.45/1]">
         {category.imageUrl ? (
           <img
-            src={optimizeCloudinaryImageUrl(category.imageUrl)}
+            src={optimizeCloudinaryImageUrl(category.imageUrl, 480)}
             alt=""
             loading="lazy"
             decoding="async"

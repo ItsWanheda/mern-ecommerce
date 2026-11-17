@@ -218,7 +218,7 @@ const HomePage = ({ initialData = null }) => {
                   <span aria-hidden="true" className="absolute inset-0 block bg-gradient-to-br from-[var(--ui-surface-raised)] via-[var(--ui-accent-soft)] to-[var(--ui-surface)]" />
                 ) : (
                   <img
-                    src={optimizeCloudinaryImageUrl(heroCampaign.image)}
+                    src={optimizeCloudinaryImageUrl(heroCampaign.image, 1800)}
                     alt={heroCampaign.title}
                     fetchPriority="high"
                     onError={() => setHeroImageFailed(true)}
@@ -288,7 +288,7 @@ const HomePage = ({ initialData = null }) => {
                   to={getCampaignPath(campaign)}
                   className="group relative isolate flex h-[145px] w-[min(84vw,26rem)] shrink-0 snap-start items-end overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-4 sm:h-[170px] sm:w-[calc((100%-1rem)/2)] sm:p-5 lg:h-[185px] lg:w-[calc((100%-2rem)/3)]"
                 >
-                  <img src={optimizeCloudinaryImageUrl(campaign.image)} alt="" loading="lazy" decoding="async" className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
+                  <img src={optimizeCloudinaryImageUrl(campaign.image, 640)} alt="" loading="lazy" decoding="async" className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]" />
                   <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
                   <div className="max-w-full text-white">
                     <h3 className="line-clamp-2 text-base font-extrabold leading-7 sm:text-lg"><bdi dir="auto">{campaign.title}</bdi></h3>
