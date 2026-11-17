@@ -17,6 +17,7 @@ import { useCategoryStore } from "../stores/useCategoryStore";
 import { getProductAttributeRows } from "../lib/product-attributes";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 import { formatPrice, getProductDiscountPercent, getProductDiscountedPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
+import { optimizeCloudinaryImageUrl } from "../lib/image-optimization.js";
 
 const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }) => {
   const { productId: matchedProductId } = useParams();
@@ -316,7 +317,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
               <div className="product-gallery relative overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] p-2 sm:p-3">
                 {activeGalleryImage && !failedImageUrls.has(activeGalleryImage) ? (
                   <button type="button" onClick={() => setImageViewerOpen(true)} aria-label="نمایش تصویر محصول در اندازه بزرگ" className="group block w-full cursor-zoom-in focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--ui-focus)]">
-                    <img src={activeGalleryImage} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[620px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
+                    <img src={optimizeCloudinaryImageUrl(activeGalleryImage)} alt={product.name} fetchPriority="high" onError={() => markGalleryImageFailed(activeGalleryImage)} className="aspect-square max-h-[620px] w-full bg-white object-contain p-3 sm:p-5 lg:p-7" />
                     <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)]/95 px-3 py-2 text-xs font-semibold text-[var(--ui-text)] shadow-sm transition group-hover:bg-[var(--ui-surface)]"><ZoomIn size={15} aria-hidden="true" />بزرگ‌نمایی تصویر</span>
                   </button>
                 ) : (
@@ -343,7 +344,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
                 <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="انتخاب تصویر محصول">
                   {galleryImages.map((image, index) => (
                     <button key={image} type="button" onClick={() => setActiveImageIndex(index)} aria-label={"نمایش تصویر " + (index + 1)} aria-pressed={activeImageIndex === index} className={"min-w-0 overflow-hidden rounded-xl border-2 bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] " + (activeImageIndex === index ? "border-[var(--ui-accent)]" : "border-transparent hover:border-[var(--ui-border-strong)]")}>
-                      {failedImageUrls.has(image) ? <span className="flex aspect-square w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={image} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-square w-full bg-white object-contain" />}
+                      {failedImageUrls.has(image) ? <span className="flex aspect-square w-full items-center justify-center px-2 text-[10px] text-[var(--ui-muted)]">تصویر موجود نیست</span> : <img src={optimizeCloudinaryImageUrl(image)} alt="" loading="lazy" onError={() => markGalleryImageFailed(image)} className="aspect-square w-full bg-white object-contain" />}
                     </button>
                   ))}
                 </div>
@@ -480,7 +481,7 @@ const ProductDetailsPage = ({ productId: routeProductId, initialProduct = null }
         <div data-product-image-dialog role="dialog" aria-modal="true" aria-label={"نمایش بزرگ تصویر " + product.name} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-3 sm:p-6" onMouseDown={event => { if (event.target === event.currentTarget) setImageViewerOpen(false); }}>
           <button ref={imageViewerCloseRef} type="button" onClick={() => setImageViewerOpen(false)} aria-label="بستن تصویر بزرگ" className="absolute right-3 top-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface/15 text-white transition hover:bg-surface/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:right-5 sm:top-5"><X size={21} aria-hidden="true" /></button>
           {galleryImages.length > 1 && <button type="button" onClick={showPreviousImage} aria-label="تصویر قبلی" className="absolute right-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface/15 text-white hover:bg-surface/25 sm:right-6"><ArrowRight size={20} aria-hidden="true" /></button>}
-          <img src={activeGalleryImage} alt={product.name} onError={() => markGalleryImageFailed(activeGalleryImage)} className="max-h-[88dvh] max-w-[94vw] touch-pinch-zoom object-contain" />
+          <img src={optimizeCloudinaryImageUrl(activeGalleryImage)} alt={product.name} onError={() => markGalleryImageFailed(activeGalleryImage)} className="max-h-[88dvh] max-w-[94vw] touch-pinch-zoom object-contain" />
           {galleryImages.length > 1 && <button type="button" onClick={showNextImage} aria-label="تصویر بعدی" className="absolute left-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-surface/15 text-white hover:bg-surface/25 sm:left-6"><ArrowLeft size={20} aria-hidden="true" /></button>}
         </div>
       )}

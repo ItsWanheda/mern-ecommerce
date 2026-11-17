@@ -6,6 +6,7 @@ import { useCartStore } from "../stores/useCartStore";
 import { useWishlistStore } from "../stores/useWishlistStore";
 import { useReviewSummaryStore } from "../stores/useReviewSummaryStore.js";
 import { formatPrice, getProductDiscountPercent, getProductDiscountedPrice, isOutOfStock, isStockTracked } from "../lib/commerce";
+import { optimizeCloudinaryImageUrl } from "../lib/image-optimization.js";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 
 const persianNumber = (value) => new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
@@ -16,7 +17,7 @@ const ProductCard = ({ product }) => {
   const reviewSummary = useReviewSummaryStore((state) => state.summaries[String(product?._id || "")]);
   const requestReviewSummary = useReviewSummaryStore((state) => state.requestSummary);
   const [imageFailed, setImageFailed] = useState(false);
-  const productImage = product.image || product.images?.[0] || "";
+  const productImage = optimizeCloudinaryImageUrl(product.image || product.images?.[0] || "");
   useEffect(() => setImageFailed(false), [productImage]);
   useEffect(() => {
     if (product?._id) requestReviewSummary(product._id);

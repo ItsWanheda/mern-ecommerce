@@ -1,5 +1,6 @@
 import { ArrowUpLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { optimizeCloudinaryImageUrl } from "../lib/image-optimization.js";
 
 const CategoryItem = ({ category }) => (
   <article className="category-tile group min-w-0 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--ui-border-strong)] hover:shadow-[0_14px_32px_-24px_var(--ui-shadow-color)]">
@@ -11,7 +12,7 @@ const CategoryItem = ({ category }) => (
       <div className="category-tile__image flex aspect-[1.3/1] w-full items-center justify-center overflow-hidden bg-[var(--ui-surface-raised)] p-3 sm:aspect-[1.45/1]">
         {category.imageUrl ? (
           <img
-            src={category.imageUrl}
+            src={optimizeCloudinaryImageUrl(category.imageUrl)}
             alt=""
             loading="lazy"
             decoding="async"
