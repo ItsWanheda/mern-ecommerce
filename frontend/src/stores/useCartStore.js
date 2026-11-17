@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "../lib/axios";
+import axios from "../lib/axios.js";
 import { toast } from "react-hot-toast";
 import { requiresCatalogMigration } from "../lib/catalog-migration.js";
 import { getProductDiscountAmount, getProductDiscountedPrice } from "../lib/commerce.js";

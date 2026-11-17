@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import axios from "../lib/axios";
+import axios from "../lib/axios.js";
 
 const GUEST_STORAGE_KEY = "computer-hardware-guest-wishlist";
 const GUEST_MIGRATION_OWNER_KEY = "computer-hardware-guest-wishlist-owner";
