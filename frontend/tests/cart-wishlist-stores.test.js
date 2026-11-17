@@ -154,13 +154,21 @@ test("failed guest-wishlist sync remains queued for the same account and can be 
   // A different account on the same browser must not inherit account-retry's pending import.
   await useWishlistStore.getState().setAuthenticated(false);
   let activeAccount = "account-other";
+  const serverWishlists = new Map([
+    ["account-other", [{ _id: "account-other-product" }]],
+  ]);
   axios.defaults.adapter = async (config) => {
     if (config.url === "/account/wishlist" && config.method === "post") {
       postAttempts += 1;
-      return response(config, { products: [] });
+      const productId = JSON.parse(config.data).productId;
+      serverWishlists.set(activeAccount, [
+        ...(serverWishlists.get(activeAccount) || []),
+        { _id: productId },
+      ]);
+      return response(config, { products: serverWishlists.get(activeAccount) });
     }
     if (config.url === "/account/wishlist" && config.method === "get") {
-      return response(config, { products: [{ _id: activeAccount + "-product" }] });
+      return response(config, { products: serverWishlists.get(activeAccount) || [] });
     }
     throw new Error("Unexpected request: " + config.method + " " + config.url);
   };
