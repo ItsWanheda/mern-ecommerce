@@ -220,12 +220,12 @@ export const getProductById = async (req, res) => {
 };
 
 export const getFeaturedProducts = async (_req, res) => {
-  const cached = await readJsonCache("featured_products_v2");
+  const cached = await readJsonCache("featured_products_v3");
   if (Array.isArray(cached)) return res.json(cached);
   try {
     const featuredProducts = await Product.find({ isFeatured: true, isActive: { $ne: false } })
       .sort({ createdAt: -1, _id: -1 }).limit(100).maxTimeMS(1500).lean();
-    await writeJsonCache("featured_products_v2", featuredProducts, 300);
+    await writeJsonCache("featured_products_v3", featuredProducts, 300);
     return res.json(featuredProducts);
   } catch (error) {
     console.error("Error in getFeaturedProducts controller", error.message);
@@ -906,14 +906,14 @@ export const setProductsDiscount = async (req, res) => {
 
 export const getRecommendedProducts = async (_req, res) => {
   try {
-    const cached = await readJsonCache("recommended_products_v1");
+    const cached = await readJsonCache("recommended_products_v2");
     if (Array.isArray(cached)) return res.json(cached);
     const products = await Product.aggregate([
       { $match: { isActive: { $ne: false } } },
       { $sample: { size: 4 } },
       { $project: { _id: 1, name: 1, description: 1, image: 1, price: 1, discountPercent: 1, category: 1, stock: 1 } },
     ]).option({ maxTimeMS: 1500 });
-    await writeJsonCache("recommended_products_v1", products, 60);
+    await writeJsonCache("recommended_products_v2", products, 60);
     return res.json(products);
   } catch (error) {
     console.error("Error in getRecommendedProducts controller", error.message);
@@ -1053,7 +1053,7 @@ export const getProductsByCategory = async (req, res) => {
       : sortKey === "oldest" ? { createdAt: 1, _id: 1 }
       : { createdAt: -1, _id: -1 };
 
-    const facetCacheKey = "category_filter_facets_v2:" + slug;
+    const facetCacheKey = "category_filter_facets_v3:" + slug;
     let filterOptions = await readJsonCache(facetCacheKey);
     if (!filterOptions || !Array.isArray(filterOptions.sizes) || !Array.isArray(filterOptions.colors)) {
       const facetResult = await Product.aggregate([
@@ -1180,7 +1180,7 @@ async function updateFeaturedProductsCache() {
   try {
     const products = await Product.find({ isFeatured: true, isActive: { $ne: false } })
       .sort({ createdAt: -1, _id: -1 }).limit(100).maxTimeMS(1500).lean();
-    await writeJsonCache("featured_products_v2", products, 300);
+    await writeJsonCache("featured_products_v3", products, 300);
   } catch (error) {
     console.error("Unable to refresh featured-products cache", error.message);
   }
@@ -1189,7 +1189,7 @@ async function updateFeaturedProductsCache() {
 
 export const getBestsellingProducts = async (req, res) => {
   const limit = clampInteger(req.query.limit, 8, 1, 24);
-  const cacheKey = `bestselling_products_v1:${limit}`;
+  const cacheKey = `bestselling_products_v2:${limit}`;
   const cached = await readJsonCache(cacheKey);
   if (Array.isArray(cached)) return res.json({ products: cached });
   try {

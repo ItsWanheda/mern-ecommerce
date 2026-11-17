@@ -19,8 +19,8 @@ export const invalidateProductDerivedCaches = async () => {
   await invalidateProductPriceBoundsCache();
   try {
     await redis.del(
-      "recommended_products_v1",
-      ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v1:" + (index + 1))
+      "recommended_products_v2",
+      ...Array.from({ length: 24 }, (_, index) => "bestselling_products_v2:" + (index + 1))
     );
   } catch (error) {
     if (!cacheWarningLogged) {

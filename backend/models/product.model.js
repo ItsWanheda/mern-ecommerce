@@ -79,7 +79,7 @@ const productSchema = new mongoose.Schema(
     fit: { type: fitSchema, default: () => ({}) },
     sizeChart: { type: [sizeMeasurementSchema], default: [] },
     isFeatured: { type: Boolean, default: false },
-    // null preserves legacy catalogue records until opening stock is entered by an admin.
+    // null means inventory has not been tracked for this product.
     stock: {
       type: Number,
       min: 0,
