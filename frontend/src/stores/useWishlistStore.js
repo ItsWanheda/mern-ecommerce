@@ -6,7 +6,6 @@ import axios from "../lib/axios";
 
 const GUEST_STORAGE_KEY = "computer-hardware-guest-wishlist";
 const GUEST_MIGRATION_OWNER_KEY = "computer-hardware-guest-wishlist-owner";
-const LEGACY_UNSCOPED_KEY = "tik-boutique-saved-products";
 
 const pendingStorageKey = (userId) => "computer-hardware-pending-wishlist:" + encodeURIComponent(String(userId));
 
@@ -144,13 +143,17 @@ export const useWishlistStore = create((set, get) => ({
     const guestItems = readGuestProducts();
     const existingPending = readPendingProducts(accountUserId);
     const pendingBeforeSync = mergeProducts(existingPending, guestItems);
+    const existingAccountItems = current.isAuthenticated && current.accountUserId === accountUserId
+      ? current.items.filter((product) => !current.guestOnlyIds.includes(product._id))
+      : [];
+    const visibleBeforeSync = mergeProducts(existingAccountItems, pendingBeforeSync);
 
     set({
       isAuthenticated: true,
       accountUserId,
       isSyncing: true,
       accountSynced: false,
-      items: pendingBeforeSync,
+      items: visibleBeforeSync,
       localHydrated: true,
       guestOnlyIds: pendingBeforeSync.map((product) => product._id),
     });
@@ -159,7 +162,7 @@ export const useWishlistStore = create((set, get) => ({
       set({
         isSyncing: false,
         accountSynced: false,
-        items: pendingBeforeSync,
+        items: visibleBeforeSync,
         guestOnlyIds: pendingBeforeSync.map((product) => product._id),
       });
       return;
@@ -199,7 +202,7 @@ export const useWishlistStore = create((set, get) => ({
           get().accountUserId !== accountUserId) return;
       const remainingPending = readPendingProducts(accountUserId);
       set({
-        items: mergeProducts(remainingPending),
+        items: mergeProducts(existingAccountItems, remainingPending),
         guestOnlyIds: remainingPending.map((product) => product._id),
         isSyncing: false,
         accountSynced: false,
@@ -225,6 +228,7 @@ export const useWishlistStore = create((set, get) => ({
 
     const accountUserId = state.accountUserId;
     const generation = wishlistAuthGeneration;
+    const wasGuestOnly = state.guestOnlyIds.includes(product._id);
     const items = wasSaved
       ? state.items.filter((item) => item._id !== product._id)
       : [product, ...state.items];
@@ -252,8 +256,8 @@ export const useWishlistStore = create((set, get) => ({
           items: wasSaved
             ? mergeProducts([product], current.items)
             : current.items.filter((item) => item._id !== product._id),
-          guestOnlyIds: wasSaved && current.guestOnlyIds.includes(product._id)
-            ? current.guestOnlyIds
+          guestOnlyIds: wasSaved && wasGuestOnly && !current.guestOnlyIds.includes(product._id)
+            ? [...current.guestOnlyIds, product._id]
             : current.guestOnlyIds,
         }));
       }
@@ -278,7 +282,8 @@ export const useWishlistStore = create((set, get) => ({
     }
 
     const accountUserId = state.accountUserId;
-    const generation = wishlistAuthGeneration;
+    const generation = ++wishlistAuthGeneration;
+    set({ isSyncing: false });
     try {
       await axios.delete("/account/wishlist");
       writePendingProducts(accountUserId, []);

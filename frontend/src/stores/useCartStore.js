@@ -244,6 +244,7 @@ export const useCartStore = create((set, get) => ({
         const cart = remainingGuestItems.reduce((current, item) => mergeCartLines(current, item), accountCart);
         set({ cart, isMergingGuestCart: false, ...totalsFor(cart, get().coupon) });
       } catch {
+        if (generation !== cartAuthGeneration || !get().authenticated || get().accountUserId !== accountUserId) return;
         set({ cart: remainingGuestItems, isMergingGuestCart: false, ...totalsFor(remainingGuestItems, get().coupon) });
       }
       toast.error("سبد خرید مهمان هنوز کامل ادغام نشده است؛ گزینه‌های آن حفظ شده‌اند.");

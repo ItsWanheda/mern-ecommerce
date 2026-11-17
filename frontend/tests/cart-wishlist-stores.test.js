@@ -151,6 +151,27 @@ test("failed guest-wishlist sync remains queued for the same account and can be 
   assert.notEqual(storage.getItem("computer-hardware-pending-wishlist:account-retry"), null);
   assert.equal(storage.getItem("computer-hardware-guest-wishlist"), null);
 
+  // A different account on the same browser must not inherit account-retry's pending import.
+  await useWishlistStore.getState().setAuthenticated(false);
+  let activeAccount = "account-other";
+  axios.defaults.adapter = async (config) => {
+    if (config.url === "/account/wishlist" && config.method === "post") {
+      postAttempts += 1;
+      return response(config, { products: [] });
+    }
+    if (config.url === "/account/wishlist" && config.method === "get") {
+      return response(config, { products: [{ _id: activeAccount + "-product" }] });
+    }
+    throw new Error("Unexpected request: " + config.method + " " + config.url);
+  };
+  await useWishlistStore.getState().setAuthenticated(true, "account-other");
+  assert.equal(postAttempts, 1);
+  assert.deepEqual(useWishlistStore.getState().items.map((item) => item._id), ["account-other-product"]);
+  assert.notEqual(storage.getItem("computer-hardware-pending-wishlist:account-retry"), null);
+  assert.equal(storage.getItem("computer-hardware-pending-wishlist:account-other"), null);
+
+  await useWishlistStore.getState().setAuthenticated(false);
+  activeAccount = "account-retry";
   await useWishlistStore.getState().setAuthenticated(true, "account-retry");
 
   assert.equal(postAttempts, 2);
