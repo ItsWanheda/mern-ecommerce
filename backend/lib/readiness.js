@@ -66,6 +66,11 @@ export const getReadinessStatus = async ({
     ? Boolean(databaseReady())
     : Boolean(databaseReady);
   const database = isDatabaseReady ? "connected" : databaseLabel(mongoose.connection.readyState);
-  const ready = isDatabaseReady && redisStatus === "connected";
-  return { status: ready ? "ready" : "not_ready", database, redis: redisStatus };
+  // MongoDB is required for storefront/API correctness. Redis-backed features
+  // have bounded fallbacks; report degradation without taking healthy API
+  // instances out of service when Redis alone is unavailable.
+  const status = !isDatabaseReady ? "not_ready"
+    : redisStatus === "connected" ? "ready"
+    : "degraded";
+  return { status, database, redis: redisStatus };
 };

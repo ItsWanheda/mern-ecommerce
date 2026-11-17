@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { getReadinessStatus } from "../lib/readiness.js";
 
-test("readiness fails when Redis is unavailable and recovers after reconnect", async () => {
+test("readiness degrades but remains available when Redis is unavailable, then recovers", async () => {
   let connected = false;
   const redisClient = { status: "connecting", ping: async () => {
     if (!connected) throw new Error("connection lost");
@@ -11,7 +11,8 @@ test("readiness fails when Redis is unavailable and recovers after reconnect", a
   } };
   const logger = { warn() {} };
   const disconnected = await getReadinessStatus({ databaseReady: true, redisClient, logger });
-  assert.equal(disconnected.status, "not_ready");
+  assert.equal(disconnected.status, "degraded");
+  assert.equal(disconnected.database, "connected");
   assert.equal(disconnected.redis, "unavailable");
   connected = true;
   const recovered = await getReadinessStatus({ databaseReady: true, redisClient, logger });

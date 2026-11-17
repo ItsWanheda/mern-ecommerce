@@ -65,7 +65,7 @@ app.get("/api/ready", async (_req, res) => {
     databaseReady: () => mongoose.connection.readyState === 1,
     redisClient: redis,
   });
-  return res.status(readiness.status === "ready" ? 200 : 503).json(readiness);
+  return res.status(readiness.status === "not_ready" ? 503 : 200).json(readiness);
 });
 
 // Some Vercel execution paths invoke the Express app directly rather than
