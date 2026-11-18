@@ -9,7 +9,7 @@ datasource db {
 
 /// A fresh application account. No MongoDB user records are imported during the cutover.
 model User {
-  id                          String   @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   name                        String
   email                       String   @unique
   password                    String
@@ -56,7 +56,7 @@ model User {
 }
 
 model AccountSession {
-  id          String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   userId      String
   tokenId     String    @unique
   deviceName  String    @default("دستگاه ناشناس")
@@ -76,7 +76,7 @@ model AccountSession {
 }
 
 model SecurityNotification {
-  id          String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   userId      String
   type        String
   title       String
@@ -93,7 +93,7 @@ model SecurityNotification {
 }
 
 model AuditLog {
-  id             String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   actorId        String?
   actorName      String    @default("Unknown admin")
   actorRole      String    @default("")
@@ -122,7 +122,7 @@ model AuditLog {
 }
 
 model Campaign {
-  id          String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   title       String
   slug        String?   @unique
   description String    @default("")
@@ -146,7 +146,7 @@ model Campaign {
 }
 
 model Category {
-  id                 String     @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   name               Json
   slug               String     @unique
   parentId           String?
@@ -171,7 +171,7 @@ model Category {
 }
 
 model Coupon {
-  id                    String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   code                  String    @unique
   description           String    @default("")
   discountPercentage    Int
@@ -194,7 +194,7 @@ model Coupon {
 }
 
 model NewsletterSubscriber {
-  id             String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   email          String    @unique
   isSubscribed   Boolean   @default(true)
   consentedAt    DateTime
@@ -207,7 +207,7 @@ model NewsletterSubscriber {
 }
 
 model Order {
-  id                           String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   userId                       String
   products                     Json
   shippingAddress              Json?
@@ -256,7 +256,7 @@ model Order {
 }
 
 model ProductReview {
-  id             String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   productId      String
   userId         String
   orderId        String
@@ -282,7 +282,7 @@ model ProductReview {
 }
 
 model Product {
-  id                  String      @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   name                String
   description         String      @db.Text
   price               Decimal     @db.Decimal(18, 0)
@@ -323,7 +323,7 @@ model Product {
 }
 
 model ServiceCase {
-  id             String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   userId         String
   orderId        String?
   type           String
@@ -351,7 +351,7 @@ model ServiceCase {
 }
 
 model StoreSettings {
-  id          String    @id @default(cuid())
+  id String @id @default(dbgenerated("substring(replace(gen_random_uuid()::text, '-', ''), 1, 24)")) @db.VarChar(24)
   key         String    @unique @default("default")
   flatRate    Decimal   @default(0) @db.Decimal(18, 0)
   freeShippingThreshold Decimal @default(0) @db.Decimal(18, 0)
