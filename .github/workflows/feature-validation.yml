@@ -38,6 +38,13 @@ jobs:
       - name: Install backend dependencies
         run: npm ci --no-audit --no-fund --prefix backend
 
+      - name: Validate PostgreSQL Prisma schema
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mern_ecommerce_test?schema=public
+        run: |
+          npm run db:validate --prefix backend
+          npm run db:generate --prefix backend
+
       - name: Start disposable MongoDB replica set
         run: |
           docker run --detach --name mongo-test --publish 27017:27017 mongo:7.0 --replSet rs0 --bind_ip_all
