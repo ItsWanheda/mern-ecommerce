@@ -29,6 +29,8 @@ test("Prisma schema targets PostgreSQL and covers all 13 current model families"
     "StoreSettings",
   ]));
   assert.equal(modelNames.length, 13);
+  const primaryKeyDefinitions = [...schema.matchAll(/^\\s*id\\s+String\\s+@id\\s+@default\\(dbgenerated\\("substring\\(replace\\(gen_random_uuid\\(\\)::text, '-', ''\\), 1, 24\\)"\\)\\)\\s+@db\\.VarChar\\(24\\)/gm)];
+  assert.equal(primaryKeyDefinitions.length, 13, "all model IDs must preserve the legacy 24-character hexadecimal API format");
 });
 
 test("Prisma foundation retains critical account, payment, and inventory fields", () => {
