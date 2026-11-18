@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A fresh application account. No MongoDB user records are imported during the cutover.
+model User {
+  id                          String   @id @default(cuid())
+  name                        String
+  email                       String   @unique
+  password                    String
+  passwordResetTokenHash      String?
+  passwordResetExpiresAt      DateTime?
+  defaultShippingAddress      Json?
+  savedShippingAddresses      Json     @default("[]")
+  cartItems                   Json     @default("[]")
+  role                        String   @default("customer")
+  /// Null retains the legacy distinction between unconfigured permissions and an explicit empty permission set.
+  permissions                 Json?
+  isActive                    Boolean  @default(true)
+  primaryPhone                String   @default("")
+  phoneVerifiedAt             DateTime?
+  emailVerifiedAt             DateTime?
+  emailVerificationTokenHash  String?
+  emailVerificationExpiresAt  DateTime?
+  pendingEmail                String   @default("")
+  emailChangeTokenHash        String?
+  emailChangeExpiresAt        DateTime?
+  wishlist                    String[] @default([])
+  communicationPreferences    Json     @default("{}")
+  twoFactorEnabled            Boolean  @default(false)
+  twoFactorSecret              String   @default("")
+  deletionRequestedAt         DateTime?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  sessions                    AccountSession[]
+  securityNotifications       SecurityNotification[]
+  auditLogs                   AuditLog[]
+  createdCampaigns            Campaign[] @relation("CampaignCreator")
+  createdCoupons              Coupon[] @relation("CouponCreator")
+  orders                      Order[]
+  authoredReviews              ProductReview[] @relation("ReviewAuthor")
+  moderatedReviews             ProductReview[] @relation("ReviewModerator")
+  serviceCases                ServiceCase[] @relation("ServiceCaseOwner")
+  handledServiceCases         ServiceCase[] @relation("ServiceCaseHandler")
+  updatedStoreSettings        StoreSettings[] @relation("StoreSettingsUpdater")
+
+  @@index([role, isActive])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model AccountSession {
+  id          String    @id @default(cuid())
+  userId      String
+  tokenId     String    @unique
+  deviceName  String    @default("دستگاه ناشناس")
+  userAgent   String    @default("")
+  ipAddress   String    @default("")
+  lastUsedAt  DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, lastUsedAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("account_sessions")
+}
+
+model SecurityNotification {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  message     String
+  metadata    Json      @default("{}")
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("security_notifications")
+}
+
+model AuditLog {
+  id             String    @id @default(cuid())
+  actorId        String?
+  actorName      String    @default("Unknown admin")
+  actorRole      String    @default("")
+  action         String
+  targetType     String
+  targetId       String    @default("")
+  summary        String
+  metadata       Json      @default("{}")
+  ip             String    @default("")
+  userAgent      String    @default("")
+  requestMethod  String    @default("")
+  requestPath    String    @default("")
+  requestId      String    @default("")
+  requestHost    String    @default("")
+  requestOrigin  String    @default("")
+  refererPath    String    @default("")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  actor          User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([actorId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String?   @unique
+  description String    @default("")
+  image       String    @default("") @db.Text
+  href        String    @default("/shop")
+  startsAt    DateTime  @default(now())
+  endsAt      DateTime
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  views       Int       @default(0)
+  clicks      Int       @default(0)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy   User?     @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  products    Product[] @relation("CampaignProducts")
+
+  @@index([isActive, startsAt, endsAt, sortOrder])
+  @@map("campaigns")
+}
+
+model Category {
+  id                 String     @id @default(cuid())
+  name               Json
+  slug               String     @unique
+  parentId           String?
+  ancestors          String[]   @default([])
+  description        Json       @default("{}")
+  image              String     @default("") @db.Text
+  sortOrder          Int        @default(0)
+  isActive           Boolean    @default(true)
+  showInNavigation   Boolean    @default(true)
+  attributes         Json       @default("[]")
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  parent             Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children           Category[] @relation("CategoryHierarchy")
+  products           Product[]
+
+  @@index([parentId, sortOrder])
+  @@index([ancestors], type: Gin)
+  @@index([isActive, showInNavigation, sortOrder])
+  @@map("categories")
+}
+
+model Coupon {
+  id                    String    @id @default(cuid())
+  code                  String    @unique
+  description           String    @default("")
+  discountPercentage    Int
+  startsAt              DateTime  @default(now())
+  expiresAt             DateTime
+  minOrderAmount        Decimal   @default(0) @db.Decimal(18, 0)
+  maxDiscountAmount     Decimal?  @db.Decimal(18, 0)
+  usageLimit            Int?
+  usageCount             Int       @default(0)
+  reservedCount          Int       @default(0)
+  isActive               Boolean   @default(true)
+  createdById            String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  createdBy              User?     @relation("CouponCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([isActive, startsAt, expiresAt])
+  @@map("coupons")
+}
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  isSubscribed   Boolean   @default(true)
+  consentedAt    DateTime
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([isSubscribed])
+  @@map("newsletter_subscribers")
+}
+
+model Order {
+  id                           String    @id @default(cuid())
+  userId                       String
+  products                     Json
+  shippingAddress              Json?
+  shipmentStatus               String?
+  shippingCarrier              String    @default("")
+  trackingCode                 String    @default("")
+  shippedAt                    DateTime?
+  deliveredAt                  DateTime?
+  shipmentEvents               Json      @default("[]")
+  totalAmount                  Decimal   @db.Decimal(18, 0)
+  shippingFee                  Decimal   @default(0) @db.Decimal(18, 0)
+  currency                     String    @default("IRT")
+  paymentProvider              String    @default("zarinpal")
+  paymentStatus                String    @default("pending")
+  paymentRequestStatus         String    @default("not_started")
+  paymentRequestAttemptedAt    DateTime?
+  reconciliationAttempts       Int       @default(0)
+  reconciliationLastAttemptAt  DateTime?
+  reconciliationNextAttemptAt  DateTime?
+  status                       String    @default("pending")
+  subtotalAmount               Decimal   @default(0) @db.Decimal(18, 0)
+  productDiscountAmount        Decimal   @default(0) @db.Decimal(18, 0)
+  couponCode                   String    @default("")
+  couponDiscountAmount         Decimal   @default(0) @db.Decimal(18, 0)
+  couponDiscountPercentage     Decimal   @default(0) @db.Decimal(5, 2)
+  couponReservationStatus      String    @default("none")
+  zarinpalAuthority            String?   @unique
+  zarinpalRefId                String    @default("")
+  expiresAt                    DateTime?
+  finalizedAt                  DateTime?
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+
+  user                         User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reviews                      ProductReview[]
+  serviceCases                 ServiceCase[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([paymentStatus, paymentProvider, createdAt])
+  @@index([paymentProvider, paymentStatus, expiresAt])
+  @@index([paymentProvider, paymentRequestStatus, expiresAt])
+  @@index([paymentProvider, paymentStatus, finalizedAt])
+  @@index([paymentProvider, paymentStatus, reconciliationNextAttemptAt, createdAt])
+  @@index([paymentStatus, shipmentStatus, createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+model ProductReview {
+  id             String    @id @default(cuid())
+  productId      String
+  userId         String
+  orderId        String
+  rating         Int
+  comment        String    @default("") @db.Text
+  displayName    String
+  verifiedPurchase Boolean @default(true)
+  status         String    @default("pending")
+  moderatedById  String?
+  moderatedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user           User      @relation("ReviewAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  moderatedBy    User?     @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+
+  @@unique([productId, userId])
+  @@index([productId, status, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("product_reviews")
+}
+
+model Product {
+  id                  String      @id @default(cuid())
+  name                String
+  description         String      @db.Text
+  price               Decimal     @db.Decimal(18, 0)
+  discountPercent     Int         @default(0)
+  image               String      @default("") @db.Text
+  images              String[]    @default([])
+  category            String
+  categoryId          String?
+  attributes          Json        @default("{}")
+  customSpecifications Json       @default("[]")
+  searchTextNormalized String     @default("") @db.Text
+  searchTokens        String[]    @default([])
+  effectivePrice      Decimal?    @db.Decimal(18, 0)
+  sizes               String[]    @default([])
+  colors              Json        @default("[]")
+  variants            Json        @default("[]")
+  fit                 Json        @default("{}")
+  sizeChart           Json        @default("[]")
+  isFeatured          Boolean     @default(false)
+  stock               Int?
+  isActive            Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  categoryRecord      Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  reviews             ProductReview[]
+  campaigns           Campaign[]  @relation("CampaignProducts")
+
+  @@index([createdAt(sort: Desc)])
+  @@index([category, price, createdAt(sort: Desc)])
+  @@index([isActive, category, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([isActive, isFeatured, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([searchTokens], type: Gin)
+  @@index([isActive, effectivePrice, id])
+  @@index([categoryId, effectivePrice, id])
+  @@index([category, effectivePrice, id])
+  @@map("products")
+}
+
+model ServiceCase {
+  id             String    @id @default(cuid())
+  userId         String
+  orderId        String?
+  type           String
+  subject        String
+  message        String    @db.Text
+  status         String    @default("open")
+  resolutionNote String    @default("") @db.Text
+  refundAmount   Decimal   @default(0) @db.Decimal(18, 0)
+  refundStatus   String    @default("not_applicable")
+  refundReference String   @default("")
+  handledById    String?
+  events         Json      @default("[]")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User      @relation("ServiceCaseOwner", fields: [userId], references: [id], onDelete: Cascade)
+  order          Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  handledBy      User?     @relation("ServiceCaseHandler", fields: [handledById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([type, status])
+  @@index([createdAt(sort: Desc), status])
+  @@map("service_cases")
+}
+
+model StoreSettings {
+  id          String    @id @default(cuid())
+  key         String    @unique @default("default")
+  flatRate    Decimal   @default(0) @db.Decimal(18, 0)
+  freeShippingThreshold Decimal @default(0) @db.Decimal(18, 0)
+  updatedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  updatedBy   User?     @relation("StoreSettingsUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("store_settings")
+}
