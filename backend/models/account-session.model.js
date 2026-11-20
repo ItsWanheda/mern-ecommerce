@@ -1,15 +1,6 @@
-import mongoose from "mongoose";
+import { createPrismaModel } from "../lib/prisma-model.js";
 
-const accountSessionSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
-  tokenId: { type: String, required: true, unique: true, index: true },
-  deviceName: { type: String, trim: true, maxlength: 160, default: "دستگاه ناشناس" },
-  userAgent: { type: String, trim: true, maxlength: 500, default: "" },
-  ipAddress: { type: String, trim: true, maxlength: 80, default: "" },
-  lastUsedAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date, required: true, index: { expires: 0 } },
-  revokedAt: { type: Date, default: null, index: true },
-}, { timestamps: true });
-
-accountSessionSchema.index({ user: 1, revokedAt: 1, lastUsedAt: -1 });
-export default mongoose.model("AccountSession", accountSessionSchema);
+// Prisma/PostgreSQL-backed model repository. The exported operations preserve
+// the existing controller contract while all persistence is handled by Prisma.
+const accountSession = createPrismaModel("accountSession");
+export default accountSession;

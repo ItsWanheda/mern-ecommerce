@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import Order from "../models/order.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -64,7 +64,7 @@ export const getAdminOrders = async (req, res) => {
 export const updateShipment = async (req, res) => {
   const orderId = req.params.id;
   const nextStatus = typeof req.body?.status === "string" ? req.body.status : "";
-  if (!mongoose.isValidObjectId(orderId)) return res.status(400).json({ message: "Invalid order ID" });
+  if (!isValidObjectId(orderId)) return res.status(400).json({ message: "Invalid order ID" });
   if (!shipmentLabels.includes(nextStatus)) return res.status(400).json({ message: "Invalid shipment status" });
 
   const carrierInput = req.body?.shippingCarrier;

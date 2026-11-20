@@ -1,10 +1,11 @@
-import mongoose from "mongoose";
 import Category from "../models/category.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { getVisibleCategoryTree, invalidateCategoryTreeCache } from "../lib/category-tree-cache.js";
 import { invalidateProductPriceBoundsCache } from "../lib/product-cache.js";
 import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
+
+import { prisma } from "../lib/prisma.js";
 
 const objectIdPattern = /^[a-f\d]{24}$/i;
 const localized = (value, previous = {}) => ({
@@ -135,27 +136,15 @@ export const getCategoryBySlug = async (req, res) => {
 
 export const getAdminCategories = async (_req, res) => {
   try {
-    const [categories, counts] = await Promise.all([
+    const [categories, productsByCategoryId, productsBySlug, childrenByParent] = await Promise.all([
       Category.find({}).sort({ sortOrder: 1, "name.fa": 1 }).lean(),
-      Product.aggregate([
-        { $facet: {
-          byId: [
-            { $match: { categoryId: { $ne: null } } },
-            { $group: { _id: "$categoryId", count: { $sum: 1 } } },
-          ],
-          bySlug: [
-            { $group: { _id: "$category", count: { $sum: 1 } } },
-          ],
-        } },
-      ]),
+      prisma.product.groupBy({ by: ["categoryId"], where: { categoryId: { not: null } }, _count: { _all: true } }),
+      prisma.product.groupBy({ by: ["category"], _count: { _all: true } }),
+      prisma.category.groupBy({ by: ["parentId"], where: { parentId: { not: null } }, _count: { _all: true } }),
     ]);
-    const countById = new Map((counts[0]?.byId || []).map((entry) => [idString(entry._id), entry.count]));
-    const countBySlug = new Map((counts[0]?.bySlug || []).map((entry) => [String(entry._id), entry.count]));
-    const childCounts = await Category.aggregate([
-      { $match: { parentId: { $ne: null } } },
-      { $group: { _id: "$parentId", count: { $sum: 1 } } },
-    ]);
-    const childCountById = new Map(childCounts.map((entry) => [idString(entry._id), entry.count]));
+    const countById = new Map(productsByCategoryId.map(entry => [idString(entry.categoryId), entry._count._all]));
+    const countBySlug = new Map(productsBySlug.map(entry => [String(entry.category), entry._count._all]));
+    const childCountById = new Map(childrenByParent.map(entry => [idString(entry.parentId), entry._count._all]));
     return res.json({
       categories: categories.map((category) => ({
         ...category,
@@ -227,7 +216,7 @@ export const createCategory = async (req, res) => {
     if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
     if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error?.code === 11000) return res.status(409).json({ message: "این slug قبلاً استفاده شده است." });
-    if (error instanceof mongoose.Error.ValidationError) return res.status(400).json({ message: "اطلاعات دسته‌بندی معتبر نیست." });
+    if (error?.name === "PrismaClientValidationError") return res.status(400).json({ message: "اطلاعات دسته‌بندی معتبر نیست." });
     console.error("Error creating category:", error.message);
     return res.status(500).json({ message: "ایجاد دسته‌بندی ناموفق بود." });
   }
@@ -332,7 +321,7 @@ export const updateCategory = async (req, res) => {
     if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
     if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error?.code === 11000) return res.status(409).json({ message: "این slug قبلاً استفاده شده است." });
-    if (error instanceof mongoose.Error.ValidationError) return res.status(400).json({ message: "اطلاعات دسته‌بندی معتبر نیست." });
+    if (error?.name === "PrismaClientValidationError") return res.status(400).json({ message: "اطلاعات دسته‌بندی معتبر نیست." });
     console.error("Error updating category:", error.message);
     return res.status(500).json({ message: "به‌روزرسانی دسته‌بندی ناموفق بود." });
   }

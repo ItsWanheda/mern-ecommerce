@@ -1,6 +1,5 @@
 import express from "express";
 import cookieParser from "cookie-parser";
-import mongoose from "mongoose";
 import { getReadinessStatus } from "./lib/readiness.js";
 import { redis } from "./lib/redis.js";
 import { connectDB } from "./lib/db.js";
@@ -48,7 +47,7 @@ app.use("/api", (req, res, next) => {
 
 app.get("/api/health", (_req, res) => res.status(200).json({ status: "ok" }));
 
-// Readiness must actively establish/re-establish MongoDB connectivity instead
+// Readiness must actively establish/re-establish PostgreSQL connectivity instead
 // of trusting the state left by a previous serverless invocation.
 app.get("/api/ready", async (_req, res) => {
   try {
@@ -58,11 +57,11 @@ app.get("/api/ready", async (_req, res) => {
     console.error("Database readiness check failed", safeErrorMetadata(error));
   }
 
-  // Read the live MongoDB state after the asynchronous Redis probe. A connection
+  // Read the live PostgreSQL state after the asynchronous Redis probe. A connection
   // that recovers during that probe must not produce "not_ready" with both
   // dependencies reported as connected.
   const readiness = await getReadinessStatus({
-    databaseReady: () => mongoose.connection.readyState === 1,
+    databaseReady: connectDB,
     redisClient: redis,
   });
   return res.status(readiness.status === "not_ready" ? 503 : 200).json(readiness);

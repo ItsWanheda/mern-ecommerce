@@ -16,11 +16,11 @@ APP_URL=https://store.example.ir
 
 ## Session architecture
 
-- Each successful signup/login creates a separate MongoDB `AccountSession` record with a random session identifier, device/user-agent metadata, IP address, last-use timestamp, and seven-day expiry.
+- Each successful signup/login creates a separate PostgreSQL `account_sessions` row through Prisma with a random session identifier, device/user-agent metadata, IP address, last-use timestamp, and seven-day expiry.
 - Access and refresh JWTs carry the session identifier. Redis refresh-token keys are isolated per user and session, so signing in on another device no longer overwrites the first device's refresh token.
 - Refresh rotation remains atomic and is scoped to that session.
 - Protected requests verify that the referenced session remains active. Revoking a session therefore blocks subsequent requests immediately, not only after the access token expires.
-- Session records expire through a MongoDB TTL index. Old tokens without a session identifier remain supported for their original expiry window; new logins use the multi-session format.
+- Session records are retained in PostgreSQL and filtered by `expiresAt`. Run `npm run db:sessions:cleanup --prefix backend` at a regular interval (for example, hourly) to remove expired rows; PostgreSQL does not provide MongoDB-style TTL deletion automatically. Old tokens without a session identifier remain supported for their original expiry window; new logins use the multi-session format.
 - Password changes revoke other devices while keeping the current device signed in. Password reset, account deactivation, and account-deletion requests revoke all sessions.
 
 ## Customer API
@@ -66,7 +66,7 @@ Optional TOTP uses the standard 30-second, six-digit SHA-1 authenticator format 
 ## Rollout checks
 
 1. Configure Resend and verify delivery on the production frontend domain.
-2. Confirm MongoDB TTL index creation for `AccountSession.expiresAt`.
+2. Schedule and verify `npm run db:sessions:cleanup --prefix backend`; expired rows must not be treated as active sessions.
 3. Test two simultaneous logins in separate browsers and verify both sessions remain active.
 4. Revoke one session and confirm that device can no longer access protected API routes or refresh.
 5. Test email verification and email-change links, including expired and replayed tokens.

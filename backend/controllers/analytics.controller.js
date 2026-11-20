@@ -1,6 +1,7 @@
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import User from "../models/user.model.js";
+import { prisma } from "../lib/prisma.js";
 
 const paidOrderMatch = (startDate, endDate) => ({
   currency: "IRT",
@@ -11,30 +12,39 @@ const paidOrderMatch = (startDate, endDate) => ({
 
 export const getAnalyticsData = async (startDate, endDate) => {
   const [users, products, salesData] = await Promise.all([
-    User.countDocuments(),
-    Product.countDocuments({ isActive: { $ne: false } }),
-    Order.aggregate([
-      { $match: paidOrderMatch(startDate, endDate) },
-      { $group: { _id: null, totalSales: { $sum: 1 }, totalRevenue: { $sum: "$totalAmount" } } },
-    ]),
+    prisma.user.count(),
+    prisma.product.count({ where: { isActive: true } }),
+    prisma.order.aggregate({
+      where: { ...paidOrderMatch(startDate, endDate) },
+      _count: { _all: true }, _sum: { totalAmount: true },
+    }),
   ]);
-  const { totalSales, totalRevenue } = salesData[0] || { totalSales: 0, totalRevenue: 0 };
+  const totalSales = salesData._count._all;
+  const totalRevenue = Number(salesData._sum.totalAmount || 0);
   return { users, products, totalSales, totalRevenue, revenueBasis: "gross-paid-orders" };
 };
 
 export const getDailySalesData = async (startDate, endDate) => {
-  const dailySalesData = await Order.aggregate([
-    { $match: paidOrderMatch(startDate, endDate) },
-    {
-      $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: "Asia/Tehran" } },
-        sales: { $sum: 1 },
-        revenue: { $sum: "$totalAmount" },
-      },
-    },
-    { $sort: { _id: 1 } },
-  ]);
-  const byDate = new Map(dailySalesData.map((item) => [item._id, item]));
+  const paidOrders = await prisma.order.findMany({
+    where: paidOrderMatch(startDate, endDate),
+    select: { createdAt: true, totalAmount: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const dateKey = date => {
+    const parts = new Intl.DateTimeFormat("en-US-u-ca-gregory-nu-latn", {
+      timeZone: "Asia/Tehran", year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  };
+  const byDate = new Map();
+  for (const order of paidOrders) {
+    const key = dateKey(order.createdAt);
+    const current = byDate.get(key) || { sales: 0, revenue: 0 };
+    current.sales += 1;
+    current.revenue += Number(order.totalAmount || 0);
+    byDate.set(key, current);
+  }
   return getDatesInRange(startDate, endDate).map((date) => {
     const item = byDate.get(date);
     return { date, sales: item?.sales || 0, revenue: item?.revenue || 0 };

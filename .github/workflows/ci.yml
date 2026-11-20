@@ -16,7 +16,24 @@ concurrency:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mern_ecommerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mern_ecommerce_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mern_ecommerce_test?schema=public
+      RUN_POSTGRES_INTEGRATION_TESTS: "true"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -36,6 +53,14 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci --no-audit --no-fund --prefix backend
+
+      - name: Validate and generate Prisma client
+        run: |
+          npm run db:validate --prefix backend
+          npm run db:generate --prefix backend
+
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate:deploy --prefix backend
 
       - name: Run the complete backend test suite
         run: npm test --prefix backend

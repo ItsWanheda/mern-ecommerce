@@ -1,3 +1,5 @@
+> **Historical plan / status update (2026-11-19):** This plan was drafted before the database cutover. The `feat/computer-hardware-store` branch now contains a PostgreSQL/Prisma runtime adapter and an initial empty-schema SQL migration for all 13 persistence model families. It intentionally imports no MongoDB demo/customer/catalogue/order records. This document remains useful as the requirements and risk register, but statements below describing MongoDB as the active runtime are pre-cutover history. PostgreSQL integration tests and live-environment validation remain release gates.
+
 # Customer Requirements Platform Upgrade — Execution Plan
 
 **Working branch:** `feat/customer-requirements-platform`  

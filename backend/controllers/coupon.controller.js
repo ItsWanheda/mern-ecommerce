@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import Coupon from "../models/coupon.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
@@ -8,6 +7,8 @@ import {
   couponEligibilityError,
   normalizeCouponCode,
 } from "../lib/coupons.js";
+
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const couponFields = [
   "code", "description", "discountPercentage", "startsAt", "expiresAt",
@@ -74,7 +75,7 @@ const normalizeCouponInput = (input, current = {}) => {
 const cartSubtotalFor = async (user) => {
   const items = Array.isArray(user?.cartItems) ? user.cartItems : [];
   if (!items.length) return { error: "سبد خرید شما خالی است." };
-  const ids = items.map((item) => String(item?.product || item?._id || "")).filter(mongoose.isValidObjectId);
+  const ids = items.map((item) => String(item?.product || item?._id || "")).filter(isValidObjectId);
   if (!ids.length) return { error: "سبد خرید را به‌روزرسانی کنید و دوباره تلاش کنید." };
   const products = await Product.find({ _id: { $in: ids }, isActive: { $ne: false } }).select("_id price discountPercent").lean();
   const byId = new Map(products.map((product) => [String(product._id), product]));
@@ -153,7 +154,7 @@ export const createCoupon = async (req, res) => {
 };
 
 export const updateCoupon = async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: "شناسه کد تخفیف نامعتبر است." });
+  if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: "شناسه کد تخفیف نامعتبر است." });
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ message: "کد تخفیف پیدا نشد." });
@@ -182,7 +183,7 @@ export const updateCoupon = async (req, res) => {
 };
 
 export const deleteCoupon = async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: "شناسه کد تخفیف نامعتبر است." });
+  if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: "شناسه کد تخفیف نامعتبر است." });
   try {
     const coupon = await Coupon.findById(req.params.id);
     if (!coupon) return res.status(404).json({ message: "کد تخفیف پیدا نشد." });

@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import Order from "../models/order.model.js";
 import ServiceCase from "../models/service-case.model.js";
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const clampPage = (value) => {
   const parsed = Number.parseInt(value, 10);
@@ -34,7 +34,7 @@ export const createServiceCase = async (req, res) => {
   try {
     let order = null;
     if (type !== "support" || orderId) {
-      if (!mongoose.isValidObjectId(orderId)) return res.status(400).json({ message: "A valid order is required for this request" });
+      if (!isValidObjectId(orderId)) return res.status(400).json({ message: "A valid order is required for this request" });
       order = await Order.findOne({ _id: orderId, user: req.user._id, currency: "IRT", paymentProvider: "zarinpal" });
       if (!order) return res.status(404).json({ message: "Order not found" });
     }

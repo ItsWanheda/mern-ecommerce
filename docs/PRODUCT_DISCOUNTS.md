@@ -19,7 +19,7 @@ The same calculation is shared by the backend and storefront. Product cards, pro
 
 ## Checkout and coupons
 
-The server reloads products from MongoDB during checkout; it never trusts a price or percentage supplied by the browser. If a product's original price or discount changes during checkout, the transaction is rejected and the cart must be refreshed.
+The server reloads products from PostgreSQL through Prisma during checkout; it never trusts a price or percentage supplied by the browser. If a product's original price or discount changes during checkout, the transaction is rejected and the cart must be refreshed.
 
 The order snapshots each line's payable `price`, `originalPrice`, and `discountPercent`, plus the total `productDiscountAmount`. Product discounts are applied first. An eligible coupon is then calculated against the already-discounted subtotal, and shipping is calculated from the post-coupon subtotal. Existing coupon reservations and Zarinpal payment reconciliation remain in use.
 

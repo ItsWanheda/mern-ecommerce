@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -8,6 +8,19 @@ const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 const schema = await readFile(path.join(backendDir, "prisma", "schema.prisma"), "utf8");
 const packageManifest = JSON.parse(await readFile(path.join(backendDir, "package.json"), "utf8"));
 const bootstrap = await readFile(path.join(backendDir, "scripts", "create-admin.mjs"), "utf8");
+const adapter = await readFile(path.join(backendDir, "lib", "prisma-model.js"), "utf8");
+
+const collectSourceFiles = async (directory) => {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map(async entry => {
+    const fullPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return collectSourceFiles(fullPath);
+    return /\.(?:js|mjs)$/.test(entry.name) ? [fullPath] : [];
+  }));
+  return nested.flat();
+};
+const backendSourceFiles = await collectSourceFiles(backendDir);
+const backendSource = (await Promise.all(backendSourceFiles.map(file => readFile(file, "utf8")))).join("\n");
 
 const modelNames = [...schema.matchAll(/^model\s+(\w+)\s*\{$/gm)].map((match) => match[1]);
 
@@ -29,7 +42,7 @@ test("Prisma schema targets PostgreSQL and covers all 13 current model families"
     "StoreSettings",
   ]));
   assert.equal(modelNames.length, 13);
-  const primaryKeyDefinitions = [...schema.matchAll(/^\\s*id\\s+String\\s+@id\\s+@default\\(dbgenerated\\("substring\\(replace\\(gen_random_uuid\\(\\)::text, '-', ''\\), 1, 24\\)"\\)\\)\\s+@db\\.VarChar\\(24\\)/gm)];
+  const primaryKeyDefinitions = [...schema.matchAll(/^\s*id\s+String\s+@id\s+@default\(dbgenerated\("substring\(replace\(gen_random_uuid\(\)::text, '-', ''\), 1, 24\)"\)\)\s+@db\.VarChar\(24\)/gm)];
   assert.equal(primaryKeyDefinitions.length, 13, "all model IDs must preserve the legacy 24-character hexadecimal API format");
 });
 
@@ -51,10 +64,47 @@ test("initial Admin bootstrap is explicitly gated and cannot promote an existing
   assert.match(bootstrap, /permissions: \["\*"\]/);
 });
 
-test("Prisma packages and database scripts are declared without changing Redis", () => {
+test("Prisma packages and database scripts are declared without changing Redis", async () => {
   assert.equal(packageManifest.dependencies["@prisma/client"], "6.19.3");
   assert.equal(packageManifest.devDependencies.prisma, "6.19.3");
   assert.equal(packageManifest.dependencies.ioredis, "^5.4.1");
-  assert.equal(packageManifest.dependencies.mongoose, "^8.5.3");
+  assert.equal(packageManifest.dependencies.mongoose, undefined);
   assert.equal(packageManifest.scripts["db:admin:create"], "node scripts/create-admin.mjs");
+  assert.equal(packageManifest.scripts["db:migrate:deploy"], "prisma migrate deploy");
+  // A pre-migration lockfile would still pin Mongoose and MongoDB. CI generates
+  // a fresh lockfile from this manifest before running npm ci.
+  const lockPath = path.join(backendDir, "package-lock.json");
+  try {
+    await access(lockPath);
+    const lock = JSON.parse(await readFile(lockPath, "utf8"));
+    assert.equal(lock.packages?.["node_modules/mongoose"], undefined);
+    assert.equal(lock.packages?.["node_modules/@prisma/client"]?.version, "6.19.3");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+});
+
+const migrationSql = await readFile(path.join(backendDir, "prisma", "migrations", "20261119000000_initial_postgresql", "migration.sql"), "utf8");
+test("the initial PostgreSQL migration creates every application persistence table", () => {
+  for (const table of ["users", "account_sessions", "security_notifications", "audit_logs", "campaigns", "categories", "coupons", "newsletter_subscribers", "orders", "product_reviews", "products", "service_cases", "store_settings"]) {
+    assert.match(migrationSql, new RegExp(`CREATE TABLE \"${table}\"`));
+  }
+  assert.match(migrationSql, /CREATE TABLE \"_CampaignProducts\"/);
+  assert.match(migrationSql, /DEFAULT substring\(replace\(gen_random_uuid/);
+  assert.doesNotMatch(migrationSql, /MONGO_URI|mongoose/i);
+});
+
+
+test("the backend runtime no longer imports or connects through Mongoose", () => {
+  assert.doesNotMatch(backendSource, /(?:from|require\()\s*["']mongoose["']/);
+  assert.doesNotMatch(backendSource, /mongoose\.(?:connect|createConnection|startSession)/);
+  assert.equal(packageManifest.dependencies.mongoose, undefined);
+  assert.equal(packageManifest.dependencies["@prisma/client"], "6.19.3");
+});
+
+test("Prisma compatibility adapter preserves secret visibility and guarded conditional writes", () => {
+  assert.doesNotMatch(adapter.match(/const hiddenUserFields = new Set\(\[([\s\S]*?)\]\);/)?.[1] || "", /\bpassword\b/);
+  assert.match(adapter, /isAtomicScalarUpdate\(model, update\) && !filterNeedsPostProcessing\(model, filter\)/);
+  assert.match(adapter, /mapped\.code = 11000/);
+  assert.match(adapter, /orderUpdates: true,[\s\S]*securityAlerts: true,[\s\S]*productNews: false,[\s\S]*promotionalEmails: false/);
 });

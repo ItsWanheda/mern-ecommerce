@@ -18,7 +18,7 @@ export const getVisibleCategoryTree = async () => {
     }
   } catch (error) {
     if (!cacheWarningLogged) {
-      console.warn("Category tree cache unavailable; reading categories from MongoDB:", error.message);
+      console.warn("Category tree cache unavailable; reading categories from PostgreSQL:", error.message);
       cacheWarningLogged = true;
     }
   }

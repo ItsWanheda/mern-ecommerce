@@ -1,46 +1,27 @@
-# Storefront Performance Optimization
+# Storefront performance optimization
 
-This branch uses MongoDB schema indexes, normalized product search tokens, stored effective prices, Redis category caching and resilient request limiting.
+The backend uses PostgreSQL indexes, Prisma queries, normalized product search tokens, stored effective prices, Redis category caching, and resilient request limiting.
 
 ## Product search and effective price
 
-No product-data migration or backfill is required.
-
-Every product created or updated through the backend's Mongoose document flow automatically generates these internal fields before validation completes:
+Every product created or saved through the Prisma model adapter updates these internal fields:
 
 - `searchTextNormalized`: normalized searchable product text.
 - `searchTokens`: unique normalized words used by token-prefix search.
-- `effectivePrice`: the product price after its percentage discount.
+- `effectivePrice`: price after the percentage discount.
 
-Search, price filtering, price sorting and price-bound queries use these fields directly. There is no branch for older documents missing either field. Future products are handled the same way from their first save.
+Search, price filtering, price sorting, and price-bound queries use these fields. Product indexes are declared in `backend/prisma/schema.prisma` and created by the checked-in PostgreSQL migration.
 
-Product indexes are declared on the Product schema. The MongoDB connection explicitly enables Mongoose schema index creation with `autoIndex: true`; index creation does not rewrite or migrate product documents.
+## PostgreSQL connection capacity
 
-## MongoDB connection pool
+Prisma manages database connections through its PostgreSQL connector. Size the database connection limit for the aggregate number of API instances and workers, not for a single local process. In serverless deployments, avoid allowing each short-lived instance to open an unbounded pool; use the hosting provider's supported pooler when the deployment topology requires one. Keep `DATABASE_URL` private and do not log credentials.
 
-The pool remains conservative by default: `MONGO_MAX_POOL_SIZE=5` and `MONGO_MIN_POOL_SIZE=0`. More storefront users do not imply that the pool should be increased automatically; each process or serverless instance can own a separate pool.
-
-| Variable | Default | Accepted range |
-| --- | ---: | ---: |
-| `MONGO_MAX_POOL_SIZE` | 5 | 1–20 |
-| `MONGO_MIN_POOL_SIZE` | 0 | 0–max pool size |
-| `MONGO_MAX_CONNECTING` | 2 | 1–max pool size |
-| `MONGO_WAIT_QUEUE_TIMEOUT_MS` | 5000 | 100–30000 |
-| `MONGO_SERVER_SELECTION_TIMEOUT_MS` | 5000 | 1000–30000 |
-| `MONGO_CONNECT_TIMEOUT_MS` | 10000 | 1000–30000 |
-| `MONGO_MAX_IDLE_TIME_MS` | 30000 | 1000–300000 |
-| `MONGO_POOL_DIAGNOSTICS` | false | Set to `true` for pool lifecycle and checkout-failure logs |
-
-Use measured checkout failures, query latency, total MongoDB connections and database capacity before testing pool sizes 10 or 15. For serverless deployments, estimate peak aggregate connections across all instances first.
-
-The backend exports an internal `getMongoPoolMetrics()` snapshot for diagnostics. It is not exposed as a public API endpoint.
+`PRISMA_QUERY_LOGGING=true` can be used temporarily in a controlled development environment to inspect query behavior. Leave it disabled in production unless a specific diagnostic session requires it.
 
 ## Redis rate-limit resilience
 
-Rate limiting continues to use an atomic Redis counter. After three consecutive Redis command failures, the process-local circuit breaker skips Redis requests for five seconds and uses the existing bounded in-memory fallback. After the cooldown, only one request probes Redis; a successful probe closes the circuit.
-
-The fallback is per-instance and best-effort, not globally coordinated. Apply an additional edge/WAF or reverse-proxy rule at the hosting layer for public traffic. Keep authentication and checkout limits stricter than the general API limit.
+Rate limiting continues to use an atomic Redis counter. After repeated Redis command failures, the process-local circuit breaker temporarily skips Redis requests and uses the existing bounded in-memory fallback. The fallback is per instance and best-effort, not globally coordinated. Apply an additional edge/WAF or reverse-proxy rule at the hosting layer for public traffic. Keep authentication and checkout limits stricter than the general API limit.
 
 ## Cache behavior
 
-The visible category tree is cached in Redis for three minutes and invalidated after category creation, update/move and deletion. If Redis is unavailable, reads fall back to MongoDB. Product price-bound entries use a generation key, so product-price or category-tree changes invalidate global and category-specific bounds without scanning Redis keys.
+The visible category tree is cached in Redis for three minutes and invalidated after category creation, update/move, and deletion. If Redis is unavailable, reads fall back to PostgreSQL. Product price-bound entries use a generation key, so product-price or category-tree changes invalidate global and category-specific bounds without scanning Redis keys.

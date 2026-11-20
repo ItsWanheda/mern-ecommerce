@@ -17,7 +17,24 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mern_ecommerce_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mern_ecommerce_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mern_ecommerce_test?schema=public
+      RUN_POSTGRES_INTEGRATION_TESTS: "true"
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -38,32 +55,13 @@ jobs:
       - name: Install backend dependencies
         run: npm ci --no-audit --no-fund --prefix backend
 
-      - name: Validate PostgreSQL Prisma schema
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/mern_ecommerce_test?schema=public
+      - name: Validate and generate Prisma client
         run: |
           npm run db:validate --prefix backend
           npm run db:generate --prefix backend
 
-      - name: Start disposable MongoDB replica set
-        run: |
-          docker run --detach --name mongo-test --publish 27017:27017 mongo:7.0 --replSet rs0 --bind_ip_all
-          for attempt in $(seq 1 60); do
-            if docker exec mongo-test mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' 2>/dev/null | grep -q '^1$'; then
-              break
-            fi
-            sleep 1
-          done
-          docker exec mongo-test mongosh --quiet --eval 'rs.initiate({_id: "rs0", members: [{_id: 0, host: "127.0.0.1:27017"}]})'
-          for attempt in $(seq 1 60); do
-            if docker exec mongo-test mongosh --quiet --eval 'db.hello().isWritablePrimary' 2>/dev/null | grep -q '^true$'; then
-              exit 0
-            fi
-            sleep 1
-          done
-          docker logs mongo-test
-          echo "MongoDB replica set did not become primary."
-          exit 1
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate:deploy --prefix backend
 
       - name: Run frontend unit tests
         run: npm run test:frontend
@@ -71,14 +69,8 @@ jobs:
       - name: Build Next.js storefront
         run: npm run build:frontend
 
-      - name: Check backend source and tests
+      - name: Check backend source syntax
         run: npm run build --prefix backend
 
-      - name: Run security and inventory recovery tests
-        env:
-          MONGO_TEST_URI: mongodb://127.0.0.1:27017/mern_ecommerce_test?replicaSet=rs0
+      - name: Run backend unit and PostgreSQL integration tests
         run: npm test --prefix backend
-
-      - name: Stop test database
-        if: always()
-        run: docker rm -f mongo-test || true

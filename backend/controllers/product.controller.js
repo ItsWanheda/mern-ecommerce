@@ -11,6 +11,8 @@ import { recordAuditEvent } from "../lib/audit-log.js";
 import { normalizeCustomSpecifications } from "../lib/custom-product-specifications.js";
 import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
+import { prisma } from "../lib/prisma.js";
+
 const idOf = (value) => value == null ? "" : String(value);
 const getCategoryProductScope = async (slug) => {
   const selected = await Category.findOne({ slug }).select("_id slug").maxTimeMS(1200).lean();
@@ -30,7 +32,7 @@ const getCachedProductPriceBounds = async (filter, scopeKey) => {
   try {
     version = (await redis.get("product_price_bounds_version_v1")) || "initial";
   } catch {
-    // Redis is optional for cache reads; MongoDB remains the source of truth.
+    // Redis is optional for cache reads; PostgreSQL remains the source of truth.
   }
   const cacheKey = "product_price_bounds_v4:" + scopeKey + ":" + version;
   const cached = await readJsonCache(cacheKey);
@@ -840,24 +842,23 @@ export const setProductsDiscount = async (req, res) => {
       return res.status(409).json({ message: "برای محصول بایگانی‌شده تخفیف ثبت نمی‌شود؛ ابتدا آن را بازیابی کنید." });
     }
 
-    const discountAmountExpression = {
-      $floor: {
-        $add: [
-          { $divide: [{ $multiply: ["$price", discountPercent] }, 100] },
-          0.5,
-        ],
-      },
-    };
-    const updated = await Product.updateMany(
-      { _id: { $in: productIds }, isActive: { $ne: false } },
-      [{
-        $set: {
-          discountPercent,
-          effectivePrice: { $max: [0, { $subtract: ["$price", discountAmountExpression] }] },
-        },
-      }]
-    );
-    if (Number(updated.matchedCount ?? updated.n ?? 0) !== productIds.length) {
+    const updatedCount = await prisma.$transaction(async tx => {
+      const current = await tx.product.findMany({
+        where: { id: { in: productIds }, isActive: true },
+        select: { id: true, price: true },
+      });
+      if (current.length !== productIds.length) return 0;
+      for (const product of current) {
+        const effectivePrice = Math.max(0, Number(product.price) - Math.min(Number(product.price), Math.round(Number(product.price) * discountPercent / 100)));
+        const changed = await tx.product.updateMany({
+          where: { id: product.id, isActive: true },
+          data: { discountPercent, effectivePrice },
+        });
+        if (changed.count !== 1) throw new Error("PRODUCT_DISCOUNT_CONCURRENT_CHANGE");
+      }
+      return current.length;
+    }, { isolationLevel: "Serializable", maxWait: 10000, timeout: 20000 });
+    if (updatedCount !== productIds.length) {
       return res.status(409).json({ message: "وضعیت بعضی محصولات هم‌زمان تغییر کرده است؛ فهرست را تازه‌سازی و دوباره تلاش کنید." });
     }
 
@@ -915,11 +916,9 @@ export const getRecommendedProducts = async (_req, res) => {
   try {
     const cached = await readJsonCache("recommended_products_v2");
     if (Array.isArray(cached)) return res.json(cached);
-    const products = await Product.aggregate([
-      { $match: { isActive: { $ne: false } } },
-      { $sample: { size: 4 } },
-      { $project: { _id: 1, name: 1, description: 1, image: 1, price: 1, discountPercent: 1, category: 1, stock: 1 } },
-    ]).option({ maxTimeMS: 1500 });
+    const sampled = await prisma.$queryRaw`SELECT "id" AS "_id", "name", "description", "image", "price", "discountPercent", "category", "stock"
+      FROM "products" WHERE "isActive" = TRUE ORDER BY RANDOM() LIMIT 4`;
+    const products = sampled.map(product => ({ ...product, price: Number(product.price), _id: product._id }));
     await writeJsonCache("recommended_products_v2", products, 60);
     return res.json(products);
   } catch (error) {
@@ -1064,72 +1063,32 @@ export const getProductsByCategory = async (req, res) => {
     const facetCacheKey = "category_filter_facets_v4:" + slug + ":" + facetCacheVersion;
     let filterOptions = await readJsonCache(facetCacheKey);
     if (!filterOptions || !Array.isArray(filterOptions.sizes) || !Array.isArray(filterOptions.colors)) {
-      const facetResult = await Product.aggregate([
-        { $match: { $and: baseClauses } },
-        {
-          $facet: {
-            sizes: [
-              { $project: { values: { $setUnion: [
-                { $ifNull: ["$sizes", []] },
-                { $map: { input: { $ifNull: ["$variants", []] }, as: "variant", in: "$$variant.size" } },
-              ] } } },
-              { $unwind: "$values" },
-              { $match: { values: { $type: "string", $ne: "" } } },
-              { $group: { _id: "$values" } },
-              { $sort: { _id: 1 } },
-              { $limit: 100 },
-            ],
-            colors: [
-              { $unwind: "$colors" },
-              { $match: { "colors.name": { $type: "string", $ne: "" } } },
-              { $group: { _id: "$colors.name", hex: { $first: "$colors.hex" } } },
-              { $sort: { _id: 1 } },
-              { $limit: 100 },
-            ],
-            variantColors: [
-              { $unwind: "$variants" },
-              { $match: { "variants.color": { $type: "string", $ne: "" } } },
-              { $group: { _id: "$variants.color" } },
-              { $sort: { _id: 1 } },
-              { $limit: 100 },
-            ],
-            fits: [
-              { $match: { "fit.type": { $type: "string", $ne: "" } } },
-              { $group: { _id: "$fit.type" } },
-              { $sort: { _id: 1 } },
-              { $limit: 30 },
-            ],
-            brands: [
-              { $project: { values: { $setUnion: [
-                { $cond: [{ $eq: [{ $type: "$brand" }, "string"] }, ["$brand"], []] },
-                { $cond: [{ $eq: [{ $type: "$brand.name" }, "string"] }, ["$brand.name"], []] },
-                { $cond: [{ $eq: [{ $type: "$brandName" }, "string"] }, ["$brandName"], []] },
-                { $cond: [{ $eq: [{ $type: "$attributes.brand" }, "string"] }, ["$attributes.brand"], []] },
-                { $cond: [{ $eq: [{ $type: "$attributes.brandName" }, "string"] }, ["$attributes.brandName"], []] },
-              ] } } },
-              { $unwind: "$values" },
-              { $match: { values: { $type: "string", $ne: "" } } },
-              { $group: { _id: "$values" } },
-              { $sort: { _id: 1 } },
-              { $limit: 100 },
-            ],
-          },
-        },
-      ]).option({ maxTimeMS: 2500 });
-
-      const rawFacets = facetResult[0] || {};
+      const facetProducts = await Product.find({ $and: baseClauses })
+        .select("sizes colors variants fit attributes brand brandName")
+        .lean();
+      const sizesSet = new Set();
       const colorMap = new Map();
-      for (const item of rawFacets.colors || []) {
-        if (typeof item._id === "string" && item._id.trim()) colorMap.set(item._id, { name: item._id, hex: typeof item.hex === "string" ? item.hex : "" });
-      }
-      for (const item of rawFacets.variantColors || []) {
-        if (typeof item._id === "string" && item._id.trim() && !colorMap.has(item._id)) colorMap.set(item._id, { name: item._id, hex: "" });
+      const fitSet = new Set();
+      const brandsSet = new Set();
+      for (const item of facetProducts) {
+        for (const value of [...(item.sizes || []), ...(item.variants || []).map(variant => variant?.size)]) {
+          if (typeof value === "string" && value.trim()) sizesSet.add(value.trim());
+        }
+        for (const color of item.colors || []) {
+          if (typeof color?.name === "string" && color.name.trim()) colorMap.set(color.name, { name: color.name, hex: typeof color.hex === "string" ? color.hex : "" });
+        }
+        for (const variant of item.variants || []) {
+          if (typeof variant?.color === "string" && variant.color.trim() && !colorMap.has(variant.color)) colorMap.set(variant.color, { name: variant.color, hex: "" });
+        }
+        if (typeof item.fit?.type === "string" && item.fit.type.trim()) fitSet.add(item.fit.type);
+        const brandValues = [item.brand, item.brandName, item.brand?.name, item.attributes?.brand, item.attributes?.brandName];
+        for (const value of brandValues) if (typeof value === "string" && value.trim()) brandsSet.add(value.trim());
       }
       filterOptions = {
-        sizes: [...new Set((rawFacets.sizes || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()))],
-        colors: [...colorMap.values()].sort((a, b) => a.name.localeCompare(b.name, "fa")),
-        fits: (rawFacets.fits || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()),
-        brands: (rawFacets.brands || []).map((item) => item._id).filter((value) => typeof value === "string" && value.trim()),
+        sizes: [...sizesSet].sort((a, b) => a.localeCompare(b, "fa")).slice(0, 100),
+        colors: [...colorMap.values()].sort((a, b) => a.name.localeCompare(b.name, "fa")).slice(0, 100),
+        fits: [...fitSet].sort((a, b) => a.localeCompare(b, "fa")).slice(0, 30),
+        brands: [...brandsSet].sort((a, b) => a.localeCompare(b, "fa")).slice(0, 100),
       };
       await writeJsonCache(facetCacheKey, filterOptions, 120);
     }
@@ -1201,32 +1160,43 @@ export const getBestsellingProducts = async (req, res) => {
   const cached = await readJsonCache(cacheKey);
   if (Array.isArray(cached)) return res.json({ products: cached });
   try {
-    const products = await Order.aggregate([
-      { $match: { paymentStatus: "paid", status: "paid" } },
-      { $unwind: "$products" },
-      { $group: {
-        _id: "$products.product",
-        soldQuantity: { $sum: "$products.quantity" },
-        orderIds: { $addToSet: "$_id" },
-      } },
-      { $addFields: { orderCount: { $size: "$orderIds" } } },
-      { $lookup: {
-        from: Product.collection.name,
-        localField: "_id",
-        foreignField: "_id",
-        as: "product",
-      } },
-      { $unwind: "$product" },
-      { $match: { "product.isActive": { $ne: false } } },
-      { $sort: { soldQuantity: -1, orderCount: -1, _id: 1 } },
-      { $limit: limit },
-      { $replaceRoot: { newRoot: {
-        $mergeObjects: [
-          "$product",
-          { soldQuantity: "$soldQuantity", orderCount: "$orderCount" },
-        ],
-      } } },
-    ]).option({ maxTimeMS: 2500 });
+    const paidOrders = await prisma.order.findMany({
+      where: { paymentStatus: "paid", status: "paid" },
+      select: { id: true, products: true },
+    });
+    const salesByProduct = new Map();
+    for (const order of paidOrders) {
+      for (const line of Array.isArray(order.products) ? order.products : []) {
+        const id = String(line?.product || "");
+        const quantity = Number(line?.quantity || 0);
+        if (!id || !Number.isFinite(quantity) || quantity <= 0) continue;
+        const current = salesByProduct.get(id) || { soldQuantity: 0, orderIds: new Set() };
+        current.soldQuantity += quantity;
+        current.orderIds.add(order.id);
+        salesByProduct.set(id, current);
+      }
+    }
+    const top = [...salesByProduct.entries()]
+      .map(([id, value]) => ({ id, soldQuantity: value.soldQuantity, orderCount: value.orderIds.size }))
+      .sort((a, b) => b.soldQuantity - a.soldQuantity || b.orderCount - a.orderCount || a.id.localeCompare(b.id))
+      .slice(0, limit);
+    const productRows = top.length ? await prisma.product.findMany({
+      where: { id: { in: top.map(item => item.id) }, isActive: true },
+      // Keep Prisma's default all-fields behavior from exposing fields that the
+      // former Mongoose schema deliberately marked select:false.
+      select: {
+        id: true, name: true, brand: true, brandName: true, description: true,
+        price: true, discountPercent: true, image: true, images: true, category: true,
+        categoryId: true, attributes: true, customSpecifications: true, sizes: true,
+        colors: true, variants: true, fit: true, sizeChart: true, isFeatured: true,
+        stock: true, isActive: true, createdAt: true, updatedAt: true,
+      },
+    }) : [];
+    const productById = new Map(productRows.map(item => [item.id, item]));
+    const products = top.map(item => {
+      const product = productById.get(item.id);
+      return product ? { ...product, _id: product.id, price: Number(product.price), effectivePrice: product.effectivePrice == null ? null : Number(product.effectivePrice), soldQuantity: item.soldQuantity, orderCount: item.orderCount } : null;
+    }).filter(Boolean);
     await writeJsonCache(cacheKey, products, 60);
     return res.json({ products });
   } catch (error) {

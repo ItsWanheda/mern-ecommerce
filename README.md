@@ -4,7 +4,7 @@
 
 **A Persian-first, right-to-left computer hardware commerce platform built for Iranian shoppers.**
 
-A production-focused MERN hardware storefront with Admin-managed category hierarchies, category-defined technical specifications, whole-Toman pricing, Zarinpal checkout, inventory safeguards, order tracking, and tools for customers and store administrators.
+A production-focused Node.js hardware storefront with Admin-managed category hierarchies, category-defined technical specifications, whole-Toman pricing, Zarinpal checkout, inventory safeguards, order tracking, and tools for customers and store administrators.
 
 <p>
   <a href="https://github.com/ItsWanheda/mern-ecommerce/actions/workflows/ci.yml"><img src="https://github.com/ItsWanheda/mern-ecommerce/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI status for master" /></a>
@@ -15,7 +15,7 @@ A production-focused MERN hardware storefront with Admin-managed category hierar
 <p>
   <img src="https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=react&logoColor=white" alt="Next.js App Router" />
   <img src="https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js and Express" />
-  <img src="https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB and Mongoose" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL and Prisma" />
   <img src="https://img.shields.io/badge/Redis-ioredis-DC382D?style=flat-square&logo=redis&logoColor=white" alt="Redis" />
   <img src="https://img.shields.io/badge/Persian-fa--IR%20%7C%20RTL-68745f?style=flat-square" alt="Persian right-to-left interface" />
 </p>
@@ -58,7 +58,7 @@ A production-focused MERN hardware storefront with Admin-managed category hierar
 
 ## 🧭 Architecture
 
-The frontend communicates with an Express API. MongoDB stores users, products, carts, orders, campaigns, shipping settings, and audit events. Redis supports sessions and distributed rate limiting; Cloudinary stores product imagery. Checkout and payment verification use Zarinpal.
+The frontend communicates with an Express API. PostgreSQL stores users, sessions, products, categories, carts, orders, campaigns, coupons, shipping settings, reviews, support cases, and audit events through Prisma. Flexible product, cart, order-line, address, and event snapshots use JSONB. Redis supports refresh-token storage, caching, and distributed rate limiting; Cloudinary stores product imagery. Checkout and payment verification use Zarinpal.
 
 ```mermaid
 flowchart TD
@@ -67,7 +67,7 @@ flowchart TD
     State --> Client[Axios API client]
     Client --> API[Express API]
     API --> Auth[JWT cookie authentication]
-    API --> DB[(MongoDB)]
+    API --> DB[(PostgreSQL + Prisma)]
     API --> Redis[(Redis)]
     API --> Media[Cloudinary]
     API --> Checkout[Zarinpal checkout and verification]
@@ -91,7 +91,7 @@ flowchart TD
 | Routing and state | Next.js App Router, client navigation adapter for shared UI components, Zustand |
 | Components and feedback | Lucide React, Framer Motion, React Hot Toast |
 | API | Node.js, Express |
-| Database | MongoDB, Mongoose |
+| Database | PostgreSQL 16+, Prisma ORM |
 | Session and rate-limit support | Redis, ioredis |
 | Product imagery | Cloudinary |
 | Payment | Zarinpal |
@@ -113,7 +113,6 @@ mern-ecommerce/
 │   ├── tests/
 │   ├── scripts/             # Database migrations and operational scripts
 │   ├── package.json
-│   ├── package-lock.json
 │   └── server.js
 ├── frontend/
 │   ├── app/                 # Next.js App Router pages and layouts
@@ -140,7 +139,7 @@ mern-ecommerce/
 ### Prerequisites
 
 - Node.js 20 or newer and npm.
-- MongoDB. Use a replica set or compatible managed deployment for production inventory transactions.
+- PostgreSQL 16 or newer. Checkout, coupon reservation, and inventory changes use database transactions.
 - Redis for refresh-token storage and distributed rate limiting.
 - Cloudinary credentials for product image uploads.
 - A Zarinpal merchant configuration; keep sandbox mode enabled while validating checkout.
@@ -150,7 +149,7 @@ mern-ecommerce/
 Run from the repository root to install each application independently:
 
 ```bash
-npm ci --prefix backend
+npm install --prefix backend
 npm ci --prefix frontend
 ```
 
@@ -161,7 +160,7 @@ Create `backend/.env` for the Express API values below. The Next.js app has its 
 ```dotenv
 NODE_ENV=development
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/mern-ecommerce
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/mern_ecommerce?schema=public
 REDIS_URL=redis://127.0.0.1:6379
 ACCESS_TOKEN_SECRET=replace_with_a_long_random_secret
 REFRESH_TOKEN_SECRET=replace_with_a_different_long_random_secret
@@ -212,7 +211,7 @@ Open [http://localhost:3000](http://localhost:3000). Next.js is the only fronten
 | --- | --- |
 | `NODE_ENV` | Runtime environment; set to `production` on production deployments. |
 | `PORT` | Local/backend listener port. |
-| `MONGO_URI` | MongoDB connection string. |
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
 | `REDIS_URL` | Redis connection string. The older `UPSTASH_REDIS_URL` is accepted for compatibility. |
 | `ACCESS_TOKEN_SECRET` | Signing secret for short-lived access cookies. |
 | `REFRESH_TOKEN_SECRET` | Separate signing secret for refresh cookies. |
@@ -239,9 +238,9 @@ The Next.js storefront reads the public variables above at build time. The socia
 - Product and shipping prices must be whole-Toman numeric values.
 - The gateway amount is supplied in Rial, so the backend converts the verified Toman amount to Rial at the payment boundary.
 - The frontend has no alternate currency selection or formatting path.
-- Records that do not contain explicit IRT/Zarinpal metadata are not included in the active order history. The migration preserves their order documents and amount fields; it does not attempt an unapproved currency conversion.
+- Records that do not contain explicit IRT/Zarinpal metadata are not included in the active order history. This branch provisions a fresh PostgreSQL schema and does not import MongoDB demo data or historical orders. Do not use a production database containing data that must be retained as the initial target.
 
-Before deploying this version to an existing database, take a verified backup and run the one-time database migration described in [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md). The migration removes obsolete checkout-session indexes/metadata so they cannot interfere with new orders.
+Apply the committed Prisma migration to a new, empty PostgreSQL database with `npm run db:migrate:deploy --prefix backend`. No MongoDB collection data is copied. Create the initial administrator separately with the one-time guarded bootstrap command after migration. Schedule `npm run db:sessions:cleanup --prefix backend` to remove expired session records.
 
 ## 🌐 API reference
 
@@ -288,11 +287,11 @@ The complete route definitions and request validation are in `backend/routes/` a
 1. After merge, set the frontend Vercel project's Root Directory to `frontend` and Output Directory to `dist`; keep the backend project rooted at `backend`. These shared project settings are intentionally not changed on the feature branch while `master` uses the old layout.
 3. Back up the database and verify you can restore it.
 3. Update product prices, shipping settings, and thresholds to approved whole-Toman amounts.
-4. Run the order-metadata/index migration against the intended database after checking `MONGO_URI`.
+4. Apply the Prisma migration to a fresh PostgreSQL database with `npm run db:migrate:deploy --prefix backend` after verifying `DATABASE_URL`.
 5. Configure production secrets in the host's secret manager; do not store secrets in Git.
 6. Set exact `CLIENT_URL` and `CORS_ALLOWED_ORIGINS` values. Avoid wildcard credentialed CORS.
 7. Use HTTPS and configure the trusted reverse proxy to forward the original scheme.
-8. Use a MongoDB replica set or transaction-capable managed deployment for atomic inventory recovery.
+8. Keep PostgreSQL on a private network, size its connection pool for the API deployment, and test transactional inventory recovery.
 9. Validate Zarinpal sandbox request, redirect, callback, failed request, timeout, duplicate callback, and reconciliation flows.
 10. Configure the reconciliation scheduler and alert on repeated failures.
 11. Enable `IRT_CATALOG_PRICES_CONFIRMED=true` only after catalogue verification.
@@ -311,20 +310,16 @@ npm test
 npm test --prefix backend
 ```
 
-The backend suite covers IRT/Zarinpal policy, Persian search normalization, security headers/origin checks, and inventory reservation/recovery. Inventory integration tests need a dedicated disposable database configured through `MONGO_TEST_URI`; use a replica set for transaction-specific tests. Never point it to production or any database containing real orders.
+The backend suite covers IRT/Zarinpal policy, Persian search normalization, security headers/origin checks, and inventory reservation/recovery. PostgreSQL integration tests run when `RUN_POSTGRES_INTEGRATION_TESTS=true` and `DATABASE_URL` points to a dedicated disposable test database. The CI workflow starts PostgreSQL 16, applies Prisma migrations, then runs these tests. Never point integration tests at production.
 
-To backfill normalized search text for existing products:
+For a fresh database, the backend computes normalized search text and effective prices when products are created or updated. A bulk catalogue import must populate these derived fields before the products are exposed to search or price filtering; this branch does not ship a bulk-import command.
 
-```bash
-npm run backfill:persian-search --prefix backend
-```
-
-For existing order collections, take a verified backup and follow the guarded migration procedure in [Persian commerce setup](docs/PERSIAN_COMMERCE_SETUP.md).
+No existing MongoDB order collection is imported by this branch. Historical financial records must be handled under a separate, explicitly approved data-migration and reconciliation project.
 
 ## 🔒 Security notes
 
 - Use unique, randomly generated authentication and scheduler secrets.
-- Keep MongoDB and Redis private and restrict network access.
+- Keep PostgreSQL and Redis private and restrict network access.
 - Never expose Cloudinary/payment credentials through frontend build variables.
 - Run production behind HTTPS; configure the reverse proxy and cookie behavior deliberately.
 - Treat build/test results and live environment verification as separate release checks.
@@ -337,6 +332,6 @@ For existing order collections, take a verified backup and follow the guarded mi
 
 [Project](https://github.com/ItsWanheda/mern-ecommerce) · [Setup guide](docs/PERSIAN_COMMERCE_SETUP.md) · [License](LICENSE)
 
-<sub>Built with React, Node.js, Express, MongoDB, and Redis.</sub>
+<sub>Built with React, Node.js, Express, PostgreSQL, Prisma, and Redis.</sub>
 
 </div>

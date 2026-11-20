@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import { startPrismaSession } from "./prisma-session.js";
 import Coupon from "../models/coupon.model.js";
 import Order from "../models/order.model.js";
 
@@ -75,7 +75,7 @@ export const reserveCoupon = async (codeInput, subtotal, now = new Date(), { ses
 };
 
 export const releaseCouponReservationForOrder = async (orderId) => {
-  const session = await mongoose.startSession();
+  const session = await startPrismaSession();
   let released = false;
   try {
     await session.withTransaction(async () => {
@@ -109,7 +109,7 @@ export const releaseCouponReservationForOrder = async (orderId) => {
 };
 
 export const redeemCouponReservationForOrder = async (orderId) => {
-  const session = await mongoose.startSession();
+  const session = await startPrismaSession();
   let redeemed = false;
   try {
     await session.withTransaction(async () => {

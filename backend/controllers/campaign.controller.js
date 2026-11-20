@@ -1,8 +1,9 @@
-import mongoose from "mongoose";
+import { randomBytes } from "node:crypto";
 import Campaign from "../models/campaign.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const persianSlugCharacters = {
   "آ": "a", "أ": "a", "إ": "e", "ا": "a", "ب": "b", "پ": "p", "ت": "t", "ث": "s",
@@ -47,7 +48,7 @@ const isValidCampaignInput = (body) => {
     Number(body.sortOrder ?? 0) >= 0 &&
     Array.isArray(body.productIds ?? []) &&
     (body.productIds ?? []).length <= 48 &&
-    (body.productIds ?? []).every((id) => mongoose.isValidObjectId(id)) &&
+    (body.productIds ?? []).every((id) => isValidObjectId(id)) &&
     new Set((body.productIds ?? []).map(String)).size === (body.productIds ?? []).length
   );
 };
@@ -82,7 +83,7 @@ export const getActiveCampaigns = async (req, res) => {
 export const getCampaignById = async (req, res) => {
   const key = String(req.params.id || "").trim();
   if (!key || key.length > 140) return res.status(404).json({ message: "Campaign not found" });
-  const lookup = mongoose.isValidObjectId(key) ? { _id: key } : { slug: key };
+  const lookup = isValidObjectId(key) ? { _id: key } : { slug: key };
   try {
     const now = new Date();
     const campaign = await Campaign.findOneAndUpdate({
@@ -106,7 +107,7 @@ export const getCampaignById = async (req, res) => {
 export const trackCampaignClick = async (req, res) => {
   const key = String(req.params.id || "").trim();
   if (!key || key.length > 140) return res.status(404).json({ message: "Campaign not found" });
-  const lookup = mongoose.isValidObjectId(key) ? { _id: key } : { slug: key };
+  const lookup = isValidObjectId(key) ? { _id: key } : { slug: key };
   try {
     const now = new Date();
     const campaign = await Campaign.findOneAndUpdate({
@@ -148,7 +149,7 @@ export const createCampaign = async (req, res) => {
       maxBytes: 5 * 1024 * 1024,
     });
     if (typeof req.body.image === "string" && req.body.image.startsWith("data:")) pendingUploadedImage = image;
-    const campaignId = new mongoose.Types.ObjectId();
+    const campaignId = randomBytes(12).toString("hex");
     const campaign = await Campaign.create({
       _id: campaignId,
       slug: createCampaignSlug(req.body.title.trim(), campaignId),

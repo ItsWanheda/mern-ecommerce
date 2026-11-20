@@ -712,7 +712,7 @@ const Navbar = () => {
           <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2.5 sm:gap-x-4 sm:py-3 min-[1280px]:grid min-[1280px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1280px]:justify-normal">
             <div
               ref={accountMenuRef}
-              className="relative z-50 hidden shrink-0 items-center gap-1 lg:flex min-[1280px]:col-start-3 min-[1280px]:row-start-1 min-[1280px]:justify-self-end min-[1280px]:gap-2"
+              className="relative z-50 hidden shrink-0 items-center gap-1 md:flex min-[1280px]:col-start-3 min-[1280px]:row-start-1 min-[1280px]:justify-self-end min-[1280px]:gap-2"
             >
               
 
@@ -722,7 +722,7 @@ const Navbar = () => {
                 aria-expanded={accountMenuOpen}
                 aria-controls="account-menu"
                 onClick={() => setAccountMenuOpen((open) => !open)}
-                className="order-2 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] lg:inline-flex"
+                className="order-2 hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface)] text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-border-strong)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:inline-flex"
               >
                 {accountMenuOpen ? <X size={19} aria-hidden="true" /> : <UserRound size={19} aria-hidden="true" />}
               </button>
@@ -754,7 +754,7 @@ const Navbar = () => {
                 <div
                   id="account-menu"
                   dir="rtl"
-                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] hidden w-64 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] lg:block lg:left-0 lg:right-auto"
+                  className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] hidden w-64 overflow-hidden rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)] p-2 shadow-[0_24px_70px_-24px_rgba(37,39,34,0.35)] md:block md:left-0 md:right-auto"
                 >
                   <div className="border-b border-border px-3 py-3">
                     <p className="text-sm font-bold text-[var(--ui-text)]">حساب کاربری</p>

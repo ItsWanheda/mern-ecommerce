@@ -1,14 +1,6 @@
-import dotenv from "dotenv";
-import mongoose from "mongoose";
-import Product from "../models/product.model.js";
+import "dotenv/config";
+import { prisma, disconnectPostgres } from "../lib/prisma.js";
 import { hasConfiguredInventory } from "../lib/inventory-stock.js";
-
-dotenv.config();
-
-if (!process.env.MONGO_URI) {
-  console.error("MONGO_URI must be configured to inspect the catalogue.");
-  process.exit(1);
-}
 
 const stockProblem = (value) => {
   if (value === undefined) return "missing";
@@ -30,54 +22,59 @@ const result = {
 };
 
 try {
-  await mongoose.connect(process.env.MONGO_URI);
-  const cursor = Product.find({ isActive: { $ne: false } })
-    .select("_id name category categoryId stock variants isActive")
-    .lean()
-    .cursor({ batchSize: 250 });
-
-  for await (const product of cursor) {
-    result.activeProductsScanned += 1;
-    if (hasConfiguredInventory(product)) continue;
-
-    const variants = Array.isArray(product.variants) ? product.variants : [];
-    const finding = {
-      productId: String(product._id),
-      name: typeof product.name === "string" ? product.name : "",
-      category: typeof product.category === "string" ? product.category : "",
-      inventoryMode: variants.length ? "variants" : "product",
-      untrackedFields: [],
-    };
-
-    if (variants.length) {
-      variants.forEach((variant, index) => {
-        const issue = stockProblem(variant?.stock);
-        if (!issue) return;
-        result.invalidVariantRecords += 1;
-        finding.untrackedFields.push({
-          variantIndex: index,
-          size: typeof variant?.size === "string" ? variant.size : "",
-          color: typeof variant?.color === "string" ? variant.color : "",
-          stockState: issue,
+  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL must be configured to inspect the PostgreSQL catalogue.");
+  await prisma.$connect();
+  let cursor;
+  while (true) {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, category: true, categoryId: true, stock: true, variants: true },
+      orderBy: { id: "asc" },
+      take: 250,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    if (!products.length) break;
+    for (const product of products) {
+      result.activeProductsScanned += 1;
+      if (hasConfiguredInventory(product)) continue;
+      const variants = Array.isArray(product.variants) ? product.variants : [];
+      const finding = {
+        productId: String(product.id),
+        name: typeof product.name === "string" ? product.name : "",
+        category: typeof product.category === "string" ? product.category : "",
+        inventoryMode: variants.length ? "variants" : "product",
+        untrackedFields: [],
+      };
+      if (variants.length) {
+        variants.forEach((variant, index) => {
+          const issue = stockProblem(variant?.stock);
+          if (!issue) return;
+          result.invalidVariantRecords += 1;
+          finding.untrackedFields.push({
+            variantIndex: index,
+            size: typeof variant?.size === "string" ? variant.size : "",
+            color: typeof variant?.color === "string" ? variant.color : "",
+            stockState: issue,
+          });
         });
-      });
-    } else {
-      const issue = stockProblem(product.stock);
-      finding.untrackedFields.push({ field: "stock", stockState: issue || "unknown" });
+      } else {
+        finding.untrackedFields.push({ field: "stock", stockState: stockProblem(product.stock) || "unknown" });
+      }
+      result.productsWithUntrackedInventory += 1;
+      result.findings.push(finding);
     }
-
-    result.productsWithUntrackedInventory += 1;
-    result.findings.push(finding);
+    cursor = products.at(-1).id;
+    if (products.length < 250) break;
   }
-
   console.log(JSON.stringify(result, null, 2));
   if (result.productsWithUntrackedInventory > 0) process.exitCode = 2;
 } catch (error) {
   console.error("Inventory audit failed:", {
     name: error?.name || "Error",
     code: typeof error?.code === "string" || typeof error?.code === "number" ? error.code : undefined,
+    message: error?.message || "Unknown error",
   });
   process.exitCode = 1;
 } finally {
-  await mongoose.disconnect().catch(() => {});
+  await disconnectPostgres().catch(() => {});
 }

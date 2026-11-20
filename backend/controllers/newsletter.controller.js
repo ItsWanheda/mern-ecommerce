@@ -1,4 +1,5 @@
 import NewsletterSubscriber from "../models/newsletter-subscriber.model.js";
+import { prisma } from "../lib/prisma.js";
 
 const normalizeEmail = (value) =>
   typeof value === "string" ? value.trim().toLowerCase().slice(0, 254) : "";
@@ -61,23 +62,14 @@ export const unsubscribeFromNewsletter = async (req, res) => {
 
 export const getNewsletterSubscribers = async (_req, res) => {
   try {
-    const [subscribers, totals] = await Promise.all([
-      NewsletterSubscriber.find({})
-        .select("email isSubscribed consentedAt unsubscribedAt createdAt updatedAt")
-        .sort({ updatedAt: -1 })
-        .limit(500)
-        .lean(),
-      NewsletterSubscriber.aggregate([
-        { $group: {
-          _id: null,
-          total: { $sum: 1 },
-          subscribed: { $sum: { $cond: ["$isSubscribed", 1, 0] } },
-        } },
-      ]),
+    const [subscribers, total, subscribed] = await Promise.all([
+      NewsletterSubscriber.find({}).select("email isSubscribed consentedAt unsubscribedAt createdAt updatedAt").sort({ updatedAt: -1 }).limit(500).lean(),
+      prisma.newsletterSubscriber.count(),
+      prisma.newsletterSubscriber.count({ where: { isSubscribed: true } }),
     ]);
     return res.json({
       subscribers,
-      summary: totals[0] || { total: 0, subscribed: 0 },
+      summary: { total, subscribed },
       emailDeliveryConfigured: false,
     });
   } catch (error) {

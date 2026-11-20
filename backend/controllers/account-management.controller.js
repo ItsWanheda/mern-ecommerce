@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import Product from "../models/product.model.js";
 import Order from "../models/order.model.js";
@@ -9,6 +8,7 @@ import SecurityNotification from "../models/security-notification.model.js";
 import { redis } from "../lib/redis.js";
 import { getPasswordPolicyError } from "../lib/password-policy.js";
 import { sendVerificationEmail, sendEmailChangeConfirmation } from "../lib/account-email.js";
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const hashToken = value => crypto.createHash("sha256").update(value).digest("hex");
 const validEmail = value => typeof value === "string" && value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -207,7 +207,7 @@ export const getSecurityNotifications = async (req, res) => {
 };
 
 export const markSecurityNotificationRead = async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ message: "شناسه اعلان معتبر نیست." });
+  if (!isValidObjectId(req.params.id)) return res.status(400).json({ message: "شناسه اعلان معتبر نیست." });
   const notification = await SecurityNotification.findOneAndUpdate({ _id: req.params.id, user: req.user._id }, { $set: { readAt: new Date() } }, { new: true });
   if (!notification) return res.status(404).json({ message: "اعلان پیدا نشد." });
   return res.json({ notification });
@@ -238,7 +238,7 @@ export const getAccountWishlist = async (req, res) => {
 
 export const addWishlistProduct = async (req, res) => {
   const productId = req.body?.productId;
-  if (!mongoose.isValidObjectId(productId)) return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
+  if (!isValidObjectId(productId)) return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
   const product = await Product.findOne({ _id: productId, isActive: { $ne: false } }).select("_id");
   if (!product) return res.status(404).json({ message: "محصول پیدا نشد." });
   await User.updateOne({ _id: req.user._id }, { $addToSet: { wishlist: product._id } });
@@ -246,7 +246,7 @@ export const addWishlistProduct = async (req, res) => {
 };
 
 export const removeWishlistProduct = async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.productId)) return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
+  if (!isValidObjectId(req.params.productId)) return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
   await User.updateOne({ _id: req.user._id }, { $pull: { wishlist: req.params.productId } });
   return getAccountWishlist(req, res);
 };

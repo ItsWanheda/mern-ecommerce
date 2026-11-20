@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+import { randomBytes } from "node:crypto";
+import { startPrismaSession } from "../lib/prisma-session.js";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
@@ -15,6 +16,8 @@ import { redis } from "../lib/redis.js";
 import { invalidateProductDerivedCaches } from "../lib/product-cache.js";
 import { getDueReconciliationFilter, getNextReconciliationDelayMs, PAYMENT_RECONCILIATION_BATCH_SIZE, PAYMENT_RECONCILIATION_LOCK_TTL_MS } from "../lib/payment-reconciliation.js";
 import { getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
+
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const isSandbox = () => process.env.ZARINPAL_SANDBOX === "true";
 const isTomanCatalogConfirmed = () => process.env.IRT_CATALOG_PRICES_CONFIRMED === "true";
@@ -99,14 +102,10 @@ const releaseReservedInventoryDirect = async (items = []) => {
   if (inventoryChanged) await invalidateProductDerivedCaches({ includeFeatured: true });
 };
 
-const isTransactionUnsupported = (error) =>
-  /Transaction numbers are only allowed|replica set|mongos|does not support transactions/i.test(error?.message || "");
-
 export const releaseReservedInventory = async (items = [], orderId = null) => {
   if (!orderId) return releaseReservedInventoryDirect(items);
 
-  const session = await mongoose.startSession();
-  let transactionUnsupported = false;
+  const session = await startPrismaSession();
   let inventoryReleased = false;
   try {
     await session.withTransaction(async () => {
@@ -142,26 +141,10 @@ export const releaseReservedInventory = async (items = [], orderId = null) => {
         inventoryReleased = true;
       }
     });
-  } catch (error) {
-    if (!isTransactionUnsupported(error)) throw error;
-    transactionUnsupported = true;
-    console.warn("MongoDB transactions are unavailable; using compatibility inventory release:", error.message);
   } finally {
     await session.endSession();
   }
-
-  if (transactionUnsupported) {
-    // Standalone local MongoDB has no transactions. Preserve local development;
-    // production recovery is atomic on MongoDB Atlas/replica sets.
-    await releaseReservedInventoryDirect(items);
-    const updates = {};
-    items.forEach((item, index) => {
-      if (item.stockReserved) updates[`products.${index}.stockReserved`] = false;
-    });
-    if (Object.keys(updates).length) await Order.updateOne({ _id: orderId, paymentProvider: "zarinpal", currency: "IRT" }, { $set: updates });
-  } else if (inventoryReleased) {
-    await invalidateProductDerivedCaches({ includeFeatured: true });
-  }
+  if (inventoryReleased) await invalidateProductDerivedCaches({ includeFeatured: true });
 };
 
 const finalizePaidOrder = async (paidOrder) => {
@@ -301,9 +284,9 @@ export const createZarinpalCheckout = async (req, res) => {
     let shippingFee = 0;
     let totalToman = 0;
 
-    // Reserve coupon usage, finite inventory, and the pending order in one MongoDB
+    // Reserve coupon usage, finite inventory, and the pending order in one PostgreSQL
     // transaction. A crash cannot leave stock reserved without a durable order record.
-    checkoutOrderId = new mongoose.Types.ObjectId();
+    checkoutOrderId = randomBytes(12).toString("hex");
     let transactionResult = null;
     const transactionItems = validated.map((item) => ({
       product: item.productId,
@@ -317,7 +300,7 @@ export const createZarinpalCheckout = async (req, res) => {
     const initialDiscountsByProductId = new Map(
       validated.map((item) => [String(item.productId), normalizeProductDiscountPercent(item.product.discountPercent)])
     );
-    const session = await mongoose.startSession();
+    const session = await startPrismaSession();
     try {
       await session.withTransaction(async () => {
         transactionResult = null;
@@ -421,7 +404,7 @@ export const createZarinpalCheckout = async (req, res) => {
 
     if (!transactionResult) throw new Error("CHECKOUT_TRANSACTION_NO_RESULT");
     order = transactionResult.order;
-    // Detach the committed order from the ended MongoDB session before later
+    // Detach the committed order from the ended PostgreSQL transaction before later
     // payment-request status updates call save().
     if (typeof order.$session === "function") order.$session(null);
     reserved = transactionResult.reserved;
@@ -601,7 +584,7 @@ export const verifyZarinpalPayment = async (req, res) => {
   const resultBase = safeClientUrl();
 
   if (!resultBase) return res.status(503).send("CLIENT_URL is not configured");
-  if (!mongoose.isValidObjectId(orderId) || !authority) {
+  if (!isValidObjectId(orderId) || !authority) {
     return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=invalid-callback`);
   }
 
@@ -686,7 +669,7 @@ export const verifyZarinpalPayment = async (req, res) => {
     console.error("Error verifying Zarinpal payment", error.message);
     // Any exception may occur after the gateway succeeded or the paid status
     // was stored. Keep the customer on an explicitly uncertain path.
-    const orderQuery = mongoose.isValidObjectId(orderId) ? `&order_id=${encodeURIComponent(orderId)}` : "";
+    const orderQuery = isValidObjectId(orderId) ? `&order_id=${encodeURIComponent(orderId)}` : "";
     return res.redirect(`${resultBase}/purchase-cancel?provider=zarinpal&reason=verification-pending${orderQuery}`);
   }
 };
@@ -694,7 +677,7 @@ export const verifyZarinpalPayment = async (req, res) => {
 
 export const getZarinpalOrderStatus = async (req, res) => {
   const { orderId } = req.params;
-  if (!mongoose.isValidObjectId(orderId)) {
+  if (!isValidObjectId(orderId)) {
     return res.status(400).json({ message: "Invalid order ID" });
   }
   try {

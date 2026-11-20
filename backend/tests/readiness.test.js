@@ -41,14 +41,14 @@ test("readiness waits for a connecting Redis client before pinging", async () =>
   assert.deepEqual(result, { status: "ready", database: "connected", redis: "connected" });
 });
 
-test("readiness rechecks MongoDB after the asynchronous Redis probe", async () => {
+test("readiness rechecks PostgreSQL after the asynchronous Redis probe", async () => {
   let databaseConnected = false;
   const result = await getReadinessStatus({
     databaseReady: () => databaseConnected,
     redisClient: {
       status: "ready",
       ping: async () => {
-        // Simulate MongoDB recovering while the Redis check is in progress.
+        // Simulate PostgreSQL recovering while the Redis check is in progress.
         databaseConnected = true;
         return "PONG";
       },
@@ -63,7 +63,7 @@ test("readiness rechecks MongoDB after the asynchronous Redis probe", async () =
   });
 });
 
-test("readiness fails when MongoDB is unavailable even if Redis responds", async () => {
+test("readiness fails when PostgreSQL is unavailable even if Redis responds", async () => {
   const status = await getReadinessStatus({
     databaseReady: false,
     redisClient: { ping: async () => "PONG" },

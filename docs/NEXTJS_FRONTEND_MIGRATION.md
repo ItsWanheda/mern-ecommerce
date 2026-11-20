@@ -1,3 +1,5 @@
+> **Historical architecture note:** This document records the frontend migration as it was originally delivered. The later `feat/computer-hardware-store` database cutover moved backend persistence to PostgreSQL/Prisma. MongoDB references below describe the pre-cutover implementation and are not current runtime requirements.
+
 # Next.js Frontend Migration — Tik Boutique
 
 **Branch:** `feat/nextjs-frontend-migration`  
@@ -51,8 +53,7 @@ mern-ecommerce/
 │   ├── routes/
 │   ├── tests/
 │   ├── scripts/               # Database migrations and operational commands
-│   ├── package.json
-│   └── package-lock.json
+│   └── package.json
 ├── frontend/                 # Standalone Next.js application root
 │   ├── app/                  # Native App Router route groups and pages
 │   ├── api/                  # Vercel robots and sitemap functions
@@ -87,7 +88,7 @@ Metadata uses shared SEO helpers and the existing public API. Canonicals remain 
 ## Development
 
 ```bash
-npm ci --prefix backend
+npm install --prefix backend
 npm ci --prefix frontend
 ```
 

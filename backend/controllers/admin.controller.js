@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import AuditLog from "../models/audit-log.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { escapeSearchRegex } from "../lib/persian-search.js";
@@ -10,6 +9,8 @@ import ServiceCase from "../models/service-case.model.js";
 import { redis } from "../lib/redis.js";
 import { getKnownProductStock } from "../lib/inventory-stock.js";
 import { hasAdministratorManagementAccess, canPreserveAdministratorManagement, withAdministratorAccessLock, AdministratorAccessLockError } from "../lib/admin-permissions.js";
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
+import { prisma } from "../lib/prisma.js";
 
 const clampInteger = (value, fallback, min, max) => {
   const parsed = Number.parseInt(value, 10);
@@ -57,7 +58,8 @@ export const getOperationsDashboard = async (_req, res) => {
       AuditLog.countDocuments({ createdAt: { $gte: dayAgo } }).maxTimeMS(1500),
     ]);
 
-    const readyState = mongoose.connection.readyState;
+    let databaseState = "disconnected";
+    try { await prisma.$queryRaw`SELECT 1`; databaseState = "connected"; } catch { databaseState = "disconnected"; }
     let redisState = "unknown";
     try {
       if (typeof redis.ping !== "function") redisState = "unsupported";
@@ -69,7 +71,6 @@ export const getOperationsDashboard = async (_req, res) => {
       redisState = "unavailable";
     }
 
-    const databaseState = readyState === 1 ? "connected" : readyState === 2 ? "connecting" : readyState === 3 ? "disconnecting" : "disconnected";
     return res.json({
       generatedAt: now,
       health: { status: databaseState === "connected" && redisState === "connected" ? "healthy" : "degraded", database: databaseState, redis: redisState },
@@ -107,13 +108,21 @@ export const getCustomers = async (req, res) => {
       User.countDocuments(filter).maxTimeMS(1500),
     ]);
     const customerIds = customers.map(customer => customer._id);
-    const [orderStats, serviceStats, sessionStats] = await Promise.all([
-      Order.aggregate([{ $match: { user: { $in: customerIds } } }, { $group: { _id: "$user", orderCount: { $sum: 1 }, paidTotal: { $sum: { $cond: [{ $eq: ["$paymentStatus", "paid"] }, "$totalAmount", 0] } } } }]),
-      ServiceCase.aggregate([{ $match: { user: { $in: customerIds }, status: { $in: ["open", "in_review"] } } }, { $group: { _id: "$user", openCases: { $sum: 1 } } }]),
-      AccountSession.aggregate([{ $match: { user: { $in: customerIds }, revokedAt: null, expiresAt: { $gt: new Date() } } }, { $group: { _id: "$user", activeSessions: { $sum: 1 }, lastLoginAt: { $max: "$lastUsedAt" } } }]),
+    const now = new Date();
+    const [orders, serviceStats, sessionStats] = await Promise.all([
+      prisma.order.findMany({ where: { userId: { in: customerIds } }, select: { userId: true, paymentStatus: true, totalAmount: true } }),
+      prisma.serviceCase.groupBy({ by: ["userId"], where: { userId: { in: customerIds }, status: { in: ["open", "in_review"] } }, _count: { _all: true } }),
+      prisma.accountSession.groupBy({ by: ["userId"], where: { userId: { in: customerIds }, revokedAt: null, expiresAt: { gt: now } }, _count: { _all: true }, _max: { lastUsedAt: true } }),
     ]);
-    const byId = rows => new Map(rows.map(row => [String(row._id), row]));
-    const ordersById = byId(orderStats), servicesById = byId(serviceStats), sessionsById = byId(sessionStats);
+    const ordersById = new Map();
+    for (const order of orders) {
+      const entry = ordersById.get(order.userId) || { orderCount: 0, paidTotal: 0 };
+      entry.orderCount += 1;
+      if (order.paymentStatus === "paid") entry.paidTotal += Number(order.totalAmount || 0);
+      ordersById.set(order.userId, entry);
+    }
+    const servicesById = new Map(serviceStats.map(row => [row.userId, { openCases: row._count._all }]));
+    const sessionsById = new Map(sessionStats.map(row => [row.userId, { activeSessions: row._count._all, lastLoginAt: row._max.lastUsedAt }]));
     const enrichedCustomers = customers.map(customer => ({
       ...customer,
       wishlistCount: Array.isArray(customer.wishlist) ? customer.wishlist.length : 0,
@@ -133,7 +142,7 @@ export const getCustomers = async (req, res) => {
 
 export const updateCustomerAccess = async (req, res) => {
   const customerId = req.params.id;
-  if (!mongoose.isValidObjectId(customerId)) return res.status(400).json({ message: "Invalid customer ID" });
+  if (!isValidObjectId(customerId)) return res.status(400).json({ message: "Invalid customer ID" });
   const { role, permissions, isActive } = req.body || {};
   if (role !== undefined && !["customer", "admin"].includes(role)) return res.status(400).json({ message: "Invalid account role" });
   if (permissions !== undefined && (!Array.isArray(permissions) || permissions.some((item) => !allowedAdminPermissions.has(item)) || new Set(permissions).size !== permissions.length)) {
@@ -173,7 +182,7 @@ export const updateCustomerAccess = async (req, res) => {
       }
       target.role = nextRole;
       target.isActive = nextActive;
-      if (nextRole === "customer") target.permissions = undefined;
+      if (nextRole === "customer") target.permissions = null;
       else if (permissions !== undefined) target.permissions = permissions;
       await target.save();
       if (isDisablingAccount) {
@@ -240,7 +249,7 @@ export const getAdminServiceCases = async (req, res) => {
 
 export const updateAdminServiceCase = async (req, res) => {
   const caseId = req.params.id;
-  if (!mongoose.isValidObjectId(caseId)) return res.status(400).json({ message: "Invalid case ID" });
+  if (!isValidObjectId(caseId)) return res.status(400).json({ message: "Invalid case ID" });
   const { status, resolutionNote, refundStatus, refundAmount, refundReference } = req.body || {};
   const statuses = ["open", "in_review", "approved", "rejected", "resolved"];
   const refundStatuses = ["requested", "approved", "processed", "rejected"];

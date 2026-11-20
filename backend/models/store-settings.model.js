@@ -1,13 +1,6 @@
-import mongoose from "mongoose";
+import { createPrismaModel } from "../lib/prisma-model.js";
 
-const storeSettingsSchema = new mongoose.Schema(
-  {
-    key: { type: String, required: true, unique: true, default: "default" },
-    flatRate: { type: Number, min: 0, default: 0 },
-    freeShippingThreshold: { type: Number, min: 0, default: 0 },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  },
-  { timestamps: true }
-);
-
-export default mongoose.model("StoreSettings", storeSettingsSchema);
+// Prisma/PostgreSQL-backed model repository. The exported operations preserve
+// the existing controller contract while all persistence is handled by Prisma.
+const storeSettings = createPrismaModel("storeSettings");
+export default storeSettings;

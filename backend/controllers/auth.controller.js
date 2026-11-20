@@ -8,13 +8,14 @@ import { verifyLoginTwoFactor } from "./account-management.controller.js";
 import { getAdminPageAccessStatus } from "../lib/admin-page-access.js";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
-import mongoose from "mongoose";
 import { isPasswordResetEmailConfigured, sendPasswordResetEmail } from "../lib/password-reset-email.js";
 import {
   rotateRefreshToken as rotateStoredRefreshToken,
   verifyPresentedRefreshToken,
   isRefreshAccountActive,
 } from "../lib/refresh-token.js";
+
+import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const generateTokens = (userId, sessionId) => {
 	const accessToken = jwt.sign({ userId, sid: sessionId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -196,9 +197,18 @@ const makeDefaultAddress = (user, chosen) => {
 const ensureAddressBook = user => {
  let changed = false;
  if (!Array.isArray(user.savedShippingAddresses)) user.savedShippingAddresses = [];
+ // JSONB does not generate Mongoose-style subdocument IDs; preserve the same
+ // stable 24-character identifiers used by the saved-address API.
+ for (const address of user.savedShippingAddresses) {
+  if (!isValidObjectId(String(address?._id || ""))) {
+   address._id = crypto.randomBytes(12).toString("hex");
+   changed = true;
+  }
+ }
  // Migrate the old single-address field the first time the profile is loaded.
  if (user.savedShippingAddresses.length === 0 && user.defaultShippingAddress?.addressLine) {
   user.savedShippingAddresses.push({
+   _id: crypto.randomBytes(12).toString("hex"),
    ...shippingAddressValues(user.defaultShippingAddress),
    label: "نشانی پیش‌فرض",
    isDefault: true,
@@ -321,7 +331,7 @@ export const saveDefaultAddress = async (req, res) => {
    if (target) Object.assign(target, address);
    else {
     if (user.savedShippingAddresses.length >= 10) return res.status(400).json({ message: "حداکثر ۱۰ نشانی می‌توانید ذخیره کنید." });
-    user.savedShippingAddresses.push({ ...address, label: "نشانی من", isDefault: false });
+    user.savedShippingAddresses.push({ _id: crypto.randomBytes(12).toString("hex"), ...address, label: "نشانی من", isDefault: false });
     target = user.savedShippingAddresses[user.savedShippingAddresses.length - 1];
    }
   }
@@ -348,7 +358,7 @@ export const createShippingAddress = async (req, res) => {
   ensureAddressBook(user);
   if (user.savedShippingAddresses.length >= 10) return res.status(400).json({ message: "حداکثر ۱۰ نشانی می‌توانید ذخیره کنید." });
   const isDefault = req.body?.isDefault === true || user.savedShippingAddresses.length === 0;
-  user.savedShippingAddresses.push({ ...address, label, isDefault: false });
+  user.savedShippingAddresses.push({ _id: crypto.randomBytes(12).toString("hex"), ...address, label, isDefault: false });
   const created = user.savedShippingAddresses[user.savedShippingAddresses.length - 1];
   if (isDefault) makeDefaultAddress(user, created);
   await user.save();
@@ -361,7 +371,7 @@ export const createShippingAddress = async (req, res) => {
 
 export const updateShippingAddress = async (req, res) => {
  const addressId = req.params.addressId;
- if (!mongoose.isValidObjectId(addressId)) return res.status(400).json({ message: "شناسه نشانی معتبر نیست." });
+ if (!isValidObjectId(addressId)) return res.status(400).json({ message: "شناسه نشانی معتبر نیست." });
  const input = req.body?.shippingAddress || req.body;
  if (!input || typeof input !== "object" || Array.isArray(input)) return res.status(400).json({ message: "اطلاعات نشانی معتبر نیست." });
  const address = normalizeShippingAddress(input);
@@ -373,7 +383,7 @@ export const updateShippingAddress = async (req, res) => {
   const user = await User.findById(req.user._id);
   if (!user) return res.status(404).json({ message: "حساب کاربری پیدا نشد." });
   ensureAddressBook(user);
-  const saved = user.savedShippingAddresses.id(addressId);
+  const saved = user.savedShippingAddresses.find(address => String(address._id) === String(addressId));
   if (!saved) return res.status(404).json({ message: "نشانی پیدا نشد." });
   Object.assign(saved, address);
   if (label) saved.label = label;
@@ -388,12 +398,12 @@ export const updateShippingAddress = async (req, res) => {
 
 export const setDefaultShippingAddress = async (req, res) => {
  const addressId = req.params.addressId;
- if (!mongoose.isValidObjectId(addressId)) return res.status(400).json({ message: "شناسه نشانی معتبر نیست." });
+ if (!isValidObjectId(addressId)) return res.status(400).json({ message: "شناسه نشانی معتبر نیست." });
  try {
   const user = await User.findById(req.user._id);
   if (!user) return res.status(404).json({ message: "حساب کاربری پیدا نشد." });
   ensureAddressBook(user);
-  const saved = user.savedShippingAddresses.id(addressId);
+  const saved = user.savedShippingAddresses.find(address => String(address._id) === String(addressId));
   if (!saved) return res.status(404).json({ message: "نشانی پیدا نشد." });
   makeDefaultAddress(user, saved);
   await user.save();
@@ -406,7 +416,7 @@ export const setDefaultShippingAddress = async (req, res) => {
 
 export const deleteShippingAddress = async (req, res) => {
  const addressId = req.params.addressId;
- if (!mongoose.isValidObjectId(addressId)) return res.status(400).json({ message: "شناسه نشانی معتبر نیست." });
+ if (!isValidObjectId(addressId)) return res.status(400).json({ message: "شناسه نشانی معتبر نیست." });
  try {
   const user = await User.findById(req.user._id);
   if (!user) return res.status(404).json({ message: "حساب کاربری پیدا نشد." });
