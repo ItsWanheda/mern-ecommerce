@@ -1,4 +1,6 @@
-import cloudinary from "./cloudinary.js";
+import { randomBytes } from "node:crypto";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 const MIME_FORMATS = {
   "image/jpeg": "jpg",
@@ -6,9 +8,14 @@ const MIME_FORMATS = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
+const ALLOWED_IMAGE_FOLDERS = new Set(["products", "categories", "campaigns"]);
 const MAX_IMAGE_WIDTH = 8192;
 const MAX_IMAGE_HEIGHT = 8192;
 const MAX_IMAGE_PIXELS = 40_000_000;
+const PUBLIC_UPLOAD_PATH = "/uploads";
+
+export const getImageStorageDirectory = () =>
+  path.resolve(process.env.IMAGE_STORAGE_DIR || path.join(process.cwd(), "uploads"));
 
 export class ImageUploadError extends Error {
   constructor(message = "تصویر انتخاب‌شده معتبر نیست.") {
@@ -19,7 +26,7 @@ export class ImageUploadError extends Error {
 
 export class ImageStorageError extends Error {
   constructor() {
-    super("ذخیره تصویر در سرویس رسانه ناموفق بود؛ بعداً دوباره تلاش کنید.");
+    super("ذخیره تصویر در فضای محلی ناموفق بود؛ فضای ذخیره‌سازی را بررسی و دوباره تلاش کنید.");
     this.name = "ImageStorageError";
   }
 }
@@ -116,58 +123,33 @@ export const validateImageDataUrl = (value, maxBytes = 2 * 1024 * 1024) => {
   return { buffer, mime, format: MIME_FORMATS[mime], width: dimensions.width, height: dimensions.height };
 };
 
-export const getManagedCloudinaryPublicId = (
+export const deleteManagedImage = async (
   value,
-  { cloudName = process.env.CLOUDINARY_CLOUD_NAME, folder } = {}
+  { folder, storageDir = getImageStorageDirectory(), publicPath = PUBLIC_UPLOAD_PATH } = {}
 ) => {
-  if (typeof value !== "string" || !cloudName || !folder) return null;
+  if (typeof value !== "string" || !ALLOWED_IMAGE_FOLDERS.has(folder)) return false;
+  const prefix = publicPath.replace(/\/+$/, "") + "/" + folder + "/";
+  if (!value.startsWith(prefix)) return false;
+
+  const filename = value.slice(prefix.length);
+  if (!/^[a-f\d]{32}\.(?:jpg|png|webp|gif)$/i.test(filename)) return false;
+
+  const targetDirectory = path.resolve(storageDir, folder);
+  const targetPath = path.resolve(targetDirectory, filename);
+  if (path.dirname(targetPath) !== targetDirectory) return false;
+
   try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.hostname !== "res.cloudinary.com" || url.username || url.password) return null;
-
-    const segments = url.pathname.split("/").filter(Boolean);
-    if (segments[0] !== cloudName || segments[1] !== "image" || segments[2] !== "upload") return null;
-
-    let assetSegments = segments.slice(3);
-    if (assetSegments[0] && /^v\d+$/.test(assetSegments[0])) assetSegments = assetSegments.slice(1);
-    // Transformed URLs are deliberately ignored: these paths are not guaranteed
-    // to map one-to-one to an uploaded source asset.
-    if (assetSegments.some((segment) => /^v\d+$/.test(segment))) return null;
-    if (!assetSegments.length) return null;
-    let decodedSegments;
-    try {
-      decodedSegments = assetSegments.map((part) => decodeURIComponent(part));
-    } catch {
-      return null;
-    }
-    // Decode before checking boundaries: encoded slashes, traversal segments,
-    // backslashes, and control characters must never escape the managed folder.
-    if (decodedSegments[0] !== folder || decodedSegments.some((part) =>
-      !part || part === "." || part === ".." || /[\/\\\u0000-\u001f\u007f]/.test(part)
-    )) return null;
-
-    const last = decodedSegments[decodedSegments.length - 1];
-    decodedSegments[decodedSegments.length - 1] = last.replace(/\.(?:jpe?g|png|webp|gif)$/i, "");
-    const publicId = decodedSegments.join("/");
-    return publicId || null;
-  } catch {
-    return null;
+    await unlink(targetPath);
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw new ImageStorageError();
   }
-};
-
-export const deleteManagedCloudinaryImage = async (
-  value,
-  { folder, cloudName = process.env.CLOUDINARY_CLOUD_NAME, uploader = cloudinary.uploader } = {}
-) => {
-  const publicId = getManagedCloudinaryPublicId(value, { cloudName, folder });
-  if (!publicId) return false;
-  const result = await uploader.destroy(publicId, { resource_type: "image", invalidate: true });
-  return result?.result === "ok" || result?.result === "not found";
 };
 
 export const resolveImageReference = async (
   value,
-  { folder, maxBytes = 2 * 1024 * 1024, uploader = cloudinary.uploader } = {}
+  { folder, maxBytes = 2 * 1024 * 1024, storageDir = getImageStorageDirectory(), publicPath = PUBLIC_UPLOAD_PATH } = {}
 ) => {
   if (value === undefined || value === null || value === "") return "";
   if (typeof value !== "string") throw new ImageUploadError();
@@ -178,20 +160,23 @@ export const resolveImageReference = async (
     return image;
   }
 
-  validateImageDataUrl(image, maxBytes);
+  if (!ALLOWED_IMAGE_FOLDERS.has(folder)) {
+    throw new ImageUploadError("مسیر ذخیره‌سازی تصویر معتبر نیست.");
+  }
+
+  const validated = validateImageDataUrl(image, maxBytes);
+  const filename = randomBytes(16).toString("hex") + "." + validated.format;
+  const targetDirectory = path.resolve(storageDir, folder);
+  const targetPath = path.resolve(targetDirectory, filename);
+  if (path.dirname(targetPath) !== targetDirectory) throw new ImageStorageError();
+
   try {
-    const result = await uploader.upload(image, {
-      folder,
-      resource_type: "image",
-      allowed_formats: ["jpg", "png", "webp", "gif"],
-      unique_filename: true,
-      overwrite: false,
-    });
-    if (typeof result?.secure_url !== "string" || !safeImageReference(result.secure_url)) {
-      throw new Error("No safe HTTPS asset URL returned");
-    }
-    return result.secure_url;
+    await mkdir(targetDirectory, { recursive: true });
+    await writeFile(targetPath, validated.buffer, { flag: "wx", mode: 0o640 });
   } catch {
+    await unlink(targetPath).catch(() => {});
     throw new ImageStorageError();
   }
+
+  return publicPath.replace(/\/+$/, "") + "/" + folder + "/" + filename;
 };
