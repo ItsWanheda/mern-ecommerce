@@ -12,6 +12,11 @@ const nextConfig = {
   // aligned with frontend/vercel.json for the eventual Vercel Root Directory switch.
   distDir: "dist",
   poweredByHeader: false,
+  experimental: {
+    // Product images are base64-encoded before being sent through this proxy.
+    // Keep this aligned with the 12 MB decoded-image aggregate budget and Express.
+    proxyClientMaxBodySize: "18mb",
+  },
   async rewrites() {
     // In Docker, Next.js proxies API and image requests over the private
     // Compose network. In ordinary local development, use the host backend.
