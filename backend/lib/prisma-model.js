@@ -207,11 +207,10 @@ function translateFieldCondition(model, field, condition) {
       if (json) clauses.push({ [root]: { equals: [] } });
       else if (value === 0) clauses.push({ [mappedField]: { isEmpty: true } });
     } else if (operator === "$elemMatch") {
-      if (root === "products" || root === "variants" || root === "colors") {
-        if (isPlainObject(value) && Object.values(value).every(v => !isPlainObject(v) || !Object.keys(v).some(k => k.startsWith("$")))) {
-          clauses.push({ [root]: { array_contains: [value] } });
-        }
-      }
+      // Prisma JSON array_contains compares the complete JSON object. Mongo's
+      // $elemMatch allows a subset of an array element's fields, so translating
+      // it here can incorrectly exclude valid rows (and make writes miss them).
+      // Leave this predicate to matchesFilter after a safe SQL candidate query.
     } else if (operator === "$regex") {
       const pattern = regexText(value);
       if (json && path.length && jsonArrayFields[model]?.has(root)) continue;
