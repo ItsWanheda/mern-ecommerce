@@ -852,7 +852,16 @@ async function executeUpdate(model, filter, update, options = {}, returnDocument
   if (!rowsRaw.length) {
     if (options.upsert) {
       const equalityFilter = Object.fromEntries(Object.entries(filter || {}).filter(([key, value]) => !key.startsWith("$") && (value === null || typeof value !== "object" || value instanceof Date)));
-      const insertFields = { ...equalityFilter, ...(update?.$setOnInsert || {}), ...(update?.$set || {}) };
+      const hasOperators = Object.keys(update || {}).some(key => key.startsWith("$"));
+      const insertFields = {
+        ...equalityFilter,
+        ...(update?.$setOnInsert || {}),
+        ...(update?.$set || (hasOperators ? {} : update || {})),
+      };
+      for (const [field, value] of Object.entries(update?.$inc || {})) {
+        if (insertFields[field] === undefined) insertFields[field] = Number(value);
+        else insertFields[field] = Number(insertFields[field] || 0) + Number(value);
+      }
       const created = await getDelegate(model, tx).create({
         data: (() => { const data = toPrismaData(model, insertFields, { includeId: true }); if (model === "campaign" && data.products?.set) data.products = { connect: data.products.set }; return data; })(),
         ...(model === "campaign" ? { include: { products: { select: { id: true } } } } : {}),
