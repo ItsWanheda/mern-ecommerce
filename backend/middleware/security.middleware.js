@@ -10,7 +10,15 @@ const configuredOrigins = () => {
   ].filter((value) => typeof value === "string" && value.trim());
 
   if (process.env.NODE_ENV !== "production") {
-    values.push("http://localhost:5173", "http://127.0.0.1:5173");
+    // Support the Next.js dev server on localhost and the observed LAN host.
+    // Production remains governed exclusively by explicitly configured origins.
+    values.push(
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://172.31.224.1:3000",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
+    );
   }
 
   return new Set(values.map((value) => {

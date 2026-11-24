@@ -1,5 +1,12 @@
 /** @type {import("next").NextConfig} */
+const extraDevOrigins = (process.env.NEXT_ALLOWED_DEV_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const nextConfig = {
+  // Next.js 16 blocks development assets requested from unlisted LAN origins.
+  allowedDevOrigins: [...new Set(["172.31.224.1", ...extraDevOrigins])],
   reactStrictMode: true,
   // The frontend workspace is the Next.js project root. Keep the output directory
   // aligned with frontend/vercel.json for the eventual Vercel Root Directory switch.

@@ -1,9 +1,44 @@
+import { Prisma } from "@prisma/client";
 import AuditLog from "../models/audit-log.model.js";
 
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
+// Normalize metadata before diffing/persistence. PostgreSQL Json accepts plain
+// JSON values, not Prisma Decimal internals, methods, or prototype properties.
+export const toAuditJsonValue = (value, ancestors = new WeakSet()) => {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "undefined" || typeof value === "function" || typeof value === "symbol") return undefined;
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  if (Prisma.Decimal.isDecimal(value)) return value.toString();
+  if (typeof value?.toHexString === "function") return value.toHexString();
+  if (typeof Buffer !== "undefined" && Buffer.isBuffer(value)) return value.toString("base64");
+  if (typeof value !== "object") return String(value);
+  if (ancestors.has(value)) return "[Circular]";
+
+  ancestors.add(value);
+  let normalized;
+  if (Array.isArray(value)) {
+    normalized = value.map((entry) => {
+      const safeEntry = toAuditJsonValue(entry, ancestors);
+      return safeEntry === undefined ? null : safeEntry;
+    });
+  } else {
+    normalized = {};
+    for (const [key, nested] of Object.entries(value)) {
+      if (key === "constructor" || key === "__proto__" || key === "prototype") continue;
+      const safeValue = toAuditJsonValue(nested, ancestors);
+      if (safeValue !== undefined) normalized[key] = safeValue;
+    }
+  }
+  ancestors.delete(value);
+  return normalized;
+};
+
 const comparableValue = (value) => {
   if (value instanceof Date) return value.toISOString();
+  if (Prisma.Decimal.isDecimal(value)) return value.toString();
   if (value && typeof value.toHexString === "function") return value.toHexString();
   if (Array.isArray(value)) return value.map(comparableValue);
   if (isRecord(value)) {
@@ -63,7 +98,7 @@ const headerValue = (req, name, maxLength) => {
 export const recordAuditEvent = async (req, event) => {
   try {
     const metadataInput = isRecord(event.metadata) ? event.metadata : {};
-    const metadata = { ...metadataInput };
+    const metadata = toAuditJsonValue(metadataInput) || {};
     const changes = buildChangeSet(metadata);
     if (changes) {
       metadata.changes = changes;

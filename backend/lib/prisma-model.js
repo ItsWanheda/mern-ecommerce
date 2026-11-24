@@ -301,8 +301,9 @@ function toPrismaData(model, source = {}, { includeId = false } = {}) {
   return output;
 }
 
-function decimalToNumber(value) {
-  if (value && typeof value === "object" && value.constructor?.name === "Decimal") return Number(value.toString());
+export function decimalToNumber(value) {
+  // Use Prisma.Decimal's stable type guard instead of relying on constructor.name.
+  if (Prisma.Decimal.isDecimal(value)) return Number(value.toString());
   if (Array.isArray(value)) return value.map(decimalToNumber);
   if (value && typeof value === "object" && !(value instanceof Date)) {
     return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, decimalToNumber(nested)]));
@@ -687,7 +688,22 @@ function attachDocumentMethods(model, row) {
         data.password = await bcrypt.hash(data.password, 10);
       }
     }
-    if (model === "product") Object.assign(data, deriveProductFields({ ...this, ...data }));
+    if (model === "product") {
+      // Preserve required catalog pricing when a compatibility query or partial
+      // document leaves price out of the save payload.
+      if (data.price == null || !Number.isFinite(Number(data.price))) {
+        const persistedProduct = await delegate.findUnique({
+          where: { id: this._id },
+          select: { price: true, discountPercent: true },
+        });
+        if (!persistedProduct) throw new Error("Product no longer exists");
+        data.price = Number(persistedProduct.price.toString());
+        if (data.discountPercent === undefined) {
+          data.discountPercent = persistedProduct.discountPercent;
+        }
+      }
+      Object.assign(data, deriveProductFields({ ...this, ...data, price: data.price }));
+    }
     const saved = await delegate.update({ where: { id: this._id }, data, ...(model === "campaign" ? { include: { products: { select: { id: true } } } } : {}) });
     const mapped = fromPrisma(model, saved);
     for (const key of Object.keys(this)) delete this[key];

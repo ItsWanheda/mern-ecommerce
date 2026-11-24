@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { readFile, readdir, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { toPrismaWhere } from "../lib/prisma-model.js";
+import { Prisma } from "@prisma/client";
+import { toPrismaWhere, decimalToNumber } from "../lib/prisma-model.js";
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const schema = await readFile(path.join(backendDir, "prisma", "schema.prisma"), "utf8");
@@ -124,4 +125,21 @@ test("Prisma adapter preserves case-insensitive Mongo-style searches", () => {
 test("PostgreSQL product variants use the required empty JSON-array representation", () => {
   assert.deepEqual(toPrismaWhere("product", { variants: { $size: 0 } }), { variants: { equals: [] } });
   assert.doesNotMatch(productController, /variants:\s*\{\s*\$exists:\s*false\s*\}/);
+});
+
+
+test("Prisma Decimal values are normalized without relying on constructor names", () => {
+  const price = new Prisma.Decimal("25217332");
+  assert.equal(decimalToNumber(price), 25217332);
+  assert.equal(typeof decimalToNumber(price), "number");
+  assert.deepEqual(decimalToNumber({ price, nested: [new Prisma.Decimal("125.50")] }), {
+    price: 25217332,
+    nested: [125.5],
+  });
+});
+
+test("product document saves preserve the persisted required price when a payload omits it", () => {
+  assert.match(adapter, /if \(data\.price == null \|\| !Number\.isFinite\(Number\(data\.price\)\)\)/);
+  assert.match(adapter, /select: \{ price: true, discountPercent: true \}/);
+  assert.match(adapter, /data\.price = Number\(persistedProduct\.price\.toString\(\)\)/);
 });

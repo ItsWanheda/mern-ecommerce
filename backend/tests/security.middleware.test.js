@@ -105,3 +105,23 @@ test("allowed CORS preflight returns configured methods and credentials", async 
     assert.match(response.headers["access-control-allow-methods"], /PATCH/);
   });
 });
+
+
+test("the LAN Next.js origin is allowed for development requests", async () => {
+  await withEnv({
+    NODE_ENV: "development",
+    CLIENT_URL: undefined,
+    FRONTEND_URL: undefined,
+    CORS_ALLOWED_ORIGINS: "",
+  }, async () => {
+    const response = makeResponse();
+    let calledNext = false;
+    browserOriginAndCors(makeRequest({
+      method: "POST",
+      headers: { Origin: "http://172.31.224.1:3000" },
+    }), response, () => { calledNext = true; });
+    assert.equal(calledNext, true);
+    assert.equal(response.headers["access-control-allow-origin"], "http://172.31.224.1:3000");
+    assert.equal(response.headers["access-control-allow-credentials"], "true");
+  });
+});
