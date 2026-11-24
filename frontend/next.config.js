@@ -6,10 +6,17 @@ const nextConfig = {
   distDir: "dist",
   poweredByHeader: false,
   async rewrites() {
-    if (process.env.NODE_ENV !== "development") return [];
+    // In Docker, Next.js proxies API and image requests over the private
+    // Compose network. In ordinary local development, use the host backend.
+    const backendUrl = process.env.BACKEND_INTERNAL_URL ||
+      (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "");
+
+    if (!backendUrl) return [];
+
     return {
       beforeFiles: [
-        { source: "/api/:path*", destination: "http://localhost:5000/api/:path*" },
+        { source: "/api/:path*", destination: `${backendUrl}/api/:path*` },
+        { source: "/uploads/:path*", destination: `${backendUrl}/uploads/:path*` },
       ],
     };
   },
