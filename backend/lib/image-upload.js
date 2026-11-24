@@ -19,7 +19,7 @@ export const MAX_IMAGE_COLLECTION_BYTES = 12 * 1024 * 1024;
 
 export const getImageDataUrlByteLength = (value) => {
   if (typeof value !== "string") return 0;
-  const match = /^data:image\\/(?:jpeg|jpg|png|webp|gif);base64,([A-Za-z0-9+/]+={0,2})$/i.exec(value);
+  const match = /^data:image[/](?:jpeg|jpg|png|webp|gif);base64,([A-Za-z0-9+/]+={0,2})$/i.exec(value);
   if (!match) return 0;
   const encoded = match[1];
   const padding = encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0;
