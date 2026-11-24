@@ -10,6 +10,9 @@ test("customer session details distinguish sign-in metadata from last observed a
   assert.match(source, /loginUserAgent/);
   assert.match(source, /lastUserAgent/);
   assert.match(source, /آخرین نوسازی نشست/);
+  assert.match(source, /lastLoginAt/);
+  assert.match(source, /lastActivityAt/);
+  assert.match(source, /آخرین فعالیت ثبت‌شده نشست/);
   assert.match(source, /به معنی ثبت تک‌تک درخواست‌ها نیست/);
   assert.match(source, /برای نشست‌های قدیمی/);
 });
