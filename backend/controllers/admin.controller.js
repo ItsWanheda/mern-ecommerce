@@ -109,10 +109,11 @@ export const getCustomers = async (req, res) => {
     ]);
     const customerIds = customers.map(customer => customer._id);
     const now = new Date();
-    const [orders, serviceStats, sessionStats] = await Promise.all([
+    const [orders, serviceStats, sessionStats, sessionHistoryStats] = await Promise.all([
       prisma.order.findMany({ where: { userId: { in: customerIds } }, select: { userId: true, paymentStatus: true, totalAmount: true } }),
       prisma.serviceCase.groupBy({ by: ["userId"], where: { userId: { in: customerIds }, status: { in: ["open", "in_review"] } }, _count: { _all: true } }),
-      prisma.accountSession.groupBy({ by: ["userId"], where: { userId: { in: customerIds }, revokedAt: null, expiresAt: { gt: now } }, _count: { _all: true }, _max: { lastUsedAt: true } }),
+      prisma.accountSession.groupBy({ by: ["userId"], where: { userId: { in: customerIds }, revokedAt: null, expiresAt: { gt: now } }, _count: { _all: true } }),
+      prisma.accountSession.groupBy({ by: ["userId"], where: { userId: { in: customerIds } }, _max: { createdAt: true, lastUsedAt: true } }),
     ]);
     const ordersById = new Map();
     for (const order of orders) {
@@ -122,7 +123,11 @@ export const getCustomers = async (req, res) => {
       ordersById.set(order.userId, entry);
     }
     const servicesById = new Map(serviceStats.map(row => [row.userId, { openCases: row._count._all }]));
-    const sessionsById = new Map(sessionStats.map(row => [row.userId, { activeSessions: row._count._all, lastLoginAt: row._max.lastUsedAt }]));
+    const sessionsById = new Map(sessionStats.map(row => [row.userId, { activeSessions: row._count._all }]));
+    const sessionHistoryById = new Map(sessionHistoryStats.map(row => [row.userId, {
+      lastLoginAt: row._max.createdAt,
+      lastActivityAt: row._max.lastUsedAt,
+    }]));
     const enrichedCustomers = customers.map(customer => ({
       ...customer,
       wishlistCount: Array.isArray(customer.wishlist) ? customer.wishlist.length : 0,
@@ -130,7 +135,8 @@ export const getCustomers = async (req, res) => {
       paidTotal: ordersById.get(String(customer._id))?.paidTotal || 0,
       openCases: servicesById.get(String(customer._id))?.openCases || 0,
       activeSessions: sessionsById.get(String(customer._id))?.activeSessions || 0,
-      lastLoginAt: sessionsById.get(String(customer._id))?.lastLoginAt || null,
+      lastLoginAt: sessionHistoryById.get(String(customer._id))?.lastLoginAt || null,
+      lastActivityAt: sessionHistoryById.get(String(customer._id))?.lastActivityAt || null,
       wishlist: undefined,
     }));
     return res.json({ customers: enrichedCustomers, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
