@@ -16,6 +16,7 @@ import {
 } from "../lib/refresh-token.js";
 
 import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
+import { getClientIpAddress } from "../lib/client-ip.js";
 
 const generateTokens = (userId, sessionId) => {
 	const accessToken = jwt.sign({ userId, sid: sessionId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -52,11 +53,13 @@ const setCookies = (res, accessToken, refreshToken) => {
 const startAccountSession = async (user, req, res) => {
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const clientIpAddress = getClientIpAddress(req);
+  const userAgent = String(req.headers["user-agent"] || "").replace(/[\\r\\n]/g, "").slice(0, 500);
   await AccountSession.create({
     user: user._id, tokenId: sessionId,
-    deviceName: String(req.headers["x-device-name"] || req.headers["user-agent"] || "دستگاه ناشناس").slice(0, 160),
-    userAgent: String(req.headers["user-agent"] || "").slice(0, 500),
-    ipAddress: String(req.ip || "").slice(0, 80), expiresAt,
+    deviceName: String(req.headers["x-device-name"] || userAgent || "دستگاه ناشناس").replace(/[\\r\\n]/g, "").slice(0, 160),
+    userAgent,
+    ipAddress: clientIpAddress.slice(0, 80), expiresAt,
   });
   const { accessToken, refreshToken } = generateTokens(user._id, sessionId);
   await storeRefreshToken(user._id, refreshToken, sessionId);
@@ -64,7 +67,7 @@ const startAccountSession = async (user, req, res) => {
   await SecurityNotification.create({
     user: user._id, type: "new_login", title: "ورود جدید به حساب",
     message: "ورود جدیدی به حساب شما انجام شد.",
-    metadata: { deviceName: String(req.headers["user-agent"] || "").slice(0, 160), ipAddress: String(req.ip || "").slice(0, 80) },
+    metadata: { deviceName: userAgent.slice(0, 160), ipAddress: clientIpAddress.slice(0, 80) },
   }).catch(error => console.warn("Unable to save security notification", error?.message));
   return sessionId;
 };
@@ -579,7 +582,14 @@ export const refreshToken = async (req, res) => {
       res.clearCookie("refreshToken");
       return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
     }
-    if (session) { session.lastUsedAt = new Date(); await session.save(); }
+    if (session) {
+      session.lastUsedAt = new Date();
+      const currentIpAddress = getClientIpAddress(req);
+      if (currentIpAddress) session.ipAddress = currentIpAddress.slice(0, 80);
+      const currentUserAgent = String(req.headers["user-agent"] || "").replace(/[\\r\\n]/g, "").slice(0, 500);
+      if (currentUserAgent) session.userAgent = currentUserAgent;
+      await session.save();
+    }
     setCookies(res, accessToken, nextRefreshToken);
     return res.json({ message: "Session refreshed successfully" });
   } catch (error) {

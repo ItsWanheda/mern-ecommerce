@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import AuditLog from "../models/audit-log.model.js";
+import { getClientIpAddress } from "./client-ip.js";
 
 const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -121,7 +122,7 @@ export const recordAuditEvent = async (req, event) => {
       targetId: event.targetId == null ? "" : String(event.targetId).slice(0, 80),
       summary: String(event.summary || event.action || "Admin action").slice(0, 500),
       metadata,
-      ip: typeof req.ip === "string" ? req.ip.slice(0, 64) : "",
+      ip: getClientIpAddress(req).slice(0, 64),
       userAgent: headerValue(req, "user-agent", 256),
       requestMethod: typeof req.method === "string" ? req.method.slice(0, 12) : "",
       requestPath: typeof req.path === "string" ? String(req.baseUrl || "") + req.path : "",

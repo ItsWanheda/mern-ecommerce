@@ -140,6 +140,49 @@ export const getCustomers = async (req, res) => {
   }
 };
 
+export const getCustomerSessions = async (req, res) => {
+  const customerId = req.params.id;
+  if (!isValidObjectId(customerId)) return res.status(400).json({ message: "Invalid customer ID" });
+
+  try {
+    const customer = await User.findById(customerId).select("_id").lean();
+    if (!customer) return res.status(404).json({ message: "Customer account not found" });
+
+    const limit = clampInteger(req.query.limit, 10, 1, 25);
+    const where = { userId: customerId };
+    const [sessions, total] = await Promise.all([
+      prisma.accountSession.findMany({
+        where,
+        orderBy: [{ lastUsedAt: "desc" }, { createdAt: "desc" }],
+        take: limit,
+        select: {
+          id: true,
+          deviceName: true,
+          userAgent: true,
+          ipAddress: true,
+          createdAt: true,
+          lastUsedAt: true,
+          expiresAt: true,
+          revokedAt: true,
+        },
+      }),
+      prisma.accountSession.count({ where }),
+    ]);
+
+    const now = new Date();
+    return res.json({
+      sessions: sessions.map((session) => ({
+        ...session,
+        status: session.revokedAt ? "revoked" : session.expiresAt <= now ? "expired" : "active",
+      })),
+      pagination: { limit, total, hasMore: total > sessions.length },
+    });
+  } catch (error) {
+    console.error("Unable to load customer session history", { name: error?.name, message: error?.message });
+    return res.status(500).json({ message: "Unable to load customer session history" });
+  }
+};
+
 export const updateCustomerAccess = async (req, res) => {
   const customerId = req.params.id;
   if (!isValidObjectId(customerId)) return res.status(400).json({ message: "Invalid customer ID" });

@@ -22,6 +22,7 @@ import accountManagementRoutes from "./routes/account-management.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
 import { browserOriginAndCors, securityHeaders } from "./middleware/security.middleware.js";
 import { getImageStorageDirectory } from "./lib/image-upload.js";
+import { getTrustProxyHops } from "./lib/client-ip.js";
 
 const app = express();
 
@@ -36,7 +37,7 @@ const safeErrorMetadata = (error) => ({
 });
 
 app.disable("x-powered-by");
-app.set("trust proxy", 1);
+app.set("trust proxy", getTrustProxyHops(process.env.TRUST_PROXY_HOPS));
 app.use(securityHeaders);
 app.use(browserOriginAndCors);
 
