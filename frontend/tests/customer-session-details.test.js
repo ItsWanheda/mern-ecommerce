@@ -9,7 +9,7 @@ test("customer session details distinguish sign-in metadata from last observed a
   assert.match(source, /lastIpAddress/);
   assert.match(source, /loginUserAgent/);
   assert.match(source, /lastUserAgent/);
-  assert.match(source, /آخرین نوسازی نشست/);
+  assert.match(source, /آخرین فعالیت نشست/);
   assert.match(source, /lastLoginAt/);
   assert.match(source, /lastActivityAt/);
   assert.match(source, /آخرین فعالیت ثبت‌شده نشست/);
