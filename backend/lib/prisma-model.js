@@ -127,7 +127,9 @@ function translateFieldCondition(model, field, condition) {
   if (condition instanceof RegExp) {
     if (json && path.length && jsonArrayFields[model]?.has(root)) return {};
     if (json) return { [root]: { path, string_contains: regexText(condition) } };
-    return { [root]: { contains: regexText(condition) } };
+    const stringFilter = { contains: regexText(condition) };
+    if (condition.flags.includes("i")) stringFilter.mode = "insensitive";
+    return { [root]: stringFilter };
   }
   if (Array.isArray(condition)) return json
     ? { [root]: { array_contains: condition } }
@@ -151,6 +153,8 @@ function translateFieldCondition(model, field, condition) {
   for (const [operator, value] of entries) {
     if (operator === "$in" || operator === "$nin") {
       const mappedValues = value.map(item => item instanceof RegExp ? regexText(item) : item);
+      const nonNullValues = mappedValues.filter(item => item !== null);
+      const includesNull = mappedValues.some(item => item === null);
       if (json && path.length && jsonArrayFields[model]?.has(root)) {
         // Evaluated against the JSONB array after the narrowed SQL query.
       } else if (json && path.length) {
@@ -159,8 +163,26 @@ function translateFieldCondition(model, field, condition) {
         clauses.push(operator === "$in"
           ? { [root]: { hasSome: mappedValues } }
           : { NOT: { [root]: { hasSome: mappedValues } } });
-      } else {
-        clauses.push({ [mappedField]: operator === "$in" ? { in: mappedValues } : { notIn: mappedValues } });
+      } else if (nullableScalarFieldsByModel[model]?.has(root)) {
+        if (operator === "$in") {
+          const alternatives = [];
+          if (nonNullValues.length) alternatives.push({ [mappedField]: { in: nonNullValues } });
+          if (includesNull) alternatives.push({ [mappedField]: null });
+          if (alternatives.length === 1) clauses.push(alternatives[0]);
+          else if (alternatives.length > 1) clauses.push({ OR: alternatives });
+          else clauses.push({ [mappedField]: { in: [] } });
+        } else if (includesNull) {
+          const notNull = { [mappedField]: { not: null } };
+          if (nonNullValues.length) clauses.push({ AND: [{ [mappedField]: { notIn: nonNullValues } }, notNull] });
+          else clauses.push(notNull);
+        } else if (nonNullValues.length) {
+          clauses.push({ OR: [{ [mappedField]: { notIn: nonNullValues } }, { [mappedField]: null }] });
+        }
+      } else if (operator === "$in") {
+        // Required PostgreSQL scalar columns cannot contain SQL NULL.
+        clauses.push({ [mappedField]: { in: nonNullValues } });
+      } else if (nonNullValues.length) {
+        clauses.push({ [mappedField]: { notIn: nonNullValues } });
       }
     } else if (operator === "$all") {
       if (!path.length && scalarArrayFields[model]?.has(root)) {
