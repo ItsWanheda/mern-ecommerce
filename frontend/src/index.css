@@ -1,75 +1,115 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
+
 
 :root {
   /* Primitive RGB values: the only source of truth for the shared palette. */
-  --color-canvas: 255 255 255;
-  --color-surface: 255 255 255;
-  --color-surface-raised: 248 248 245;
-  --color-surface-muted: 241 240 235;
-  --color-strong: 37 39 34;
-  --color-strong-hover: 65 68 59;
-  --color-ink: 37 39 34;
-  --color-ink-strong: 65 68 59;
-  --color-muted: 98 100 92;
-  --color-muted-soft: 119 120 111;
-  --color-border: 232 230 224;
-  --color-border-strong: 201 199 190;
-  --color-hover: 241 244 237;
-  --color-brand: 104 116 95;
-  --color-brand-hover: 65 68 59;
-  --color-brand-soft: 233 237 228;
-  --color-brand-deep: 82 97 73;
-  --color-brand-muted: 154 165 142;
-  --color-disabled: 160 161 149;
-  --color-success: 53 107 74;
-  --color-danger: 139 61 52;
-  --color-warning: 128 91 23;
-  --color-on-brand: 255 254 250;
+  /* Backgrounds */
+  --color-canvas: 8 8 8;
+  --color-surface: 17 17 17;
+  --color-surface-raised: 25 25 25;
+  --color-surface-muted: 32 32 32;
 
-  color-scheme: light;
+  /* Text */
+--color-strong: 198 243 106;
+--color-strong-hover: 177 225 77;
+  --color-ink: 220 220 220;
+  --color-ink-strong: 245 245 245;
+  --color-muted: 155 155 155;
+  --color-muted-soft: 115 115 115;
+
+  /* Borders */
+  --color-border: 45 45 45;
+  --color-border-strong: 65 65 65;
+
+  /* Interactive states */
+  --color-hover: 32 32 32;
+
+  /* Brand — Electric Lime */
+  --color-brand: 198 243 106;
+  --color-brand-hover: 177 225 77;
+  --color-brand-soft: 38 48 25;
+  --color-brand-deep: 153 194 69;
+  --color-brand-muted: 130 155 91;
+
+  /* Status */
+  --color-disabled: 90 90 90;
+  --color-success: 105 190 125;
+  --color-danger: 239 91 91;
+  --color-warning: 240 183 76;
+
+  /* Contrast */
+  --color-on-brand: 8 8 8;
+
+  color-scheme: dark;
+  /* Core surfaces */
   --ui-canvas: rgb(var(--color-canvas));
   --ui-surface: rgb(var(--color-surface));
   --ui-surface-raised: rgb(var(--color-surface-raised));
-  --ui-input-bg: var(--ui-surface);
+  --ui-input-bg: rgb(22 22 22);
+  --ui-surface-muted: rgb(var(--color-surface-muted));
+
+  /* Typography */
   --ui-text: rgb(var(--color-ink));
   --ui-text-strong: rgb(var(--color-ink-strong));
   --ui-muted: rgb(var(--color-muted));
+
+  /* Borders */
   --ui-border: rgb(var(--color-border));
   --ui-border-strong: rgb(var(--color-border-strong));
+
+  /* Interaction */
   --ui-hover: rgb(var(--color-hover));
   --ui-accent: rgb(var(--color-brand));
   --ui-accent-hover: rgb(var(--color-brand-hover));
   --ui-accent-soft: rgb(var(--color-brand) / 0.12);
   --ui-focus: var(--ui-accent);
-  --ui-chart-grid: #dedbd2;
+
+  /* Charts */
+  --ui-chart-grid: #303030;
   --ui-chart-axis: var(--ui-muted);
-  --ui-chart-secondary: #536b9c;
-  --ui-overlay: rgba(37, 39, 34, 0.58);
-  --ui-shadow-color: rgba(37, 39, 34, 0.22);
+  --ui-chart-secondary: #8B9BC5;
+
+  /* Overlays and shadows */
+  --ui-overlay: rgb(0 0 0 / 0.72);
+  --ui-shadow-color: rgb(0 0 0 / 0.45);
+
+  /* Strong surfaces */
   --ui-strong-surface: rgb(var(--color-strong));
   --ui-strong-hover: rgb(var(--color-strong-hover));
-  --ui-inverse-text: rgb(var(--color-surface));
-  --ui-button-text: rgb(var(--color-on-brand));
-  --ui-disabled-bg: var(--ui-surface-raised);
-  --ui-disabled-text: rgb(var(--color-disabled));
-  --ui-success: rgb(var(--color-success));
-  --ui-success-bg: #edf5ee;
-  --ui-success-border: #b9d5bf;
-  --ui-danger: rgb(var(--color-danger));
-  --ui-danger-bg: #f8eeeb;
-  --ui-danger-border: #e2b9b4;
-  --ui-warning: rgb(var(--color-warning));
-  --ui-warning-bg: #fbf4e5;
-  --ui-warning-border: #e6d2a4;
 
+  /* Inverse text */
+  --ui-inverse-text: rgb(8 8 8);
+  --ui-button-text: rgb(var(--color-on-brand));
+
+  /* Disabled states */
+  --ui-disabled-bg: rgb(35 35 35);
+  --ui-disabled-text: rgb(var(--color-disabled));
+
+  /* Success */
+  --ui-success: rgb(var(--color-success));
+  --ui-success-bg: #14251A;
+  --ui-success-border: #285638;
+
+  /* Danger */
+  --ui-danger: rgb(var(--color-danger));
+  --ui-danger-bg: #291716;
+  --ui-danger-border: #65302D;
+
+  /* Warning */
+  --ui-warning: rgb(var(--color-warning));
+  --ui-warning-bg: #292213;
+  --ui-warning-border: #65502A;
+
+  /* Store aliases */
   --store-canvas: var(--ui-canvas);
   --store-surface: var(--ui-surface);
   --store-ink: var(--ui-text);
   --store-muted: var(--ui-muted);
+
+  /* Brand aliases */
   --brand-primary: var(--ui-accent);
   --brand-hover: var(--ui-accent-hover);
-  --brand-muted: var(--ui-accent);
-  --brand-soft: var(--ui-hover);
+  --brand-muted: rgb(var(--color-brand-muted));
+  --brand-soft: var(--ui-accent-soft);
 }
 
 @tailwind base;
@@ -101,6 +141,62 @@
     color: var(--store-ink);
   }
 
+  /* Primary action buttons */
+.storefront-page button[class*="bg-lime"],
+.storefront-page button[class*="bg-brand"],
+.admin-workspace button[class*="bg-lime"],
+.admin-workspace button[class*="bg-brand"] {
+  color: var(--ui-button-text);
+}
+
+/* Standard buttons */
+.storefront-page button,
+.admin-workspace button {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+/* Inputs */
+input,
+textarea,
+select {
+  color: var(--ui-text);
+  accent-color: var(--ui-accent);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ui-muted);
+  opacity: 1;
+}
+
+/* Native select options */
+select,
+option {
+  background-color: var(--ui-surface-raised);
+  color: var(--ui-text);
+}
+
+/* Checkbox and radio */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--ui-accent);
+}
+
+/* Selection */
+::selection {
+  background: var(--ui-accent);
+  color: var(--ui-inverse-text);
+}
+
+/* Scrollbars */
+* {
+  scrollbar-color:
+    var(--ui-border-strong)
+    var(--ui-surface);
+}
   button,
   input,
   textarea,
@@ -240,7 +336,7 @@ input,
 textarea,
 select,
 button {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 /* Shared admin workspace treatment. Layout and admin components remain unchanged. */
@@ -444,13 +540,13 @@ input[type="search"]::-webkit-search-decoration {
 
 .storefront-search-form input[type="search"] {
   min-width: 0;
-  color: #252722;
+  color: var(--ui-text);
   background: transparent;
   caret-color: var(--ui-accent);
 }
 
 .storefront-search-form input[type="search"]::placeholder {
-  color: #77786f;
+  color: var(--ui-muted);
   opacity: 1;
 }
 
@@ -483,7 +579,7 @@ input[type="search"]::-webkit-search-decoration {
 
 .product-card__image-frame,
 .product-card__image-link {
-  background: #fff;
+  background: var(--ui-surface-raised);
 }
 
 .product-card__title {
@@ -583,9 +679,9 @@ input[type="search"]::-webkit-search-decoration {
 }
 
 .storefront-footer {
-  scroll-margin-top: 6rem;
-  background-color: rgb(var(--color-surface-muted));
-  border-top-color: rgb(var(--color-border-strong));
+  background-color: var(--ui-surface);
+  border-top: 1px solid var(--ui-border);
+  color: var(--ui-text);
 }
 
 @media (max-width: 767px) {

@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const globalForPrisma = globalThis;
 const queryLoggingEnabled = process.env.PRISMA_QUERY_LOGGING === "true";
 
+
 export const prisma = globalForPrisma.prismaClient ?? new PrismaClient({
   log: queryLoggingEnabled ? ["warn", "error", "query"] : ["warn", "error"],
 });

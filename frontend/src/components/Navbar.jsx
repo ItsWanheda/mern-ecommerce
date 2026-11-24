@@ -928,21 +928,22 @@ const Navbar = () => {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() => setMobileSearchOpen(true)}
-                aria-label={activeFilterCount > 0
-                  ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
-                  : "باز کردن جست‌وجو و فیلتر محصولات"}
-                className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-white p-0 text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-surface-raised)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
-              >
-                <Search size={18} aria-hidden="true" />
-                {activeFilterCount > 0 && (
-                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[var(--ui-canvas)] bg-[var(--ui-accent)] px-1 py-0.5 text-[10px] font-bold leading-none text-[var(--ui-button-text)]">
-                    {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
-                  </span>
-                )}
-              </button>
+<button
+  type="button"
+  onClick={() => setMobileSearchOpen(true)}
+  aria-label={activeFilterCount > 0
+    ? `باز کردن جست‌وجو و فیلتر محصولات، ${new Intl.NumberFormat("fa-IR").format(activeFilterCount)} فیلتر فعال`
+    : "باز کردن جست‌وجو و فیلتر محصولات"}
+  className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--ui-border-strong)] bg-[var(--ui-surface-raised)] p-0 text-[var(--ui-text-strong)] shadow-sm transition hover:border-[var(--ui-accent)] hover:bg-[var(--ui-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ui-focus)] md:hidden"
+>
+  <Search size={18} aria-hidden="true" />
+
+  {activeFilterCount > 0 && (
+    <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full border-2 border-[var(--ui-canvas)] bg-[var(--ui-accent)] px-1 py-0.5 text-[10px] font-bold leading-none text-[var(--ui-button-text)]">
+      {new Intl.NumberFormat("fa-IR").format(activeFilterCount)}
+    </span>
+  )}
+</button>
             </div>
           </div>
         </div>
@@ -1163,7 +1164,7 @@ const Navbar = () => {
             type="button"
             aria-label="بستن جست‌وجو"
             onClick={() => { setMobileSearchOpen(false); setActiveSearchSurface(null); }}
-            className="absolute inset-0 h-full w-full bg-strong/35 backdrop-blur-md"
+            className="absolute inset-0 h-full w-full bg-black/70 backdrop-blur-md"
           />
 
           <section

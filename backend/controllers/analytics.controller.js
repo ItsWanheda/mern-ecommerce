@@ -7,7 +7,7 @@ const paidOrderMatch = (startDate, endDate) => ({
   currency: "IRT",
   paymentProvider: "zarinpal",
   paymentStatus: "paid",
-  createdAt: { $gte: startDate, $lte: endDate },
+  createdAt: { gte: startDate, lte: endDate },
 });
 
 export const getAnalyticsData = async (startDate, endDate) => {
