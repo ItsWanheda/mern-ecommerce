@@ -4,6 +4,7 @@ import path from "node:path";
 
 const MIME_FORMATS = {
   "image/jpeg": "jpg",
+  "image/jpg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
@@ -65,7 +66,7 @@ const readDimensions = (buffer, mime) => {
   if (mime === "image/png" && buffer.length >= 24 && buffer.toString("ascii", 12, 16) === "IHDR") {
     return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
   }
-  if (mime === "image/jpeg") return jpegDimensions(buffer);
+  if (mime === "image/jpeg" || mime === "image/jpg") return jpegDimensions(buffer);
   if (mime === "image/gif" && buffer.length >= 10) {
     return { width: buffer.readUInt16LE(6), height: buffer.readUInt16LE(8) };
   }
@@ -92,7 +93,7 @@ const readDimensions = (buffer, mime) => {
 };
 
 const signatureMatches = (buffer, mime) => {
-  if (mime === "image/jpeg") return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (mime === "image/jpeg" || mime === "image/jpg") return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
   if (mime === "image/png") return buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   if (mime === "image/gif") return buffer.length >= 6 && ["GIF87a", "GIF89a"].includes(buffer.toString("ascii", 0, 6));
   if (mime === "image/webp") return buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP";
@@ -101,7 +102,7 @@ const signatureMatches = (buffer, mime) => {
 
 export const validateImageDataUrl = (value, maxBytes = 2 * 1024 * 1024) => {
   if (typeof value !== "string") throw new ImageUploadError();
-  const match = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+  const match = /^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
   if (!match) throw new ImageUploadError("فرمت تصویر پشتیبانی نمی‌شود؛ فقط JPG، PNG، WebP یا GIF مجاز است.");
 
   const [, mime, encoded] = match;
