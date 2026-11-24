@@ -146,6 +146,7 @@ model Campaign {
   products    Product[] @relation("CampaignProducts")
 
   @@index([isActive, startsAt, endsAt, sortOrder])
+  @@index([createdById])
   @@map("campaigns")
 }
 
@@ -194,6 +195,7 @@ model Coupon {
   createdBy              User?     @relation("CouponCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([isActive, startsAt, expiresAt])
+  @@index([createdById])
   @@map("coupons")
 }
 
@@ -282,6 +284,9 @@ model ProductReview {
   @@unique([productId, userId])
   @@index([productId, status, createdAt(sort: Desc)])
   @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([orderId])
+  @@index([moderatedById])
   @@map("product_reviews")
 }
 
@@ -367,5 +372,6 @@ model StoreSettings {
 
   updatedBy   User?     @relation("StoreSettingsUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
 
+  @@index([updatedById])
   @@map("store_settings")
 }
