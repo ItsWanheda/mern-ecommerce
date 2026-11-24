@@ -13,8 +13,8 @@ test("storefront uses the committed hardware palette without a runtime theme tog
   assert.match(css, /--color-canvas:\s*8 8 8;/);
   assert.match(css, /--color-surface:\s*17 17 17;/);
   assert.match(css, /color-scheme:\s*dark;/);
-  assert.match(css, /Storefront visual system[\\s\\S]*?color-scheme:\\s*light;/);
-  assert.doesNotMatch(css, /data-theme=["']dark|prefers-color-scheme:\\s*dark/);
+  assert.match(css, /Storefront visual system[\s\S]*?color-scheme:\s*light;/);
+  assert.doesNotMatch(css, /data-theme=["']dark|prefers-color-scheme:\s*dark/);
   assert.doesNotMatch(layout, /computer-hardware-theme|themeInitialization|data-theme/);
   assert.match(layout, /name="theme-color" content="#ffffff"/);
 });
