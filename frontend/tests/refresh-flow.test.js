@@ -150,7 +150,7 @@ for (const scenario of ["expired", "replayed"]) {
     await flushPendingLogout();
     assert.equal(profileAttempts, 1);
     assert.equal(refreshAttempts, 1);
-    assert.equal(logoutAttempts, 1);
+    assert.equal(logoutAttempts, 0);
     assert.equal(useUserStore.getState().user, null);
   });
 }
@@ -213,4 +213,71 @@ test("admin dashboard entry refreshes a stale customer role after an administrat
   assert.equal(refreshedUser.role, "admin");
   assert.equal(useUserStore.getState().user?.role, "admin");
   assert.deepEqual(useUserStore.getState().user?.permissions, ["*"]);
+});
+
+
+test("guest auth bootstrap treats a missing refresh cookie as an ordinary signed-out state", async () => {
+  resetStore(true);
+  let profileAttempts = 0;
+  let refreshAttempts = 0;
+  let logoutAttempts = 0;
+  const originalConsoleError = console.error;
+  const consoleErrors = [];
+  console.error = (...args) => consoleErrors.push(args);
+  try {
+    installAdapter(async (config) => {
+      if (config.url === "/auth/profile") {
+        profileAttempts += 1;
+        throw unauthorized(config, "No access token");
+      }
+      if (config.url === "/auth/refresh-token") {
+        refreshAttempts += 1;
+        throw unauthorized(config, "No refresh cookie");
+      }
+      if (config.url === "/auth/logout") {
+        logoutAttempts += 1;
+        return ok(config);
+      }
+      throw new Error("Unexpected test request: " + config.url);
+    });
+
+    await useUserStore.getState().checkAuth();
+    assert.equal(profileAttempts, 1);
+    assert.equal(refreshAttempts, 1);
+    assert.equal(logoutAttempts, 0);
+    assert.equal(consoleErrors.length, 0);
+    assert.equal(useUserStore.getState().user, null);
+    assert.equal(useUserStore.getState().checkingAuth, false);
+    assert.equal(useUserStore.getState().authInitialized, true);
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test("a temporary refresh failure does not trigger logout or discard an existing user", async () => {
+  resetStore(false);
+  const existingUser = { _id: "user-preserved", role: "customer" };
+  useUserStore.setState({ user: existingUser });
+  let refreshAttempts = 0;
+  let logoutAttempts = 0;
+
+  installAdapter(async (config) => {
+    if (config.url === "/protected/resource") throw unauthorized(config);
+    if (config.url === "/auth/refresh-token") {
+      refreshAttempts += 1;
+      const response = { data: { message: "Temporarily unavailable" }, status: 503, statusText: "Unavailable", headers: {}, config };
+      throw new AxiosError("Temporarily unavailable", "ERR_BAD_RESPONSE", config, null, response);
+    }
+    if (config.url === "/auth/logout") {
+      logoutAttempts += 1;
+      return ok(config);
+    }
+    throw new Error("Unexpected test request: " + config.url);
+  });
+
+  await assert.rejects(axiosInstance.get("/protected/resource"), (error) => error.response?.status === 503);
+  assert.equal(refreshAttempts, 1);
+  assert.equal(logoutAttempts, 0);
+  assert.equal(useUserStore.getState().user, existingUser);
+  assert.equal(useUserStore.getState().checkingAuth, false);
 });
