@@ -599,12 +599,12 @@ export const updateProduct = async (req, res) => {
     }
     const uploadedImages = [];
     for (const imageInput of imageInputs) {
-      if (/^https:\/\//i.test(imageInput)) {
-        uploadedImages.push(imageInput);
-      } else {
-        const response = await cloudinary.uploader.upload(imageInput, { folder: "products" });
-        if (response.secure_url) uploadedImages.push(response.secure_url);
-      }
+      const imageReference = await resolveImageReference(imageInput, {
+        folder: "products",
+        maxBytes: 2 * 1024 * 1024,
+      });
+      uploadedImages.push(imageReference);
+      if (imageInput.startsWith("data:")) pendingUploadedImages.push(imageReference);
     }
 
     const previousImageReferences = [...new Set([product.image, ...(product.images || [])]
