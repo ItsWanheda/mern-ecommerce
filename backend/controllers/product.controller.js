@@ -1,5 +1,5 @@
 import { redis } from "../lib/redis.js";
-import cloudinary from "../lib/cloudinary.js";
+import { ImageUploadError, ImageStorageError, deleteManagedImage, resolveImageReference } from "../lib/image-upload.js";
 import Product from "../models/product.model.js";
 import Category from "../models/category.model.js";
 import Order from "../models/order.model.js";
@@ -320,6 +320,7 @@ export const getSearchedProducts = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
+  const pendingUploadedImages = [];
   try {
     const {
       name, description, price, image, images, category, categoryId, attributes, stock,
@@ -421,12 +422,12 @@ export const createProduct = async (req, res) => {
       .slice(0, 8);
     const uploadedImages = [];
     for (const imageInput of imageInputs) {
-      if (/^https:\/\//i.test(imageInput)) {
-        uploadedImages.push(imageInput);
-      } else {
-        const response = await cloudinary.uploader.upload(imageInput, { folder: "products" });
-        if (response.secure_url) uploadedImages.push(response.secure_url);
-      }
+      const imageReference = await resolveImageReference(imageInput, {
+        folder: "products",
+        maxBytes: 2 * 1024 * 1024,
+      });
+      uploadedImages.push(imageReference);
+      if (imageInput.startsWith("data:")) pendingUploadedImages.push(imageReference);
     }
 
     const product = await Product.create({
@@ -446,6 +447,7 @@ export const createProduct = async (req, res) => {
       sizeChart: normalizedSizeChart,
       stock: normalizedVariants.length ? null : numericStock,
     });
+    pendingUploadedImages.length = 0;
     await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
       action: "product.created",
@@ -477,12 +479,20 @@ export const createProduct = async (req, res) => {
     });
     return res.status(201).json(product);
   } catch (error) {
+    await Promise.all(pendingUploadedImages.map((image) =>
+      deleteManagedImage(image, { folder: "products" }).catch((cleanupError) => {
+        console.error("Unpersisted product image cleanup failed", { name: cleanupError?.name || "Error" });
+      })
+    ));
+    if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
+    if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     console.error("Error in createProduct controller", error.message);
     return res.status(500).json({ message: "Unable to create product" });
   }
 };
 
 export const updateProduct = async (req, res) => {
+  const pendingUploadedImages = [];
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
@@ -597,6 +607,9 @@ export const updateProduct = async (req, res) => {
       }
     }
 
+    const previousImageReferences = [...new Set([product.image, ...(product.images || [])]
+      .filter((value) => typeof value === "string" && value))];
+
     const snapshot = (item) => ({
       name: item.name,
       description: item.description,
@@ -632,6 +645,14 @@ export const updateProduct = async (req, res) => {
     product.sizeChart = normalizedSizeChart;
     product.stock = normalizedVariants.length ? null : numericStock;
     await product.save();
+    pendingUploadedImages.length = 0;
+
+    const retainedImageReferences = new Set(uploadedImages);
+    await Promise.all(previousImageReferences
+      .filter((image) => !retainedImageReferences.has(image))
+      .map((image) => deleteManagedImage(image, { folder: "products" }).catch((cleanupError) => {
+        console.error("Replaced product image cleanup failed", { name: cleanupError?.name || "Error" });
+      })));
 
     await updateFeaturedProductsCache();
     await invalidateProductDerivedCaches();
@@ -644,6 +665,13 @@ export const updateProduct = async (req, res) => {
     });
     return res.json(product);
   } catch (error) {
+    await Promise.all(pendingUploadedImages.map((image) =>
+      deleteManagedImage(image, { folder: "products" }).catch((cleanupError) => {
+        console.error("Unpersisted product image cleanup failed", { name: cleanupError?.name || "Error" });
+      })
+    ));
+    if (error instanceof ImageUploadError) return res.status(400).json({ message: error.message });
+    if (error instanceof ImageStorageError) return res.status(502).json({ message: error.message });
     if (error.name === "CastError") return res.status(400).json({ message: "شناسه محصول معتبر نیست." });
     console.error("Error updating product", error.message);
     return res.status(500).json({ message: "به‌روزرسانی محصول ناموفق بود." });
@@ -771,15 +799,14 @@ export const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ message: "Product not found" });
     if (product.isActive !== false) return res.status(409).json({ message: "ابتدا محصول را بایگانی کنید و سپس حذف دائمی را انجام دهید." });
-    if (product.image) {
-      try {
-        const publicId = product.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(`products/${publicId}`);
-      } catch (error) {
-        console.error("Error deleting product image", error.message);
-      }
-    }
+    const productImageReferences = [...new Set([product.image, ...(product.images || [])]
+      .filter((value) => typeof value === "string" && value))];
     await Product.findByIdAndDelete(req.params.id);
+    await Promise.all(productImageReferences.map((image) =>
+      deleteManagedImage(image, { folder: "products" }).catch((error) => {
+        console.error("Error deleting local product image", { name: error?.name || "Error" });
+      })
+    ));
     await updateFeaturedProductsCache();
     await invalidateProductDerivedCaches();
     await recordAuditEvent(req, {
