@@ -228,6 +228,10 @@ export function toPrismaWhere(model, filter = {}) {
   for (const [field, condition] of Object.entries(filter)) {
     if (field === "$expr") continue;
     if (field === "$or" || field === "$and" || field === "$nor") {
+      // If an OR/NOR branch needs JavaScript evaluation, translating only part
+      // of the boolean expression can exclude valid candidates. Leave the full
+      // expression to matchesFilter and use only the other safe SQL predicates.
+      if ((field === "$or" || field === "$nor") && condition.some(item => filterNeedsPostProcessing(model, item))) continue;
       const translated = condition.map(item => toPrismaWhere(model, item));
       clauses.push(field === "$or" ? { OR: translated } : field === "$nor" ? { NOT: { OR: translated } } : { AND: translated });
     } else {
@@ -780,11 +784,18 @@ async function executeAtomicScalarUpdate(model, filter, update, options, returnD
         !key.startsWith("$") && (value === null || typeof value !== "object" || value instanceof Date)
       )
     );
+    const hasOperators = Object.keys(update || {}).some(key => key.startsWith("$"));
     const insertFields = {
       ...equalityFilter,
       ...(update?.$setOnInsert || {}),
-      ...(update?.$set || (Object.keys(update || {}).some(key => key.startsWith("$")) ? {} : update || {})),
+      ...(update?.$set || (hasOperators ? {} : update || {})),
     };
+    // Mongo upsert initializes $inc fields from the increment value when the
+    // document does not exist. $unset has no insert-side effect.
+    for (const [field, value] of Object.entries(update?.$inc || {})) {
+      if (insertFields[field] === undefined) insertFields[field] = Number(value);
+      else insertFields[field] = Number(insertFields[field] || 0) + Number(value);
+    }
     const createData = toPrismaData(model, insertFields, { includeId: true });
     if (model === "campaign" && createData.products?.set) {
       createData.products = { connect: createData.products.set };
@@ -801,7 +812,7 @@ async function executeAtomicScalarUpdate(model, filter, update, options, returnD
     } catch (error) {
       // A concurrent upsert may win the unique-key race. Re-read the matching
       // row and apply this update instead of returning a false "not found".
-      if (error?.code !== "P2002") throw error;
+      if (error?.code !== "P2002" || tx) throw error;
       beforeRaw = await delegate.findFirst({ where, include });
       if (!beforeRaw) throw error;
     }
