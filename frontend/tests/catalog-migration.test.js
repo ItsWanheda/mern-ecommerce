@@ -15,14 +15,18 @@ test("legacy variant, size, colour, fit, and size-chart records require migratio
     { variants: [{ size: "L", color: "black", stock: 2 }] },
     { sizes: ["S", "M"] },
     { colors: [{ name: "Black" }] },
-    { fit: { type: "regular" } },
+    { fit: { type: "regular", description: "قالب استاندارد لباس" } },
     { sizeChart: [{ size: "M", chest: 96 }] },
   ];
   for (const product of legacyProducts) assert.equal(requiresCatalogMigration(product), true);
 });
 
-test("empty legacy fields, including Prisma's empty fit object, do not block hardware products", () => {
+test("empty and accidentally generated default fit metadata do not block hardware products", () => {
   assert.equal(requiresCatalogMigration({ variants: [], sizes: [], colors: [], sizeChart: [], fit: null }), false);
   assert.equal(requiresCatalogMigration({ variants: [], sizes: [], colors: [], sizeChart: [], fit: {} }), false);
+  assert.equal(requiresCatalogMigration({
+    variants: [], sizes: [], colors: [], sizeChart: [],
+    fit: { type: "regular", description: "", modelHeight: "", modelSize: "" },
+  }), false);
   assert.equal(requiresCatalogMigration(null), false);
 });
