@@ -965,13 +965,18 @@ export function createPrismaModel(model) {
       if (filterNeedsPostProcessing(delegate, filter)) {
         const candidates = await modelDelegate.findMany({ where });
         row = candidates.find(candidate => matchesFilter(fromPrisma(delegate, candidate), filter));
-        if (row) row = { id: row.id };
+        if (row) row = { id: row.id, updatedAt: row.updatedAt };
       } else {
         row = await modelDelegate.findFirst({ where, select: { id: true } });
       }
       if (!row) return { acknowledged: true, deletedCount: 0 };
-      await modelDelegate.delete({ where: { id: row.id } });
-      return { acknowledged: true, deletedCount: 1 };
+      // Recheck ordinary SQL predicates atomically. For JavaScript-only JSON
+      // predicates, updatedAt acts as an optimistic concurrency guard.
+      const deleteWhere = filterNeedsPostProcessing(delegate, filter)
+        ? { id: row.id, ...(row.updatedAt ? { updatedAt: row.updatedAt } : {}) }
+        : { AND: [where, { id: row.id }] };
+      const deleted = await modelDelegate.deleteMany({ where: deleteWhere });
+      return { acknowledged: true, deletedCount: deleted.count };
     },
     async deleteMany(filter = {}, options = {}) {
       const tx = unwrapTransaction(options.session);
@@ -984,11 +989,15 @@ export function createPrismaModel(model) {
       // Evaluate the complete predicate in JavaScript, then delete only the
       // explicitly matched primary keys. An empty match set is a no-op.
       const candidates = await modelDelegate.findMany({ where });
-      const ids = candidates
-        .filter(candidate => matchesFilter(fromPrisma(delegate, candidate), filter))
-        .map(candidate => candidate.id);
-      if (!ids.length) return { count: 0 };
-      return modelDelegate.deleteMany({ where: { id: { in: ids } } });
+      const matched = candidates.filter(candidate => matchesFilter(fromPrisma(delegate, candidate), filter));
+      if (!matched.length) return { count: 0 };
+      // Avoid deleting rows that changed after the JavaScript predicate was
+      // evaluated. Every candidate is guarded by its primary key and version.
+      const guards = matched.map(candidate => ({
+        id: candidate.id,
+        ...(candidate.updatedAt ? { updatedAt: candidate.updatedAt } : {}),
+      }));
+      return modelDelegate.deleteMany({ where: { OR: guards } });
     },
   };
 }
