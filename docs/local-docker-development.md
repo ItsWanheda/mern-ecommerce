@@ -1,5 +1,12 @@
 # Local Docker Development
 
+
+Run the focused local image-storage tests inside the backend container:
+
+```powershell
+docker compose exec backend node --test tests/image-upload.test.js
+```
+
 This setup runs the Next.js frontend and Node.js backend in Docker while reusing the existing PostgreSQL and Redis containers. Product, category, and campaign image files are stored in the persistent Docker volume named \`hardware-store-product-images\`.
 
 ## Requirements
@@ -75,7 +82,7 @@ The command copies the current credentials and secrets without printing them. It
 From the repository root:
 
 \`\`\`powershell
-docker compose config
+docker compose config --quiet
 docker compose up -d --build
 docker compose ps
 \`\`\`
