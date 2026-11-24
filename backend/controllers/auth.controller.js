@@ -59,7 +59,12 @@ const startAccountSession = async (user, req, res) => {
     user: user._id, tokenId: sessionId,
     deviceName: String(req.headers["x-device-name"] || userAgent || "دستگاه ناشناس").replace(/[\\r\\n]/g, "").slice(0, 160),
     userAgent,
-    ipAddress: clientIpAddress.slice(0, 80), expiresAt,
+    ipAddress: clientIpAddress.slice(0, 80),
+    loginIpAddress: clientIpAddress.slice(0, 80),
+    lastIpAddress: clientIpAddress.slice(0, 80),
+    loginUserAgent: userAgent,
+    lastUserAgent: userAgent,
+    expiresAt,
   });
   const { accessToken, refreshToken } = generateTokens(user._id, sessionId);
   await storeRefreshToken(user._id, refreshToken, sessionId);
@@ -531,6 +536,8 @@ export const logout = async (req, res) => {
 export const refreshToken = async (req, res) => {
   const presentedToken = req.cookies?.refreshToken;
   if (!presentedToken) {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
     return res.status(401).json({ message: "Authentication session expired. Please sign in again." });
   }
 
@@ -585,9 +592,9 @@ export const refreshToken = async (req, res) => {
     if (session) {
       session.lastUsedAt = new Date();
       const currentIpAddress = getClientIpAddress(req);
-      if (currentIpAddress) session.ipAddress = currentIpAddress.slice(0, 80);
+      if (currentIpAddress) session.lastIpAddress = currentIpAddress.slice(0, 80);
       const currentUserAgent = String(req.headers["user-agent"] || "").replace(/[\\r\\n]/g, "").slice(0, 500);
-      if (currentUserAgent) session.userAgent = currentUserAgent;
+      if (currentUserAgent) session.lastUserAgent = currentUserAgent;
       await session.save();
     }
     setCookies(res, accessToken, nextRefreshToken);
