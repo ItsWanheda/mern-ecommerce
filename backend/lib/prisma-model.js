@@ -774,7 +774,39 @@ async function executeAtomicScalarUpdate(model, filter, update, options, returnD
   // Resolve one candidate ID, then repeat the complete predicate in UPDATE.
   // This preserves findOneAndUpdate's conditional-write semantics and prevents
   // concurrent payment/coupon/session operations from overwriting each other.
-  const beforeRaw = await delegate.findFirst({ where, include });
+  let beforeRaw = await delegate.findFirst({ where, include });
+  if (!beforeRaw && options.upsert) {
+    const equalityFilter = Object.fromEntries(
+      Object.entries(filter || {}).filter(([key, value]) =>
+        !key.startsWith("$") && (value === null || typeof value !== "object" || value instanceof Date)
+      )
+    );
+    const insertFields = {
+      ...equalityFilter,
+      ...(update?.$setOnInsert || {}),
+      ...(update?.$set || (Object.keys(update || {}).some(key => key.startsWith("$")) ? {} : update || {})),
+    };
+    const createData = toPrismaData(model, insertFields, { includeId: true });
+    if (model === "campaign" && createData.products?.set) {
+      createData.products = { connect: createData.products.set };
+    }
+    try {
+      const created = await delegate.create({
+        data: createData,
+        ...(include ? { include } : {}),
+      });
+      const mapped = attachDocumentMethods(model, fromPrisma(model, created));
+      return returnDocument
+        ? mapped
+        : { acknowledged: true, matchedCount: 0, modifiedCount: 0, upsertedId: created.id, n: 1, nModified: 0 };
+    } catch (error) {
+      // A concurrent upsert may win the unique-key race. Re-read the matching
+      // row and apply this update instead of returning a false "not found".
+      if (error?.code !== "P2002") throw error;
+      beforeRaw = await delegate.findFirst({ where, include });
+      if (!beforeRaw) throw error;
+    }
+  }
   if (!beforeRaw) {
     return returnDocument ? null : { acknowledged: true, matchedCount: 0, modifiedCount: 0, n: 0, nModified: 0 };
   }
@@ -804,6 +836,9 @@ async function executeUpdate(model, filter, update, options = {}, returnDocument
   const where = toPrismaWhere(model, filter);
   let rowsRaw = await delegate.findMany({ where, ...(model === "campaign" ? { include: { products: { select: { id: true } } } } : {}) });
   if (filterNeedsPostProcessing(model, filter)) rowsRaw = rowsRaw.filter(row => matchesFilter(fromPrisma(model, row), filter));
+  // updateOne/findOneAndUpdate must never fan out across every post-filtered row.
+  // updateMany is the only compatibility operation allowed to modify all matches.
+  if (!options.many && rowsRaw.length > 1) rowsRaw = rowsRaw.slice(0, 1);
   if (!rowsRaw.length) {
     if (options.upsert) {
       const equalityFilter = Object.fromEntries(Object.entries(filter || {}).filter(([key, value]) => !key.startsWith("$") && (value === null || typeof value !== "object" || value instanceof Date)));
@@ -923,12 +958,38 @@ export function createPrismaModel(model) {
     },
     async updateOne(filter, update, options = {}) { return executeUpdate(delegate, filter, update, options, false); },
     async updateMany(filter, update, options = {}) { return executeUpdate(delegate, filter, update, { ...options, many: true }, false); },
-    async deleteOne(filter) {
-      const row = await getDelegate(delegate).findFirst({ where: toPrismaWhere(delegate, filter), select: { id: true } });
+    async deleteOne(filter = {}, options = {}) {
+      const tx = unwrapTransaction(options.session);
+      const modelDelegate = getDelegate(delegate, tx);
+      const where = toPrismaWhere(delegate, filter);
+      let row;
+      if (filterNeedsPostProcessing(delegate, filter)) {
+        const candidates = await modelDelegate.findMany({ where });
+        row = candidates.find(candidate => matchesFilter(fromPrisma(delegate, candidate), filter));
+        if (row) row = { id: row.id };
+      } else {
+        row = await modelDelegate.findFirst({ where, select: { id: true } });
+      }
       if (!row) return { acknowledged: true, deletedCount: 0 };
-      await getDelegate(delegate).delete({ where: { id: row.id } });
+      await modelDelegate.delete({ where: { id: row.id } });
       return { acknowledged: true, deletedCount: 1 };
     },
-    async deleteMany(filter = {}) { const result = await getDelegate(delegate).deleteMany({ where: toPrismaWhere(delegate, filter) }); return result; },
+    async deleteMany(filter = {}, options = {}) {
+      const tx = unwrapTransaction(options.session);
+      const modelDelegate = getDelegate(delegate, tx);
+      const where = toPrismaWhere(delegate, filter);
+      if (!filterNeedsPostProcessing(delegate, filter)) {
+        return modelDelegate.deleteMany({ where });
+      }
+      // Never pass a lossy Mongo-to-Prisma translation directly to DELETE.
+      // Evaluate the complete predicate in JavaScript, then delete only the
+      // explicitly matched primary keys. An empty match set is a no-op.
+      const candidates = await modelDelegate.findMany({ where });
+      const ids = candidates
+        .filter(candidate => matchesFilter(fromPrisma(delegate, candidate), filter))
+        .map(candidate => candidate.id);
+      if (!ids.length) return { count: 0 };
+      return modelDelegate.deleteMany({ where: { id: { in: ids } } });
+    },
   };
 }
