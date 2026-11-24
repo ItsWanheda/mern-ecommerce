@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import Campaign from "../models/campaign.model.js";
 import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
-import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
+import { ImageUploadError, ImageStorageError, deleteManagedImage, resolveImageReference } from "../lib/image-upload.js";
 import { isValidDatabaseId as isValidObjectId } from "../lib/prisma-model.js";
 
 const persianSlugCharacters = {
@@ -189,7 +189,7 @@ export const createCampaign = async (req, res) => {
     return res.status(201).json({ campaign });
   } catch (error) {
     if (pendingUploadedImage) {
-      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "campaigns" }).catch((cleanupError) => {
+      await deleteManagedImage(pendingUploadedImage, { folder: "campaigns" }).catch((cleanupError) => {
         console.error("Unpersisted campaign image cleanup failed", { name: cleanupError?.name || "Error" });
       });
     }
@@ -256,7 +256,7 @@ export const updateCampaign = async (req, res) => {
     await current.save();
     pendingUploadedImage = "";
     if (before.image && before.image !== current.image) {
-      await deleteManagedCloudinaryImage(before.image, { folder: "campaigns" }).catch((cleanupError) => {
+      await deleteManagedImage(before.image, { folder: "campaigns" }).catch((cleanupError) => {
         console.error("Replaced campaign image cleanup failed", { name: cleanupError?.name || "Error" });
       });
     }
@@ -285,7 +285,7 @@ export const updateCampaign = async (req, res) => {
     return res.json({ campaign: current });
   } catch (error) {
     if (pendingUploadedImage) {
-      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "campaigns" }).catch((cleanupError) => {
+      await deleteManagedImage(pendingUploadedImage, { folder: "campaigns" }).catch((cleanupError) => {
         console.error("Unpersisted campaign image cleanup failed", { name: cleanupError?.name || "Error" });
       });
     }
@@ -314,7 +314,7 @@ export const deleteCampaign = async (req, res) => {
       productIds: (campaign.productIds || []).map(String),
     };
     await Campaign.deleteOne({ _id: campaign._id });
-    await deleteManagedCloudinaryImage(campaign.image, { folder: "campaigns" }).catch((cleanupError) => {
+    await deleteManagedImage(campaign.image, { folder: "campaigns" }).catch((cleanupError) => {
       console.error("Deleted campaign image cleanup failed", { name: cleanupError?.name || "Error" });
     });
     await recordAuditEvent(req, {
