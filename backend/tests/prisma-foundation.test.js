@@ -96,6 +96,7 @@ test("Prisma packages and database scripts are declared without changing Redis",
 });
 
 const migrationSql = await readFile(path.join(backendDir, "prisma", "migrations", "20261119000000_initial_postgresql", "migration.sql"), "utf8");
+const indexMigrationSql = await readFile(path.join(backendDir, "prisma", "migrations", "20261124010000_add_missing_foreign_key_indexes", "migration.sql"), "utf8");
 test("the initial PostgreSQL migration creates every application persistence table", () => {
   for (const table of ["users", "account_sessions", "security_notifications", "audit_logs", "campaigns", "categories", "coupons", "newsletter_subscribers", "orders", "product_reviews", "products", "service_cases", "store_settings"]) {
     assert.match(migrationSql, new RegExp(`CREATE TABLE \"${table}\"`));
@@ -150,4 +151,49 @@ test("product document saves preserve the persisted required price when a payloa
   assert.match(adapter, /if \(data\.price == null \|\| !Number\.isFinite\(Number\(data\.price\)\)\)/);
   assert.match(adapter, /select: \{ price: true, discountPercent: true \}/);
   assert.match(adapter, /data\.price = Number\(persistedProduct\.price\.toString\(\)\)/);
+});
+
+
+test("Prisma adapter leaves Mongo JSON-array elemMatch predicates to exact post-filtering", () => {
+  assert.deepEqual(toPrismaWhere("product", {
+    variants: { $elemMatch: { size: "M", color: "Black" } },
+  }), {});
+  assert.deepEqual(toPrismaWhere("product", {
+    _id: { $in: ["aaaaaaaaaaaaaaaaaaaaaaaa"] },
+    variants: { $elemMatch: { size: "M", color: "Black" } },
+  }), { id: { in: ["aaaaaaaaaaaaaaaaaaaaaaaa"] } });
+  // An OR containing a JavaScript-only branch must not be narrowed to only
+  // the SQL-translatable branch, otherwise valid rows could be omitted.
+  assert.deepEqual(toPrismaWhere("product", {
+    $or: [
+      { variants: { $elemMatch: { size: "M" } } },
+      { name: "Exact match" },
+    ],
+  }), {});
+});
+
+test("Prisma adapter enforces single-record and safe filtered delete semantics", () => {
+  assert.match(adapter, /if \(!options\.many && rowsRaw\.length > 1\) rowsRaw = rowsRaw\.slice\(0, 1\)/);
+  assert.match(adapter, /async deleteOne\(filter = \{\}, options = \{\}\)/);
+  assert.match(adapter, /async deleteMany\(filter = \{\}, options = \{\}\)/);
+  assert.match(adapter, /matchesFilter\(fromPrisma\(delegate, candidate\), filter\)/);
+  assert.match(adapter, /updatedAt: candidate\.updatedAt/);
+  assert.match(adapter, /where: \{ OR: guards \}/);
+});
+
+test("PostgreSQL schema and additive migration index previously unindexed foreign keys", () => {
+  for (const index of [
+    /@@index\(\[createdById\]\)/,
+    /@@index\(\[orderId\]\)/,
+    /@@index\(\[moderatedById\]\)/,
+    /@@index\(\[updatedById\]\)/,
+  ]) assert.match(schema, index);
+  for (const index of [
+    /campaigns_createdById_idx/,
+    /coupons_createdById_idx/,
+    /product_reviews_userId_idx/,
+    /product_reviews_orderId_idx/,
+    /product_reviews_moderatedById_idx/,
+    /store_settings_updatedById_idx/,
+  ]) assert.match(indexMigrationSql, index);
 });
