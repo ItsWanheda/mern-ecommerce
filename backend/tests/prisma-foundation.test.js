@@ -13,9 +13,14 @@ const bootstrap = await readFile(path.join(backendDir, "scripts", "create-admin.
 const adapter = await readFile(path.join(backendDir, "lib", "prisma-model.js"), "utf8");
 const productController = await readFile(path.join(backendDir, "controllers", "product.controller.js"), "utf8");
 
+const ignoredSourceDirectories = new Set([
+  "node_modules", ".git", "dist", "coverage", "uploads",
+]);
+
 const collectSourceFiles = async (directory) => {
   const entries = await readdir(directory, { withFileTypes: true });
   const nested = await Promise.all(entries.map(async entry => {
+    if (entry.isDirectory() && ignoredSourceDirectories.has(entry.name)) return [];
     const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) return collectSourceFiles(fullPath);
     return /\.(?:js|mjs)$/.test(entry.name) ? [fullPath] : [];
