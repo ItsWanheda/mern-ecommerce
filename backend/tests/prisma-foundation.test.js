@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import { readFile, readdir, access } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { toPrismaWhere } from "../lib/prisma-model.js";
 
 const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const schema = await readFile(path.join(backendDir, "prisma", "schema.prisma"), "utf8");
 const packageManifest = JSON.parse(await readFile(path.join(backendDir, "package.json"), "utf8"));
 const bootstrap = await readFile(path.join(backendDir, "scripts", "create-admin.mjs"), "utf8");
 const adapter = await readFile(path.join(backendDir, "lib", "prisma-model.js"), "utf8");
+const productController = await readFile(path.join(backendDir, "controllers", "product.controller.js"), "utf8");
 
 const collectSourceFiles = async (directory) => {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -107,4 +109,19 @@ test("Prisma compatibility adapter preserves secret visibility and guarded condi
   assert.match(adapter, /isAtomicScalarUpdate\(model, update\) && !filterNeedsPostProcessing\(model, filter\)/);
   assert.match(adapter, /mapped\.code = 11000/);
   assert.match(adapter, /orderUpdates: true,[\s\S]*securityAlerts: true,[\s\S]*productNews: false,[\s\S]*promotionalEmails: false/);
+});
+
+test("Prisma adapter translates null membership without invalid scalar IN values", () => {
+  assert.deepEqual(toPrismaWhere("order", { trackingCode: { $in: ["", null] } }), { trackingCode: { in: [""] } });
+  assert.deepEqual(toPrismaWhere("order", { zarinpalAuthority: { $in: [null, ""] } }), { OR: [{ zarinpalAuthority: { in: [""] } }, { zarinpalAuthority: null }] });
+  assert.deepEqual(toPrismaWhere("order", { zarinpalAuthority: { $nin: [null, ""] } }), { AND: [{ zarinpalAuthority: { notIn: [""] } }, { zarinpalAuthority: { not: null } }] });
+});
+
+test("Prisma adapter preserves case-insensitive Mongo-style searches", () => {
+  assert.deepEqual(toPrismaWhere("user", { email: /customer@example\.com/i }), { email: { contains: "customer@example.com", mode: "insensitive" } });
+});
+
+test("PostgreSQL product variants use the required empty JSON-array representation", () => {
+  assert.deepEqual(toPrismaWhere("product", { variants: { $size: 0 } }), { variants: { equals: [] } });
+  assert.doesNotMatch(productController, /variants:\s*\{\s*\$exists:\s*false\s*\}/);
 });
