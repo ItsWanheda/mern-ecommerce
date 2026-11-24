@@ -271,7 +271,7 @@ test("PostgreSQL adapter updateOne only changes the first JSON-array post-filter
   });
 
   const result = await Product.updateOne(
-    { variants: { $elemMatch: { size: "M", color: "Black" } } },
+    { _id: { $in: created.map(item => item._id) }, variants: { $elemMatch: { size: "M", color: "Black" } } },
     { $set: { brandName: `updated-${suffix}` } },
   );
   assert.equal(result.matchedCount, 1);
@@ -306,7 +306,10 @@ test("PostgreSQL adapter deleteOne and deleteMany honor JSON-array post-filters"
     await prisma.$disconnect();
   });
 
-  const filter = { variants: { $elemMatch: { size: "M", color: "Black" } } };
+  const filter = {
+    _id: { $in: matching.map(item => item._id) },
+    variants: { $elemMatch: { size: "M", color: "Black" } },
+  };
   const one = await Product.deleteOne(filter);
   assert.equal(one.deletedCount, 1);
   const remainingMatches = await prisma.product.findMany({
