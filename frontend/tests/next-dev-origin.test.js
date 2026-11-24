@@ -7,3 +7,8 @@ test("Next.js development config allows the reported LAN host", () => {
   assert.ok(nextConfig.allowedDevOrigins.every((origin) => !/^https?:\/\//i.test(origin)));
   assert.equal(typeof nextConfig.rewrites, "function");
 });
+
+
+test("Next.js proxy buffering limit is explicitly aligned for product image requests", () => {
+  assert.equal(nextConfig.experimental?.proxyClientMaxBodySize, "18mb");
+});
