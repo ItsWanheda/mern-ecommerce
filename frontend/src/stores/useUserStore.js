@@ -70,7 +70,9 @@ export const useUserStore = create((set) => ({
 				set({ user: response.data, checkingAuth: false, authInitialized: true });
 				return response.data;
 			} catch (error) {
-				console.error("بررسی احراز هویت ناموفق بود:", error);
+				if (error.response?.status !== 401) {
+					console.error("بررسی احراز هویت ناموفق بود:", error);
+				}
 				set({ checkingAuth: false, user: null, authInitialized: true });
 				return null;
 			} finally {
@@ -111,7 +113,11 @@ export const useUserStore = create((set) => ({
 			set({ checkingAuth: false });
 			return response.data;
 		} catch (error) {
-			set({ user: null, checkingAuth: false });
+			if (error.response?.status === 401) {
+				set({ user: null, checkingAuth: false, authInitialized: true });
+			} else {
+				set({ checkingAuth: false });
+			}
 			throw error;
 		}
 	},
@@ -133,8 +139,10 @@ axios.interceptors.response.use(
 			await refreshSessionOnce();
 			return axios(originalRequest);
 		} catch (refreshError) {
-			void useUserStore.getState().logout();
-			return Promise.reject(refreshError);
+			// A 401 means there is no valid refresh session (normal for signed-out visitors).
+			// The backend clears stale cookies; avoid sending a redundant logout request.
+			// Temporary failures such as 503 must not silently sign out an existing user.
+			return Promise.reject(refreshError?.response?.status === 401 ? error : refreshError);
 		}
 	}
 );
