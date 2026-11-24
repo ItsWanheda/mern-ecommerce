@@ -6,6 +6,7 @@ import { formatPrice, getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import CategoryAttributeFields from "./CategoryAttributeFields";
 import CustomProductSpecifications from "./CustomProductSpecifications";
 import { resolveCategoryAttributeDefinitions, validateCategoryAttributeValues } from "../lib/category-attributes.js";
+import { validateProductImageSelection, getProductImageSelectionMessage } from "../lib/product-image-upload.js";
 
 const currencyLabel = getCurrencyLabel(STORE_CURRENCY);
 const categoryPath = (category, categories) => {
@@ -80,9 +81,9 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
 
   const handleImageChange = async (event) => {
     const files = Array.from(event.target.files || []);
-    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-    if (form.images.length + files.length > 8 || files.some((file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) || totalSize > 6 * 1024 * 1024) {
-      setFormError("حداکثر ۸ تصویر و مجموعاً ۶ مگابایت مجاز است؛ هر تصویر باید از نوع عکس و حداکثر ۵ مگابایت باشد.");
+    const validationIssue = validateProductImageSelection({ currentImages: form.images, files });
+    if (validationIssue) {
+      setFormError(getProductImageSelectionMessage(validationIssue));
       event.target.value = "";
       return;
     }
@@ -211,7 +212,7 @@ const ProductEditForm = ({ product, onClose, onSaved }) => {
                 <p className="text-xs leading-5 text-[var(--ui-muted)]">تصویر اول تصویر اصلی محصول خواهد بود. تا ۸ تصویر مجاز است؛ تصاویر تازه هنگام ذخیره بارگذاری می‌شوند.</p>
                 <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2.5 text-sm hover:bg-[var(--ui-hover)]">
                   <ImagePlus size={17} aria-hidden="true" /> افزودن تصاویر
-                  <input type="file" accept="image/*" multiple className="sr-only" onChange={handleImageChange} disabled={imageBusy || form.images.length >= 8} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={handleImageChange} disabled={imageBusy || form.images.length >= 8} />
                 </label>
                 {imageBusy && <p role="status" className="text-xs text-[var(--ui-muted)]">در حال آماده‌سازی تصاویر…</p>}
                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
