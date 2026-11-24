@@ -152,12 +152,11 @@ const CreateProductForm = () => {
           <label className={labelClass}>توضیحات
             <textarea value={newProduct.description} onChange={(event) => updateField("description", event.target.value)} rows={3} className={fieldClass} maxLength={5000} required />
           </label>
-          <CustomProductSpecifications value={customSpecifications} onChange={setCustomSpecifications} />
           <div className="grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>قیمت ({priceUnitLabel})
               <input type="number" min="0" step="1" inputMode="numeric" value={newProduct.price} onChange={(event) => updateField("price", event.target.value)} className={fieldClass} required />
             </label>
-            <label className={labelClass}>موجودی انبار
+            <label className={labelClass}>موجودی کل انبار
               <input type="number" min="0" step="1" inputMode="numeric" value={newProduct.stock} onChange={(event) => updateField("stock", event.target.value)} className={fieldClass} required />
             </label>
           </div>
@@ -182,13 +181,20 @@ const CreateProductForm = () => {
           </label>
         </section>
 
-        <CategoryAttributeFields
-          definitions={selectedCategoryAttributes}
-          values={attributeValues}
-          onChange={(key, value) => setAttributeValues((current) => ({ ...current, [key]: value }))}
-          fieldClass={fieldClass}
-          labelClass={labelClass}
-        />
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-sm font-bold text-[var(--ui-text)]">مشخصات فنی و تکمیلی محصول</h3>
+            <p className="mt-1 text-xs leading-5 text-[var(--ui-muted)]">پس از انتخاب دسته‌بندی، ویژگی‌های فنی همان گروه نمایش داده می‌شوند. مشخصات اختصاصی دیگر مانند گارانتی و اقلام همراه را نیز در همین بخش اضافه کنید.</p>
+          </div>
+          <CategoryAttributeFields
+            definitions={selectedCategoryAttributes}
+            values={attributeValues}
+            onChange={(key, value) => setAttributeValues((current) => ({ ...current, [key]: value }))}
+            fieldClass={fieldClass}
+            labelClass={labelClass}
+          />
+          <CustomProductSpecifications value={customSpecifications} onChange={setCustomSpecifications} />
+        </section>
 
         <section className="space-y-3">
           <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold text-[var(--ui-text)]">گالری تصاویر محصول</h3>
