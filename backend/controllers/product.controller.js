@@ -1,5 +1,5 @@
 import { redis } from "../lib/redis.js";
-import { ImageUploadError, ImageStorageError, deleteManagedImage, resolveImageReference } from "../lib/image-upload.js";
+import { ImageUploadError, ImageStorageError, deleteManagedImage, resolveImageReference, isImageCollectionWithinLimit } from "../lib/image-upload.js";
 import Product from "../models/product.model.js";
 import Category from "../models/category.model.js";
 import Order from "../models/order.model.js";
@@ -417,9 +417,15 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({ message: "Size measurements must be non-negative numbers" });
     }
 
+    if (Array.isArray(images) && images.length > 8) {
+      return res.status(400).json({ message: "حداکثر ۸ تصویر برای هر محصول مجاز است." });
+    }
     const imageInputs = (Array.isArray(images) ? images : image ? [image] : [])
       .filter((value) => typeof value === "string" && value.trim())
       .slice(0, 8);
+    if (!isImageCollectionWithinLimit(imageInputs)) {
+      return res.status(413).json({ message: "مجموع حجم تصاویر محصول نباید از ۱۲ مگابایت بیشتر شود." });
+    }
     const uploadedImages = [];
     for (const imageInput of imageInputs) {
       const imageReference = await resolveImageReference(imageInput, {
@@ -593,6 +599,9 @@ export const updateProduct = async (req, res) => {
 
     const imageInputs = (Array.isArray(body.images) ? body.images : (body.image ? [body.image] : []))
       .filter((value) => typeof value === "string" && value.trim()).slice(0, 8);
+    if (!isImageCollectionWithinLimit(imageInputs)) {
+      return res.status(413).json({ message: "مجموع حجم تصاویر محصول نباید از ۱۲ مگابایت بیشتر شود." });
+    }
     if ((Array.isArray(body.images) && body.images.length > 8) ||
         imageInputs.some((value) => !/^https:\/\//i.test(value) && !/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(value))) {
       return res.status(400).json({ message: "فرمت تصاویر محصول معتبر نیست." });
