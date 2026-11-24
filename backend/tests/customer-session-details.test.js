@@ -41,3 +41,10 @@ test("session metadata migration is additive and backfills only historical last-
   assert.match(migration, /SET "lastIpAddress" = "ipAddress"/);
   assert.match(migration, /"lastUserAgent" = "userAgent"/);
 });
+
+test("customer summary distinguishes the most recent login from later session refreshes", () => {
+  const customerListHandler = controller.slice(controller.indexOf("export const getCustomers"), controller.indexOf("export const getCustomerSessions"));
+  assert.match(customerListHandler, /_max:\s*\{\s*createdAt:\s*true,\s*lastUsedAt:\s*true\s*\}/);
+  assert.match(customerListHandler, /lastLoginAt:\s*sessionHistoryById[^\n]*lastLoginAt/);
+  assert.match(customerListHandler, /lastActivityAt:\s*sessionHistoryById[^\n]*lastActivityAt/);
+});
