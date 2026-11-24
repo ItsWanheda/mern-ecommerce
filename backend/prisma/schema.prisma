@@ -61,8 +61,12 @@ model AccountSession {
   tokenId     String    @unique
   deviceName  String    @default("دستگاه ناشناس")
   userAgent   String    @default("")
-  ipAddress   String    @default("")
-  lastUsedAt  DateTime  @default(now())
+  ipAddress      String    @default("")
+  loginIpAddress String    @default("")
+  lastIpAddress  String    @default("")
+  loginUserAgent String    @default("")
+  lastUserAgent  String    @default("")
+  lastUsedAt     DateTime  @default(now())
   expiresAt   DateTime
   revokedAt   DateTime?
   createdAt   DateTime  @default(now())
