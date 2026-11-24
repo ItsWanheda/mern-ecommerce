@@ -120,7 +120,7 @@ export default function CustomerManagement() {
         </button>
         {expandedSessions[customer._id] && (
           <div className="space-y-3 border-t border-[var(--ui-border)] p-3">
-            <p className="text-xs leading-6 text-[var(--ui-muted)]">IP از سمت سرور و بر اساس زنجیره پراکسی مورداعتماد ثبت می‌شود. VPN، NAT و شبکه‌های اشتراکی ممکن است یک IP عمومی مشترک نشان دهند؛ IP به‌تنهایی هویت یا موقعیت دقیق فرد را ثابت نمی‌کند.</p>
+            <p className="text-xs leading-6 text-[var(--ui-muted)]">IP از سمت سرور و بر اساس زنجیره پراکسی مورداعتماد ثبت می‌شود. زمان آخرین نوسازی هنگام چرخش موفق توکن به‌روزرسانی می‌شود و به معنی ثبت تک‌تک درخواست‌ها نیست. VPN، NAT و شبکه‌های اشتراکی ممکن است یک IP عمومی مشترک نشان دهند؛ IP به‌تنهایی هویت یا موقعیت دقیق فرد را ثابت نمی‌کند.</p>
             {sessionsLoading[customer._id] ? (
               <div role="status" className="flex min-h-20 items-center justify-center gap-2 text-xs text-[var(--ui-muted)]"><LoaderCircle size={16} className="animate-spin" aria-hidden="true" />در حال دریافت تاریخچه نشست‌ها…</div>
             ) : sessionsError[customer._id] ? (
@@ -141,7 +141,7 @@ export default function CustomerManagement() {
                     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       <div className="min-w-0"><p className="text-[10px] text-[var(--ui-muted)]">IP ثبت‌شده برای این نشست</p><p dir="ltr" className="mt-1 break-all text-left font-mono text-sm font-semibold text-[var(--ui-text)]">{session.ipAddress || "ثبت نشده"}</p></div>
                       <div className="min-w-0"><p className="text-[10px] text-[var(--ui-muted)]">زمان ایجاد نشست / ورود موفق</p><p className="mt-1 text-xs text-[var(--ui-text)]">{session.createdAt ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(session.createdAt)) : "—"}</p></div>
-                      <div className="min-w-0"><p className="text-[10px] text-[var(--ui-muted)]">آخرین فعالیت ثبت‌شده</p><p className="mt-1 text-xs text-[var(--ui-text)]">{session.lastUsedAt ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(session.lastUsedAt)) : "—"}</p></div>
+                      <div className="min-w-0"><p className="text-[10px] text-[var(--ui-muted)]">آخرین نوسازی نشست</p><p className="mt-1 text-xs text-[var(--ui-text)]">{session.lastUsedAt ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(session.lastUsedAt)) : "—"}</p></div>
                       <div className="min-w-0"><p className="text-[10px] text-[var(--ui-muted)]">انقضای نشست</p><p className="mt-1 text-xs text-[var(--ui-text)]">{session.expiresAt ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(session.expiresAt)) : "—"}</p></div>
                       {session.revokedAt && <div className="min-w-0"><p className="text-[10px] text-[var(--ui-muted)]">زمان لغو نشست</p><p className="mt-1 text-xs text-[var(--ui-text)]">{new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(session.revokedAt))}</p></div>}
                     </div>
