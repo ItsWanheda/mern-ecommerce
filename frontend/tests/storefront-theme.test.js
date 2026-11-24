@@ -4,14 +4,17 @@ import { readFile } from "node:fs/promises";
 
 const readSource = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
-test("storefront palette is fixed to the white C-option light scheme", async () => {
+test("storefront uses the committed hardware palette without a runtime theme toggle", async () => {
   const css = await readSource("../src/index.css");
   const layout = await readSource("../app/layout.jsx");
 
-  assert.match(css, /--color-canvas:\s*255 255 255;/);
-  assert.match(css, /--color-surface:\s*255 255 255;/);
-  assert.match(css, /color-scheme:\s*light;/);
-  assert.doesNotMatch(css, /data-theme=["']dark|color-scheme:\s*dark|prefers-color-scheme:\s*dark/);
+  // Match the actual shared tokens on this branch. The storefront scope uses
+  // light native-control rendering while the shared/root token palette is dark.
+  assert.match(css, /--color-canvas:\s*8 8 8;/);
+  assert.match(css, /--color-surface:\s*17 17 17;/);
+  assert.match(css, /color-scheme:\s*dark;/);
+  assert.match(css, /Storefront visual system[\\s\\S]*?color-scheme:\\s*light;/);
+  assert.doesNotMatch(css, /data-theme=["']dark|prefers-color-scheme:\\s*dark/);
   assert.doesNotMatch(layout, /computer-hardware-theme|themeInitialization|data-theme/);
   assert.match(layout, /name="theme-color" content="#ffffff"/);
 });
