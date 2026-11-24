@@ -7,6 +7,7 @@ import { getCurrencyLabel, STORE_CURRENCY } from "../lib/commerce";
 import CategoryAttributeFields from "./CategoryAttributeFields";
 import CustomProductSpecifications from "./CustomProductSpecifications";
 import { resolveCategoryAttributeDefinitions, validateCategoryAttributeValues } from "../lib/category-attributes.js";
+import { validateProductImageSelection, getProductImageSelectionMessage } from "../lib/product-image-upload.js";
 
 const categoryPath = (category, categories) => {
   const byId = new Map(categories.map((item) => [String(item._id), item]));
@@ -106,9 +107,9 @@ const CreateProductForm = () => {
 
   const handleImageChange = async (event) => {
     const files = Array.from(event.target.files || []);
-    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
-    if (newProduct.images.length + files.length > 8 || files.some((file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) || totalSize > 6 * 1024 * 1024) {
-      setImageError("حداکثر ۸ تصویر و مجموعاً ۶ مگابایت مجاز است؛ هر تصویر باید از نوع عکس و حداکثر ۵ مگابایت باشد.");
+    const validationIssue = validateProductImageSelection({ currentImages: newProduct.images, files });
+    if (validationIssue) {
+      setImageError(getProductImageSelectionMessage(validationIssue));
       event.target.value = "";
       return;
     }
@@ -193,7 +194,7 @@ const CreateProductForm = () => {
           <h3 className="border-b border-[var(--ui-border)] pb-2 text-sm font-bold text-[var(--ui-text)]">گالری تصاویر محصول</h3>
           <p className="text-xs leading-5 text-[var(--ui-muted)]">تا ۸ تصویر اضافه کنید؛ تصویر اول تصویر اصلی محصول خواهد بود. برای قطعات فنی، تصاویر نمای روبه‌رو، پورت‌ها، برچسب مشخصات و اقلام داخل جعبه مفید هستند.</p>
           <div className="flex flex-wrap items-center gap-3">
-            <input type="file" id="product-images" className="sr-only" accept="image/*" multiple onChange={handleImageChange} disabled={imageBusy || newProduct.images.length >= 8} />
+            <input type="file" id="product-images" className="sr-only" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleImageChange} disabled={imageBusy || newProduct.images.length >= 8} />
             <label htmlFor="product-images" className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-[var(--ui-border)] bg-[var(--ui-surface-raised)] px-4 py-2.5 text-sm font-medium text-[var(--ui-text)] transition hover:bg-[var(--ui-hover)]"><Upload size={18} aria-hidden="true" />انتخاب تصاویر</label>
             <span className="text-xs text-[var(--ui-muted)]">{newProduct.images.length ? newProduct.images.length + " تصویر انتخاب شده" : "هنوز تصویری انتخاب نشده"}</span>
           </div>
