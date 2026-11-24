@@ -95,7 +95,8 @@ app.use("/api", async (req, res, next) => {
 
 // Request bodies are parsed only after rate limiting and database availability checks.
 // Keep ordinary JSON payloads small. Only content-management endpoints that may
-// carry image data URLs receive the larger, still bounded 10 MB parser.
+// carry image data URLs receive the larger, still bounded 18 MB parser. This is
+// aligned with Next.js proxy buffering for base64-encoded product image collections.
 const largeJsonRequest = (req) => {
   const path = req.path;
   if (req.method === "POST" && ["/products", "/categories", "/campaigns"].includes(path)) return true;
@@ -103,7 +104,7 @@ const largeJsonRequest = (req) => {
       [/^\/products\/[a-f\d]{24}$/i, /^\/categories\/[a-f\d]{24}$/i, /^\/campaigns\/[a-f\d]{24}$/i].some((pattern) => pattern.test(path))) return true;
   return false;
 };
-app.use("/api", express.json({ limit: "10mb", type: largeJsonRequest }));
+app.use("/api", express.json({ limit: "18mb", type: largeJsonRequest }));
 app.use("/api", express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
