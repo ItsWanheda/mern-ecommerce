@@ -9,6 +9,7 @@ import { getVisibleCategoryTree } from "../lib/category-tree-cache.js";
 import { getProductDerivedCacheVersion, invalidateProductDerivedCaches } from "../lib/product-cache.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { normalizeCustomSpecifications } from "../lib/custom-product-specifications.js";
+import { normalizeProductFit } from "../lib/product-fit.js";
 import { getProductDiscountAmount, getProductDiscountedPrice, normalizeProductDiscountPercent } from "../lib/product-pricing.js";
 
 import { prisma } from "../lib/prisma.js";
@@ -360,12 +361,7 @@ export const createProduct = async (req, res) => {
           stock: Number(variant?.stock),
         }))
       : [];
-    const normalizedFit = fit && typeof fit === "object" ? {
-      type: ["true-to-size", "slim", "regular", "relaxed", "oversized", "athletic"].includes(fit.type) ? fit.type : "regular",
-      description: typeof fit.description === "string" ? fit.description.trim().slice(0, 500) : "",
-      modelHeight: typeof fit.modelHeight === "string" ? fit.modelHeight.trim().slice(0, 40) : "",
-      modelSize: typeof fit.modelSize === "string" ? fit.modelSize.trim().slice(0, 24) : "",
-    } : { type: "regular", description: "", modelHeight: "", modelSize: "" };
+    const normalizedFit = normalizeProductFit(fit);
     const normalizedSizeChart = Array.isArray(sizeChart)
       ? sizeChart.filter((row) => row && typeof row.size === "string" && row.size.trim())
           .slice(0, 24)
@@ -543,12 +539,7 @@ export const updateProduct = async (req, res) => {
           stock: Number(variant?.stock),
         }))
       : [];
-    const normalizedFit = body.fit && typeof body.fit === "object" ? {
-      type: ["true-to-size", "slim", "regular", "relaxed", "oversized", "athletic"].includes(body.fit.type) ? body.fit.type : "regular",
-      description: typeof body.fit.description === "string" ? body.fit.description.trim().slice(0, 500) : "",
-      modelHeight: typeof body.fit.modelHeight === "string" ? body.fit.modelHeight.trim().slice(0, 40) : "",
-      modelSize: typeof body.fit.modelSize === "string" ? body.fit.modelSize.trim().slice(0, 24) : "",
-    } : { type: "regular", description: "", modelHeight: "", modelSize: "" };
+    const normalizedFit = normalizeProductFit(body.fit);
     const normalizedSizeChart = Array.isArray(body.sizeChart)
       ? body.sizeChart.filter((row) => row && typeof row.size === "string" && row.size.trim()).slice(0, 24).map((row) => {
           const measurement = (value) => value === "" || value === null || value === undefined ? null : Number(value);
