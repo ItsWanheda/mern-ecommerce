@@ -326,3 +326,50 @@ test("PostgreSQL adapter deleteOne and deleteMany honor JSON-array post-filters"
   });
   assert.equal(deletedMatches.length, 0);
 });
+
+
+test("PostgreSQL enforces catalog constraints and nullable creator relations", { skip: !enabled }, async t => {
+  const [{ prisma, connectPostgres }] = await Promise.all([import("../lib/prisma.js")]);
+  await connectPostgres();
+  const suffix = randomBytes(6).toString("hex");
+  const email = `relation-${suffix}@example.test`;
+  const code = `REL-${suffix.toUpperCase()}`;
+  let user;
+  let coupon;
+  t.after(async () => {
+    if (coupon) await prisma.coupon.deleteMany({ where: { id: coupon.id } });
+    if (user) await prisma.user.deleteMany({ where: { id: user.id } });
+    await prisma.$disconnect();
+  });
+
+  await assert.rejects(prisma.product.create({
+    data: {
+      name: "Invalid negative-price fixture", description: "Must be rejected by PostgreSQL",
+      price: -1, category: "integration-fixtures",
+    },
+  }));
+  await assert.rejects(prisma.product.create({
+    data: {
+      name: "Invalid foreign-key fixture", description: "Must be rejected by PostgreSQL",
+      price: 1000, category: "integration-fixtures", categoryId: "ffffffffffffffffffffffff",
+    },
+  }));
+
+  user = await prisma.user.create({
+    data: { name: "Relation fixture", email, password: "not-used-by-test" },
+  });
+  coupon = await prisma.coupon.create({
+    data: {
+      code, discountPercentage: 10,
+      startsAt: new Date(Date.now() - 60_000),
+      expiresAt: new Date(Date.now() + 60_000),
+      createdById: user.id,
+    },
+  });
+
+  await prisma.user.delete({ where: { id: user.id } });
+  user = null;
+  const detachedCoupon = await prisma.coupon.findUnique({ where: { id: coupon.id } });
+  assert.ok(detachedCoupon);
+  assert.equal(detachedCoupon.createdById, null);
+});
