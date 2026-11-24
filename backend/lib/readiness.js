@@ -30,8 +30,15 @@ const waitForRedisReady = async (redisClient, timeoutMs = 6000) => {
 export const getReadinessStatus = async ({ databaseReady, redisClient, logger = console } = {}) => {
   let database = "disconnected";
   try {
-    if (typeof databaseReady === "function") await databaseReady();
-    else if (databaseReady !== true) await prisma.$queryRaw`SELECT 1`;
+    if (typeof databaseReady === "function") {
+      await databaseReady();
+    } else if (databaseReady === false) {
+      // An explicit false is an authoritative failed probe; do not silently
+      // replace it with a second query that may hit a different connection.
+      throw new Error("PostgreSQL readiness probe reported unavailable");
+    } else if (databaseReady !== true) {
+      await prisma.$queryRaw`SELECT 1`;
+    }
     database = "connected";
   } catch (error) {
     logger.warn?.("PostgreSQL readiness check failed", {

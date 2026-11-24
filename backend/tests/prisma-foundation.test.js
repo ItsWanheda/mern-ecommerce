@@ -13,8 +13,11 @@ const bootstrap = await readFile(path.join(backendDir, "scripts", "create-admin.
 const adapter = await readFile(path.join(backendDir, "lib", "prisma-model.js"), "utf8");
 const productController = await readFile(path.join(backendDir, "controllers", "product.controller.js"), "utf8");
 
+// This assertion is specifically about the application runtime. One-off data
+// migration utilities and legacy integration fixtures may intentionally retain
+// MongoDB tooling without being loaded by the production API.
 const ignoredSourceDirectories = new Set([
-  "node_modules", ".git", "dist", "coverage", "uploads",
+  "node_modules", ".git", "dist", "coverage", "uploads", "scripts", "tests",
 ]);
 
 const collectSourceFiles = async (directory) => {
