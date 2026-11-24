@@ -169,11 +169,11 @@ export const getAllProducts = async (req, res) => {
     if (stock === "in_stock") {
       clauses.push({ $or: [
         { variants: { $elemMatch: { stock: { $gt: 0 } } } },
-        { $and: [{ stock: { $gt: 0 } }, { $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] }] },
+        { $and: [{ stock: { $gt: 0 } }, { $or: [{ variants: { $size: 0 } }] }] },
       ] });
     } else if (stock === "out_of_stock") {
       clauses.push({ $or: [
-        { stock: 0, $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] },
+        { stock: 0, $or: [{ variants: { $size: 0 } }] },
         { $expr: { $and: [
           { $gt: [{ $size: { $ifNull: ["$variants", []] } }, 0] },
           { $eq: [
@@ -183,7 +183,7 @@ export const getAllProducts = async (req, res) => {
         ] } },
       ] });
     } else if (stock === "untracked") {
-      clauses.push({ stock: null, $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] });
+      clauses.push({ stock: null, $or: [{ variants: { $size: 0 } }] });
     }
     if (clauses.length) filter.$and = clauses;
 
@@ -1003,7 +1003,7 @@ export const getProductsByCategory = async (req, res) => {
           { variants: { $elemMatch: { stock: { $gt: 0 } } } },
           {
             $and: [
-              { $or: [{ variants: { $size: 0 } }, { variants: { $exists: false } }] },
+              { $or: [{ variants: { $size: 0 } }] },
               { $or: [{ stock: { $gt: 0 } }, { stock: null }, { stock: { $exists: false } }] },
             ],
           },
