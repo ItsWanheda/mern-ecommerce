@@ -21,6 +21,7 @@ import serviceCaseRoutes from "./routes/service-case.route.js";
 import accountManagementRoutes from "./routes/account-management.route.js";
 import { apiRateLimit } from "./middleware/rate-limit.middleware.js";
 import { browserOriginAndCors, securityHeaders } from "./middleware/security.middleware.js";
+import { getImageStorageDirectory } from "./lib/image-upload.js";
 
 const app = express();
 
@@ -38,6 +39,17 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(securityHeaders);
 app.use(browserOriginAndCors);
+
+// Public catalogue media is served from the persistent local upload directory.
+// New uploads use opaque generated filenames; uploaded files are never exposed
+// through a user-controlled filesystem path.
+app.use("/uploads", express.static(getImageStorageDirectory(), {
+  dotfiles: "deny",
+  index: false,
+  fallthrough: false,
+  maxAge: "7d",
+  immutable: true,
+}));
 
 // Rate-limit before readiness/database middleware can trigger connection attempts.
 app.use("/api", (req, res, next) => {
