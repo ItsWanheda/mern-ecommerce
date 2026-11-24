@@ -46,7 +46,6 @@ app.use(browserOriginAndCors);
 app.use("/uploads", express.static(getImageStorageDirectory(), {
   dotfiles: "deny",
   index: false,
-  fallthrough: false,
   maxAge: "7d",
   immutable: true,
 }));
