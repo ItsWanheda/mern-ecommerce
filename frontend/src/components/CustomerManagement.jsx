@@ -110,7 +110,10 @@ export default function CustomerManagement() {
         <div><p className="text-[var(--ui-muted)]">نشست‌های فعال</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.activeSessions || 0)}</p></div>
         <div><p className="text-[var(--ui-muted)]">تأیید دومرحله‌ای</p><p className="mt-1 font-semibold">{customer.twoFactorEnabled ? "فعال" : "غیرفعال"}</p></div>
         <div><p className="text-[var(--ui-muted)]">علاقه‌مندی‌ها</p><p className="mt-1 font-semibold">{new Intl.NumberFormat("fa-IR").format(customer.wishlistCount || 0)}</p></div>
-        <div className="col-span-2 sm:col-span-4"><p className="text-[var(--ui-muted)]">آخرین ورود موفق</p><p className="mt-1 font-semibold">{customer.lastLoginAt ? new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(customer.lastLoginAt)) : "سابقه‌ای ثبت نشده"}</p></div>
+        <div className="col-span-2 sm:col-span-4 grid gap-3 sm:grid-cols-2">
+          <div><p className="text-[var(--ui-muted)]">آخرین ورود موفق</p><p className="mt-1 font-semibold">{customer.lastLoginAt ? new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(customer.lastLoginAt)) : "سابقه‌ای ثبت نشده"}</p></div>
+          <div><p className="text-[var(--ui-muted)]">آخرین فعالیت ثبت‌شده نشست (نوسازی موفق توکن)</p><p className="mt-1 font-semibold">{customer.lastActivityAt ? new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(customer.lastActivityAt)) : "فعالیتی ثبت نشده"}</p></div>
+        </div>
         {customer.deletionRequestedAt && <div className="col-span-2 text-[var(--ui-danger)] sm:col-span-4">درخواست حذف حساب: {new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium"}).format(new Date(customer.deletionRequestedAt))}</div>}
       </div>
       <div className="mt-4 overflow-hidden rounded-xl border border-[var(--ui-border)]">
