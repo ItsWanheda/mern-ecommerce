@@ -9,6 +9,8 @@ import {
   deleteManagedImage,
   resolveImageReference,
   validateImageDataUrl,
+  getImageDataUrlByteLength,
+  isImageCollectionWithinLimit,
 } from "../lib/image-upload.js";
 
 const tinyPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jCkAAAAAASUVORK5CYII=";
@@ -104,4 +106,15 @@ test("wraps local filesystem failures without leaking operating-system details",
   } finally {
     await rm(storageRoot, { recursive: true, force: true });
   }
+});
+
+
+test("calculates decoded image data URL bytes and enforces an aggregate collection limit", () => {
+  const decodedBytes = Buffer.from(tinyPng.split(",")[1], "base64").length;
+  assert.equal(getImageDataUrlByteLength(tinyPng), decodedBytes);
+  assert.equal(getImageDataUrlByteLength("/uploads/products/existing.png"), 0);
+  assert.equal(isImageCollectionWithinLimit([tinyPng], decodedBytes), true);
+  assert.equal(isImageCollectionWithinLimit([tinyPng], decodedBytes - 1), false);
+  assert.equal(isImageCollectionWithinLimit([tinyPng, tinyPng], decodedBytes * 2), true);
+  assert.equal(isImageCollectionWithinLimit([tinyPng, tinyPng], decodedBytes * 2 - 1), false);
 });
