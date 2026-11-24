@@ -224,3 +224,102 @@ test("all 13 Prisma model families persist and hydrate their API relations", { s
   assert.equal(created.newsletter.email, `news-${suffix}@example.test`);
   assert.equal(Number(created.settings.flatRate), 15000);
 });
+
+
+test("PostgreSQL adapter upserts a missing scalar record on first use", { skip: !enabled }, async t => {
+  const [{ prisma, connectPostgres }, { createPrismaModel }] = await Promise.all([
+    import("../lib/prisma.js"), import("../lib/prisma-model.js"),
+  ]);
+  await connectPostgres();
+  const StoreSettings = createPrismaModel("storeSettings");
+  const key = `upsert-${randomBytes(6).toString("hex")}`;
+  t.after(async () => {
+    await prisma.storeSettings.deleteMany({ where: { key } });
+    await prisma.$disconnect();
+  });
+
+  const created = await StoreSettings.findOneAndUpdate(
+    { key },
+    { $set: { flatRate: 17500, freeShippingThreshold: 250000 } },
+    { upsert: true, new: true },
+  ).lean();
+
+  assert.ok(created);
+  assert.equal(created.key, key);
+  assert.equal(Number(created.flatRate), 17500);
+  assert.equal(Number(created.freeShippingThreshold), 250000);
+  assert.equal(await prisma.storeSettings.count({ where: { key } }), 1);
+});
+
+test("PostgreSQL adapter updateOne only changes the first JSON-array post-filter match", { skip: !enabled }, async t => {
+  const [{ prisma, connectPostgres }, { createPrismaModel }] = await Promise.all([
+    import("../lib/prisma.js"), import("../lib/prisma-model.js"),
+  ]);
+  await connectPostgres();
+  const Product = createPrismaModel("product");
+  const suffix = randomBytes(6).toString("hex");
+  const created = [];
+  for (const name of [`post-filter-a-${suffix}`, `post-filter-b-${suffix}`]) {
+    created.push(await Product.create({
+      name, description: "Disposable JSON post-filter fixture", price: 1000,
+      category: "integration-fixtures", variants: [{ size: "M", color: "Black", stock: 2 }],
+    }));
+  }
+  t.after(async () => {
+    await prisma.product.deleteMany({ where: { id: { in: created.map(item => item._id) } } });
+    await prisma.$disconnect();
+  });
+
+  const result = await Product.updateOne(
+    { variants: { $elemMatch: { size: "M", color: "Black" } } },
+    { $set: { brandName: `updated-${suffix}` } },
+  );
+  assert.equal(result.matchedCount, 1);
+  const rows = await prisma.product.findMany({ where: { id: { in: created.map(item => item._id) } } });
+  assert.equal(rows.filter(row => row.brandName === `updated-${suffix}`).length, 1);
+});
+
+test("PostgreSQL adapter deleteOne and deleteMany honor JSON-array post-filters", { skip: !enabled }, async t => {
+  const [{ prisma, connectPostgres }, { createPrismaModel }] = await Promise.all([
+    import("../lib/prisma.js"), import("../lib/prisma-model.js"),
+  ]);
+  await connectPostgres();
+  const Product = createPrismaModel("product");
+  const suffix = randomBytes(6).toString("hex");
+  const matching = [];
+  const nonMatching = [];
+  for (const [name, variants] of [
+    [`delete-match-a-${suffix}`, [{ size: "M", color: "Black" }]],
+    [`delete-match-b-${suffix}`, [{ size: "M", color: "Black" }]],
+    [`delete-keep-${suffix}`, [{ size: "L", color: "Blue" }]],
+  ]) {
+    const product = await Product.create({
+      name, description: "Disposable JSON delete fixture", price: 1000,
+      category: "integration-fixtures", variants,
+    });
+    (name.includes("delete-keep") ? nonMatching : matching).push(product);
+  }
+  t.after(async () => {
+    await prisma.product.deleteMany({
+      where: { id: { in: [...matching, ...nonMatching].map(item => item._id) } },
+    });
+    await prisma.$disconnect();
+  });
+
+  const filter = { variants: { $elemMatch: { size: "M", color: "Black" } } };
+  const one = await Product.deleteOne(filter);
+  assert.equal(one.deletedCount, 1);
+  const remainingMatches = await prisma.product.findMany({
+    where: { id: { in: matching.map(item => item._id) } },
+  });
+  assert.equal(remainingMatches.length, 1);
+
+  const many = await Product.deleteMany(filter);
+  assert.equal(many.count, 1);
+  const kept = await prisma.product.findUnique({ where: { id: nonMatching[0]._id } });
+  assert.ok(kept);
+  const deletedMatches = await prisma.product.findMany({
+    where: { id: { in: matching.map(item => item._id) } },
+  });
+  assert.equal(deletedMatches.length, 0);
+});
