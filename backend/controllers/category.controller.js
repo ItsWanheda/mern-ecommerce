@@ -3,7 +3,7 @@ import Product from "../models/product.model.js";
 import { recordAuditEvent } from "../lib/audit-log.js";
 import { getVisibleCategoryTree, invalidateCategoryTreeCache } from "../lib/category-tree-cache.js";
 import { invalidateProductPriceBoundsCache } from "../lib/product-cache.js";
-import { ImageUploadError, ImageStorageError, deleteManagedCloudinaryImage, resolveImageReference } from "../lib/image-upload.js";
+import { ImageUploadError, ImageStorageError, deleteManagedImage, resolveImageReference } from "../lib/image-upload.js";
 
 import { prisma } from "../lib/prisma.js";
 
@@ -209,7 +209,7 @@ export const createCategory = async (req, res) => {
     return res.status(201).json({ category });
   } catch (error) {
     if (pendingUploadedImage) {
-      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "categories" }).catch((cleanupError) => {
+      await deleteManagedImage(pendingUploadedImage, { folder: "categories" }).catch((cleanupError) => {
         console.error("Uploaded category image cleanup failed", { name: cleanupError?.name || "Error" });
       });
     }
@@ -277,7 +277,7 @@ export const updateCategory = async (req, res) => {
     await category.save();
     pendingUploadedImage = "";
     if (before.image && before.image !== category.image) {
-      await deleteManagedCloudinaryImage(before.image, { folder: "categories" }).catch((cleanupError) => {
+      await deleteManagedImage(before.image, { folder: "categories" }).catch((cleanupError) => {
         console.error("Replaced category image cleanup failed", { name: cleanupError?.name || "Error" });
       });
     }
@@ -314,7 +314,7 @@ export const updateCategory = async (req, res) => {
     return res.json({ category });
   } catch (error) {
     if (pendingUploadedImage) {
-      await deleteManagedCloudinaryImage(pendingUploadedImage, { folder: "categories" }).catch((cleanupError) => {
+      await deleteManagedImage(pendingUploadedImage, { folder: "categories" }).catch((cleanupError) => {
         console.error("Unpersisted category image cleanup failed", { name: cleanupError?.name || "Error" });
       });
     }
@@ -356,7 +356,7 @@ export const deleteCategory = async (req, res) => {
     await Category.deleteOne({ _id: category._id });
     await invalidateCategoryTreeCache();
     await invalidateProductPriceBoundsCache();
-    await deleteManagedCloudinaryImage(category.image, { folder: "categories" }).catch((cleanupError) => {
+    await deleteManagedImage(category.image, { folder: "categories" }).catch((cleanupError) => {
       console.error("Deleted category image cleanup failed", { name: cleanupError?.name || "Error" });
     });
     await recordAuditEvent(req, {
