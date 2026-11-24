@@ -15,6 +15,21 @@ const MAX_IMAGE_HEIGHT = 8192;
 const MAX_IMAGE_PIXELS = 40_000_000;
 const PUBLIC_UPLOAD_PATH = "/uploads";
 
+export const MAX_IMAGE_COLLECTION_BYTES = 12 * 1024 * 1024;
+
+export const getImageDataUrlByteLength = (value) => {
+  if (typeof value !== "string") return 0;
+  const match = /^data:image\\/(?:jpeg|jpg|png|webp|gif);base64,([A-Za-z0-9+/]+={0,2})$/i.exec(value);
+  if (!match) return 0;
+  const encoded = match[1];
+  const padding = encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor((encoded.length * 3) / 4) - padding);
+};
+
+export const isImageCollectionWithinLimit = (values, maxBytes = MAX_IMAGE_COLLECTION_BYTES) =>
+  Array.isArray(values) &&
+  values.reduce((total, value) => total + getImageDataUrlByteLength(value), 0) <= maxBytes;
+
 export const getImageStorageDirectory = () =>
   path.resolve(process.env.IMAGE_STORAGE_DIR || path.join(process.cwd(), "uploads"));
 
