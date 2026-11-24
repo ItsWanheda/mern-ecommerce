@@ -50,8 +50,8 @@ if (-not (Test-Path .\\backend\\.env)) {
 }
 
 $dockerEnv = Get-Content .\\backend\\.env -Raw
-$dockerEnv = $dockerEnv -replace '@(?:localhost|127\\.0\\.0\\.1)(?=:5432)', '@postgres'
-$dockerEnv = $dockerEnv -replace 'redis://(?:localhost|127\\.0\\.0\\.1)(?=:6379)', 'redis://redis'
+$dockerEnv = $dockerEnv -replace '@(?:localhost|127\.0\.0\.1)(?=:5432)', '@postgres'
+$dockerEnv = $dockerEnv -replace 'redis://(?:localhost|127\.0\.0\.1)(?=:6379)', 'redis://redis'
 $dockerEnv = [regex]::Replace($dockerEnv, '(?m)^NODE_ENV=.*$', 'NODE_ENV=development')
 $dockerEnv = [regex]::Replace($dockerEnv, '(?m)^PORT=.*$', 'PORT=5000')
 
